@@ -1,7 +1,7 @@
 <launch>
   <!-- Camera -->
   <node pkg="bluefox2" type="bluefox2" name="camera" output="screen" >
-    <param name="fps" type="double" value="5.0" />
+    <param name="fps" type="double" value="30.0" />
     <param name="gain" type="double" value="0.0" />
     <param name="exposure_time_us" type="int" value="10000" />
     <param name="use_auto_exposure" type="bool" value="true" />
@@ -12,6 +12,6 @@
     <param name="use_binning" type="bool" value="false" />
     <param name="use_split_image" type="bool" value="false" />
     <param name="use_stereo" type="bool" value="false" />
-    <param name="serial_left"  type="string" value="29900114" />
+    <param name="serial_left"  type="string" value="29900189" />
   </node>
 </launch>

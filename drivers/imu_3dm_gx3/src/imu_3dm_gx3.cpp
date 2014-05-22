@@ -10,7 +10,7 @@
 #include <eigen3/Eigen/Geometry>
 // #include "pose_utils.h"
 
-using namespace std;
+using std::string;
 
 #define REPLY_LENGTH 4
 
@@ -18,7 +18,7 @@ boost::asio::serial_port *serial_port = 0;
 const char stop[3] = {'\xFA', '\x75', '\xB4'};
 char mode[4] = {'\xD4', '\xA3', '\x47', '\x00'};
 unsigned char reply[REPLY_LENGTH];
-std::string name;
+string name;
 
 static float extract_float(unsigned char *addr)
 {
@@ -72,10 +72,10 @@ int main(int argc, char **argv)
 
   name = ros::this_node::getName();
 
-  std::string port;
-  if (n.hasParam("port"))
+  string port;
+  if (n.hasParam("port")) {
     n.getParam("port", port);
-  else {
+  } else {
     ROS_ERROR("%s: must provide a port", name.c_str());
     return -1;
   }

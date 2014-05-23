@@ -1,5 +1,5 @@
 #!bin/bash
-# source ros and add Galt to package path
+# add ros and add Galt to package path
 source /opt/ros/indigo/setup.bash
 export ROS_PACKAGE_PATH=$ROS_PACKAGE_PATH:$(pwd)
 

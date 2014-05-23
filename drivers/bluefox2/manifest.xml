@@ -1,0 +1,15 @@
+<package>
+  <description brief="bluefox2">
+
+     Driver for one or two mv bluefox cameras
+
+  </description>
+  <author>Shaojie Shen</author>
+  <license>GPL</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/bluefox2</url>
+  <depend package="roscpp"/>
+  <depend package="sensor_msgs"/>
+
+</package>
+

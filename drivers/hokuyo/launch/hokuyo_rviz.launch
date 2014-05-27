@@ -1,0 +1,17 @@
+<!--
+
+This launch file will start the urg_node with rviz
+
+Refer to hokuyo_test.launch for more details
+
+Rviz configuration file will be stored in hokuyo/config
+
+-->
+
+<launch>
+
+    <include file="$(find hokuyo)/launch/hokuyo_test.launch" />
+
+    <node name="rviz" pkg="rviz" type="rviz" respawn="false" />
+
+</launch>

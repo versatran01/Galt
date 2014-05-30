@@ -1,8 +1,8 @@
 <!--
 
-This launch file will start the urg_node
+This launch file will start the urg_node with a ethernet hokuyo
 
-You may have to change the ip address is your laser has a differenct ip address
+You may have to change the ip address if your laser has a differenct ip address
 
 You may also need to set the ip address of your computer
 
@@ -15,7 +15,7 @@ If you want to have a visualization, use hokuyo_rviz.launch
 <launch>
 
     <node name="urg_node" pkg="urg_node" type="urg_node" respawn="false" output="screen">
-    <param name="ip_address" type="string" value="192.168.0.10"/>
+        <param name="ip_address" type="string" value="192.168.0.10"/>
     </node>
 
 </launch>

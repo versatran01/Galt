@@ -12,6 +12,6 @@
     <param name="use_binning" type="bool" value="false" />
     <param name="use_split_image" type="bool" value="false" />
     <param name="use_stereo" type="bool" value="false" />
-    <param name="serial_left"  type="string" value="29900130" />
+    <param name="serial_left"  type="string" value="25000855" />
   </node>
 </launch>

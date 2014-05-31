@@ -1,0 +1,5 @@
+<launch>
+  <node name="ublox_gps" pkg="ublox_gps" type="ublox_gps">
+    <param name="baudrate" type="double" value="115200"/>
+  </node>
+</launch>

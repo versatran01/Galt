@@ -5,9 +5,8 @@ find_package(catkin REQUIRED roscpp sensor_msgs)
 
 catkin_package()
 
-include_directories(mvIMPACT ${catkin_INCLUDE_DIRS})
+include_directories(include ${catkin_INCLUDE_DIRS})
 
-# set(MVIMPACT_DIR "${PROJECT_SOURCE_DIR}/mvIMPACT_acquire-x86_64-2.7.1")
 set(MVIMPACT_DIR "${PROJECT_SOURCE_DIR}/mvIMPACT") # 2.7.2
 include_directories(${MVIMPACT_DIR})
 

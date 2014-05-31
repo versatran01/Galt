@@ -1,4 +1,4 @@
-#include "camera.h"
+#include "bluefox2/camera.h"
 
 namespace bluefox2 {
 

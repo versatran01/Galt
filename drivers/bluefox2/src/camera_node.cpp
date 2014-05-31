@@ -1,6 +1,6 @@
 #include <ros/ros.h>
 
-#include "camera.h"
+#include "bluefox2/camera.h"
 
 int main(int argc, char **argv)
 {

@@ -4,6 +4,7 @@ namespace bluefox2 {
 
 Camera::Camera(ros::NodeHandle _comm_nh, ros::NodeHandle _param_nh) : node(_comm_nh), pnode(_param_nh)
 {
+  // Read parameters from launch file
   pnode.param("use_stereo", use_stereo, false);
   pnode.param("use_split_image", use_split_image, false);
   pnode.param("use_color", use_color, false);
@@ -19,6 +20,20 @@ Camera::Camera(ros::NodeHandle _comm_nh, ros::NodeHandle _param_nh) : node(_comm
   pnode.param("serial_right",     serial1, std::string(""));
   ok = false;
 
+  // Set up camera information manager
+  if (_param_nh.getParam("calibration_file", calibration_file_)) {
+    if (camera_calibration_parsers::readCalibration(calibration_file_,
+                                                    camera_name_,
+                                                    camera_info_)) {
+      ROS_WARN("Calibration: %s", calibration_file_.c_str());
+    } else {
+      ROS_WARN("bluefox2: invalidCalibrationFile: %s",
+               calibration_file_.c_str());
+    }
+  } else {
+    ROS_WARN("bluefox2: requireCalibrationFile");
+  }
+
   pub  = pnode.advertise<sensor_msgs::Image>("image", 10);
   if (use_stereo && use_split_image) {
     publ = pnode.advertise<sensor_msgs::Image>("left",  10);
@@ -27,7 +42,7 @@ Camera::Camera(ros::NodeHandle _comm_nh, ros::NodeHandle _param_nh) : node(_comm
 
   // Count cameras
   devCnt = devMgr.deviceCount();
-  ROS_WARN("Camera Cnt:  %d", devCnt);
+  ROS_WARN("Camera Cnt: %d", devCnt);
 
   // Init cameras
   if (use_stereo && devCnt >= 2 && devCnt <= 10 && serial0 != serial1) {

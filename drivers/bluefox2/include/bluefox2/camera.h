@@ -1,9 +1,12 @@
 #include <iostream>
 #include <algorithm>
+#include <string>
 #include <ros/ros.h>
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/image_encodings.h>
 #include <mvIMPACT_CPP/mvIMPACT_acquire.h>
+#include <image_transport/image_transport.h>
+#include <camera_calibration_parsers/parse.h>
 #include <errno.h>
 
 namespace bluefox2 {
@@ -46,9 +49,12 @@ class Camera {
     bool use_auto_exposure;
     double fps;
     double gain;
-    int  exposure_time_us;
-    std::string  serial0;
-    std::string  serial1;
+    int exposure_time_us;
+    std::string serial0;
+    std::string serial1;
+    std::string calibration_file_;
+    std::string camera_name_;
+    sensor_msgs::CameraInfo camera_info_;
     unsigned int id0;
     unsigned int id1;
 

@@ -7,8 +7,8 @@ catkin_package(
     LIBRARIES ${PROJECT_NAME}
     CATKIN_DEPENDS roscpp ublox_msgs ublox_serialization) #sensor_msgs
 
-set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
-set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
+#set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
+#set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 # include boost
 find_package(Boost REQUIRED COMPONENTS system regex thread)
@@ -25,8 +25,12 @@ SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -lrt -pthread")
 
 # build library
 add_library(ublox_gps src/gps.cpp)
+
+# fix msg compile order bug
+add_dependencies(ublox_gps ${ublox_msgs_EXPORTED_TARGETS})
+
 target_link_libraries(ublox_gps boost_system boost_regex boost_thread)
-target_link_libraries(ublox_gps ${roscpp_LIBRARIES})
+target_link_libraries(ublox_gps ${roscpp_LIBRARIES} ${ublox_msgs_LIBRARIES})
 
 # build node
 add_executable(ublox_gps_node src/node.cpp)

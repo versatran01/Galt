@@ -6,7 +6,7 @@ You need to supply the id
   <arg name="id_mono" default="25000855" />
   <arg name="calibration_file" default="$(arg id_mono).yml" />
 
-  <node pkg="bluefox2" type="bluefox2" name="camera" output="screen" >
+  <node pkg="bluefox2" type="bluefox2" name="cam$(arg id_mono)" output="screen" >
     <param name="fps" type="double" value="30.0" />
     <param name="gain" type="double" value="0.0" />
     <param name="exposure_time_us" type="int" value="10000" />

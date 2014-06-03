@@ -22,7 +22,7 @@ class Camera {
     // Node handle
     ros::NodeHandle node_, pnode_;
     // mvIMPACT Acquire device manager
-    mvIMPACT::acquire::DeviceManager devMgr;
+    mvIMPACT::acquire::DeviceManager device_manager_;
     // create an interface to the device found
     mvIMPACT::acquire::FunctionInterface *fi[10];
     // establish access to the statistic properties
@@ -35,7 +35,7 @@ class Camera {
     ros::Publisher pub;
     ros::Publisher publ;
     ros::Publisher pubr;
-    unsigned int devCnt;
+    unsigned int device_count_;
 
     // User specified parameters
     bool use_stereo;

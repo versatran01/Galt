@@ -49,28 +49,29 @@ Camera::Camera(ros::NodeHandle comm_nh, ros::NodeHandle param_nh)
   }
 
   // Count cameras
-  devCnt = devMgr.deviceCount();
-  ROS_WARN("Camera Cnt: %d", devCnt);
+  device_count_ = device_manager_.deviceCount();
+  ROS_WARN("Camera Cnt: %d", device_count_);
 
   // Init cameras
-  if (use_stereo && devCnt >= 2 && devCnt <= 10 && serial0 != serial1) {
+  if (use_stereo && device_count_ >= 2 && device_count_ <= 10 &&
+      serial0 != serial1) {
     int cnt = 0;
-    for (unsigned int k = 0; k < devCnt; k++) {
-      if (devMgr[k]->serial.read() == serial0) {
+    for (unsigned int k = 0; k < device_count_; k++) {
+      if (device_manager_[k]->serial.read() == serial0) {
         id0 = k;
         cnt++;
       }
-      if (devMgr[k]->serial.read() == serial1) {
+      if (device_manager_[k]->serial.read() == serial1) {
         id1 = k;
         cnt++;
       }
     }
     if (cnt == 2 && initSingleMVDevice(id0) && initSingleMVDevice(id1))
       ok = true;
-  } else if (!use_stereo && devCnt >= 1 && devCnt <= 10) {
+  } else if (!use_stereo && device_count_ >= 1 && device_count_ <= 10) {
     int cnt = 0;
-    for (unsigned int k = 0; k < devCnt; k++) {
-      if (devMgr[k]->serial.read() == serial0) {
+    for (unsigned int k = 0; k < device_count_; k++) {
+      if (device_manager_[k]->serial.read() == serial0) {
         id0 = k;
         cnt++;
       }
@@ -86,12 +87,12 @@ Camera::~Camera()
 {
   if (use_stereo) {
     fi[id0]->imageRequestReset(0, 0);
-    devMgr[id0]->close();
+    device_manager_[id0]->close();
     fi[id1]->imageRequestReset(0, 0);
-    devMgr[id1]->close();
+    device_manager_[id1]->close();
   } else {
     fi[id0]->imageRequestReset(0, 0);
-    devMgr[id0]->close();
+    device_manager_[id0]->close();
   }
   ok = false;
 }
@@ -105,37 +106,46 @@ bool Camera::isOK()
 
 bool Camera::initSingleMVDevice(unsigned int id)
 {
-  ROS_WARN("Camera Found:  %s(%s)", devMgr[id]->family.read().c_str(), devMgr[id]->serial.read().c_str());
+  ROS_WARN("Camera Found:  %s(%s)", device_manager_[id]->family.read().c_str(),
+           device_manager_[id]->serial.read().c_str());
 
   try {
-    devMgr[id]->open();
+    device_manager_[id]->open();
   } catch (const mvIMPACT::acquire::ImpactAcquireException &e) {
-    std::cout << "An error occurred while opening the device " << devMgr[id]->serial.read()
-              << "(error code: " << e.getErrorCode() << "(" << e.getErrorCodeAsString() << "))."
-              << std::endl << "Press [ENTER] to end the application..." << std::endl;
+    std::cout << "An error occurred while opening the device "
+              << device_manager_[id]->serial.read()
+              << "(error code: " << e.getErrorCode() << "("
+              << e.getErrorCodeAsString() << "))." << std::endl
+              << "Press [ENTER] to end the application..." << std::endl;
     return false;
   }
 
   try {
-    fi[id] = new mvIMPACT::acquire::FunctionInterface(devMgr[id]);
+    fi[id] = new mvIMPACT::acquire::FunctionInterface(device_manager_[id]);
   } catch (const mvIMPACT::acquire::ImpactAcquireException &e) {
-    std::cout << "An error occurred while creating the function interface on device " << devMgr[id]->serial.read()
-              << "(error code: " << e.getErrorCode() << "(" << e.getErrorCodeAsString() << "))."
-              << std::endl << "Press [ENTER] to end the application..." << std::endl;
+    std::cout
+        << "An error occurred while creating the function interface on device "
+        << device_manager_[id]->serial.read()
+        << "(error code: " << e.getErrorCode() << "("
+        << e.getErrorCodeAsString() << "))." << std::endl
+        << "Press [ENTER] to end the application..." << std::endl;
     return false;
   }
 
   try {
-    statistics[id] = new mvIMPACT::acquire::Statistics(devMgr[id]);
+    statistics[id] = new mvIMPACT::acquire::Statistics(device_manager_[id]);
   } catch (const mvIMPACT::acquire::ImpactAcquireException &e) {
-    std::cout << "An error occurred while initializing the statistical information on device " << devMgr[id]->serial.read()
-              << "(error code: " << e.getErrorCode() << "(" << e.getErrorCodeAsString() << "))."
-              << std::endl << "Press [ENTER] to end the application..." << std::endl;
+    std::cout << "An error occurred while initializing the statistical "
+                 "information on device " << device_manager_[id]->serial.read()
+              << "(error code: " << e.getErrorCode() << "("
+              << e.getErrorCodeAsString() << "))." << std::endl
+              << "Press [ENTER] to end the application..." << std::endl;
     return false;
   }
 
   // Set Properties
-  mvIMPACT::acquire::SettingsBlueFOX settings(devMgr[id]); // Using the "Base" settings (default)
+  // Using the "Base" settings (default)
+  mvIMPACT::acquire::SettingsBlueFOX settings(device_manager_[id]);
 
   // Binning
   if (use_binning) {
@@ -155,7 +165,8 @@ bool Camera::initSingleMVDevice(unsigned int id)
     ROS_WARN("Auto Gain");
   }
 
-  // Auto exposure, modified controller for better results, be careful about the minimum exposure time
+  // Auto exposure, modified controller for better results,
+  // be careful about the minimum exposure time
   if (use_auto_exposure) {
     settings.cameraSetting.autoControlParameters.controllerSpeed.write(acsUserDefined);
     settings.cameraSetting.autoControlParameters.controllerGain.write(0.5);
@@ -204,7 +215,7 @@ bool Camera::initSingleMVDevice(unsigned int id)
   }
 
   // prefill the capture queue. There can be more then 1 queue for some device, but only one for now
-  mvIMPACT::acquire::SystemSettings ss(devMgr[id]);
+  mvIMPACT::acquire::SystemSettings ss(device_manager_[id]);
   ss.requestCount.write(1);
 
   // Only for stereo, skip if only one camera exists
@@ -281,8 +292,9 @@ bool Camera::grab_monocular(sensor_msgs::ImagePtr image)
       // Set image properties
       int channels  = pRequest[id0]->imageChannelCount.read();
       image->height = pRequest[id0]->imageHeight.read();
-      image->width  = pRequest[id0]->imageWidth.read();
-      image->step   = pRequest[id0]->imageChannelCount.read() * pRequest[id0]->imageWidth.read();
+      image->width = pRequest[id0]->imageWidth.read();
+      image->step = pRequest[id0]->imageChannelCount.read() *
+                    pRequest[id0]->imageWidth.read();
       if (channels == 1)
         image->encoding = sensor_msgs::image_encodings::MONO8;
       else if (channels == 3)
@@ -293,9 +305,12 @@ bool Camera::grab_monocular(sensor_msgs::ImagePtr image)
       // Copy data
       img_frame = (const unsigned char *)pRequest[id0]->imageData.read();
       if (use_inverted)
-        std::reverse_copy(img_frame, img_frame + image->width * image->height * channels, &image->data[0]);
+        std::reverse_copy(img_frame,
+                          img_frame + image->width * image->height * channels,
+                          &image->data[0]);
       else
-        memcpy(&image->data[0], img_frame, image->width * image->height * channels);
+        memcpy(&image->data[0], img_frame,
+               image->width * image->height * channels);
       // Release capture request
       fi[id0]->imageRequestUnlock(requestNr);
       status = true;
@@ -317,9 +332,9 @@ bool Camera::grab_monocular(sensor_msgs::ImagePtr image)
   return status;
 }
 
-
-bool Camera::grab_stereo(sensor_msgs::ImagePtr image, sensor_msgs::ImagePtr left, sensor_msgs::ImagePtr right)
-{
+bool Camera::grab_stereo(sensor_msgs::ImagePtr image,
+                         sensor_msgs::ImagePtr left,
+                         sensor_msgs::ImagePtr right) {
   const unsigned char *img_frame = NULL;
   bool status   = false;
 
@@ -329,7 +344,9 @@ bool Camera::grab_stereo(sensor_msgs::ImagePtr image, sensor_msgs::ImagePtr left
   fi[id0]->imageRequestSingle();
   capture_time = ros::Time::now();
 
-  int requestNr[10] = {INVALID_ID, INVALID_ID, INVALID_ID, INVALID_ID, INVALID_ID, INVALID_ID, INVALID_ID, INVALID_ID, INVALID_ID, INVALID_ID};
+  int requestNr[10] = {INVALID_ID, INVALID_ID, INVALID_ID, INVALID_ID,
+                       INVALID_ID, INVALID_ID, INVALID_ID, INVALID_ID,
+                       INVALID_ID, INVALID_ID};
   requestNr[id0] = fi[id0]->imageRequestWaitFor(300);
   requestNr[id1] = fi[id1]->imageRequestWaitFor(300);
 
@@ -344,14 +361,17 @@ bool Camera::grab_stereo(sensor_msgs::ImagePtr image, sensor_msgs::ImagePtr left
       int channels  = pRequest[id0]->imageChannelCount.read();
       image->height = pRequest[id0]->imageHeight.read() * 2;
       image->width  = pRequest[id0]->imageWidth.read();
-      image->step   = pRequest[id0]->imageChannelCount.read() * pRequest[id0]->imageWidth.read();
+      image->step = pRequest[id0]->imageChannelCount.read() *
+                    pRequest[id0]->imageWidth.read();
       if (use_split_image) {
         left->height  = pRequest[id0]->imageHeight.read();
         left->width   = pRequest[id0]->imageWidth.read();
-        left->step    = pRequest[id0]->imageChannelCount.read() * pRequest[id0]->imageWidth.read();
+        left->step = pRequest[id0]->imageChannelCount.read() *
+                     pRequest[id0]->imageWidth.read();
         right->height = pRequest[id0]->imageHeight.read();
         right->width  = pRequest[id0]->imageWidth.read();
-        right->step   = pRequest[id0]->imageChannelCount.read() * pRequest[id0]->imageWidth.read();
+        right->step = pRequest[id0]->imageChannelCount.read() *
+                      pRequest[id0]->imageWidth.read();
       }
       if (channels == 1) {
         image->encoding = sensor_msgs::image_encodings::MONO8;
@@ -379,24 +399,36 @@ bool Camera::grab_stereo(sensor_msgs::ImagePtr image, sensor_msgs::ImagePtr left
       // Copy data
       img_frame = (const unsigned char *)pRequest[id0]->imageData.read();
       if (use_inverted) {
-        std::reverse_copy(img_frame, img_frame + image->width * image->height / 2 * channels, &image->data[0]);
+        std::reverse_copy(
+            img_frame, img_frame + image->width * image->height / 2 * channels,
+            &image->data[0]);
         if (use_split_image)
-          std::reverse_copy(img_frame, img_frame + left->width * left->height * channels, &left->data[0]);
+          std::reverse_copy(img_frame,
+                            img_frame + left->width * left->height * channels,
+                            &left->data[0]);
       } else {
-        memcpy(&image->data[0], img_frame, image->width * image->height / 2 * channels);
+        memcpy(&image->data[0], img_frame,
+               image->width * image->height / 2 * channels);
         if (use_split_image)
-          memcpy(&left->data[0], img_frame, left->width * left->height * channels);
+          memcpy(&left->data[0], img_frame,
+                 left->width * left->height * channels);
       }
 
       img_frame = (const unsigned char *)pRequest[id1]->imageData.read();
       if (use_inverted) {
-        std::reverse_copy(img_frame, img_frame + image->width * image->height / 2 * channels, &image->data[image->width * image->height / 2 * channels]);
+        std::reverse_copy(
+            img_frame, img_frame + image->width * image->height / 2 * channels,
+            &image->data[image->width * image->height / 2 * channels]);
         if (use_split_image)
-          std::reverse_copy(img_frame, img_frame + right->width * right->height * channels, &right->data[0]);
+          std::reverse_copy(img_frame,
+                            img_frame + right->width * right->height * channels,
+                            &right->data[0]);
       } else {
-        memcpy(&image->data[image->width * image->height / 2 * channels], img_frame, image->width * image->height / 2 * channels);
+        memcpy(&image->data[image->width * image->height / 2 * channels],
+               img_frame, image->width * image->height / 2 * channels);
         if (use_split_image)
-          memcpy(&right->data[0], img_frame, right->width * right->height * channels);
+          memcpy(&right->data[0], img_frame,
+                 right->width * right->height * channels);
       }
 
       // Release capture request
@@ -427,4 +459,3 @@ bool Camera::grab_stereo(sensor_msgs::ImagePtr image, sensor_msgs::ImagePtr left
 }
 
 }
-

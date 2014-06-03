@@ -19,20 +19,8 @@ void Imu::Packet::calcChecksum()
 {
   uint8_t byte1=0,byte2=0;
 
-  byte1 += syncMSB;
-  byte2 += byte1;
-
-  byte1 += syncLSB;
-  byte2 += byte1;
-
-  byte1 += descriptor;
-  byte2 += byte1;
-
-  byte1 += length;
-  byte2 += byte1;
-
-  for (uint8_t i=0; i < length; i++) {
-    byte1 += payload[i];
+  for (size_t i=0; i < kHeaderLength+length; i++) {
+    byte1 += operator[](i);
     byte2 += byte1;
   }
 
@@ -73,7 +61,7 @@ bool Imu::initialize()
   try {
       _port->open(port);
   } catch (std::exception& err) {
-      throw invalid_argument("Could not open port, error : " + err.what());
+      throw runtime_error("Could not open port, error : " + err.what());
   }
 
   if (!port_->is_open()) {
@@ -95,16 +83,20 @@ bool Imu::initialize()
 
 void Imu::run()
 {
-  deque<uint8_t> data;
+  deque<uint8_t> buffer;
   Packet packet;
-  bool reading = false;
+  enum {
+    Idle = 0,
+    Reading,
+  } state;
+  size_t idx=0;
 
-  while (comm.ok())
+  while ( comm.ok() )
   {
     if ( data.empty() )
     {
-      uint8_t buffer[4096];
-      const size_t readLength = read(buffer, sizeof(buffer));
+      uint8_t readBuf[20];
+      const size_t readLength = read(readBuf, sizeof(readBuf));
 
       for (size_t i=0; i < readLength; i++) {
         data.push_back(buffer[i]);
@@ -112,21 +104,34 @@ void Imu::run()
     }
     else
     {
-      if (reading)
+      if (state == Idle)  //   waiting for packet
       {
-        
-      }
-      else if (data.size() > 1)
-      {
-        packet.syncMSB = data[0];
-        packet.syncLSB = data[1];
-
-        if (packet.syncMSB == 0x75 && packet.syncLSB == 0x65) {
-          reading = true;
+        if (data.size() > 1) {
+          if (data[0] == Imu::Packet::kSyncMSB && data[1] == Imu::Packet::kSyncLSB) {
+            sate = Reading;  //   found the magic ID
+          }
         }
+        idx = 0;
+      }
+      else if (state == Reading)
+      {
+        uint8_t byte = data[0];
+        data.pop_front();
 
-        data.pop_front();
-        data.pop_front();
+        packet[idx] = byte;
+        if (&packet[idx] == &packet.checkLSB) {
+          // reached the end of the packet
+          uint16_t sum = packet.checksum;
+          packet.calcChecksum();
+          if (sum != packet.checksum) {
+#ifdef VERBOSE
+            ROS_WARN("Warning: Rejecting packet with mismatched checksum: %u != %u", sum, packet.checmsum);
+#endif
+            state = Idle;  // go back to idle state
+          } else {
+            // received a packet
+          }
+        }
       }
     }
   }

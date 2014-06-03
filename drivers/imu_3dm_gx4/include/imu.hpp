@@ -18,6 +18,7 @@
 
 extern "C" {
   #include <stdint.h>
+  #include <assert.h>
 }
 
 namespace imu_3dm_gx4
@@ -32,6 +33,11 @@ public:
 
   struct Packet
   {
+    static constexpr uint8_t kHeaderLength = 4;
+
+    static constexpr uint8_t kSyncMSB = 0x75;
+    static constexpr uint8_t kSyncLSB = 0x65;
+
     union {
       struct {
         uint8_t syncMSB;
@@ -62,6 +68,43 @@ public:
      *
      */
     void copyToBuffer(uint8_t *insert);
+
+    /**
+     *  @brief Constructor
+     */
+     Packet() : sync(0), descriptor(0), length(0), checksum(0) {
+     }
+
+    /**
+     *  @brief Byte level accessor
+     */
+    uint8_t& operator [] (size_t idx)
+    {
+      const size_t end = kHeaderLength+length;
+      assert(idx < end+2);
+
+      switch(idx) {
+        case 0: return syncMSB;
+        case 1: return syncLSB;
+        case 2: return descriptor;
+        case 3: return length;
+        default:
+        {
+          //  idx > kHeaderLength
+          if (idx < end) {
+            return payload[idx-kHeaderLength];
+          }
+          else if (idx == end) {
+            return checkMSB;
+          }
+          else if (idx == end+1) {
+            return checkLSB;
+          }
+        }
+      }
+
+      return checkLSB;
+    }
   };
 
   /**

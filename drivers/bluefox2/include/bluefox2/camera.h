@@ -6,7 +6,7 @@
 #include <sensor_msgs/image_encodings.h>
 #include <mvIMPACT_CPP/mvIMPACT_acquire.h>
 #include <image_transport/image_transport.h>
-#include <camera_calibration_parsers/parse.h>
+#include <camera_info_manager/camera_info_manager.h>
 #include <errno.h>
 
 namespace bluefox2 {
@@ -19,9 +19,8 @@ class Camera {
     void feedImages();
 
   private:
-
     // Node handle
-    ros::NodeHandle node, pnode;
+    ros::NodeHandle node_, pnode_;
     // mvIMPACT Acquire device manager
     mvIMPACT::acquire::DeviceManager devMgr;
     // create an interface to the device found
@@ -50,17 +49,21 @@ class Camera {
     double fps;
     double gain;
     int exposure_time_us;
-    std::string serial0;
-    std::string serial1;
-    std::string calibration_file_;
-    std::string camera_name_;
-    sensor_msgs::CameraInfo camera_info_;
     unsigned int id0;
     unsigned int id1;
+    std::string serial0;
+    std::string serial1;
+
+    std::string calibration_url_;
+    std::string camera_name_;
+    boost::shared_ptr<camera_info_manager::CameraInfoManager> camera_info_manager_;
+    image_transport::CameraPublisher camera_pub_;
 
     bool initSingleMVDevice(unsigned int id);
     bool grab_monocular(sensor_msgs::ImagePtr image);
-    bool grab_stereo(sensor_msgs::ImagePtr image, sensor_msgs::ImagePtr left, sensor_msgs::ImagePtr right);
+    bool grab_stereo(sensor_msgs::ImagePtr image,
+                     sensor_msgs::ImagePtr left,
+                     sensor_msgs::ImagePtr right);
 };
 
 }

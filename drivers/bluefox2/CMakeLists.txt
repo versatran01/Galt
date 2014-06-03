@@ -1,7 +1,8 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(bluefox2)
 
-find_package(catkin REQUIRED roscpp sensor_msgs camera_calibration_parsers)
+find_package(catkin REQUIRED COMPONENTS
+    roscpp sensor_msgs image_transport camera_info_manager)
 
 catkin_package()
 

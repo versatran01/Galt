@@ -2,42 +2,50 @@
 
 namespace bluefox2 {
 
-Camera::Camera(ros::NodeHandle _comm_nh, ros::NodeHandle _param_nh) : node(_comm_nh), pnode(_param_nh)
+Camera::Camera(ros::NodeHandle comm_nh, ros::NodeHandle param_nh)
+    : node_(comm_nh), pnode_(param_nh)
 {
   // Read parameters from launch file
-  pnode.param("use_stereo", use_stereo, false);
-  pnode.param("use_split_image", use_split_image, false);
-  pnode.param("use_color", use_color, false);
-  pnode.param("use_hdr", use_hdr, false);
-  pnode.param("has_hdr", has_hdr, false);
-  pnode.param("use_inverted", use_inverted, false);
-  pnode.param("use_binning", use_binning, false);
-  pnode.param("use_auto_exposure", use_auto_exposure, false);
-  pnode.param("fps", fps, 30.0);
-  pnode.param("gain", gain, 0.0);
-  pnode.param("exposure_time_us", exposure_time_us, 10000);
-  pnode.param("serial_left",      serial0, std::string(""));
-  pnode.param("serial_right",     serial1, std::string(""));
+  pnode_.param("use_stereo", use_stereo, false);
+  pnode_.param("use_split_image", use_split_image, false);
+  pnode_.param("use_color", use_color, false);
+  pnode_.param("use_hdr", use_hdr, false);
+  pnode_.param("has_hdr", has_hdr, false);
+  pnode_.param("use_inverted", use_inverted, false);
+  pnode_.param("use_binning", use_binning, false);
+  pnode_.param("use_auto_exposure", use_auto_exposure, false);
+  pnode_.param("fps", fps, 30.0);
+  pnode_.param("gain", gain, 0.0);
+  pnode_.param("exposure_time_us", exposure_time_us, 10000);
+  pnode_.param("serial_left", serial0, std::string(""));
+  pnode_.param("serial_right", serial1, std::string(""));
   ok = false;
 
-  // Set up camera information manager
-  if (_param_nh.getParam("calibration_file", calibration_file_)) {
-    if (camera_calibration_parsers::readCalibration(calibration_file_,
-                                                    camera_name_,
-                                                    camera_info_)) {
-      ROS_WARN("Calibration: %s", calibration_file_.c_str());
-    } else {
-      ROS_WARN("bluefox2: invalidCalibrationFile: %s",
-               calibration_file_.c_str());
-    }
-  } else {
+  // Read camera calibration url
+  if (!param_nh.getParam("calibration_url", calibration_url_)) {
+    calibration_url_ = "";
     ROS_WARN("bluefox2: requireCalibrationFile");
+  } else {
+    ROS_INFO("Calibration: %s", calibration_url_.c_str());
   }
 
-  pub  = pnode.advertise<sensor_msgs::Image>("image", 10);
+  camera_info_manager_ =
+      boost::shared_ptr<camera_info_manager::CameraInfoManager>(
+          new camera_info_manager::CameraInfoManager(pnode_, "bluefox2",
+                                                     calibration_url_));
+  if (camera_info_manager_->isCalibrated()) {
+    ROS_INFO("Camera has loaded calibration file");
+  }
+
+  // Set up image transport publisher
+  image_transport::ImageTransport it(pnode_);
+  camera_pub_ = it.advertiseCamera("image_raw", 1);
+
+  // Old stuff
+  pub = pnode_.advertise<sensor_msgs::Image>("image", 10);
   if (use_stereo && use_split_image) {
-    publ = pnode.advertise<sensor_msgs::Image>("left",  10);
-    pubr = pnode.advertise<sensor_msgs::Image>("right", 10);
+    publ = pnode_.advertise<sensor_msgs::Image>("left",  10);
+    pubr = pnode_.advertise<sensor_msgs::Image>("right", 10);
   }
 
   // Count cameras
@@ -73,7 +81,6 @@ Camera::Camera(ros::NodeHandle _comm_nh, ros::NodeHandle _param_nh) : node(_comm
   if (!ok)
     ROS_ERROR("Camera Init Failed.");
 }
-
 
 Camera::~Camera()
 {
@@ -223,15 +230,17 @@ bool Camera::initSingleMVDevice(unsigned int id)
 void Camera::feedImages()
 {
   ros::Rate r(fps);
+  sensor_msgs::CameraInfoPtr camera_info(
+      new sensor_msgs::CameraInfo(camera_info_manager_->getCameraInfo()));
   sensor_msgs::ImagePtr image(new sensor_msgs::Image);
   sensor_msgs::ImagePtr left(new sensor_msgs::Image);
   sensor_msgs::ImagePtr right(new sensor_msgs::Image);
-  while (pnode.ok()) {
+  while (pnode_.ok()) {
     if (use_stereo) {
       if (grab_stereo(image, left, right)) {
         image->header.stamp = capture_time;
         image->header.frame_id = std::string("image");
-        left->header  = image->header;
+        left->header = image->header;
         right->header = image->header;
         pub.publish(*image);
         if (use_split_image) {
@@ -244,6 +253,7 @@ void Camera::feedImages()
         image->header.stamp = capture_time;
         image->header.frame_id = std::string("image");
         pub.publish(*image);
+        camera_pub_.publish(image, camera_info);
       }
     }
     r.sleep();

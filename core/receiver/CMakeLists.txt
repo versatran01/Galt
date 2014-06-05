@@ -5,7 +5,7 @@ project(receiver)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  roscpp image_transport cv_bridge sensor_msgs
+  roscpp image_transport cv_bridge sensor_msgs message_filters
 )
 find_package(OpenCV)
 ## System dependencies are found with CMake's conventions

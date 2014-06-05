@@ -6,33 +6,30 @@ Camera::Camera(ros::NodeHandle comm_nh, ros::NodeHandle param_nh)
     : node_(comm_nh), pnode_(param_nh)
 {
   // Read parameters from launch file
-  pnode_.param("use_stereo", use_stereo, false);
+  pnode_.param("use_stereo", use_stereo_, false);
   pnode_.param("use_split_image", use_split_image, false);
-  pnode_.param("use_color", use_color, false);
+  pnode_.param("use_color", use_color_, false);
   pnode_.param("use_hdr", use_hdr, false);
   pnode_.param("has_hdr", has_hdr, false);
   pnode_.param("use_inverted", use_inverted, false);
   pnode_.param("use_binning", use_binning, false);
-  pnode_.param("use_auto_exposure", use_auto_exposure, false);
-  pnode_.param("fps", fps, 30.0);
-  pnode_.param("gain", gain, 0.0);
-  pnode_.param("exposure_time_us", exposure_time_us, 10000);
+  pnode_.param("use_auto_exposure", use_auto_exposure_, false);
+  pnode_.param("fps", fps_, 30.0);
+  pnode_.param("gain", gain_, 0.0);
+  pnode_.param("exposure_time_us", exposure_time_us_, 10000);
   pnode_.param("serial_left", serial0, std::string(""));
   pnode_.param("serial_right", serial1, std::string(""));
-  ok = false;
+  ok_ = false;
 
-  // Read camera calibration url
+  // Read camera calibration url via camera info manager
   if (!param_nh.getParam("calibration_url", calibration_url_)) {
     calibration_url_ = "";
-    ROS_WARN("bluefox2: requireCalibrationFile");
-  } else {
-    ROS_INFO("Calibration: %s", calibration_url_.c_str());
+    ROS_WARN("No calibration file specified.");
   }
 
-  camera_info_manager_ =
-      boost::shared_ptr<camera_info_manager::CameraInfoManager>(
-          new camera_info_manager::CameraInfoManager(pnode_, "bluefox2",
-                                                     calibration_url_));
+  camera_info_manager_ = boost::shared_ptr<CamInfoMgr>(
+      new CamInfoMgr(pnode_, "bluefox2", calibration_url_));
+
   if (camera_info_manager_->isCalibrated()) {
     ROS_INFO("Camera has loaded calibration file");
   }
@@ -41,19 +38,19 @@ Camera::Camera(ros::NodeHandle comm_nh, ros::NodeHandle param_nh)
   image_transport::ImageTransport it(pnode_);
   camera_pub_ = it.advertiseCamera("image_raw", 1);
 
-  // Old stuff
+  // Old stuff, need to get rid of
   pub = pnode_.advertise<sensor_msgs::Image>("image", 10);
-  if (use_stereo && use_split_image) {
+  if (use_stereo_ && use_split_image) {
     publ = pnode_.advertise<sensor_msgs::Image>("left",  10);
     pubr = pnode_.advertise<sensor_msgs::Image>("right", 10);
   }
 
   // Count cameras
   device_count_ = device_manager_.deviceCount();
-  ROS_WARN("Camera Cnt: %d", device_count_);
+  ROS_WARN("Camera Count: %d", device_count_);
 
   // Init cameras
-  if (use_stereo && device_count_ >= 2 && device_count_ <= 10 &&
+  if (use_stereo_ && device_count_ >= 2 && device_count_ <= 10 &&
       serial0 != serial1) {
     int cnt = 0;
     for (unsigned int k = 0; k < device_count_; k++) {
@@ -67,8 +64,8 @@ Camera::Camera(ros::NodeHandle comm_nh, ros::NodeHandle param_nh)
       }
     }
     if (cnt == 2 && initSingleMVDevice(id0) && initSingleMVDevice(id1))
-      ok = true;
-  } else if (!use_stereo && device_count_ >= 1 && device_count_ <= 10) {
+      ok_ = true;
+  } else if (!use_stereo_ && device_count_ >= 1 && device_count_ <= 10) {
     int cnt = 0;
     for (unsigned int k = 0; k < device_count_; k++) {
       if (device_manager_[k]->serial.read() == serial0) {
@@ -77,15 +74,15 @@ Camera::Camera(ros::NodeHandle comm_nh, ros::NodeHandle param_nh)
       }
     }
     if (cnt == 1 && initSingleMVDevice(id0))
-      ok = true;
+      ok_ = true;
   }
-  if (!ok)
-    ROS_ERROR("Camera Init Failed.");
+  if (!ok_)
+    ROS_ERROR("Camera Initialization Failed.");
 }
 
 Camera::~Camera()
 {
-  if (use_stereo) {
+  if (use_stereo_) {
     fi[id0]->imageRequestReset(0, 0);
     device_manager_[id0]->close();
     fi[id1]->imageRequestReset(0, 0);
@@ -94,19 +91,18 @@ Camera::~Camera()
     fi[id0]->imageRequestReset(0, 0);
     device_manager_[id0]->close();
   }
-  ok = false;
+  ok_ = false;
 }
 
-
-bool Camera::isOK()
+bool Camera::ok()
 {
-  return ok;
+  return ok_;
 }
 
 
 bool Camera::initSingleMVDevice(unsigned int id)
 {
-  ROS_WARN("Camera Found:  %s(%s)", device_manager_[id]->family.read().c_str(),
+  ROS_WARN("Camera Found: %s(%s)", device_manager_[id]->family.read().c_str(),
            device_manager_[id]->serial.read().c_str());
 
   try {
@@ -157,9 +153,9 @@ bool Camera::initSingleMVDevice(unsigned int id)
 
   // Gain
   settings.cameraSetting.autoGainControl.write(agcOff);
-  if (gain >= 0.0) {
-    settings.cameraSetting.gain_dB.write(gain);
-    ROS_WARN("Gain:  %f", gain);
+  if (gain_ >= 0.0) {
+    settings.cameraSetting.gain_dB.write(gain_);
+    ROS_WARN("Gain:  %f", gain_);
   } else {
     settings.cameraSetting.autoGainControl.write(agcOn);
     ROS_WARN("Auto Gain");
@@ -167,7 +163,7 @@ bool Camera::initSingleMVDevice(unsigned int id)
 
   // Auto exposure, modified controller for better results,
   // be careful about the minimum exposure time
-  if (use_auto_exposure) {
+  if (use_auto_exposure_) {
     settings.cameraSetting.autoControlParameters.controllerSpeed.write(acsUserDefined);
     settings.cameraSetting.autoControlParameters.controllerGain.write(0.5);
     settings.cameraSetting.autoControlParameters.controllerIntegralTime_ms.write(100);
@@ -175,12 +171,15 @@ bool Camera::initSingleMVDevice(unsigned int id)
     settings.cameraSetting.autoControlParameters.desiredAverageGreyValue.write(100);
     settings.cameraSetting.autoControlParameters.controllerDelay_Images.write(0);
     settings.cameraSetting.autoControlParameters.exposeLowerLimit_us.write(50);
-    settings.cameraSetting.autoControlParameters.exposeUpperLimit_us.write(exposure_time_us);
+    settings.cameraSetting.autoControlParameters.exposeUpperLimit_us.write(exposure_time_us_);
     settings.cameraSetting.autoExposeControl.write(aecOn);
-    ROS_WARN("Auto Exposure w/ Max Exposure Time (us) :  %d", settings.cameraSetting.autoControlParameters.exposeUpperLimit_us.read());
+    ROS_WARN("Auto Exposure w/ Max Exposure Time (us) :  %d",
+             settings.cameraSetting.autoControlParameters.exposeUpperLimit_us
+                 .read());
   } else {
-    settings.cameraSetting.expose_us.write(exposure_time_us);
-    ROS_WARN("Exposure Time (us) :  %d", settings.cameraSetting.expose_us.read());
+    settings.cameraSetting.expose_us.write(exposure_time_us_);
+    ROS_WARN("Exposure Time (us) :  %d",
+             settings.cameraSetting.expose_us.read());
   }
 
   // HDR
@@ -190,11 +189,19 @@ bool Camera::initSingleMVDevice(unsigned int id)
       settings.cameraSetting.getHDRControl().HDREnable.write(bTrue);
       ROS_WARN("Enable HDR ...");
       ROS_WARN("KneePoint 0:");
-      ROS_WARN("  Voltage (mV):      %d", settings.cameraSetting.getHDRControl().getHDRKneePoint(0).HDRControlVoltage_mV.read());
-      ROS_WARN("  Parts per Million: %d", settings.cameraSetting.getHDRControl().getHDRKneePoint(0).HDRExposure_ppm.read());
+      ROS_WARN("  Voltage (mV):      %d", settings.cameraSetting.getHDRControl()
+                                              .getHDRKneePoint(0)
+                                              .HDRControlVoltage_mV.read());
+      ROS_WARN("  Parts per Million: %d", settings.cameraSetting.getHDRControl()
+                                              .getHDRKneePoint(0)
+                                              .HDRExposure_ppm.read());
       ROS_WARN("KneePoint 1:");
-      ROS_WARN("  Voltage (mV):      %d", settings.cameraSetting.getHDRControl().getHDRKneePoint(1).HDRControlVoltage_mV.read());
-      ROS_WARN("  Parts per Million: %d", settings.cameraSetting.getHDRControl().getHDRKneePoint(1).HDRExposure_ppm.read());
+      ROS_WARN("  Voltage (mV):      %d", settings.cameraSetting.getHDRControl()
+                                              .getHDRKneePoint(1)
+                                              .HDRControlVoltage_mV.read());
+      ROS_WARN("  Parts per Million: %d", settings.cameraSetting.getHDRControl()
+                                              .getHDRKneePoint(1)
+                                              .HDRExposure_ppm.read());
     } else {
       settings.cameraSetting.getHDRControl().HDREnable.write(bFalse);
       ROS_WARN("HDR Off");
@@ -204,7 +211,7 @@ bool Camera::initSingleMVDevice(unsigned int id)
   }
 
   // Color
-  if (use_color) {
+  if (use_color_) {
     // RGB image
     settings.imageDestination.pixelFormat.write(idpfRGB888Packed);
     ROS_WARN("Color Images");
@@ -214,25 +221,26 @@ bool Camera::initSingleMVDevice(unsigned int id)
     ROS_WARN("Grayscale/Bayer Images");
   }
 
-  // prefill the capture queue. There can be more then 1 queue for some device, but only one for now
+  // prefill the capture queue. There can be more then 1 queue for some device,
+  // but only one for now
   mvIMPACT::acquire::SystemSettings ss(device_manager_[id]);
   ss.requestCount.write(1);
 
   // Only for stereo, skip if only one camera exists
-  if (use_stereo) {
-    if (id == id0) { // Master camera
-      ROS_WARN("Set Master Camera\n");
-      //settings.cameraSetting.triggerMode.write(ctmOnDemand);
-      settings.cameraSetting.flashMode.write(cfmDigout0);
-      settings.cameraSetting.flashType.write(cftStandard);
-      settings.cameraSetting.flashToExposeDelay_us.write(0);
-    } else {                                             // Slave camera
-      ROS_WARN("Set Slave Camera\n");
-      settings.cameraSetting.triggerMode.write(ctmOnHighLevel);
-      settings.cameraSetting.triggerSource.write(ctsDigIn0);
-      settings.cameraSetting.frameDelay_us.write(0);
-    }
-  }
+  // if (use_stereo_) {
+  //   if (id == id0) { // Master camera
+  //     ROS_WARN("Set Master Camera\n");
+  //     //settings.cameraSetting.triggerMode.write(ctmOnDemand);
+  //     settings.cameraSetting.flashMode.write(cfmDigout0);
+  //     settings.cameraSetting.flashType.write(cftStandard);
+  //     settings.cameraSetting.flashToExposeDelay_us.write(0);
+  //   } else {                                             // Slave camera
+  //     ROS_WARN("Set Slave Camera\n");
+  //     settings.cameraSetting.triggerMode.write(ctmOnHighLevel);
+  //     settings.cameraSetting.triggerSource.write(ctsDigIn0);
+  //     settings.cameraSetting.frameDelay_us.write(0);
+  //   }
+  // }
 
   return true;
 }
@@ -240,16 +248,16 @@ bool Camera::initSingleMVDevice(unsigned int id)
 
 void Camera::feedImages()
 {
-  ros::Rate r(fps);
+  ros::Rate r(fps_);
   sensor_msgs::CameraInfoPtr camera_info(
       new sensor_msgs::CameraInfo(camera_info_manager_->getCameraInfo()));
   sensor_msgs::ImagePtr image(new sensor_msgs::Image);
   sensor_msgs::ImagePtr left(new sensor_msgs::Image);
   sensor_msgs::ImagePtr right(new sensor_msgs::Image);
   while (pnode_.ok()) {
-    if (use_stereo) {
-      if (grab_stereo(image, left, right)) {
-        image->header.stamp = capture_time;
+    if (use_stereo_) {
+      if (grabStereo(image, left, right)) {
+        image->header.stamp = capture_time_;
         image->header.frame_id = std::string("image");
         left->header = image->header;
         right->header = image->header;
@@ -260,8 +268,8 @@ void Camera::feedImages()
         }
       }
     } else {
-      if (grab_monocular(image)) {
-        image->header.stamp = capture_time;
+      if (grabMonocular(image)) {
+        image->header.stamp = capture_time_;
         image->header.frame_id = std::string("image");
         pub.publish(*image);
         camera_pub_.publish(image, camera_info);
@@ -273,13 +281,13 @@ void Camera::feedImages()
 }
 
 
-bool Camera::grab_monocular(sensor_msgs::ImagePtr image)
+bool Camera::grabMonocular(sensor_msgs::ImagePtr image)
 {
   const unsigned char *img_frame = NULL;
   bool status   = false;
   // Request and wait for image
   fi[id0]->imageRequestSingle();
-  capture_time = ros::Time::now();
+  capture_time_ = ros::Time::now();
   usleep(10000);  // necessary short sleep to warm up the camera
 
   int requestNr = INVALID_ID;
@@ -332,9 +340,8 @@ bool Camera::grab_monocular(sensor_msgs::ImagePtr image)
   return status;
 }
 
-bool Camera::grab_stereo(sensor_msgs::ImagePtr image,
-                         sensor_msgs::ImagePtr left,
-                         sensor_msgs::ImagePtr right) {
+bool Camera::grabStereo(sensor_msgs::ImagePtr image, sensor_msgs::ImagePtr left,
+                        sensor_msgs::ImagePtr right) {
   const unsigned char *img_frame = NULL;
   bool status   = false;
 
@@ -342,7 +349,7 @@ bool Camera::grab_stereo(sensor_msgs::ImagePtr image,
   fi[id1]->imageRequestSingle();
   usleep(10000);  // necessary short sleep to warm up the camera
   fi[id0]->imageRequestSingle();
-  capture_time = ros::Time::now();
+  capture_time_ = ros::Time::now();
 
   int requestNr[10] = {INVALID_ID, INVALID_ID, INVALID_ID, INVALID_ID,
                        INVALID_ID, INVALID_ID, INVALID_ID, INVALID_ID,
@@ -350,7 +357,8 @@ bool Camera::grab_stereo(sensor_msgs::ImagePtr image,
   requestNr[id0] = fi[id0]->imageRequestWaitFor(300);
   requestNr[id1] = fi[id1]->imageRequestWaitFor(300);
 
-  if (fi[id0]->isRequestNrValid(requestNr[id0]) && fi[id1]->isRequestNrValid(requestNr[id1])) {
+  if (fi[id0]->isRequestNrValid(requestNr[id0]) &&
+      fi[id1]->isRequestNrValid(requestNr[id1])) {
     pRequest[id0] = fi[id0]->getRequest(requestNr[id0]);
     pRequest[id1] = fi[id1]->getRequest(requestNr[id1]);
     if (pRequest[id0]->isOK()                   && pRequest[id1]->isOK()                   &&

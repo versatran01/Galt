@@ -1,0 +1,5 @@
+<launch>
+    <node name="receiver" pkg="receiver" type="receiver_node" output="screen">
+        <remap from="~camera" to="/cam25000855/image"/>
+    </node>
+</launch>

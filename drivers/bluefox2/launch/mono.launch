@@ -1,5 +1,5 @@
 <launch>
-  <!-- You need to specify  serial and mode -->
+  <!-- Serial number on the back of camera -->
   <arg name="serial" default="25000855" />
   <!-- Calibration files are located under bluefox/config -->
   <arg name="calibration_file" default="calib_$(arg serial).yml" />

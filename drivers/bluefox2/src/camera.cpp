@@ -328,9 +328,11 @@ bool Camera::grabImage(sensor_msgs::ImagePtr image)
 void Camera::feedImage()
 {
   ros::Rate ros_rate(fps_);
+
   sensor_msgs::CameraInfoPtr camera_info(
       new sensor_msgs::CameraInfo(camera_info_manager_->getCameraInfo()));
   sensor_msgs::ImagePtr image(new sensor_msgs::Image);
+
   while (pnode_.ok()) {
       if (grabImage(image)) {
         camera_pub_.publish(image, camera_info);

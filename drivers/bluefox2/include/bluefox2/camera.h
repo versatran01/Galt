@@ -14,66 +14,116 @@
 
 #include <boost/shared_ptr.hpp>
 
+#define PRESS_A_KEY getchar();
+
 typedef camera_info_manager::CameraInfoManager CamInfoMgr;
+typedef mvIMPACT::acquire::ImpactAcquireException mvAcquireException;
 
 namespace bluefox2 {
 
 class Camera {
   public:
+    /**
+     * @brief Constructor
+     *
+     * @param comm_nh ros node handle
+     * @param param_nh private ros node handle
+     */
     Camera(ros::NodeHandle comm_nh, ros::NodeHandle param_nh);
+
+    /**
+     * @brief Destructor
+     */
     ~Camera();
+
+    /**
+     * @brief True if camera is initialized
+     */
     bool ok();
-    void feedImages();
+
+    /**
+     * @brief Publish image
+     */
+    void feedImage();
 
   private:
     // Node handle
-    ros::NodeHandle node_, pnode_;
+    ros::NodeHandle node_;
+    ros::NodeHandle pnode_;
     // mvIMPACT Acquire device manager
     mvIMPACT::acquire::DeviceManager device_manager_;
     // create an interface to the device found
-    mvIMPACT::acquire::FunctionInterface *fi[10];
+    mvIMPACT::acquire::FunctionInterface *func_interface_;
     // establish access to the statistic properties
-    mvIMPACT::acquire::Statistics *statistics[10];
+    mvIMPACT::acquire::Statistics *statistics_;
     // Image request
-    const mvIMPACT::acquire::Request *pRequest[10];
-    // Internal parameters that cannot be changed
+    const mvIMPACT::acquire::Request *pRequest_;
+
     bool ok_;
     ros::Time capture_time_;
     unsigned int device_count_;
 
-    // Old stuff
-    ros::Publisher pub;
-    ros::Publisher publ;
-    ros::Publisher pubr;
-    unsigned int id0;
-    unsigned int id1;
-    std::string serial0;
-    std::string serial1;
-
-    // User specified parameters
-    bool use_stereo_;
+    // Settings
     bool use_color_;
-    bool use_split_image;
-    bool use_hdr;
-    bool has_hdr;
-    bool use_inverted;
-    bool use_binning;
+    bool use_hdr_;
+    bool has_hdr_;
+    bool use_inverted_;
+    bool use_binning_;
     bool use_auto_exposure_;
+    int exposure_time_us_;
+    int height_;
+    int width_;
     double fps_;
     double gain_;
-    int exposure_time_us_;
 
+    int id_;
+    std::string mode_;  ///< mode can be master, slave and standalone
+    std::string serial_;  ///< serial number on the back of camera
+    std::string frame_id_;
     std::string calibration_url_;
-    std::string camera_name_;
+
     boost::shared_ptr<CamInfoMgr> camera_info_manager_;
     image_transport::CameraPublisher camera_pub_;
 
-    bool initSingleMVDevice(unsigned int id);
-    bool grabMonocular(sensor_msgs::ImagePtr image);
-    bool grabStereo(sensor_msgs::ImagePtr image,
-                     sensor_msgs::ImagePtr left,
-                     sensor_msgs::ImagePtr right);
-};
+    /**
+     * @brief Find camera index by serial number
+     * @return camera index in device manager, -1 if not found
+     */
+    int findCameraSerial();
 
-}
+    /**
+     * @brief Read settings from launch file
+     */
+    void readSettings();
+
+    /**
+     * @brief Print all bluefox setings
+     */
+    void printSettings();
+
+    /**
+     * @brief Print mv error message
+     *
+     * @param e mvIMPACT acquire exception
+     * @param header Message header
+     */
+    void printMvErrorMsg(const mvAcquireException &e, const std::string header);
+
+    /**
+     * @brief Initialize camera
+     * @return ture if successful
+     */
+    bool initCamera();
+
+    /**
+     * @brief Get image from camera
+     *
+     * @param image Pointer to ros sensor_msgs::Image
+     * @return true if successful
+     */
+    bool grabImage(sensor_msgs::ImagePtr image);
+
+};  // class Camera
+
+}  // namespace bluefox2
 

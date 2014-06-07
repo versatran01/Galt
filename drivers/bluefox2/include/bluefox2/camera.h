@@ -60,8 +60,7 @@ class Camera {
     const mvIMPACT::acquire::Request *pRequest_;
 
     bool ok_;
-    ros::Time capture_time_;
-    unsigned int device_count_;
+    int device_count_;
 
     // Settings
     bool use_color_;

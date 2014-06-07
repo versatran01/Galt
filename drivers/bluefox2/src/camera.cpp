@@ -278,7 +278,7 @@ bool Camera::grabImage(sensor_msgs::ImagePtr image)
     pRequest_ = func_interface_->getRequest(requestNr);
     if (pRequest_->isOK()) {
       // Set image properties
-      int channels  = pRequest_->imageChannelCount.read();
+      int channels = pRequest_->imageChannelCount.read();
       image->height = pRequest_->imageHeight.read();
       image->width = pRequest_->imageWidth.read();
       image->step = pRequest_->imageChannelCount.read() *
@@ -305,7 +305,8 @@ bool Camera::grabImage(sensor_msgs::ImagePtr image)
       func_interface_->imageRequestUnlock(requestNr);
       // Set image header
       image->header.stamp = ros::Time::now();
-      image->header.frame_id = std::string(frame_id_);
+      image->header.frame_id = frame_id_;
+
       status = true;
     } else {
       ROS_ERROR("Invalid Image");
@@ -327,18 +328,21 @@ bool Camera::grabImage(sensor_msgs::ImagePtr image)
 
 void Camera::feedImage()
 {
-  ros::Rate ros_rate(fps_);
+  ros::Rate camera_rate(fps_);
 
   sensor_msgs::CameraInfoPtr camera_info(
       new sensor_msgs::CameraInfo(camera_info_manager_->getCameraInfo()));
   sensor_msgs::ImagePtr image(new sensor_msgs::Image);
 
   while (pnode_.ok()) {
-      if (grabImage(image)) {
-        camera_pub_.publish(image, camera_info);
-      }
+    if (grabImage(image)) {
+      camera_pub_.publish(image, camera_info);
+    } else {
+      ROS_WARN("Grab image failed.");
     }
-    ros_rate.sleep();
-    ros::spinOnce();
+    camera_rate.sleep();
+    // ros::spinOnce();
   }
 }
+
+}  // namepace bluefox2

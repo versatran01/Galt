@@ -6,21 +6,18 @@
 namespace bluefox2 {
 
 Camera::Camera(ros::NodeHandle comm_nh, ros::NodeHandle param_nh)
-    : node_(comm_nh), pnode_(param_nh), ok_(false)
+    : node_(comm_nh), pnode_(param_nh), ok_(false), calibrated_(false)
 {
+  // Read and display settings from launch file
   readSettings();
   printSettings();
 
-  camera_info_manager_ = boost::shared_ptr<CamInfoMgr>(
-      new CamInfoMgr(pnode_, "bluefox2", calibration_url_));
-
-  if (camera_info_manager_->isCalibrated()) {
-    ROS_INFO("Camera has loaded calibration file");
-  }
-
-  // Set up image transport publisher
+  // Set up image transport publisher and camera info manager
   image_transport::ImageTransport it(pnode_);
   camera_pub_ = it.advertiseCamera("image_raw", 1);
+  camera_info_manager_ = boost::shared_ptr<CamInfoManager>(
+      new CamInfoManager(pnode_, "bluefox2", calibration_url_));
+  calibrated_ = checkCameraInfo();
 
   // Count cameras
   device_count_ = device_manager_.deviceCount();
@@ -89,6 +86,22 @@ void Camera::printSettings()
   ROS_INFO("Binning:  %s", btoa(use_binning_));
   ROS_INFO("Inverted: %s", btoa(use_inverted_));
   ROS_INFO("HDR:      %s", btoa(use_hdr_));
+}
+
+bool Camera::checkCameraInfo()
+{
+  sensor_msgs::CameraInfoPtr camera_info(
+      new sensor_msgs::CameraInfo(camera_info_manager_->getCameraInfo()));
+  // Chech height, width and camera matrix
+  if (camera_info->width != width_ || camera_info->height != height_) {
+    ROS_WARN("bluefox2: Calibration dimension mismatch.");
+    return false;
+  }
+  if (!camera_info_manager_->isCalibrated()) {
+    ROS_WARN("bluefox2: Invalid camera matrix.");
+    return false;
+  }
+  return  true;
 }
 
 int Camera::findCameraSerial()
@@ -271,7 +284,7 @@ bool Camera::initCamera()
 bool Camera::grabImage(sensor_msgs::ImagePtr image)
 {
   const unsigned char *image_frame = NULL;
-  bool status   = false;
+  bool status = false;
 
   // Request and wait for image
   func_interface_->imageRequestSingle();
@@ -296,8 +309,9 @@ bool Camera::grabImage(sensor_msgs::ImagePtr image)
         image->encoding = sensor_msgs::image_encodings::BGR8;
       }
       // Resize image only when necessary
-      if (image->data.size() != image->step * image->height)
+      if (image->data.size() != image->step * image->height) {
         image->data.resize(image->step * image->height);
+      }
       // Copy data
       image_frame = (const unsigned char *)pRequest_->imageData.read();
       if (use_inverted_) {
@@ -335,21 +349,21 @@ bool Camera::grabImage(sensor_msgs::ImagePtr image)
 
 void Camera::feedImage()
 {
-  // ros::Rate camera_rate(fps_);
-
   sensor_msgs::CameraInfoPtr camera_info(
       new sensor_msgs::CameraInfo(camera_info_manager_->getCameraInfo()));
   sensor_msgs::ImagePtr image(new sensor_msgs::Image);
 
-  // while (pnode_.ok()) {
   if (grabImage(image)) {
+    // Only publish height and width if camera not calibrated
+    if (!calibrated_) {
+       camera_info.reset(new sensor_msgs::CameraInfo());
+       camera_info->width = image->width;
+       camera_info->height = image->height;
+    }
     camera_pub_.publish(image, camera_info);
   } else {
     ROS_WARN("Grab image failed.");
   }
-  // camera_rate.sleep();
-  // ros::spinOnce();
-  // }
 }
 
 }  // namepace bluefox2

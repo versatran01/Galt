@@ -16,7 +16,7 @@
 
 #define PRESS_A_KEY getchar();
 
-typedef camera_info_manager::CameraInfoManager CamInfoMgr;
+typedef camera_info_manager::CameraInfoManager CamInfoManager;
 typedef mvIMPACT::acquire::ImpactAcquireException mvAcquireException;
 
 namespace bluefox2 {
@@ -67,6 +67,7 @@ class Camera {
 
     bool ok_;
     int device_count_;
+    bool calibrated_;
 
     // Settings
     bool use_color_;
@@ -87,7 +88,7 @@ class Camera {
     std::string frame_id_;
     std::string calibration_url_;
 
-    boost::shared_ptr<CamInfoMgr> camera_info_manager_;
+    boost::shared_ptr<CamInfoManager> camera_info_manager_;
     image_transport::CameraPublisher camera_pub_;
 
     /**
@@ -105,6 +106,12 @@ class Camera {
      * @brief Print all bluefox setings
      */
     void printSettings();
+
+    /**
+     * @brief Check calibration status
+     * @return True if calibration file is valid
+     */
+    bool checkCameraInfo();
 
     /**
      * @brief Print mv error message

@@ -41,9 +41,11 @@ Camera::Camera(ros::NodeHandle comm_nh, ros::NodeHandle param_nh)
 
 Camera::~Camera()
 {
-  func_interface_->imageRequestReset(0, 0);
-  device_manager_[id_]->close();
-  ok_ = false;
+  if (ok_) {
+    func_interface_->imageRequestReset(0, 0);
+    device_manager_[id_]->close();
+    ok_ = false;
+  }
 }
 
 void Camera::readSettings()
@@ -113,6 +115,11 @@ void Camera::printMvErrorMsg(const mvAcquireException &e,
 bool Camera::ok()
 {
   return ok_;
+}
+
+int Camera::fps()
+{
+  return fps_;
 }
 
 bool Camera::initCamera()
@@ -328,21 +335,21 @@ bool Camera::grabImage(sensor_msgs::ImagePtr image)
 
 void Camera::feedImage()
 {
-  ros::Rate camera_rate(fps_);
+  // ros::Rate camera_rate(fps_);
 
   sensor_msgs::CameraInfoPtr camera_info(
       new sensor_msgs::CameraInfo(camera_info_manager_->getCameraInfo()));
   sensor_msgs::ImagePtr image(new sensor_msgs::Image);
 
-  while (pnode_.ok()) {
-    if (grabImage(image)) {
-      camera_pub_.publish(image, camera_info);
-    } else {
-      ROS_WARN("Grab image failed.");
-    }
-    camera_rate.sleep();
-    // ros::spinOnce();
+  // while (pnode_.ok()) {
+  if (grabImage(image)) {
+    camera_pub_.publish(image, camera_info);
+  } else {
+    ROS_WARN("Grab image failed.");
   }
+  // camera_rate.sleep();
+  // ros::spinOnce();
+  // }
 }
 
 }  // namepace bluefox2

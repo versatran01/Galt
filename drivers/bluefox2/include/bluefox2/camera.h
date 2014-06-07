@@ -42,6 +42,12 @@ class Camera {
     bool ok();
 
     /**
+     * @brief Accessor for fps
+     * @return Camera fps
+     */
+    int fps();
+
+    /**
      * @brief Publish image
      */
     void feedImage();

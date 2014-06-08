@@ -33,8 +33,6 @@ extern "C" {
 
 #define u8(x) static_cast<uint8_t>((x))
 
-#define devinfo2str(buf,ofs)  std::string((char*)(buf) + (ofs), 16)
-
 using namespace imu_3dm_gx4;
 using namespace std;
 
@@ -116,15 +114,20 @@ struct decoder<N,N,Ts...>
     void operator () (uint8_t * buffer, std::tuple<Ts...>& output) {}
 };
 
-template <ssize_t i=0, typename ...Ts>
+template <typename ...Ts>
 void decode(uint8_t * buffer, std::tuple<Ts...>& output) {
     
-    decoder<i,sizeof...(Ts),Ts...> dec;
+    decoder<0,sizeof...(Ts),Ts...> dec;
     dec(buffer,output);
 }
 
 bool Imu::Packet::is_ack() const {
+    //  length must be 4 for the first field in an ACK
     return (payload[0]==0x04 && payload[1]==0xF1);
+}
+
+bool Imu::Packet::is_data() const {
+    return descriptor==0x80;
 }
 
 int Imu::Packet::ack_code(const Packet& command) const {
@@ -363,10 +366,12 @@ bool Imu::getDeviceInfo(Imu::Info& info)
     p.payload[1] = 0x03;
     p.calcChecksum();
  
-    if (sendCommand(p, kTimeout)) {
+    if ( sendCommand(p, kTimeout) ) {
         
         to_device_order<2>(&packet_.payload[6]);    //  swap firmware ver.
         memcpy(&info.firmwareVersion, &packet_.payload[6], 2);
+        
+#define devinfo2str(buf,ofs)  std::string((char*)(buf) + (ofs), 16)
         
         info.modelName = ltrim( devinfo2str(packet_.payload, 8) );
         info.modelNumber = ltrim( devinfo2str(packet_.payload, 24) );
@@ -374,10 +379,62 @@ bool Imu::getDeviceInfo(Imu::Info& info)
         info.lotNumber = ltrim( devinfo2str(packet_.payload, 56) );
         info.deviceOptions = ltrim( devinfo2str(packet_.payload, 72) );
         
+#undef devinfo2str
+        
         return true;
     }
     
     return false;
+}
+
+bool Imu::setDataRate(uint16_t decimation, unsigned int sources)
+{
+    Imu::Packet p(0x0C,0x04);
+    p.payload[0] = 0x00;    //  field length
+    p.payload[1] = 0x08;
+    p.payload[2] = 0x01;    //  function
+    p.payload[3] = 0x00;    //  descriptor count
+    
+    uint8_t descCount = 0;
+    
+    if (sources & Imu::Data::Accelerometer) {
+        descCount++;
+        p.length += encode(p.payload + p.length, u8(0x04), decimation);
+    }
+    
+    if (sources & Imu::Data::Gyroscope) {
+        descCount++;
+        p.length += encode(p.payload + p.length, u8(0x05), decimation);
+    }
+    
+    if (sources & Imu::Data::Magnetometer) {
+        descCount++;
+        p.length += encode(p.payload + p.length, u8(0x06), decimation);
+    }
+    
+    if (sources & Imu::Data::Barometer) {
+        descCount++;
+        p.length += encode(p.payload + p.length, u8(0x17), decimation);
+    }
+    
+    p.payload[3] = descCount;
+    p.payload[0] = 4 + 3*descCount;
+    
+    p.calcChecksum();
+    return sendCommand(p, kTimeout);
+}
+
+bool Imu::enableIMUStream(bool enabled)
+{
+    Packet p(0x0C, 0x05);
+    p.payload[0] = 0x05;
+    p.payload[1] = 0x11;
+    p.payload[2] = 0x01;    //  apply new settings
+    p.payload[3] = 0x01;    //  device: IMU
+    p.payload[4] = (enabled == true);
+    
+    p.calcChecksum();
+    return sendCommand(p, kTimeout);
 }
 
 int Imu::pollInput(unsigned int to)
@@ -409,6 +466,11 @@ int Imu::handleRead(size_t bytes_transferred)  //  parses packets out of the inp
         queue_.push_back(buffer_[i]);
     }
     
+    if (state_ == Idle) {
+        dstIndex_ = 1;  //  reset counts
+        srcIndex_ = 0;
+    }
+    
     while (srcIndex_ < queue_.size())
     {
         if (state_ == Idle)
@@ -421,6 +483,9 @@ int Imu::handleRead(size_t bytes_transferred)  //  parses packets out of the inp
                     //   found the magic ID
                     packet_.syncMSB = queue_[0];
                     state_ = Reading;
+                    
+                    //  clear out previous packet content
+                    memset(packet_.payload, 0, sizeof(packet_.payload));
                 }
             }
             
@@ -479,10 +544,51 @@ int Imu::handleRead(size_t bytes_transferred)  //  parses packets out of the inp
 
 void Imu::processPacket()
 {
-    if ( !packet_.is_ack() )
+    Data data;
+    std::tuple<float,float,float> v3f;
+    
+    if ( packet_.is_data() )
     {
-        //  this is a data packet
-        log_i("Received data packet!\n");
+        //  process all fields in the packet
+        size_t idx=0;
+        
+        while (idx+1 < sizeof(packet_.payload))
+        {
+            size_t len = packet_.payload[idx];
+            size_t ddesc = packet_.payload[idx+1];
+            
+            if (!len) {
+                break;
+            }
+            
+            if (ddesc >= 0x04 && ddesc <= 0x06) //  accel/gyro/mag
+            {
+                float * buf=0;
+                switch (ddesc) {
+                    case 0x04: buf = data.accel; break;
+                    case 0x05: buf = data.gyro;  break;
+                    case 0x06: buf = data.mag;   break;
+                };
+                dbg_assert(buf != 0);
+                
+                decode(&packet_.payload[idx + 2], v3f);
+                buf[0] = get<0>(v3f);
+                buf[1] = get<1>(v3f);
+                buf[2] = get<2>(v3f);
+            }
+            else if (ddesc == 0x17) //  pressure sensor
+            {
+                std::tuple<float> v1f;
+                decode(&packet_.payload[idx + 2], v1f);
+                data.pressure = get<0>(v1f);
+            }
+            else {
+                log_w("Warning: Unsupported data field present in IMU packet\n");
+            }
+            
+            idx += len;
+        }
+        
     }
 }
 

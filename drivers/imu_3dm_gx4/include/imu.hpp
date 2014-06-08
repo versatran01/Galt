@@ -71,6 +71,11 @@ public:
         /**
          *
          */
+        bool is_data() const;
+        
+        /**
+         *
+         */
         int ack_code(const Packet& command) const;
         
         /**
@@ -85,6 +90,9 @@ public:
         
     } __attribute__((packed));
     
+    /**
+     *
+     */
     struct Info
     {
         uint64_t firmwareVersion;
@@ -93,6 +101,35 @@ public:
         std::string serialNumber;
         std::string lotNumber;
         std::string deviceOptions;
+        
+        Info() {}
+        
+        //  non-copyable
+        Info(const Info&) = delete;
+        Info& operator = (const Info&) = delete;
+    };
+    
+    /**
+     *
+     */
+    struct Data
+    {
+        enum
+        {
+            Accelerometer   = (1 << 0),
+            Gyroscope       = (1 << 1),
+            Magnetometer    = (1 << 2),
+            Barometer       = (1 << 3),
+        };
+        
+        unsigned int fields;
+        
+        float accel[3];
+        float gyro[3];
+        float mag[3];
+        float pressure;
+        
+        Data() : fields(0) {}
     };
     
     typedef std::shared_ptr<Imu> Ptr;
@@ -120,6 +157,10 @@ public:
     bool resume();
     
     bool getDeviceInfo(Imu::Info& info);
+    
+    bool setDataRate(uint16_t decimation, unsigned int sources);
+    
+    bool enableIMUStream(bool enabled);
     
 public:
         

@@ -15,8 +15,8 @@ Camera::Camera(ros::NodeHandle comm_nh, ros::NodeHandle param_nh)
   // Set up image transport publisher and camera info manager
   image_transport::ImageTransport it(pnode_);
   camera_pub_ = it.advertiseCamera("image_raw", 1);
-  camera_info_manager_ = boost::shared_ptr<CamInfoManager>(
-      new CamInfoManager(pnode_, "bluefox2", calibration_url_));
+  camera_info_manager_ = boost::shared_ptr<CameraInfoManager>(
+      new CameraInfoManager(pnode_, "bluefox2", calibration_url_));
   calibrated_ = checkCameraInfo();
 
   // Count cameras
@@ -116,7 +116,7 @@ int Camera::findCameraSerial()
   return -1;
 }
 
-void Camera::printMvErrorMsg(const mvAcquireException &e,
+void Camera::printMvErrorMsg(const ImpactAcquireException &e,
                              const std::string header) {
   std::cout << header << " " << device_manager_[id_]->serial.read()
             << "(error code: " << e.getErrorCode() << "("
@@ -143,7 +143,7 @@ bool Camera::initCamera()
 
   try {
     device_manager_[id_]->open();
-  } catch (const mvAcquireException &e) {
+  } catch (const ImpactAcquireException &e) {
     printMvErrorMsg(e, "An error occurred while openning the device");
     return false;
   }
@@ -151,7 +151,7 @@ bool Camera::initCamera()
   try {
     func_interface_ =
         new mvIMPACT::acquire::FunctionInterface(device_manager_[id_]);
-  } catch (const mvAcquireException &e) {
+  } catch (const ImpactAcquireException &e) {
     printMvErrorMsg(e,
                      "An error occured while creating the function interface");
     return false;
@@ -159,7 +159,7 @@ bool Camera::initCamera()
 
   try {
     statistics_ = new mvIMPACT::acquire::Statistics(device_manager_[id_]);
-  } catch (const mvAcquireException &e) {
+  } catch (const ImpactAcquireException &e) {
     printMvErrorMsg(
         e, "An error occurred while initializing the statistical information");
     return false;

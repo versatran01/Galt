@@ -17,8 +17,8 @@
 
 #define PRESS_A_KEY getchar();
 
-typedef camera_info_manager::CameraInfoManager CamInfoManager;
-typedef mvIMPACT::acquire::ImpactAcquireException mvAcquireException;
+using camera_info_manager::CameraInfoManager;
+using mvIMPACT::acquire::ImpactAcquireException;
 
 namespace bluefox2 {
 
@@ -89,7 +89,7 @@ class Camera {
     std::string frame_id_;
     std::string calibration_url_;
 
-    boost::shared_ptr<CamInfoManager> camera_info_manager_;
+    boost::shared_ptr<CameraInfoManager> camera_info_manager_;
     image_transport::CameraPublisher camera_pub_;
 
     /**
@@ -120,7 +120,7 @@ class Camera {
      * @param e mvIMPACT acquire exception
      * @param header Message header
      */
-    void printMvErrorMsg(const mvAcquireException &e, const std::string header);
+    void printMvErrorMsg(const ImpactAcquireException &e, const std::string header);
 
     /**
      * @brief Initialize camera

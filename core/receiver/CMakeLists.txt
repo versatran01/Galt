@@ -100,16 +100,19 @@ include_directories(${OpenCV_INCLUDE_DIRS})
 # )
 
 ## Declare a cpp executable
-add_executable(receiver_node src/receiver_node.cpp)
+add_executable(receiver_sync src/receiver_sync.cpp)
+add_executable(receiver src/receiver.cpp)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
 # add_dependencies(receiver_node receiver_generate_messages_cpp)
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(receiver_node ${catkin_LIBRARIES})
-target_link_libraries(receiver_node ${OpenCV_LIBRARIES})
+target_link_libraries(receiver_sync ${catkin_LIBRARIES})
+target_link_libraries(receiver_sync ${OpenCV_LIBRARIES})
 
+target_link_libraries(receiver ${catkin_LIBRARIES})
+target_link_libraries(receiver ${OpenCV_LIBRARIES})
 #############
 ## Install ##
 #############

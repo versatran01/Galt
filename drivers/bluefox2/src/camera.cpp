@@ -360,6 +360,8 @@ void Camera::feedImage()
        camera_info->width = image->width;
        camera_info->height = image->height;
     }
+    camera_info->header.stamp = image->header.stamp;
+    camera_info->header.frame_id = image->header.frame_id;
     camera_pub_.publish(image, camera_info);
   } else {
     ROS_WARN("Grab image failed.");

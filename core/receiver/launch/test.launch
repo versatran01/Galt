@@ -1,6 +1,5 @@
 <launch>
-    <node name="receiver" pkg="receiver" type="receiver_node" output="screen">
-        <remap from="~image1" to="/cam25000855/image_raw"/>
-        <remap from="~image2" to="/cam25000495/image_raw"/>
+    <node name="receiver" pkg="receiver" type="receiver" output="screen">
+        <remap from="~image" to="/cam25000495/image_raw"/>
     </node>
 </launch>

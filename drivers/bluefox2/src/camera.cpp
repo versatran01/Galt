@@ -32,7 +32,7 @@ Camera::Camera(ros::NodeHandle comm_nh, ros::NodeHandle param_nh)
       ROS_INFO("Camera %s initialization failed", serial_.c_str());
     }
   } else {
-    ROS_WARN("No camera found.");
+    ROS_WARN("No specified camera found.");
   }
 }
 

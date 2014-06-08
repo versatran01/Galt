@@ -14,140 +14,142 @@
 
 #include <memory>
 #include <string>
-#include <boost/asio.hpp>
+#include <deque>
+#include <queue>
+#include <vector>
 
-extern "C" {
-  #include <stdint.h>
-  #include <assert.h>
-}
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__   //  will fail outside of gcc/clang
+#   define HOST_LITTLE_ENDIAN
+#else
+#   define HOST_BIG_ENDIAN
+#endif
 
 namespace imu_3dm_gx4
 {
 
-/**
- *  @brief Class for communicating with the Microstrain 3DM-GX4-25
- */
 class Imu
 {
 public:
-
-  struct Packet
-  {
-    static constexpr uint8_t kHeaderLength = 4;
-
-    static constexpr uint8_t kSyncMSB = 0x75;
-    static constexpr uint8_t kSyncLSB = 0x65;
-
-    union {
-      struct {
-        uint8_t syncMSB;
-        uint8_t syncLSB;
-      };
-      uint16_t sync;       /**< Header of packet */
-    };
-
-    uint8_t descriptor;    /**< Type of packet */
-    uint8_t length;        /**< Length of the packet in bytes */
-
-    uint8_t payload[255];  /**< Payload of packet */
-
-    union {
-      struct {
-        uint8_t checkMSB;
-        uint8_t checkLSB;
-      };
-      uint16_t checksum;  /**< Packet checksum */
-    };
-
-    /**
-     *
-     */
-    void calcChecksum();
-
-    /**
-     *
-     */
-    void copyToBuffer(uint8_t *insert);
-
-    /**
-     *  @brief Constructor
-     */
-     Packet() : sync(0), descriptor(0), length(0), checksum(0) {
-     }
-
-    /**
-     *  @brief Byte level accessor
-     */
-    uint8_t& operator [] (size_t idx)
+    
+    struct Packet
     {
-      const size_t end = kHeaderLength+length;
-      assert(idx < end+2);
-
-      switch(idx) {
-        case 0: return syncMSB;
-        case 1: return syncLSB;
-        case 2: return descriptor;
-        case 3: return length;
-        default:
-        {
-          //  idx > kHeaderLength
-          if (idx < end) {
-            return payload[idx-kHeaderLength];
-          }
-          else if (idx == end) {
-            return checkMSB;
-          }
-          else if (idx == end+1) {
-            return checkLSB;
-          }
+        static constexpr uint8_t kHeaderLength = 4;
+        
+        static constexpr uint8_t kSyncMSB = 0x75;
+        static constexpr uint8_t kSyncLSB = 0x65;
+        
+        union {
+            struct {
+                uint8_t syncMSB;
+                uint8_t syncLSB;
+            };
+            uint16_t sync;     /**< Header of packet */
+        };
+        
+        uint8_t descriptor;    /**< Type of packet */
+        uint8_t length;        /**< Length of the packet in bytes */
+        
+        uint8_t payload[255];  /**< Payload of packet */
+        
+        union {
+            struct {
+                uint8_t checkMSB;
+                uint8_t checkLSB;
+            };
+            uint16_t checksum;  /**< Packet checksum */
+        };
+        
+        size_t totalLength() const {
+            return kHeaderLength + length + 2;
         }
-      }
-
-      return checkLSB;
-    }
-  };
-
-  /**
-   *  @brief Ctor
-   */
-  Imu(ros::NodeHandle comm, ros::NodeHandle params, const boost::asio::io_service& io_service);
-
-  /**
-   *  @brief Open serial port and configure IMU
-   */
-  void initialize();
-
-  /**
-   *  @brief Run the read loop and publish packets as they arrive
-   */
-  void run();
-
-  void ping();
-
+        
+        /**
+         *
+         */
+        bool is_ack() const;
+        
+        /**
+         *
+         */
+        int ack_code(const Packet& command) const;
+        
+        /**
+         *
+         */
+        void calcChecksum();
+        
+        /**
+         *  @brief Constructor
+         */
+        Packet(uint8_t desc=0, uint8_t len=0);
+        
+    } __attribute__((packed));
+    
+    struct Info
+    {
+        uint64_t firmwareVersion;
+        std::string modelName;
+        std::string modelNumber;
+        std::string serialNumber;
+        std::string lotNumber;
+        std::string deviceOptions;
+    };
+    
+    typedef std::shared_ptr<Imu> Ptr;
+    
+    /* Constants */
+    
+    static constexpr size_t kBufferSize = 512;
+    
+    Imu(const std::string& device);
+    
+    virtual ~Imu();
+    
+    void connect();
+    
+    void runOnce();
+    
+    void disconnect();
+    
+    void selectBaudRate(unsigned int baud);
+    
+    bool ping();
+    
+    bool idle();
+    
+    bool resume();
+    
+    bool getDeviceInfo(Imu::Info& info);
+    
+public:
+        
+    int pollInput(unsigned int to);
+    
+    int handleRead(size_t);
+    
+    void processPacket();
+    
+    int writePacket(const Packet& p, unsigned int to);
+    
+    bool sendCommand(const Packet &p, unsigned int to);
+    
+    bool termiosBaudRate(unsigned int baud);
+        
 private:
-
-  void setIdle();
-
-  void setImuFormat();
-
-  void setFilterFormat();
-
-  void saveMessageFormat();
-
-  void enableDataStream();
-
-  void resume();
-
-  // bool poll();
-
-  bool write(const Packet& packet);
-
-  size_t read(void * buffer, size_t length);
-
-  ros::NodeHandle comm_;
-  ros::NodeHandle params_;
-
-  std::shared_ptr<boost::asio::serial_port> port_;
+    const std::string device_;
+    unsigned int baudrate_;
+    
+    int fd_;
+    
+    std::vector<uint8_t> buffer_;
+    std::deque<uint8_t> queue_;
+    size_t srcIndex_, dstIndex_;
+    
+    enum {
+        Idle = 0,
+        Reading,
+    } state_;
+    Packet packet_;
 };
 
 }  //  imu_3dm_gx4

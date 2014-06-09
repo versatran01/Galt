@@ -1,0 +1,11 @@
+cmake_minimum_required(VERSION 2.8.3)
+project(galt_common)
+find_package(catkin REQUIRED)
+
+catkin_package(INCLUDE_DIRS include
+               LIBRARIES ${PROJECT_NAME}
+               CATKIN_DEPENDS roscpp
+               CFG_EXTRAS extras.cmake)
+
+include_directories(include)
+add_library(${PROJECT_NAME} src/galt_common.cpp)

@@ -107,9 +107,8 @@ set wildignore+=*/tmp/*,*.so,*.swp,*.zip
 set wildignore+=*.mexa64,*.mexgln
 
 " => Some autocmd to suite different files
-autocmd FileType python setlocal expandtab shiftwidth=4 softtabstop=4
-autocmd FileType matlab setlocal expandtab shiftwidth=2 softtabstop=2
 autocmd BufRead *bash_* setlocal filetype=sh
+autocmd BufRead *.launch setlocal filetype=xml
 autocmd BufNewFile,BufRead .bundles setf vim
 
 set mouse=a
@@ -185,6 +184,3 @@ augroup BgHighlight
   autocmd WinLeave * set nocul
   autocmd WinLeave * set nocuc
 augroup END
-
-" Makefile
-map <F9> :make<CR>

@@ -53,7 +53,6 @@ namespace galt	//	project galt
     
 /**
  * @brief Class for handling exceptions w/ detailed error info.
- * @note Use of this class on memory constrained platforms is not recommended.
  * @see http://www.boost.org/community/error_handling.html
  */
 class Exception : public std::exception, virtual public boost::exception
@@ -115,18 +114,6 @@ public:
 private:
 	std::string description_;
 };
-    
-template <typename T>
-void log_exception(const T&) {
-	log_e("Exception: unknown type %s\n", typeid(T).name());
-}
-    
-template <>
-void log_exception<std::exception>(const std::exception& e) {
-	log_e("Exception: %s\n", e.what());
-}
-    
-//  TODO: Add custom loggers for boost::exception
 
 };	//	namespace galt
 

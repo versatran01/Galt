@@ -27,9 +27,11 @@ extern "C" {
 #include <time.h>
 #include <errno.h>
 #include <termios.h>
+#include <sys/ioctl.h>
 }
 
 #define kTimeout    (100)
+#define kBufferSize (1024)
 
 #define u8(x) static_cast<uint8_t>((x))
 
@@ -199,17 +201,17 @@ void Imu::connect()
     struct termios toptions;
     if (tcgetattr(fd_, &toptions) < 0) {
         disconnect();
-        throw std::runtime_error("Could not retrieve parameters of device : " + device_);
+        throw io_error( strerror(errno) );
     }
     
     //  set default baud rate
-    cfsetispeed(&toptions, baudrate_);
-    cfsetospeed(&toptions, baudrate_);
+    cfsetispeed(&toptions, 115200);
+    cfsetospeed(&toptions, 115200);
     
     toptions.c_cflag &= ~PARENB;    //  no parity bit
     toptions.c_cflag &= ~CSTOPB;    //  disable 2 stop bits (only one used instead)
     toptions.c_cflag &= ~CSIZE;     //  disable any previous size settings
-    toptions.c_cflag &= ~HUPCL;     //  disable modem disconnect
+    toptions.c_cflag |= HUPCL;      //  enable modem disconnect
     toptions.c_cflag |= CS8;        //  bytes are 8 bits long
     
     toptions.c_cflag &= ~CRTSCTS;  //  no hardware RTS/CTS switch
@@ -227,19 +229,22 @@ void Imu::connect()
     toptions.c_cc[VMIN] = 0;        //  no minimum number of bytes when reading
     toptions.c_cc[VTIME] = 0;       //  no time blocking
     
-    //  TCSANOW = make change right away
-    if (tcsetattr(fd_, TCSANOW, &toptions) < 0) {
+    //  TCSAFLUSH = make change after flushing i/o buffers
+    if (tcsetattr(fd_, TCSAFLUSH, &toptions) < 0) {
         disconnect();
-        throw std::runtime_error("Could not set parameters of device : " + device_);
+        throw io_error( strerror(errno) );
     }
 }
 
 void Imu::disconnect()
 {
     if (fd_ > 0) {
+        //  send the idle command first
+        idle(kTimeout);
+        
         close(fd_);
-        fd_ = 0;
     }
+    fd_ = 0;
 }
 
 bool Imu::termiosBaudRate(unsigned int baud)
@@ -253,7 +258,7 @@ bool Imu::termiosBaudRate(unsigned int baud)
     cfsetispeed(&toptions, baud);
     cfsetospeed(&toptions, baud);
     
-    if (tcsetattr(fd_, TCSANOW, &toptions) < 0) {
+    if (tcsetattr(fd_, TCSAFLUSH, &toptions) < 0) {
         return false;
     }
     
@@ -267,7 +272,7 @@ void Imu::runOnce()
     int sig = pollInput(kTimeout);
     if (sig < 0) {
         //  failure in poll/read, device disconnected
-        throw galt::Exception( string("Error while polling for input : ") + strerror(errno) );
+        throw io_error( strerror(errno) );
     }
 }
 
@@ -279,34 +284,51 @@ void Imu::selectBaudRate(unsigned int baud)
     
     if ( !std::binary_search(rates, rates + num_rates, baud) ) {
         //  invalid baud rate
-        throw galt::Exception( string("Baud rate unsupported by device : ") + to_string(baud) );
+        throw std::invalid_argument(string("Baud rate unsupported ") + to_string(baud));
     }
     
-    //  place current baudrate first
-    for (size_t i=1; i < num_rates; i++) {
-        if (rates[i] == baudrate_) {
-            std::swap(rates[0], rates[i]);
-            break;
-        }
-    }
+    Imu::Packet pp(0x01, 0x02);
+    pp.payload[0] = 0x02;
+    pp.payload[1] = 0x01;
+    pp.calcChecksum();
     
+    size_t i;
     bool foundRate = false;
-    
-    for (size_t i=0; i < num_rates; i++)
+
+    for (i=0; i < num_rates; i++)
     {
         if ( !termiosBaudRate(rates[i]) ) {
-            throw galt::Exception( string("Failed to set baud rate to ") + to_string(rates[i]) + " : " + strerror(errno) );
+            throw io_error(strerror(errno));
         }
-    
-        //  ping the device
-        if ( ping() ) {
+        
+        //  send ping and wait for first response
+        sendPacket(pp, 100);
+        
+        if (receiveResponse(pp, 500) > 0) {
             foundRate = true;
             break;
         }
     }
     
     if (!foundRate) {
-        throw galt::Exception("Failed to reach the device : " + device_);
+        throw runtime_error("Failed to reach device " + device_);
+    }
+    
+    //  set idle before changing baud rate
+    int code = 0;
+    int count = 0;
+    while (code == 0) {
+        code = idle(100);
+        if (count++ == 5) {
+            //  try up to 5 times
+            break;
+        }
+    }
+    
+    if (code == 0) {
+        throw runtime_error("Device did not respond to idle command");
+    } else if (code < 0) {
+        throw runtime_error("Device rejected idle command");
     }
     
     //  we are on the correct baud rate, now change to the new rate
@@ -314,59 +336,76 @@ void Imu::selectBaudRate(unsigned int baud)
     dbg_assert( encode(comm.payload, u8(0x07), u8(0x40), u8(0x01), static_cast<uint32_t>(baud)) == 0x07 );
     comm.calcChecksum();
     
-    if ( !sendCommand(comm, 100) ) {
-        throw galt::Exception("Device rejected baud rate : " + to_string(baud));
+    code = sendCommand(comm, 300);
+    if ( code <= 0 ) {
+        throw runtime_error("Device rejected baud rate " + to_string(baud) + " (Code: " + to_string(code) + ")");
     }
     
     //  device has switched baud rate, now we should also
     if ( !termiosBaudRate(baud) ) {
-        throw galt::Exception("Failed to set baud rate to " + to_string(baud) + " : " + strerror(errno) );
+        throw io_error( strerror(errno) );
     }
     
     //  ping
-    if (!ping()) {
-        log_w("Warning: Device did not respond after changing the baud rate!\n");
+    if (ping(200) <= 0) {
+        throw runtime_error("Device did not respond to ping");
     }
 }
 
-bool Imu::ping()
+int Imu::ping(unsigned int to)
 {
     Imu::Packet p(0x01, 0x02);
     p.payload[0] = 0x02;
     p.payload[1] = 0x01;
     p.calcChecksum();
+    dbg_assert(p.checkMSB == 0xE0 && p.checkLSB == 0xC6);
 
-    return sendCommand(p, kTimeout);
+    return sendCommand(p, to);
 }
 
-bool Imu::idle()
+int Imu::idle(unsigned int to)
 {
     Imu::Packet p(0x01, 0x02);
     p.payload[0] = 0x02;
     p.payload[1] = 0x02;
     p.calcChecksum();
+    dbg_assert(p.checkMSB == 0xE1 && p.checkLSB == 0xC7);
     
-    return sendCommand(p, kTimeout);
+    return sendCommand(p, to);
 }
 
-bool Imu::resume()
+int Imu::resume(unsigned int to)
 {
     Imu::Packet p(0x01, 0x02);
     p.payload[0] = 0x02;
     p.payload[1] = 0x06;
     p.calcChecksum();
+    dbg_assert(p.checkMSB == 0xE5 && p.checkLSB == 0xCB);
     
-    return sendCommand(p, kTimeout);
+    return sendCommand(p, to);
 }
 
-bool Imu::getDeviceInfo(Imu::Info& info)
+/*int Imu::reset(unsigned int to)
+{
+    Imu::Packet p(0x01,0x02);
+    p.payload[0] = 0x02;
+    p.payload[1] = 0x7E;
+    p.calcChecksum();
+    dbg_assert(p.checkMSB == 0x5D && p.checkLSB == 0x43);
+    
+    return sendCommand(p, to);
+}*/
+
+int Imu::getDeviceInfo(Imu::Info& info)
 {
     Imu::Packet p(0x01, 0x02);
     p.payload[0] = 0x02;
     p.payload[1] = 0x03;
     p.calcChecksum();
+    dbg_assert(p.checkMSB == 0xE2 && p.checkLSB == 0xC8);
  
-    if ( sendCommand(p, kTimeout) ) {
+    int comm = sendCommand(p, kTimeout);
+    if ( comm > 0 ) {
         
         to_device_order<2>(&packet_.payload[6]);    //  swap firmware ver.
         memcpy(&info.firmwareVersion, &packet_.payload[6], 2);
@@ -380,14 +419,13 @@ bool Imu::getDeviceInfo(Imu::Info& info)
         info.deviceOptions = ltrim( devinfo2str(packet_.payload, 72) );
         
 #undef devinfo2str
-        
-        return true;
+
     }
     
-    return false;
+    return comm;
 }
 
-bool Imu::setDataRate(uint16_t decimation, unsigned int sources)
+int Imu::setDataRate(uint16_t decimation, unsigned int sources)
 {
     Imu::Packet p(0x0C,0x04);
     p.payload[0] = 0x00;    //  field length
@@ -424,7 +462,7 @@ bool Imu::setDataRate(uint16_t decimation, unsigned int sources)
     return sendCommand(p, kTimeout);
 }
 
-bool Imu::enableIMUStream(bool enabled)
+int Imu::enableIMUStream(bool enabled)
 {
     Packet p(0x0C, 0x05);
     p.payload[0] = 0x05;
@@ -435,6 +473,15 @@ bool Imu::enableIMUStream(bool enabled)
     
     p.calcChecksum();
     return sendCommand(p, kTimeout);
+}
+
+void Imu::setDataCallback(const std::function<void (const Imu::Data&)> cb)
+{
+    if (!cb) {
+        throw std::invalid_argument("Callback cannot be null");
+    }
+    
+    callback_ = cb;
 }
 
 int Imu::pollInput(unsigned int to)
@@ -448,11 +495,16 @@ int Imu::pollInput(unsigned int to)
     if (rPoll > 0)
     {
         const ssize_t amt = ::read(fd_, &buffer_[0], buffer_.size());
-        if (amt > 0) {
+        if (amt >= 0) {
             return handleRead(amt);
         }
     } else if (rPoll == 0) {
         return 0;   //  no socket can be read
+    }
+    
+    if (errno == EAGAIN || errno == EINTR) {
+        //  treat these like timeout errors
+        return 0;
     }
     
     //  poll() or read() failed
@@ -501,7 +553,9 @@ int Imu::handleRead(size_t bytes_transferred)  //  parses packets out of the inp
             
             //  fill out fields of packet structure
             if (dstIndex_ == 1)         packet_.syncLSB = byte;
-            else if (dstIndex_ == 2)    packet_.descriptor = byte;
+            else if (dstIndex_ == 2) {
+                packet_.descriptor = byte;
+            }
             else if (dstIndex_ == 3)    packet_.length = byte;
             else if (dstIndex_ < end)   packet_.payload[dstIndex_ - Packet::kHeaderLength] = byte;
             else if (dstIndex_ == end)  packet_.checkMSB = byte;
@@ -589,6 +643,16 @@ void Imu::processPacket()
             idx += len;
         }
         
+        if (callback_) {
+            callback_(data);
+        }
+        
+    } else if ( packet_.is_ack() ) {
+        if (packet_.payload[3] == 0) {
+            //  log_i("Received ACK packet: 0x%02x, 0x%02x\n", packet_.descriptor, packet_.payload[2]);
+        } else {
+            //  log_i("Received NACK packet: 0x%02x, 0x%02x, 0x%02x\n", packet_.descriptor, packet_.payload[2], packet_.payload[3]);
+        }
     }
 }
 
@@ -620,7 +684,11 @@ int Imu::writePacket(const Packet& p, unsigned int to)
         if (amt > 0) {
             written += amt;
         } else if (amt < 0) {
-            return -1;  //  error while writing
+            if (errno == EAGAIN || errno == EINTR) {
+                //  blocked or interrupted - try again until timeout
+            } else {
+                return -1;  //  error while writing
+            }
         }
         
         if (tstop < high_resolution_clock::now()) {
@@ -631,38 +699,51 @@ int Imu::writePacket(const Packet& p, unsigned int to)
     return 1;   //  wrote w/o issue
 }
 
-bool Imu::sendCommand(const Packet &p, unsigned int to)
+void Imu::sendPacket(const Packet& p, unsigned int to)
 {
     const int wrote = writePacket(p, to);
     if (wrote < 0) {
-        throw galt::Exception( string("Error while writing packet : ") + strerror(errno) );
+        throw io_error( strerror(errno) );
     }
-    else if (wrote ==0) {
-        throw galt::Exception("Timed out while writing packet");
+    else if (wrote == 0) {
+        throw timeout_error(p.descriptor, p.payload[1]);
     }
-    
+}
+
+int Imu::receiveResponse(const Packet& command, unsigned int to)
+{
     //  read back response
     auto tstart = chrono::high_resolution_clock::now();
     auto tend = tstart + chrono::milliseconds(to);
     
     while (chrono::high_resolution_clock::now() <= tend)
     {
-        if (pollInput(1) > 0)
+        auto resp = pollInput(1);
+        if (resp > 0)
         {
             //  check if this is an ack
-            int ack = packet_.ack_code(p);
+            int ack = packet_.ack_code(command);
             
             if (ack == 0) {
-                return true;
+                return 1;
             }
             else if (ack > 0) {
                 log_w("Warning: Received NACK code %x for command {%x, %x}",
-                      ack, p.descriptor, p.payload[1]);
-                return false;
+                      ack, command.descriptor, command.payload[1]);
+                return -ack;
             }
+        }
+        else if (resp < 0) {
+            throw io_error( strerror(errno) );
         }
     }
     
-    return false;
+    //  unreachable
+    return 0;
 }
 
+int Imu::sendCommand(const Packet &p, unsigned int to)
+{
+    sendPacket(p, to);
+    return receiveResponse(p, to);
+}

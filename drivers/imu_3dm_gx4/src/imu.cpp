@@ -10,7 +10,7 @@
  */
 
 #include "imu.hpp"
-#include "error_handling.hpp"
+#include <error_handling.hpp>
 #include <chrono>
 #include <locale>
 
@@ -167,7 +167,9 @@ void Imu::Packet::calcChecksum()
     
     checksum = (static_cast<uint16_t>(byte1) << 8) + static_cast<uint16_t>(byte2);
 #ifdef HOST_LITTLE_ENDIAN
-    std::swap(checkMSB,checkLSB);   //  convert to device order
+    uint8_t temp = checkLSB;
+    checkLSB = checkMSB;
+    checkMSB = temp;
 #endif
 }
 

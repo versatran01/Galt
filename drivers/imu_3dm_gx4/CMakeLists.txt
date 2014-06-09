@@ -1,12 +1,19 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(imu_3dm_gx4)
-find_package(catkin REQUIRED)
+find_package(catkin REQUIRED roscpp sensor_msgs galt_common)
 
-catkin_package()
+catkin_package(INCLUDE_DIRS include CATKIN_DEPENDS roscpp sensor_msgs galt_common)
 
+# include boost
 find_package(Boost REQUIRED)
 link_directories(${Boost_LIBRARY_DIR})
 include_directories(${Boost_INCLUDE_DIR})
 
-add_executable(${PROJECT_NAME} src/imu_3dm_gx4.cpp)
-target_link_libraries(${PROJECT_NAME} ${roscpp_LIBRARIES})
+# include headers
+include_directories(include)
+include_directories(${galt_common_INCLUDE_DIRS})
+
+add_executable(${PROJECT_NAME} src/imu_3dm_gx4.cpp src/imu.cpp)
+target_link_libraries(${PROJECT_NAME} ${roscpp_LIBRARIES} ${galt_common_LIBRARIES})
+
+message(STATUS "3DM GX4 CXX FLAGS: ${CMAKE_CXX_FLAGS}")

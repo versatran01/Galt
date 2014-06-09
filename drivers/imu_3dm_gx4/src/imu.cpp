@@ -176,7 +176,7 @@ Imu::Packet::Packet(uint8_t desc, uint8_t len) : syncMSB(kSyncMSB), syncLSB(kSyn
 {
 }
 
-Imu::Imu(const std::string& device) : device_(device), baudrate_(115200), fd_(0), state_(Idle)
+Imu::Imu(const std::string& device) : device_(device), fd_(0), state_(Idle)
 {
     //  buffer for storing reads
     buffer_.resize(kBufferSize);

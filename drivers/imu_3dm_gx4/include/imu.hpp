@@ -278,7 +278,6 @@ private:
     bool termiosBaudRate(unsigned int baud);
         
     const std::string device_;
-    unsigned int baudrate_;
     
     int fd_;
     

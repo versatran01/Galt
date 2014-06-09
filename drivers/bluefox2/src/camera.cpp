@@ -47,6 +47,13 @@ Camera::~Camera()
 
 void Camera::readSettings()
 {
+  // Required
+  if (!pnode_.getParam("serial", serial_)) {
+    serial_ = std::string("");
+    ROS_ERROR("No camera serial provided.");
+  }
+
+  // Optional
   pnode_.param("use_color", use_color_, false);
   pnode_.param("use_hdr", use_hdr_, false);
   pnode_.param("has_hdr", has_hdr_, false);
@@ -60,10 +67,6 @@ void Camera::readSettings()
   pnode_.param("gain", gain_, 0.0);
   pnode_.param<std::string>("frame_id", frame_id_, "bluefox2");
   pnode_.param<std::string>("mode", mode_, "standalone");  // requires a hint
-  if (!pnode_.getParam("serial", serial_)) {
-    serial_ = std::string("");
-    ROS_ERROR("No camera serial provided.");
-  }
   if (!pnode_.getParam("calibration_url", calibration_url_)) {
     calibration_url_ = "";
     ROS_WARN("No calibration file specified.");
@@ -98,7 +101,7 @@ bool Camera::checkCameraInfo() const
     return false;
   }
   if (!camera_info_manager_->isCalibrated()) {
-    ROS_WARN("bluefox2: Invalid camera matrix.");
+    ROS_WARN("bluefox2: Camera not calibrated.");
     return false;
   }
   return  true;
@@ -150,8 +153,7 @@ bool Camera::initCamera()
   }
 
   try {
-    func_interface_ =
-        new mvIMPACT::acquire::FunctionInterface(device_manager_[id_]);
+    func_interface_ = new FunctionInterface(device_manager_[id_]);
   } catch (const ImpactAcquireException &e) {
     printMvErrorMsg(e,
                      "An error occured while creating the function interface");
@@ -159,7 +161,7 @@ bool Camera::initCamera()
   }
 
   try {
-    statistics_ = new mvIMPACT::acquire::Statistics(device_manager_[id_]);
+    statistics_ = new Statistics(device_manager_[id_]);
   } catch (const ImpactAcquireException &e) {
     printMvErrorMsg(
         e, "An error occurred while initializing the statistical information");
@@ -364,8 +366,6 @@ void Camera::feedImage()
     camera_info->header.stamp = image->header.stamp;
     camera_info->header.frame_id = image->header.frame_id;
     camera_pub_.publish(image, camera_info);
-  } else {
-    ROS_WARN("Grab image failed.");
   }
 }
 

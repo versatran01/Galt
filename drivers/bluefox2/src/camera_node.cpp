@@ -12,7 +12,7 @@ int main(int argc, char **argv)
     ROS_WARN("Start publishing...");
     ros::Rate rate(camera.fps());
     while (ros::ok()) {
-      camera.feedImage();
+      camera.feedImage();  // Publishing image and cinfo topic
       ros::spinOnce();
       rate.sleep();
     }

@@ -19,6 +19,10 @@
 
 using camera_info_manager::CameraInfoManager;
 using mvIMPACT::acquire::ImpactAcquireException;
+using mvIMPACT::acquire::FunctionInterface;
+using mvIMPACT::acquire::DeviceManager;
+using mvIMPACT::acquire::Statistics;
+using mvIMPACT::acquire::Request;
 
 typedef boost::shared_ptr<CameraInfoManager> CameraInfoManagerPtr;
 
@@ -58,13 +62,13 @@ class Camera {
     // Node handle
     ros::NodeHandle pnode_;
     // mvIMPACT Acquire device manager
-    mvIMPACT::acquire::DeviceManager device_manager_;
+    DeviceManager device_manager_;
     // create an interface to the device found
-    mvIMPACT::acquire::FunctionInterface *func_interface_;
+    FunctionInterface *func_interface_;
     // establish access to the statistic properties
-    mvIMPACT::acquire::Statistics *statistics_;
+    Statistics *statistics_;
     // Image request
-    const mvIMPACT::acquire::Request *pRequest_;
+    const Request *pRequest_;
 
     bool ok_;
     int device_count_;

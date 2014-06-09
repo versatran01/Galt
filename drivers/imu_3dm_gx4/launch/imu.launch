@@ -1,10 +1,12 @@
 <launch>
-    <arg name="imu_node" default="imu_3dm_gx4" />
+    <arg name="imu_node" default="imu_3dm_gx4"/>
     <arg name="baudrate" default="115200" />
-    <arg name="port" default="/dev/ttyACM0" />
-    _
+    <arg name="device" default="/dev/ttyACM0" />
+    <arg name="decimation" default="10"/>
+
     <node pkg="imu_3dm_gx4" name="$(arg imu_node)" type="imu_3dm_gx4" output="screen">
-        <param name="port" type="string" value="$(arg port)" />
+        <param name="device" type="string" value="$(arg device)" />
         <param name="baudrate" type="int" value="$(arg baudrate)" />
+        <param name="decimation" type="int" value="$(arg decimation)" />
     </node>
 </launch>

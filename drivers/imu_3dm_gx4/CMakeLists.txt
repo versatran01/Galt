@@ -13,7 +13,7 @@ include_directories(${Boost_INCLUDE_DIR})
 include_directories(include)
 include_directories(${galt_common_INCLUDE_DIRS})
 
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+
 add_executable(${PROJECT_NAME} src/imu_3dm_gx4.cpp src/imu.cpp)
 target_link_libraries(${PROJECT_NAME} ${roscpp_LIBRARIES} ${galt_common_LIBRARIES})
-
-message(STATUS "3DM GX4 CXX FLAGS: ${CMAKE_CXX_FLAGS}")

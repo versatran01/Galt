@@ -61,18 +61,18 @@ int main(int argc, char **argv)
 
   ros::NodeHandle nh("~");
 
-  nh.advertise<sensor_msgs::Imu>("imu", 1);
-  nh.advertise<sensor_msgs::MagneticField>("magnetic_field", 1);
-  nh.advertise<sensor_msgs::FluidPressure>("pressure", 1);
+  pubIMU = nh.advertise<sensor_msgs::Imu>("imu", 1);
+  pubMag = nh.advertise<sensor_msgs::MagneticField>("magnetic_field", 1);
+  pubPressure = nh.advertise<sensor_msgs::FluidPressure>("pressure", 1);
 
   std::string device;
-  unsigned int baudrate;
-  uint16_t decimation;
+  int baudrate;
+  int decimation;
 
   //  load parameters from launch file
-  nh.param("device", device, "/dev/ttyACM0");
-  nh.param("baudrate", baudrate, 115200);
-  nh.param("decimation", decimation, 10);
+  nh.param<std::string>("device", device, "/dev/ttyACM0");
+  nh.param<int>("baudrate", baudrate, 115200);
+  nh.param<int>("decimation", decimation, 10);
 
   Imu imu(device);
 
@@ -132,6 +132,6 @@ int main(int argc, char **argv)
   catch (std::exception& e) {
       log_e("Exception: %s\n", e.what());
   }
-  
+
   return 0;
 }

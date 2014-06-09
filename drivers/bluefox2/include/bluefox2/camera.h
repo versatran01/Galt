@@ -29,10 +29,9 @@ class Camera {
     /**
      * @brief Constructor
      *
-     * @param comm_nh ros node handle
      * @param param_nh private ros node handle
      */
-    Camera(ros::NodeHandle comm_nh, ros::NodeHandle param_nh);
+    Camera(ros::NodeHandle param_nh);
 
     /**
      * @brief Destructor
@@ -57,7 +56,6 @@ class Camera {
 
   private:
     // Node handle
-    ros::NodeHandle node_;
     ros::NodeHandle pnode_;
     // mvIMPACT Acquire device manager
     mvIMPACT::acquire::DeviceManager device_manager_;

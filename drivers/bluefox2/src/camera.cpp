@@ -5,8 +5,8 @@
 
 namespace bluefox2 {
 
-Camera::Camera(ros::NodeHandle comm_nh, ros::NodeHandle param_nh)
-    : node_(comm_nh), pnode_(param_nh), ok_(false), calibrated_(false)
+Camera::Camera(ros::NodeHandle param_nh)
+    : pnode_(param_nh), ok_(false), calibrated_(false)
 {
   // Read and display settings from launch file
   readSettings();

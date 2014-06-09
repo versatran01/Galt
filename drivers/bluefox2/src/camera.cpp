@@ -1,7 +1,7 @@
 #include "bluefox2/camera.h"
 
 #define btoa(x) ((x) ? "true" : "false")
-#define TIMEOUT 300
+#define TIMEOUT 300  // ms
 
 namespace bluefox2 {
 
@@ -15,7 +15,7 @@ Camera::Camera(ros::NodeHandle comm_nh, ros::NodeHandle param_nh)
   // Set up image transport publisher and camera info manager
   image_transport::ImageTransport it(pnode_);
   camera_pub_ = it.advertiseCamera("image_raw", 1);
-  camera_info_manager_ = boost::shared_ptr<CameraInfoManager>(
+  camera_info_manager_ = CameraInfoManagerPtr(
       new CameraInfoManager(pnode_, "bluefox2", calibration_url_));
   calibrated_ = checkCameraInfo();
 
@@ -70,7 +70,7 @@ void Camera::readSettings()
   }
 }
 
-void Camera::printSettings()
+void Camera::printSettings() const
 {
   ROS_INFO("Input settings:");
   ROS_INFO("Serial:   %s", serial_.c_str());
@@ -88,7 +88,7 @@ void Camera::printSettings()
   ROS_INFO("HDR:      %s", btoa(use_hdr_));
 }
 
-bool Camera::checkCameraInfo()
+bool Camera::checkCameraInfo() const
 {
   sensor_msgs::CameraInfoPtr camera_info(
       new sensor_msgs::CameraInfo(camera_info_manager_->getCameraInfo()));
@@ -104,7 +104,7 @@ bool Camera::checkCameraInfo()
   return  true;
 }
 
-int Camera::findCameraSerial()
+int Camera::findCameraSerial() const
 {
   if (device_count_ > 0) {
     for (int k = 0; k < device_count_; ++k) {
@@ -117,7 +117,8 @@ int Camera::findCameraSerial()
 }
 
 void Camera::printMvErrorMsg(const ImpactAcquireException &e,
-                             const std::string header) {
+                             const std::string header) const
+{
   std::cout << header << " " << device_manager_[id_]->serial.read()
             << "(error code: " << e.getErrorCode() << "("
             << e.getErrorCodeAsString() << "))." << std::endl
@@ -125,12 +126,12 @@ void Camera::printMvErrorMsg(const ImpactAcquireException &e,
   PRESS_A_KEY;
 }
 
-bool Camera::ok()
+bool Camera::ok() const
 {
   return ok_;
 }
 
-int Camera::fps()
+int Camera::fps() const
 {
   return fps_;
 }

@@ -20,6 +20,8 @@
 using camera_info_manager::CameraInfoManager;
 using mvIMPACT::acquire::ImpactAcquireException;
 
+typedef boost::shared_ptr<CameraInfoManager> CameraInfoManagerPtr;
+
 namespace bluefox2 {
 
 class Camera {
@@ -40,13 +42,13 @@ class Camera {
     /**
      * @brief True if camera is initialized
      */
-    bool ok();
+    bool ok() const;
 
     /**
      * @brief Accessor for fps
      * @return Camera fps
      */
-    int fps();
+    int fps() const;
 
     /**
      * @brief Publish image
@@ -89,14 +91,14 @@ class Camera {
     std::string frame_id_;
     std::string calibration_url_;
 
-    boost::shared_ptr<CameraInfoManager> camera_info_manager_;
+    CameraInfoManagerPtr camera_info_manager_;
     image_transport::CameraPublisher camera_pub_;
 
     /**
      * @brief Find camera index by serial number
      * @return camera index in device manager, -1 if not found
      */
-    int findCameraSerial();
+    int findCameraSerial() const;
 
     /**
      * @brief Read settings from launch file
@@ -106,13 +108,13 @@ class Camera {
     /**
      * @brief Print all bluefox setings
      */
-    void printSettings();
+    void printSettings() const;
 
     /**
      * @brief Check calibration status
      * @return True if calibration file is valid
      */
-    bool checkCameraInfo();
+    bool checkCameraInfo() const;
 
     /**
      * @brief Print mv error message
@@ -120,7 +122,8 @@ class Camera {
      * @param e mvIMPACT acquire exception
      * @param header Message header
      */
-    void printMvErrorMsg(const ImpactAcquireException &e, const std::string header);
+    void printMvErrorMsg(const ImpactAcquireException &e,
+                         const std::string header) const;
 
     /**
      * @brief Initialize camera
@@ -139,4 +142,3 @@ class Camera {
 };  // class Camera
 
 }  // namespace bluefox2
-

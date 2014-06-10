@@ -5,13 +5,14 @@
 
 <launch>
 
-    <arg name="serial" type="string" value="25000495" />
+    <arg name="serial" type="string" default="25000495" />
     <arg name="calibration_file" default="calib_$(arg serial).yml" />
-    <param name="serial"
-    <param name="calibration_url" type="string" value="package://bluefox2/config/$(arg calibration_file)" />
 
     <!-- start unit-test node -->
     <test pkg="bluefox2" type="rtest_mono" name="rtest_mono"
-        test-name="rtest_mono" time-limit="10.0"/>
+        test-name="rtest_mono" time-limit="10.0">
+        <param name="serial" type="string" value="$(arg serial)" />
+        <param name="fps" type="double" value="10.0" />
+    </test>
 
 </launch>

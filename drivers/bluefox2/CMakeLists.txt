@@ -19,6 +19,9 @@ target_link_libraries(bluefox2
 # Unit test uses gtest, but needs rostest to create a ROS environment.
 # Hence, it must be created as a normal executable, not using
 # catkin_add_gtest() which runs an additional test without rostest.
-add_executable(rtest_mono tests/rtest_mono.cpp)
-target_link_libraries(rtest_mono ${catkin_LIBRARIES} ${GTEST_LIBRARIES})
+add_executable(rtest_mono tests/rtest_mono.cpp src/camera.cpp)
+target_link_libraries(rtest_mono
+    ${catkin_LIBRARIES}
+    ${GTEST_LIBRARIES}
+    ${MVIMPACT_DIR}/lib/x86_64/libmvDeviceManager.so)
 add_rostest(tests/rtest_mono.test)

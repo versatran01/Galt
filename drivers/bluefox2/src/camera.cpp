@@ -63,7 +63,7 @@ void Camera::readSettings()
   pnode_.param("exposure_time_us", exposure_time_us_, 10000);
   pnode_.param("height", height_, 480);
   pnode_.param("width", width_, 752);
-  pnode_.param("fps", fps_, 30.0);
+  pnode_.param("fps", fps_, 20.0);
   pnode_.param("gain", gain_, 0.0);
   pnode_.param<std::string>("frame_id", frame_id_, "bluefox2");
   pnode_.param<std::string>("mode", mode_, "standalone");  // requires a hint

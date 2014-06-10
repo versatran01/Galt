@@ -4,7 +4,9 @@
 
 TEST(CameraTest, construstor)
 {
-    ros::NodeHandle nh;
+  ros::NodeHandle nh("~");
+  bluefox2::Camera camera(nh);
+  EXPECT_EQ(10, camera.fps());
 }
 
 int main(int argc, char **argv)

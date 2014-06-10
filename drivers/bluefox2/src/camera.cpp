@@ -12,13 +12,6 @@ Camera::Camera(ros::NodeHandle param_nh)
   readSettings();
   printSettings();
 
-  // Set up image transport publisher and camera info manager
-  image_transport::ImageTransport it(pnode_);
-  camera_pub_ = it.advertiseCamera("image_raw", 1);
-  camera_info_manager_ = CameraInfoManagerPtr(
-      new CameraInfoManager(pnode_, "bluefox2", calibration_url_));
-  calibrated_ = checkCameraInfo();
-
   // Count cameras
   device_count_ = device_manager_.deviceCount();
   ROS_INFO("Camera count: %d", device_count_);
@@ -26,6 +19,12 @@ Camera::Camera(ros::NodeHandle param_nh)
   // Initialize camera
   if((id_ = findCameraSerial()) >= 0) {  // Found a camera
     if (initCamera()) {  // Initialized a camera
+      // Set up image transport publisher and camera info manager
+      image_transport::ImageTransport it(pnode_);
+      camera_pub_ = it.advertiseCamera("image_raw", 1);
+      camera_info_manager_ = CameraInfoManagerPtr(
+          new CameraInfoManager(pnode_, "bluefox2", calibration_url_));
+      calibrated_ = checkCameraInfo();
       ok_ = true;
       ROS_INFO("Camera %s initialized", serial_.c_str());
     } else {
@@ -286,7 +285,6 @@ bool Camera::initCamera()
 
 bool Camera::grabImage(sensor_msgs::ImagePtr image)
 {
-  const unsigned char *image_frame = NULL;
   bool status = false;
 
   // Request and wait for image
@@ -316,6 +314,7 @@ bool Camera::grabImage(sensor_msgs::ImagePtr image)
         image->data.resize(image->step * image->height);
       }
       // Copy data
+      const unsigned char *image_frame = NULL;
       image_frame = (const unsigned char *)pRequest_->imageData.read();
       if (use_inverted_) {
         std::reverse_copy(image_frame,
@@ -330,7 +329,6 @@ bool Camera::grabImage(sensor_msgs::ImagePtr image)
       // Set image header
       image->header.stamp = ros::Time::now();
       image->header.frame_id = frame_id_;
-
       status = true;
     } else {
       ROS_ERROR("Invalid Image");

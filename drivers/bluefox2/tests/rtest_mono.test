@@ -1,7 +1,10 @@
-<!-- -*- mode: XML -*- -->
-<!-- rostest launch file for bluefox2
-     This unit test uses rostest, because the bluefox2
-     constructor requires a node handle. -->
+<!--
+rostest launch file for bluefox2
+This unit test uses rostest, because the bluefox2 constructor requires a node
+handle.
+
+You need to supply the serial number of your camera as an argument
+ -->
 
 <launch>
 

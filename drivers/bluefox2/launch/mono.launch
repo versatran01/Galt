@@ -1,6 +1,11 @@
+<!-- This launch file launches a single mvBlueFox MLC usb 2.0 camera -->
+<!-- You should provide the launch file with your camera serial number and
+     calibration file -->
+
 <launch>
+
   <!-- Serial number on the back of camera -->
-  <arg name="serial" default="25000855" />
+  <arg name="serial" default="25000495" />
   <!-- Calibration files are located under bluefox/config -->
   <arg name="calibration_file" default="calib_$(arg serial).yml" />
   <!-- Options for mode are: master, slave and standalone -->

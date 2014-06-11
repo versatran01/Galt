@@ -5,10 +5,12 @@
     <arg name="mode" default="standalone" />
     <arg name="size" default="8x6" />
     <arg name="square" default="0.025" />
+    <arg name="fps" value="5.0" />
 
     <include file="$(find bluefox2)/launch/mono.launch">
         <arg name="serial" value="$(arg serial)" />
         <arg name="mode" value="$(arg mode)" />
+        <arg name="fps" value="$(arg fps)" />
     </include>
 
     <node pkg="camera_calibration" name="cameracalibrator" type="cameracalibrator.py"

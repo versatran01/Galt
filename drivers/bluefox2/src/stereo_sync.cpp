@@ -1,20 +1,21 @@
 #include <ros/ros.h>
-#include <image_transport/image_transport.h>
 #include <sensor_msgs/Image.h>
-#include <cv_bridge/cv_bridge.h>
-#include <sensor_msgs/image_encodings.h>
 #include <sensor_msgs/CameraInfo.h>
-
+#include <sensor_msgs/image_encodings.h>
+#include <image_transport/image_transport.h>
 #include <image_transport/subscriber_filter.h>
+
 #include <message_filters/subscriber.h>
 #include <message_filters/synchronizer.h>
 #include <message_filters/time_synchronizer.h>
 #include <message_filters/sync_policies/approximate_time.h>
 
+// #define GUI
+#ifdef GUI
+#include <cv_bridge/cv_bridge.h>
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
-
-// #define GUI
+#endif
 
 typedef message_filters::Subscriber<sensor_msgs::CameraInfo> CinfoSubscriber;
 typedef image_transport::SubscriberFilter ImageSubscriber;

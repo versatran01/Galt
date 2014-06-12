@@ -40,5 +40,6 @@
         <remap from="left" to="/stereo_sync/left/image" />
         <remap from="left_camera" to="/stereo_sync/left"/>
         <remap from="right" to="/stereo_sync/right/image" />
+        <remap from="right_camera" to="/stereo_sync/right" />
     </node>
 </launch>

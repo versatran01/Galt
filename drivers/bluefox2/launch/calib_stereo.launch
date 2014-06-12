@@ -37,9 +37,8 @@
     <!-- Launch camera calibration here -->
     <node pkg="camera_calibration" name="cameracalibrator" type="cameracalibrator.py"
         args="--size $(arg size) --square $(arg square) --no-service-check" >
-        <remap from="left" to="/stereo_sync/left/image_raw" />
-        <remap from="left_camera" to="/stereo_sync/left" />
-        <remap from="right" to="/stereo_sync/right/image_raw" />
-        <remap from="right_camera" to="/stereo_sync/right" />
+        <remap from="left" to="/stereo_sync/left/image" />
+        <remap from="left_camera" to="/stereo_sync/left"/>
+        <remap from="right" to="/stereo_sync/right/image" />
     </node>
 </launch>

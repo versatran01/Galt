@@ -73,8 +73,8 @@ int main(int argc, char **argv)
   CinfoSubscriber cinfo_sub2(nh, "cinfo2", 1);
 
   // Publisher
-  left_pub = it.advertiseCamera("left", 1);
-  right_pub = it.advertiseCamera("right", 1);
+  left_pub = it.advertiseCamera("left/image", 1);
+  right_pub = it.advertiseCamera("right/image", 1);
 
 #ifdef GUI
   cv::namedWindow("image1", 1);

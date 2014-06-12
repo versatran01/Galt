@@ -17,8 +17,8 @@
 #include <opencv2/highgui/highgui.hpp>
 #endif
 
-typedef message_filters::Subscriber<sensor_msgs::CameraInfo> CinfoSubscriber;
 typedef image_transport::SubscriberFilter ImageSubscriber;
+typedef message_filters::Subscriber<sensor_msgs::CameraInfo> CinfoSubscriber;
 typedef message_filters::sync_policies::ApproximateTime<
     sensor_msgs::Image, sensor_msgs::Image, sensor_msgs::CameraInfo,
     sensor_msgs::CameraInfo> StereoSyncPolicy;
@@ -29,13 +29,13 @@ image_transport::CameraPublisher right_pub;
 void sync_callback(const sensor_msgs::ImageConstPtr &image1,
                    const sensor_msgs::ImageConstPtr &image2,
                    const sensor_msgs::CameraInfoConstPtr &cinfo1,
-                   const sensor_msgs::CameraInfoConstPtr &cinfo2)
-{
+                   const sensor_msgs::CameraInfoConstPtr &cinfo2) {
   // Synchronizer time stamp
   sensor_msgs::ImagePtr image2_sync(new sensor_msgs::Image(*image2));
   sensor_msgs::CameraInfoPtr cinfo2_sync(new sensor_msgs::CameraInfo(*cinfo2));
   image2_sync->header.stamp = image1->header.stamp;
   cinfo2_sync->header.stamp = cinfo1->header.stamp;
+
   // Publish synchronized topics
   left_pub.publish(image1, cinfo1);
   right_pub.publish(image2_sync, cinfo2_sync);
@@ -59,8 +59,7 @@ void sync_callback(const sensor_msgs::ImageConstPtr &image1,
 #endif
 }
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
   ros::init(argc, argv, "stereo_sync");
   ROS_INFO("Starting node: stereo_sync");
 

@@ -6,8 +6,7 @@
 namespace bluefox2 {
 
 Camera::Camera(ros::NodeHandle param_nh)
-    : pnode_(param_nh), ok_(false), calibrated_(false)
-{
+    : pnode_(param_nh), ok_(false), calibrated_(false) {
   // Read and display settings from launch file
   readSettings();
   printSettings();
@@ -17,8 +16,8 @@ Camera::Camera(ros::NodeHandle param_nh)
   ROS_INFO("Camera count: %d", device_count_);
 
   // Initialize camera
-  if((id_ = findCameraSerial()) >= 0) {  // Found a camera
-    if (initCamera()) {  // Initialized a camera
+  if ((id_ = findCameraSerial()) >= 0) {  // Found a camera
+    if (initCamera()) {                   // Initialized a camera
       // Set up image transport publisher and camera info manager
       image_transport::ImageTransport it(pnode_);
       camera_pub_ = it.advertiseCamera("image_raw", 1);
@@ -35,8 +34,7 @@ Camera::Camera(ros::NodeHandle param_nh)
   }
 }
 
-Camera::~Camera()
-{
+Camera::~Camera() {
   if (ok_) {
     func_interface_->imageRequestReset(0, 0);
     device_manager_[id_]->close();
@@ -44,8 +42,7 @@ Camera::~Camera()
   }
 }
 
-void Camera::readSettings()
-{
+void Camera::readSettings() {
   // Required
   if (!pnode_.getParam("serial", serial_)) {
     serial_ = std::string("");
@@ -72,8 +69,7 @@ void Camera::readSettings()
   }
 }
 
-void Camera::printSettings() const
-{
+void Camera::printSettings() const {
   ROS_INFO("Input settings:");
   ROS_INFO("Serial:   %s", serial_.c_str());
   ROS_INFO("Mode:     %s", mode_.c_str());
@@ -90,8 +86,7 @@ void Camera::printSettings() const
   ROS_INFO("HDR:      %s", btoa(use_hdr_));
 }
 
-bool Camera::checkCameraInfo() const
-{
+bool Camera::checkCameraInfo() const {
   sensor_msgs::CameraInfoPtr camera_info(
       new sensor_msgs::CameraInfo(camera_info_manager_->getCameraInfo()));
   // Chech height, width and camera matrix
@@ -103,11 +98,10 @@ bool Camera::checkCameraInfo() const
     ROS_WARN("bluefox2: Camera not calibrated.");
     return false;
   }
-  return  true;
+  return true;
 }
 
-int Camera::findCameraSerial() const
-{
+int Camera::findCameraSerial() const {
   if (device_count_ > 0) {
     for (int k = 0; k < device_count_; ++k) {
       if (device_manager_[k]->serial.read() == serial_) {
@@ -119,8 +113,7 @@ int Camera::findCameraSerial() const
 }
 
 void Camera::printMvErrorMsg(const ImpactAcquireException &e,
-                             const std::string header) const
-{
+                             const std::string header) const {
   std::cout << header << " " << device_manager_[id_]->serial.read()
             << "(error code: " << e.getErrorCode() << "("
             << e.getErrorCodeAsString() << "))." << std::endl
@@ -128,42 +121,36 @@ void Camera::printMvErrorMsg(const ImpactAcquireException &e,
   PRESS_A_KEY;
 }
 
-bool Camera::ok() const
-{
-  return ok_;
-}
+bool Camera::ok() const { return ok_; }
 
-int Camera::fps() const
-{
-  return fps_;
-}
+int Camera::fps() const { return fps_; }
 
-bool Camera::initCamera()
-{
+bool Camera::initCamera() {
   ROS_INFO("Initializing camera: %s(%s)",
            device_manager_[id_]->family.read().c_str(),
            device_manager_[id_]->serial.read().c_str());
 
   try {
     device_manager_[id_]->open();
-  } catch (const ImpactAcquireException &e) {
+  }
+  catch (const ImpactAcquireException &e) {
     printMvErrorMsg(e, "An error occurred while openning the device");
     return false;
   }
 
   try {
     func_interface_ = new FunctionInterface(device_manager_[id_]);
-  } catch (const ImpactAcquireException &e) {
-    printMvErrorMsg(e,
-                     "An error occured while creating the function interface");
+  }
+  catch (const ImpactAcquireException &e) {
+    printMvErrorMsg(e, "An error occured while creating function interface");
     return false;
   }
 
   try {
     statistics_ = new Statistics(device_manager_[id_]);
-  } catch (const ImpactAcquireException &e) {
-    printMvErrorMsg(
-        e, "An error occurred while initializing the statistical information");
+  }
+  catch (const ImpactAcquireException &e) {
+    printMvErrorMsg(e, "An error occurred while initializing statistical info");
     return false;
   }
 
@@ -211,24 +198,30 @@ bool Camera::initCamera()
   }
 
   // Auto exposure
-  // modified controller for better results, be careful about the minimum exposure time
+  // modified controller for better results, be careful about the minimum
+  // exposure time
   if (use_auto_exposure_) {
-    settings.cameraSetting.autoControlParameters.controllerSpeed.write(acsUserDefined);
+    settings.cameraSetting.autoControlParameters.controllerSpeed.write(
+        acsUserDefined);
     settings.cameraSetting.autoControlParameters.controllerGain.write(0.5);
-    settings.cameraSetting.autoControlParameters.controllerIntegralTime_ms.write(100);
-    settings.cameraSetting.autoControlParameters.controllerDerivativeTime_ms.write(0.0001);
-    settings.cameraSetting.autoControlParameters.desiredAverageGreyValue.write(100);
-    settings.cameraSetting.autoControlParameters.controllerDelay_Images.write(0);
+    settings.cameraSetting.autoControlParameters.controllerIntegralTime_ms
+        .write(100);
+    settings.cameraSetting.autoControlParameters.controllerDerivativeTime_ms
+        .write(0.0001);
+    settings.cameraSetting.autoControlParameters.desiredAverageGreyValue.write(
+        100);
+    settings.cameraSetting.autoControlParameters.controllerDelay_Images.write(
+        0);
     settings.cameraSetting.autoControlParameters.exposeLowerLimit_us.write(50);
-    settings.cameraSetting.autoControlParameters.exposeUpperLimit_us.write(exposure_time_us_);
+    settings.cameraSetting.autoControlParameters.exposeUpperLimit_us.write(
+        exposure_time_us_);
     settings.cameraSetting.autoExposeControl.write(aecOn);
     ROS_WARN("Auto Exposure w/ Max Exposure Time (us): %d",
              settings.cameraSetting.autoControlParameters.exposeUpperLimit_us
                  .read());
   } else {
     settings.cameraSetting.expose_us.write(exposure_time_us_);
-    ROS_WARN("Exposure Time (us): %d",
-             settings.cameraSetting.expose_us.read());
+    ROS_WARN("Exposure Time (us): %d", settings.cameraSetting.expose_us.read());
   }
 
   // HDR
@@ -283,8 +276,7 @@ bool Camera::initCamera()
   return true;
 }
 
-bool Camera::grabImage(sensor_msgs::ImagePtr image)
-{
+bool Camera::grabImage(sensor_msgs::ImagePtr image) {
   bool status = false;
 
   // Request and wait for image
@@ -302,8 +294,8 @@ bool Camera::grabImage(sensor_msgs::ImagePtr image)
       int channels = pRequest_->imageChannelCount.read();
       image->height = pRequest_->imageHeight.read();
       image->width = pRequest_->imageWidth.read();
-      image->step = pRequest_->imageChannelCount.read() *
-                    pRequest_->imageWidth.read();
+      image->step =
+          pRequest_->imageChannelCount.read() * pRequest_->imageWidth.read();
       if (channels == 1) {
         image->encoding = sensor_msgs::image_encodings::MONO8;
       } else if (channels == 3) {
@@ -348,8 +340,7 @@ bool Camera::grabImage(sensor_msgs::ImagePtr image)
   return status;
 }
 
-void Camera::feedImage()
-{
+void Camera::feedImage() {
   sensor_msgs::CameraInfoPtr camera_info(
       new sensor_msgs::CameraInfo(camera_info_manager_->getCameraInfo()));
   sensor_msgs::ImagePtr image(new sensor_msgs::Image);
@@ -357,9 +348,9 @@ void Camera::feedImage()
   if (grabImage(image)) {
     // Only publish height and width if camera not calibrated
     if (!calibrated_) {
-       camera_info.reset(new sensor_msgs::CameraInfo());
-       camera_info->width = image->width;
-       camera_info->height = image->height;
+      camera_info.reset(new sensor_msgs::CameraInfo());
+      camera_info->width = image->width;
+      camera_info->height = image->height;
     }
     camera_info->header.stamp = image->header.stamp;
     camera_info->header.frame_id = image->header.frame_id;

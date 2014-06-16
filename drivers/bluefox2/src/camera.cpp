@@ -63,6 +63,7 @@ void Camera::readSettings() {
   pnode_.param("gain", gain_, 0.0);
   pnode_.param<std::string>("frame_id", frame_id_, "bluefox2");
   pnode_.param<std::string>("mode", mode_, "standalone");  // requires a hint
+  pnode_.param<std::string>("white_balance", white_balance_, "none");
   if (!pnode_.getParam("calibration_url", calibration_url_)) {
     calibration_url_ = "";
     ROS_WARN("No calibration file specified.");
@@ -80,6 +81,7 @@ void Camera::printSettings() const {
   ROS_INFO("FPS:      %f", fps_);
   ROS_INFO("Gain:     %f", gain_);
   ROS_INFO("Color:    %s", btoa(use_color_));
+  ROS_INFO("WBP:      %s", white_balance_.c_str());  // White balance parameter
   ROS_INFO("Auto exp: %s", btoa(use_auto_exposure_));
   ROS_INFO("Binning:  %s", btoa(use_binning_));
   ROS_INFO("Inverted: %s", btoa(use_inverted_));
@@ -191,8 +193,12 @@ bool Camera::initCamera() {
   // Color
   if (use_color_) {
     settings.imageDestination.pixelFormat.write(idpfRGB888Packed);
-    settings.imageProcessing.whiteBalance.write(wbpFluorescent);
-    ROS_WARN("bayer mode: %d", settings.imageProcessing.whiteBalance.read());
+    if (white_balance_ == "indoor") {
+      settings.imageProcessing.whiteBalance.write(wbpFluorescent);
+    } else if (white_balance_ == "outdoor") {
+      settings.imageProcessing.whiteBalance.write(wbpDayLight);
+    }
+    ROS_WARN("White Balance: %s", white_balance_.c_str());
     ROS_WARN("Color Images");
   } else {
     settings.imageDestination.pixelFormat.write(idpfRaw);

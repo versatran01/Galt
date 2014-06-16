@@ -12,6 +12,8 @@
   <arg name="mode" default="standalone" />
   <arg name="fps" default="20.0" />
   <arg name="color" default="false" />
+  <!-- White balance parameter, options are: indoor, outdoor -->
+  <arg name="wbp" default="none" />
 
   <node pkg="bluefox2" type="bluefox2" name="cam_$(arg serial)" output="screen" >
     <param name="height" type="int" value="480" />
@@ -21,6 +23,7 @@
     <param name="exposure_time_us" type="int" value="10000" />
     <param name="use_auto_exposure" type="bool" value="false" />
     <param name="use_color" type="bool" value="$(arg color)" />
+    <param name="white_balance" type="string" value="$(arg wbp)" />
     <param name="use_binning" type="bool" value="false" />
     <param name="serial" type="string" value="$(arg serial)" />
     <param name="frame_id" type="string" value="cam$(arg serial)" />

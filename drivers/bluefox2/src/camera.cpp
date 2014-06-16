@@ -191,6 +191,8 @@ bool Camera::initCamera() {
   // Color
   if (use_color_) {
     settings.imageDestination.pixelFormat.write(idpfRGB888Packed);
+    settings.imageProcessing.whiteBalance.write(wbpFluorescent);
+    ROS_WARN("bayer mode: %d", settings.imageProcessing.whiteBalance.read());
     ROS_WARN("Color Images");
   } else {
     settings.imageDestination.pixelFormat.write(idpfRaw);

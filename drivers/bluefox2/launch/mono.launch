@@ -19,7 +19,7 @@
     <param name="gain" type="double" value="0.0" />
     <param name="exposure_time_us" type="int" value="10000" />
     <param name="use_auto_exposure" type="bool" value="false" />
-    <param name="use_color" type="bool" value="false" />
+    <param name="use_color" type="bool" value="true" />
     <param name="use_binning" type="bool" value="false" />
     <param name="serial" type="string" value="$(arg serial)" />
     <param name="frame_id" type="string" value="cam$(arg serial)" />

@@ -1,8 +1,0 @@
-<launch>
-    <node name="receiver" pkg="receiver" type="receiver_sync" output="screen">
-        <remap from="~image1" to="/cam25000855/image_raw"/>
-        <remap from="~cinfo1" to="/cam25000855/camera_info"/>
-        <remap from="~image2" to="/cam25000495/image_raw"/>
-        <remap from="~cinfo2" to="/cam25000495/camera_info"/>
-    </node>
-</launch>

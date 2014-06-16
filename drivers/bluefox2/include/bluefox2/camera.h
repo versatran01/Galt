@@ -12,7 +12,6 @@
 #include <camera_info_manager/camera_info_manager.h>
 
 #include <mvIMPACT_CPP/mvIMPACT_acquire.h>
-
 #include <boost/shared_ptr.hpp>
 
 #define PRESS_A_KEY getchar();

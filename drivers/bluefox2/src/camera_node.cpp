@@ -2,8 +2,7 @@
 
 #include "bluefox2/camera.h"
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
   ros::init(argc, argv, "bluefox2");
   bluefox2::Camera camera(ros::NodeHandle("~"));
 
@@ -20,4 +19,3 @@ int main(int argc, char **argv)
 
   return 0;
 }
-

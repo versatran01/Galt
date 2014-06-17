@@ -196,8 +196,8 @@ void Imu::connect()
     }
 
     //  set default baud rate
-    cfsetispeed(&toptions, 115200);
-    cfsetospeed(&toptions, 115200);
+    cfsetispeed(&toptions, B115200);
+    cfsetospeed(&toptions, B115200);
 
     toptions.c_cflag &= ~PARENB;    //  no parity bit
     toptions.c_cflag &= ~CSTOPB;    //  disable 2 stop bits (only one used instead)
@@ -245,9 +245,21 @@ bool Imu::termiosBaudRate(unsigned int baud)
         return false;
     }
 
+    speed_t speed;
+    switch (baud) {
+      case 9600: speed = B9600; break;
+      case 19200: speed = B19200; break;
+      case 115200: speed = B115200; break;
+      case 230400: speed = B230400; break;
+      case 460800: speed = B460800; break;
+      case 921600: speed = B921600; break;
+    default:
+      assert(false);
+    }
+
     //  modify only the baud rate
-    cfsetispeed(&toptions, baud);
-    cfsetospeed(&toptions, baud);
+    cfsetispeed(&toptions, speed);
+    cfsetospeed(&toptions, speed);
 
     if (tcsetattr(fd_, TCSAFLUSH, &toptions) < 0) {
         return false;
@@ -304,23 +316,6 @@ void Imu::selectBaudRate(unsigned int baud)
     if (!foundRate) {
         throw runtime_error("Failed to reach device " + device_);
     }
-
-    //  set idle before changing baud rate
-    /*int code = 0;
-    int count = 0;
-    while (code == 0) {
-        code = idle(100);
-        if (count++ == 5) {
-            //  try up to 5 times
-            break;
-        }
-    }
-
-    if (code == 0) {
-        throw runtime_error("Device did not respond to idle command");
-    } else if (code < 0) {
-        throw runtime_error("Device rejected idle command");
-    }*/
 
     //  we are on the correct baud rate, now change to the new rate
     Packet comm(0x0C, 0x07);
@@ -416,26 +411,81 @@ int Imu::getDeviceInfo(Imu::Info& info)
     return comm;
 }
 
+int Imu::getIMUDataBaseRate(uint16_t& baseRate)
+{
+  Packet p(0x0C, 0x02);
+  p.payload[0] = 0x02;
+  p.payload[1] = 0x06;
+  p.calcChecksum();
+
+  int comm = sendCommand(p, kTimeout);
+  if (comm > 0)
+  {
+    decode(&packet_.payload[6],1,&baseRate);
+  }
+  return comm;
+}
+
+int Imu::getFilterDataBaseRate(uint16_t& baseRate)
+{
+  Packet p(0x0C, 0x02);
+  p.payload[0] = 0x02;
+  p.payload[1] = 0x0B;
+  p.calcChecksum();
+
+  int comm = sendCommand(p, kTimeout);
+  if (comm > 0)
+  {
+    decode(&packet_.payload[6],1,&baseRate);
+  }
+  return comm;
+}
+
+int Imu::getDiagnosticInfo(Imu::DiagnosticFields& fields)
+{
+  Packet p(0x0C, 0x05);
+  p.payload[0] = 0x05;
+  p.payload[1] = 0x64;
+  encode(&p.payload[2],static_cast<uint16_t>(6234));  //  device model number (0x185A)
+  p.payload[4] = 0x02;  //  diagnostic mode
+  p.calcChecksum();
+
+  int comm = sendCommand(p, kTimeout);
+  if (comm > 0)
+  {
+    if (packet_.payload[4] != 0x4B) { //  should be full diagnostic report
+      log_w("Wrong diagnostic field length returned");
+    }
+
+    decode(&packet_.payload[6],1,&fields.modelNumber);
+    decode(&packet_.payload[8],1,&fields.selector);
+    decode(&packet_.payload[9],4,&fields.statusFlags);
+    decode(&packet_.payload[25],2,&fields.imuStreamEnabled);
+    decode(&packet_.payload[27],13,&fields.imuPacketsDropped);
+  }
+  return comm;
+}
+
 template <typename T>
 int getNextBit(T& val)
 {
     const static int nBits = sizeof(T)*8;
     static_assert(!std::numeric_limits<T>::is_signed &&
                    std::numeric_limits<T>::is_integer, "Type must be a unsigned integer");
-    
+
     int count = 0;
     T n = val;
-    
+
     while (!(n & 0x01) && count != nBits) {
         n = n >> 1;
         count++;
     }
-    
+
     if (count < nBits) {
         val = val & ~(1 << count);
         return count;
     }
-    
+
     return -1;
 }
 
@@ -452,18 +502,18 @@ int Imu::setIMUDataRate(uint16_t decimation, unsigned int sources)
     //  Gyroscope       bit 1
     //  Magnetometer    bit 2
     //  Barometer       bit 3
-    
+
     //  these correspond to numbers in the device manual
     static const uint8_t fieldDescs[] = {0x04, 0x05, 0x06, 0x17};
     uint8_t descCount = 0;
-    
+
     int bPos;
     while ( (bPos = getNextBit(sources)) >= 0 )
     {
       if (bPos >= sizeof(fieldDescs)) {
         throw invalid_argument("Invalid data source requested!");
       }
-      
+
       descCount++;
       p.length += encode(p.payload + p.length, fieldDescs[bPos], decimation);
     }
@@ -475,14 +525,14 @@ int Imu::setIMUDataRate(uint16_t decimation, unsigned int sources)
     return sendCommand(p, kTimeout);
 }
 
-int Imu::setFilterDataRate(uint16_t decimation, unsigned int sources) 
+int Imu::setFilterDataRate(uint16_t decimation, unsigned int sources)
 {
     Imu::Packet p(0x0C,0x04);
     p.payload[0] = 0x00;    //  field length
     p.payload[1] = 0x0A;
     p.payload[2] = 0x01;    //  function
     p.payload[3] = 0x00;    //  descriptor count
-    
+
     static const uint8_t fieldDescs[] = {0x03, 0x06};
     uint8_t descCount = 0;
 
@@ -492,18 +542,18 @@ int Imu::setFilterDataRate(uint16_t decimation, unsigned int sources)
       if (bPos >= sizeof(fieldDescs)) {
         throw invalid_argument("Invalid data source requested!");
       }
-      
+
       descCount++;
       p.length += encode(p.payload + p.length, fieldDescs[bPos], decimation);
     }
-    
+
     if (sources != 0) {
       throw std::invalid_argument("Invalid data source requested");
     }
-    
+
     p.payload[3] = descCount;
     p.payload[0] = 4 + 3*descCount;
-    
+
     p.calcChecksum();
     return sendCommand(p, kTimeout);
 }
@@ -514,7 +564,7 @@ int Imu::enableMeasurements(bool accel, bool magnetometer)
   p.payload[0] = 0x05;
   p.payload[1] = 0x41;
   p.payload[2] = 0x01;  //  apply new settings
-  
+
   p.payload[3] = 0;
   if (accel) {
     p.payload[3] |= 0x01;
@@ -522,7 +572,7 @@ int Imu::enableMeasurements(bool accel, bool magnetometer)
   if (magnetometer) {
     p.payload[3] |= 0x02;
   }
-  
+
   p.calcChecksum();
   return sendCommand(p, kTimeout);
 }
@@ -541,7 +591,7 @@ int Imu::enableIMUStream(bool enabled)
 }
 
 int Imu::enableFilterStream(bool enabled)
-{  
+{
     Packet p(0x0C, 0x05);
     p.payload[0] = 0x05;
     p.payload[1] = 0x11;
@@ -560,7 +610,7 @@ int Imu::pollInput(unsigned int to)
     p.fd = fd_;
     p.events = POLLIN;
 
-    int rPoll = poll(&p, 1, to); // timeout is in millis
+    int rPoll = poll(&p, 1, 0); // timeout is in millis
     if (rPoll > 0)
     {
         const ssize_t amt = ::read(fd_, &buffer_[0], buffer_.size());
@@ -712,9 +762,9 @@ void Imu::processPacket()
         }
     }
     else if ( packet_.is_filter_data() ) {
-      
+
       size_t idx=0;
-      
+
       while (idx+1 < sizeof(packet_.payload))
       {
         size_t len = packet_.payload[idx];
@@ -723,7 +773,7 @@ void Imu::processPacket()
         if (!len) {
             break;
         }
-        
+
         if (ddesc == 0x03)  //  quaternion
         {
           decode(&packet_.payload[idx+2], 4, filterData.quaternion);
@@ -732,10 +782,10 @@ void Imu::processPacket()
         else {
           log_w("Warning: Unsupported data field present in estimator packet");
         }
-        
+
         idx += len;
       }
-      
+
       if (this->filterDataCallback) {
         filterDataCallback(filterData);
       }

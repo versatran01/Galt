@@ -120,6 +120,34 @@ public:
     };
     
     /**
+     * @brief DiagnosticFields struct (See 3DM documentation for these fields)
+     */
+    struct DiagnosticFields
+    {
+      uint16_t modelNumber;
+      uint8_t selector;
+      uint32_t statusFlags;
+      uint32_t systemTimer;
+      uint32_t num1PPSPulses;
+      uint32_t last1PPSPulse;
+      uint8_t imuStreamEnabled;
+      uint8_t filterStreamEnabled;
+      uint32_t imuPacketsDropped;
+      uint32_t filterPacketsDropped;
+      uint32_t comBytesWritten;
+      uint32_t comBytesRead;
+      uint32_t comNumWriteOverruns;
+      uint32_t comNumReadOverruns;
+      uint32_t usbBytesWritten;
+      uint32_t usbBytesRead;
+      uint32_t usbNumWriteOverruns;
+      uint32_t usbNumReadOverruns;
+      uint32_t numIMUParseErrors;
+      uint32_t totalIMUMessages;
+      uint32_t lastIMUMessage;
+    } __attribute__((packed));
+    
+    /**
      *  @brief IMUData IMU readings produced by the sensor
      */
     struct IMUData
@@ -251,6 +279,27 @@ public:
      *  @return 0 on timeout, negative value if NACK is received, positive on success.
      */
     int getDeviceInfo(Imu::Info& info);
+    
+    /**
+     * @brief getIMUDataBaseRate Get the imu data base rate (should be 1000)
+     * @param baseRate On success, the base rate in Hz
+     * @return 0 on timeout, negative value if NACK is received, positive on success.
+     */
+    int getIMUDataBaseRate(uint16_t& baseRate);
+    
+    /**
+     * @brief getFilterDataBaseRate Get the filter data base rate (should be 500)
+     * @param baseRate On success, the base rate in Hz
+     * @return 0 on timeout, negative value if NACK is received, positive on success.
+     */
+    int getFilterDataBaseRate(uint16_t& baseRate);
+    
+    /**
+     * @brief getDiagnosticInfo
+     * @param fields
+     * @return 
+     */
+    int getDiagnosticInfo(Imu::DiagnosticFields& fields);
     
     /**
      *  @brief setIMUDataRate Set imu data rate for different sources.

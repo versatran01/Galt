@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(bluefox2)
 
+add_definitions("-Wall")
+
 find_package(catkin REQUIRED COMPONENTS
     roscpp sensor_msgs image_transport camera_info_manager
     cv_bridge message_filters

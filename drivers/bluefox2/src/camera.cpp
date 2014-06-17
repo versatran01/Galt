@@ -92,7 +92,8 @@ bool Camera::checkCameraInfo() const {
   sensor_msgs::CameraInfoPtr camera_info(
       new sensor_msgs::CameraInfo(camera_info_manager_->getCameraInfo()));
   // Chech height, width and camera matrix
-  if (camera_info->width != width_ || camera_info->height != height_) {
+  if (camera_info->width != (unsigned int)width_ ||
+      camera_info->height != (unsigned int)height_) {
     ROS_WARN("bluefox2: Calibration dimension mismatch.");
     return false;
   }

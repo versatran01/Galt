@@ -69,9 +69,14 @@ public:
         bool is_ack() const;
         
         /**
-         *  @brief is_data True if this packet corresponds to a data message.
+         *  @brief is_imu_data True if this packet corresponds to an imu data message.
          */
-        bool is_data() const;
+        bool is_imu_data() const;
+        
+        /**
+         * @brief is_filter_data True if this packet corresponds to a filter data message
+         */
+        bool is_filter_data() const;
         
         /**
          *  @brief ack_code Extract the ACK code from this packet.
@@ -115,9 +120,9 @@ public:
     };
     
     /**
-     *  @brief Data IMU readings produced by the sensor
+     *  @brief IMUData IMU readings produced by the sensor
      */
-    struct Data
+    struct IMUData
     {
         enum
         {
@@ -134,7 +139,25 @@ public:
         float mag[3];           /**< Magnetic field, units of gauss */
         float pressure;         /**< Pressure, units of gauss */
         
-        Data() : fields(0) {}
+        IMUData() : fields(0) {}
+    };
+    
+    /**
+     *  @brief FilterData Estimator readings produced by the sensor
+     */
+    struct FilterData
+    {
+      enum
+      {
+        Quaternion    = (1 << 0),
+      };
+      
+      unsigned int fields;    /**< Which fields are valid in the struct */
+      
+      float quaternion[4];    /**< Orientation quaternion (q0,q1,q2,q3) */
+      uint16_t quatStatus;    /**< Quaternion status: 0 = invalid, 1 = valid, 2 = georeferenced to magnetic north */
+            
+      FilterData() : fields(0) {}
     };
     
     /* Exceptions */
@@ -230,14 +253,34 @@ public:
     int getDeviceInfo(Imu::Info& info);
     
     /**
-     *  @brief setDataRate Set data rate for different sources.
+     *  @brief setIMUDataRate Set imu data rate for different sources.
      *  @param decimation Denominator in the update rate value: 1000/x
      *  @param sources Sources to apply this rate to. May be a bitwise combination of the values:
      *   Accelerometer, Gyroscope, Magnetometer, Barometer
      *
+     *  @throw invalid_argument if an invalid source is requested.
      *  @return 0 on timeout, negative value if NACK is received, positive on success.
      */
-    int setDataRate(uint16_t decimation, unsigned int sources);
+    int setIMUDataRate(uint16_t decimation, unsigned int sources);
+    
+    /**
+     *  @brief setFilterDataRate Set estimator data rate for different sources.
+     *  @param decimation Denominator in the update rate value: 1000/x
+     *  @param sources Sources to apply this rate to. May be a bitwise combination of the values:
+     *   Quaternion
+     *
+     *  @throw invalid_argument if an invalid source is requested.
+     *  @return 0 on timeout, negative value if NACK is received, positive on success.
+     */
+    int setFilterDataRate(uint16_t decimation, unsigned int sources); 
+    
+    /**
+     * @brief enableMeasurements Set which measurements to enable in the filter
+     * @param accel If true, acceleration measurements are enabled
+     * @param magnetometer If true, magnetometer measurements are enabled
+     * @return 0 on timeout, negative value if NACK is received, positive on success.
+     */
+    int enableMeasurements(bool accel, bool magnetometer);
     
     /**
      *  @brief enableIMUStream Enable/disable streaming of IMU data
@@ -248,12 +291,17 @@ public:
     int enableIMUStream(bool enabled);
     
     /**
-     *  @brief setDataCallback Set the callback which will be called when data arrives.
-     *  @param cb The functional to execute.
+     *  @brief enableFilterStream Enable/disable streaming of estimation filter data
+     *  @param enabled If true, streaming is enabled.
      *
-     *  @throw invalid_argument if cb is null.
+     *  @return 0 on timeout, negative value if NACK is received, positive on success.
      */
-    void setDataCallback(const std::function<void (const Imu::Data&)> cb);
+    int enableFilterStream(bool enabled);
+    
+    /* Public properties */
+    
+    std::function<void (const Imu::IMUData&)> imuDataCallback;        /**< Called with IMU data is ready */
+    std::function<void (const Imu::FilterData&)> filterDataCallback;  /**< Called when filter data is ready */
     
 private:
     
@@ -290,8 +338,6 @@ private:
         Reading,
     } state_;
     Packet packet_;
-    
-    std::function<void (const Imu::Data&)> callback_;
 };
 
 }  //  imu_3dm_gx4

@@ -32,7 +32,7 @@ extern "C" {
 }
 
 #define kTimeout    (100)
-#define kBufferSize (1024)
+#define kBufferSize (4096)
 
 #define u8(x) static_cast<uint8_t>((x))
 
@@ -113,8 +113,12 @@ bool Imu::Packet::is_ack() const {
     return (payload[0]==0x04 && payload[1]==0xF1);
 }
 
-bool Imu::Packet::is_data() const {
-    return descriptor==0x80;
+bool Imu::Packet::is_imu_data() const {
+  return descriptor==0x80;
+}
+
+bool Imu::Packet::is_filter_data() const {
+  return descriptor==0x82;
 }
 
 int Imu::Packet::ack_code(const Packet& command) const {
@@ -412,7 +416,30 @@ int Imu::getDeviceInfo(Imu::Info& info)
     return comm;
 }
 
-int Imu::setDataRate(uint16_t decimation, unsigned int sources)
+template <typename T>
+int getNextBit(T& val)
+{
+    const static int nBits = sizeof(T)*8;
+    static_assert(!std::numeric_limits<T>::is_signed &&
+                   std::numeric_limits<T>::is_integer, "Type must be a unsigned integer");
+    
+    int count = 0;
+    T n = val;
+    
+    while (!(n & 0x01) && count != nBits) {
+        n = n >> 1;
+        count++;
+    }
+    
+    if (count < nBits) {
+        val = val & ~(1 << count);
+        return count;
+    }
+    
+    return -1;
+}
+
+int Imu::setIMUDataRate(uint16_t decimation, unsigned int sources)
 {
     Imu::Packet p(0x0C,0x04);
     p.payload[0] = 0x00;    //  field length
@@ -420,26 +447,25 @@ int Imu::setDataRate(uint16_t decimation, unsigned int sources)
     p.payload[2] = 0x01;    //  function
     p.payload[3] = 0x00;    //  descriptor count
 
+    //  order of fields:
+    //  Accelerometer   bit 0
+    //  Gyroscope       bit 1
+    //  Magnetometer    bit 2
+    //  Barometer       bit 3
+    
+    //  these correspond to numbers in the device manual
+    static const uint8_t fieldDescs[] = {0x04, 0x05, 0x06, 0x17};
     uint8_t descCount = 0;
-
-    if (sources & Imu::Data::Accelerometer) {
-        descCount++;
-        p.length += encode(p.payload + p.length, u8(0x04), decimation);
-    }
-
-    if (sources & Imu::Data::Gyroscope) {
-        descCount++;
-        p.length += encode(p.payload + p.length, u8(0x05), decimation);
-    }
-
-    if (sources & Imu::Data::Magnetometer) {
-        descCount++;
-        p.length += encode(p.payload + p.length, u8(0x06), decimation);
-    }
-
-    if (sources & Imu::Data::Barometer) {
-        descCount++;
-        p.length += encode(p.payload + p.length, u8(0x17), decimation);
+    
+    int bPos;
+    while ( (bPos = getNextBit(sources)) >= 0 )
+    {
+      if (bPos >= sizeof(fieldDescs)) {
+        throw invalid_argument("Invalid data source requested!");
+      }
+      
+      descCount++;
+      p.length += encode(p.payload + p.length, fieldDescs[bPos], decimation);
     }
 
     p.payload[3] = descCount;
@@ -447,6 +473,58 @@ int Imu::setDataRate(uint16_t decimation, unsigned int sources)
 
     p.calcChecksum();
     return sendCommand(p, kTimeout);
+}
+
+int Imu::setFilterDataRate(uint16_t decimation, unsigned int sources) 
+{
+    Imu::Packet p(0x0C,0x04);
+    p.payload[0] = 0x00;    //  field length
+    p.payload[1] = 0x0A;
+    p.payload[2] = 0x01;    //  function
+    p.payload[3] = 0x00;    //  descriptor count
+    
+    static const uint8_t fieldDescs[] = {0x03, 0x06};
+    uint8_t descCount = 0;
+
+    int bPos;
+    while ( (bPos = getNextBit(sources)) >= 0 )
+    {
+      if (bPos >= sizeof(fieldDescs)) {
+        throw invalid_argument("Invalid data source requested!");
+      }
+      
+      descCount++;
+      p.length += encode(p.payload + p.length, fieldDescs[bPos], decimation);
+    }
+    
+    if (sources != 0) {
+      throw std::invalid_argument("Invalid data source requested");
+    }
+    
+    p.payload[3] = descCount;
+    p.payload[0] = 4 + 3*descCount;
+    
+    p.calcChecksum();
+    return sendCommand(p, kTimeout);
+}
+
+int Imu::enableMeasurements(bool accel, bool magnetometer)
+{
+  Imu::Packet p(0x0D, 0x05);
+  p.payload[0] = 0x05;
+  p.payload[1] = 0x41;
+  p.payload[2] = 0x01;  //  apply new settings
+  
+  p.payload[3] = 0;
+  if (accel) {
+    p.payload[3] |= 0x01;
+  }
+  if (magnetometer) {
+    p.payload[3] |= 0x02;
+  }
+  
+  p.calcChecksum();
+  return sendCommand(p, kTimeout);
 }
 
 int Imu::enableIMUStream(bool enabled)
@@ -462,13 +540,17 @@ int Imu::enableIMUStream(bool enabled)
     return sendCommand(p, kTimeout);
 }
 
-void Imu::setDataCallback(const std::function<void (const Imu::Data&)> cb)
-{
-    if (!cb) {
-        throw std::invalid_argument("Callback cannot be null");
-    }
+int Imu::enableFilterStream(bool enabled)
+{  
+    Packet p(0x0C, 0x05);
+    p.payload[0] = 0x05;
+    p.payload[1] = 0x11;
+    p.payload[2] = 0x01;
+    p.payload[3] = 0x03;    //  device: estimation filter
+    p.payload[4] = (enabled == true);
 
-    callback_ = cb;
+    p.calcChecksum();
+    return sendCommand(p, kTimeout);
 }
 
 int Imu::pollInput(unsigned int to)
@@ -585,9 +667,10 @@ int Imu::handleRead(size_t bytes_transferred)  //  parses packets out of the inp
 
 void Imu::processPacket()
 {
-    Data data;
+    IMUData data;
+    FilterData filterData;
 
-    if ( packet_.is_data() )
+    if ( packet_.is_imu_data() )
     {
         //  process all fields in the packet
         size_t idx=0;
@@ -618,17 +701,46 @@ void Imu::processPacket()
                 decode(&packet_.payload[idx + 2], 1, &data.pressure);
             }
             else {
-                log_w("Warning: Unsupported data field present in IMU packet\n");
+                log_w("Warning: Unsupported data field present in IMU packet");
             }
 
             idx += len;
         }
 
-        if (callback_) {
-            callback_(data);
+        if (this->imuDataCallback) {
+            imuDataCallback(data);
         }
+    }
+    else if ( packet_.is_filter_data() ) {
+      
+      size_t idx=0;
+      
+      while (idx+1 < sizeof(packet_.payload))
+      {
+        size_t len = packet_.payload[idx];
+        size_t ddesc = packet_.payload[idx+1];
 
-    } else if ( packet_.is_ack() ) {
+        if (!len) {
+            break;
+        }
+        
+        if (ddesc == 0x03)  //  quaternion
+        {
+          decode(&packet_.payload[idx+2], 4, filterData.quaternion);
+          decode(&packet_.payload[idx+2+sizeof(float)*4], 1, &filterData.quatStatus);
+        }
+        else {
+          log_w("Warning: Unsupported data field present in estimator packet");
+        }
+        
+        idx += len;
+      }
+      
+      if (this->filterDataCallback) {
+        filterDataCallback(filterData);
+      }
+    }
+    else if ( packet_.is_ack() ) {
         if (packet_.payload[3] == 0) {
             //  log_i("Received ACK packet: 0x%02x, 0x%02x\n", packet_.descriptor, packet_.payload[2]);
         } else {

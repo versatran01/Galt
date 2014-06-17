@@ -8,6 +8,7 @@
 #include <string>
 
 #include <error_handling.hpp>
+#include <imu_3dm_gx4/Orientation.h>
 #include "imu.hpp"
 
 using namespace imu_3dm_gx4;
@@ -16,8 +17,9 @@ using namespace std;
 ros::Publisher pubIMU;
 ros::Publisher pubMag;
 ros::Publisher pubPressure;
+ros::Publisher pubOrientation;
 
-void publish_data(const Imu::Data& data)
+void publish_data(const Imu::IMUData& data)
 {
     sensor_msgs::Imu imu;
     sensor_msgs::MagneticField field;
@@ -27,7 +29,7 @@ void publish_data(const Imu::Data& data)
     field.header.stamp = imu.header.stamp;
     pressure.header.stamp = imu.header.stamp;
 
-    imu.orientation_covariance[0] = -1; //  indicate we don't support this
+    imu.orientation_covariance[0] = -1; //  orientation data is on a separate topic
 
     imu.linear_acceleration.x = data.accel[0];
     imu.linear_acceleration.y = data.accel[1];
@@ -55,6 +57,19 @@ void publish_data(const Imu::Data& data)
     pubPressure.publish(pressure);
 }
 
+void publish_filter(const Imu::FilterData& data)
+{
+  imu_3dm_gx4::Orientation orientation;
+  orientation.header.stamp = ros::Time::now();
+  orientation.quaternion.w = data.quaternion[0];
+  orientation.quaternion.x = data.quaternion[1];
+  orientation.quaternion.y = data.quaternion[2];
+  orientation.quaternion.z = data.quaternion[3];
+  orientation.filterStatus = data.quatStatus;
+  
+  pubOrientation.publish(orientation); 
+}
+
 int main(int argc, char **argv)
 {
   ros::init(argc, argv, "imu_3dm_gx4");
@@ -64,6 +79,7 @@ int main(int argc, char **argv)
   pubIMU = nh.advertise<sensor_msgs::Imu>("imu", 1);
   pubMag = nh.advertise<sensor_msgs::MagneticField>("magnetic_field", 1);
   pubPressure = nh.advertise<sensor_msgs::FluidPressure>("pressure", 1);
+  pubOrientation = nh.advertise<imu_3dm_gx4::Orientation>("orientation", 1);
 
   std::string device;
   int baudrate;
@@ -80,46 +96,63 @@ int main(int argc, char **argv)
   {
     imu.connect();
 
-    log_w("Selecting baud rate %u\n", baudrate);
+    log_w("Selecting baud rate %u", baudrate);
     imu.selectBaudRate(baudrate);
 
     Imu::Info info;
     if ( imu.getDeviceInfo(info) ) {
 
-        log_w("Retrieved device info:\n");
-        log_w("\tFirmware version: %u\n", info.firmwareVersion);
-        log_w("\tModel name: %s\n", info.modelName.c_str());
-        log_w("\tModel number: %s\n", info.modelNumber.c_str());
-        log_w("\tSerial number: %s\n", info.serialNumber.c_str());
-        log_w("\tDevice options: %s\n", info.deviceOptions.c_str());
+        log_w("Retrieved device info:");
+        log_w("\tFirmware version: %u", info.firmwareVersion);
+        log_w("\tModel name: %s", info.modelName.c_str());
+        log_w("\tModel number: %s", info.modelNumber.c_str());
+        log_w("\tSerial number: %s", info.serialNumber.c_str());
+        log_w("\tDevice options: %s", info.deviceOptions.c_str());
     }
 
-    log_w("1. Idling the device\n");
+    log_w("1. Idling the device");
     if (imu.idle(100) <= 0) {
         throw std::runtime_error("Idle failed");
     }
 
-    log_w("2. Selecting decimation rate: %u\n", decimation);
-    if (imu.setDataRate(decimation, Imu::Data::Accelerometer | Imu::Data::Gyroscope
-                        | Imu::Data::Magnetometer | Imu::Data::Barometer) <= 0)
+    log_w("2. Selecting IMU decimation rate: %u", decimation);
+    if (imu.setIMUDataRate(decimation, Imu::IMUData::Accelerometer | Imu::IMUData::Gyroscope
+                        | Imu::IMUData::Magnetometer | Imu::IMUData::Barometer) <= 0)
     {
-        throw std::runtime_error("Setting data rate failed");
+        throw std::runtime_error("Setting IMU data rate failed");
+    }
+    
+    log_w("3. Selecting filter decimation rate: %u", 10);
+    if (imu.setFilterDataRate(10, Imu::FilterData::Quaternion) <= 0)
+    {
+      throw std::runtime_error("Set filter data rate failed");
     }
 
-    log_w("3. Enabling IMU data stream\n");
+    log_w("4. Enabling IMU data stream");
     if (imu.enableIMUStream(true) <= 0) {
-        throw std::runtime_error("Enabling data stream failed");
+        throw std::runtime_error("Enabling IMU data stream failed");
     }
-
-    log_w("4. Resuming the device\n");
+    
+    log_w("5. Enabling filter data stream");
+    if (imu.enableFilterStream(true) <= 0) {
+      throw std::runtime_error("Enable filter data stream failed");
+    }
+    
+    log_w("6. Enabling filter measurements");
+    if (imu.enableMeasurements(true, false) <= 0) {
+      throw std::runtime_error("Enable filter measurements failed");
+    }
+    
+    log_w("7. Resuming the device");
     if (imu.resume(100) <= 0) {
         throw std::runtime_error("Resuming the device failed");
     }
 
-    imu.setDataCallback(publish_data);
+    imu.imuDataCallback = publish_data;
+    imu.filterDataCallback = publish_filter;
     while (ros::ok()) {
       imu.runOnce();
-      ros::spinOnce();
+      //ros::spinOnce();
     }
     imu.disconnect();
   }

@@ -1,8 +1,12 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(imu_3dm_gx4)
-find_package(catkin REQUIRED roscpp sensor_msgs galt_common)
+find_package(catkin REQUIRED COMPONENTS message_generation roscpp geometry_msgs sensor_msgs galt_common)
 
-catkin_package(INCLUDE_DIRS include CATKIN_DEPENDS roscpp sensor_msgs galt_common)
+add_message_files(DIRECTORY msg)
+generate_messages(DEPENDENCIES geometry_msgs)
+
+catkin_package(INCLUDE_DIRS include
+               CATKIN_DEPENDS message_runtime roscpp geometry_msgs sensor_msgs galt_common)
 
 # include boost
 find_package(Boost REQUIRED)

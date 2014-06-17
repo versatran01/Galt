@@ -2,12 +2,12 @@
     <arg name="imu_node" default="imu_3dm_gx4"/>
     <arg name="baudrate" default="921600" />
     <arg name="device" default="/dev/ttyACM0" />
-    <arg name="imu_decimation" default="10"/>
 
     <node pkg="imu_3dm_gx4" name="$(arg imu_node)" type="imu_3dm_gx4" output="screen">
         <param name="device" type="string" value="$(arg device)" />
         <param name="baudrate" type="int" value="$(arg baudrate)" />
-        <param name="imu_decimation" type="int" value="$(arg imu_decimation)" />
-        <param name="use_filter" type="bool" value="false"/>
+        <param name="imu_decimation" type="int" value="20" />
+        <param name="filter_decimation" type="int" value="10" />
+        <param name="use_filter" type="bool" value="true"/>
     </node>
 </launch>

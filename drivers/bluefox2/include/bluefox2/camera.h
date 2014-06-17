@@ -90,6 +90,7 @@ class Camera {
     std::string mode_;  ///< mode can be master, slave and standalone
     std::string serial_;  ///< serial number on the back of camera
     std::string frame_id_;
+    std::string white_balance_;
     std::string calibration_url_;
 
     CameraInfoManagerPtr camera_info_manager_;

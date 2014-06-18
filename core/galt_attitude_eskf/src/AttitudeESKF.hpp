@@ -36,11 +36,11 @@ public:
     /**
      *  @brief Perform the prediction step
      *  @param wg Uncorrected gyroscope readings in body frame
-     *  @param dt Time step
+     *  @param time Current time in seconds
      *
      *  @note Integrates the nominal state using RK4.
      */
-    void predict(const Eigen::Matrix<float,3,1>& wg, float dt);
+    void predict(const Eigen::Matrix<float,3,1>& wg, double time);
     
     /**
      *  @brief Perform the update step
@@ -73,10 +73,13 @@ public:
      */
     bool isStable() const { return m_isStable; }
     
-private:
+//  temp: public
     
     quat m_q;
     Eigen::Matrix<float,3,1> m_b;
+    
+    double lastTime_;
+    Eigen::Vector3f predAccel_;
     
     Eigen::Matrix<float,6,6> m_P;
     Eigen::Matrix<float,6,6> m_Q;

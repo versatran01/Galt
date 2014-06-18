@@ -1,0 +1,13 @@
+<launch>
+
+  <!-- Launch the 3DM w/ only IMU data streaming -->
+  <include file="$(find imu_3dm_gx4)/launch/imu.launch">
+  </include>
+
+  <!-- Point the filter to the correct topics of the 3DM -->
+  <include file="$(find galt_attitude_eskf)/launch/attitude_eskf.launch">
+    <arg name="imu_topic" value="/imu_3dm_gx4/imu"/>
+    <arg name="field_topic" value="/imu_3dm_gx4/magnetic_field"/>
+  </include>
+
+</launch>

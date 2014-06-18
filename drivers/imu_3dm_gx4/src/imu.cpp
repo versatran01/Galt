@@ -610,7 +610,7 @@ int Imu::pollInput(unsigned int to)
     p.fd = fd_;
     p.events = POLLIN;
 
-    int rPoll = poll(&p, 1, 0); // timeout is in millis
+    int rPoll = poll(&p, 1, to); // timeout is in millis
     if (rPoll > 0)
     {
         const ssize_t amt = ::read(fd_, &buffer_[0], buffer_.size());

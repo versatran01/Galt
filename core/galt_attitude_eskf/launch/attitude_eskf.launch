@@ -1,0 +1,16 @@
+<launch>
+  <!-- Name of the node -->
+  <arg name="eskf_node" default="attitude_eskf"/>
+
+  <!-- IMU topic to use -->
+  <arg name="imu_topic" default="/imu/imu"/>
+
+  <!-- Magnetic field topic to use -->
+  <arg name="field_topic" default="/imu/magnetic_field"/>
+
+  <node pkg="galt_attitude_eskf" name="$(arg eskf_node)" type="galt_attitude_eskf" output="screen">
+    <param name="imu_topic" type="string" value="$(arg imu_topic)"/>
+    <param name="field_topic" type="string" value="$(arg field_topic)"/>
+  </node>
+
+</launch>

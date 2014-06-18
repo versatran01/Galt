@@ -60,11 +60,13 @@ static inline float determinant(const Matrix<float,3,3>& A)
             A(0,2) * ( A(1,0)*A(2,1) - A(1,1)*A(2,0) );
 }
 
-AttitudeESKF::AttitudeESKF(float varAccel, float varGyro, float varGyroBias) :  m_q(), m_isStable(true)
+AttitudeESKF::AttitudeESKF(float varAccel, float varGyro, float varGyroBias) :  m_q(), lastTime_(0.0), m_isStable(true)
 {
 	m_Q.setIdentity();
 	m_R.setIdentity();
 	m_P.setZero();
+  
+  m_b.setZero();
 
 	//	gyro
 	m_Q.block<3,3>(0,0) *= varGyro;
@@ -73,11 +75,17 @@ AttitudeESKF::AttitudeESKF(float varAccel, float varGyro, float varGyroBias) :  
 	m_Q.block<3,3>(3,3) *= varGyroBias;
 
 	//	accelerometer
-	m_R *= varAccel;
+	m_R *= 10.0f;
 }
 
-void AttitudeESKF::predict(const Matrix<float,3,1>& wg, float dt)
+void AttitudeESKF::predict(const Matrix<float,3,1>& wg, double time)
 {
+    float dt = 0.01f;
+    if (lastTime_ != 0.0) {
+      dt = static_cast<float>(time - lastTime_);
+    }
+    lastTime_ = time;
+  
     static const Matrix<float,3,3> I3 = Matrix<float,3,3>::Identity();
     const Matrix<float,3,1> wt = (wg - m_b);	//	true gyro reading
     
@@ -118,7 +126,8 @@ void AttitudeESKF::update(const Matrix<float,3,1>& ab)
     gravity[2] = 1.0f;
 
     const Matrix<float,3,1> aPred = R.transpose() * gravity;
-        
+    predAccel_ = aPred;    
+    
     //  calculate gravity component of Jacobian and residual
     H.block<3,3>(0,0) = cross_skew(aPred);
     const Matrix<float,6,3> Ht = H.transpose();
@@ -150,7 +159,7 @@ void AttitudeESKF::update(const Matrix<float,3,1>& ab)
     m_q /= m_q.norm();
 
     for (int i=0; i < 3; i++) {
-        m_b[i] += dx[i+3];
+        //m_b[i] += dx[i+3];
     }
 }
 

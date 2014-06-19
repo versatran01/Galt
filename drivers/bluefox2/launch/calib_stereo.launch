@@ -9,7 +9,7 @@
     <arg name="rnode" value="cam$(arg right)" />
 
     <!-- Use lower fps for calibration -->
-    <arg name="fps" value="5.0" />
+    <arg name="fps" value="5" />
     <arg name="size" default="8x6" />
     <arg name="square" default="0.025" />
 

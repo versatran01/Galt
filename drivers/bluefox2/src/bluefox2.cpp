@@ -1,119 +1,138 @@
-#include "bluefox2/camera.h"
+#include "bluefox2/bluefox2.h"
 
 #define btoa(x) ((x) ? "true" : "false")
-#define TIMEOUT 300  // ms
 
 namespace bluefox2 {
 
-Camera::Camera(ros::NodeHandle param_nh)
-    : pnode_(param_nh), ok_(false), calibrated_(false) {
-  // Read and display settings from launch file
-  readSettings();
-  printSettings();
-
+Camera::Camera(string serial, mv_params_t mv_params)
+    : ok_(false),
+      serial_(serial),
+      params_(mv_params),
+      device_(NULL),
+      func_interface_(NULL),
+      stats_(NULL),
+      request_(NULL),
+      bluefox_settings_(NULL),
+      system_settings_(NULL) {
   // Count cameras
   device_count_ = device_manager_.deviceCount();
-  ROS_INFO("Camera count: %d", device_count_);
 
-  // Initialize camera
-  if ((id_ = findCameraSerial()) >= 0) {  // Found a camera
-    if (initCamera()) {                   // Initialized a camera
-      // Set up image transport publisher and camera info manager
-      image_transport::ImageTransport it(pnode_);
-      camera_pub_ = it.advertiseCamera("image_raw", 1);
-      camera_info_manager_ = CameraInfoManagerPtr(
-          new CameraInfoManager(pnode_, "bluefox2", calibration_url_));
-      calibrated_ = checkCameraInfo();
-      ok_ = true;
-      ROS_INFO("Camera %s initialized", serial_.c_str());
+  if (device_count_ > 0) {
+    if ((id_ = findDeviceId()) >= 0) {
+      device_ = device_manager_[id_];
+      std::cout << "Initializing camera" << device_->family.read() << "/"
+                << device_->serial.read() << std::endl;
     } else {
-      ROS_INFO("Camera %s initialization failed", serial_.c_str());
+      throw std::runtime_error("No device with serial number: " + serial_);
     }
   } else {
-    ROS_WARN("No specified camera found.");
+    throw std::runtime_error("No devices found.");
   }
 }
 
-Camera::~Camera() {
-  if (ok_) {
-    func_interface_->imageRequestReset(0, 0);
-    device_manager_[id_]->close();
-    ok_ = false;
-  }
-}
+Camera::~Camera() { close(); }
 
-void Camera::readSettings() {
-  // Required
-  if (!pnode_.getParam("serial", serial_)) {
-    serial_ = std::string("");
-    ROS_ERROR("No camera serial provided.");
-  }
-
-  // Optional
-  pnode_.param("use_color", use_color_, false);
-  pnode_.param("use_hdr", use_hdr_, false);
-  pnode_.param("has_hdr", has_hdr_, false);
-  pnode_.param("use_inverted_", use_inverted_, false);
-  pnode_.param("use_binning_", use_binning_, false);
-  pnode_.param("use_auto_exposure", use_auto_exposure_, false);
-  pnode_.param("exposure_time_us", exposure_time_us_, 10000);
-  pnode_.param("height", height_, 480);
-  pnode_.param("width", width_, 752);
-  pnode_.param("fps", fps_, 20.0);
-  pnode_.param("gain", gain_, 0.0);
-  pnode_.param<std::string>("frame_id", frame_id_, "bluefox2");
-  pnode_.param<std::string>("mode", mode_, "standalone");  // requires a hint
-  pnode_.param<std::string>("white_balance", white_balance_, "none");
-  if (!pnode_.getParam("calibration_url", calibration_url_)) {
-    calibration_url_ = "";
-    ROS_WARN("No calibration file specified.");
-  }
-}
-
-void Camera::printSettings() const {
-  ROS_INFO("Input settings:");
-  ROS_INFO("Serial:   %s", serial_.c_str());
-  ROS_INFO("Mode:     %s", mode_.c_str());
-  ROS_INFO("Calib:    %s", calibration_url_.c_str());
-  ROS_INFO("Frame:    %s", frame_id_.c_str());
-  ROS_INFO("Height:   %d", height_);
-  ROS_INFO("Width:    %d", width_);
-  ROS_INFO("FPS:      %f", fps_);
-  ROS_INFO("Gain:     %f", gain_);
-  ROS_INFO("Color:    %s", btoa(use_color_));
-  ROS_INFO("WBP:      %s", white_balance_.c_str());  // White balance parameter
-  ROS_INFO("Auto exp: %s", btoa(use_auto_exposure_));
-  ROS_INFO("Binning:  %s", btoa(use_binning_));
-  ROS_INFO("Inverted: %s", btoa(use_inverted_));
-  ROS_INFO("HDR:      %s", btoa(use_hdr_));
-}
-
-bool Camera::checkCameraInfo() const {
-  sensor_msgs::CameraInfoPtr camera_info(
-      new sensor_msgs::CameraInfo(camera_info_manager_->getCameraInfo()));
-  // Chech height, width and camera matrix
-  if (camera_info->width != (unsigned int)width_ ||
-      camera_info->height != (unsigned int)height_) {
-    ROS_WARN("bluefox2: Calibration dimension mismatch.");
-    return false;
-  }
-  if (!camera_info_manager_->isCalibrated()) {
-    ROS_WARN("bluefox2: Camera not calibrated.");
-    return false;
-  }
-  return true;
-}
-
-int Camera::findCameraSerial() const {
-  if (device_count_ > 0) {
-    for (int k = 0; k < device_count_; ++k) {
-      if (device_manager_[k]->serial.read() == serial_) {
-        return k;
-      }
+int Camera::findDeviceId() const {
+  for (int k = 0; k < device_count_; ++k) {
+    if (device_manager_[k]->serial.read() == serial_) {
+      return k;
     }
   }
   return -1;
 }
+
+bool Camera::open() {
+  try {
+    device_->open();
+  }
+  catch (const ImpactAcquireException &e) {
+    printMvErrorMsg(e, "Failed to open the device");
+    close();
+    return false;
+  }
+
+  try {
+    func_interface_ = new FunctionInterface(device_);
+  }
+  catch (const ImpactAcquireException &e) {
+    printMvErrorMsg(e, "Failed to create a function interface");
+    close();
+    return false;
+  }
+
+  try {
+    stats_ = new Statistics(device_);
+  }
+  catch (const ImpactAcquireException &e) {
+    printMvErrorMsg(e, "Fialed to initialize statistical info");
+    close();
+    return false;
+  }
+
+  bluefox_settings_ = new SettingsBlueFOX(device_);
+  system_settings_ = new SystemSettings(device_);
+
+  return true;
+}
+
+void Camera::close() {
+  if (device_ != NULL) {
+    device_->close();
+  }
+  if (func_interface_ != NULL) {
+    func_interface_->imageRequestReset(0, 0);
+    delete func_interface_;
+  }
+  if (stats_ != NULL) {
+    delete stats_;
+  }
+  if (request_ != NULL) {
+    delete request_;
+  }
+  if (bluefox_settings_ != NULL) {
+    delete bluefox_settings_;
+  }
+  if (system_settings_ != NULL) {
+    delete system_settings_;
+  }
+  ok_ = false;
+}
+
+void Camera::init(bool verbose) {
+  if (!(ok_ = open())) {
+    throw std::runtime_error("Failed to open device");
+  }
+
+  applySettings();
+
+  if (verbose) {
+    printSettings();
+  }
+}
+
+void Camera::applySettings() {
+  // AOI
+  setAoi(params_.width, params_.height);
+
+  // Binning
+  if (params_.binning) {
+    bluefox_settings_->cameraSetting.binningMode.write(cbmBinningHV);
+  }
+
+  // Color
+  if (params_.color) {
+  }
+
+  // Gain
+
+  // Exposure
+
+  // Mode
+}
+
+void Camera::printSettings() const {}
+
+void Camera::printStats() const {}
 
 void Camera::printMvErrorMsg(const ImpactAcquireException &e,
                              const std::string header) const {
@@ -124,38 +143,34 @@ void Camera::printMvErrorMsg(const ImpactAcquireException &e,
   PRESS_A_KEY;
 }
 
-bool Camera::ok() const { return ok_; }
+void Camera::setAoi(const int &w, const int &h) {
+  int w_max = bluefox_settings_->cameraSetting.aoiWidth.getMaxValue();
+  int w_min = bluefox_settings_->cameraSetting.aoiWidth.getMinValue();
+  int h_max = bluefox_settings_->cameraSetting.aoiHeight.getMaxValue();
+  int h_min = bluefox_settings_->cameraSetting.aoiHeight.getMinValue();
 
-int Camera::fps() const { return fps_; }
-
+  if (w > w_max || w < w_min || h > h_max || h < h_min) {
+    // Invalid settings of width and height
+    std::stringstream error_msg;
+    error_msg << "Invalid dimension, width: " << w << " out of [" << w_min
+              << "," << w_max << "], height: " << h << " out of [" << h_min
+              << "," << h_max << "]";
+    throw std::runtime_error(error_msg.str());
+  }
+  // Set StartX and StartY so that the image is centered
+  int x = (w_max - w) / 2;
+  int y = (h_max - h) / 2;
+  bluefox_settings_->cameraSetting.aoiStartX.write(x);
+  bluefox_settings_->cameraSetting.aoiStartY.write(y);
+  bluefox_settings_->cameraSetting.aoiWidth.write(w);
+  bluefox_settings_->cameraSetting.aoiHeight.write(h);
+}
+/*
 bool Camera::initCamera() {
   ROS_INFO("Initializing camera: %s(%s)",
            device_manager_[id_]->family.read().c_str(),
            device_manager_[id_]->serial.read().c_str());
 
-  try {
-    device_manager_[id_]->open();
-  }
-  catch (const ImpactAcquireException &e) {
-    printMvErrorMsg(e, "An error occurred while openning the device");
-    return false;
-  }
-
-  try {
-    func_interface_ = new FunctionInterface(device_manager_[id_]);
-  }
-  catch (const ImpactAcquireException &e) {
-    printMvErrorMsg(e, "An error occured while creating function interface");
-    return false;
-  }
-
-  try {
-    statistics_ = new Statistics(device_manager_[id_]);
-  }
-  catch (const ImpactAcquireException &e) {
-    printMvErrorMsg(e, "An error occurred while initializing statistical info");
-    return false;
-  }
 
   // Using the "Base" settings (default)
   mvIMPACT::acquire::SettingsBlueFOX settings(device_manager_[id_]);
@@ -284,7 +299,9 @@ bool Camera::initCamera() {
 
   return true;
 }
+*/
 
+/*
 bool Camera::grabImage(sensor_msgs::ImagePtr image) {
   bool status = false;
 
@@ -348,7 +365,9 @@ bool Camera::grabImage(sensor_msgs::ImagePtr image) {
   }
   return status;
 }
+*/
 
+/*
 void Camera::feedImage() {
   sensor_msgs::CameraInfoPtr camera_info(
       new sensor_msgs::CameraInfo(camera_info_manager_->getCameraInfo()));
@@ -366,5 +385,6 @@ void Camera::feedImage() {
     camera_pub_.publish(image, camera_info);
   }
 }
+*/
 
 }  // namepace bluefox2

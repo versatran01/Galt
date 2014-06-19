@@ -1,0 +1,5 @@
+<launch>
+    <node pkg="bluefox2" name="camera" type="bluefox2" output="screen">
+        <param name="color" type="bool" value="true" />
+    </node>
+</launch>

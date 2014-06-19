@@ -4,7 +4,7 @@
     <arg name="node" default="cam_$(arg serial)" />
     <arg name="size" default="8x6" />
     <arg name="square" default="0.1" />
-    <arg name="fps" value="5.0" />
+    <arg name="fps" value="5" />
 
     <include file="$(find bluefox2)/launch/mono.launch">
         <arg name="serial" value="$(arg serial)" />

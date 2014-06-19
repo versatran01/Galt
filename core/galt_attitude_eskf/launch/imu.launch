@@ -1,7 +1,7 @@
 <launch>
 
   <!-- Launch the 3DM w/ only IMU data streaming -->
-  <include file="$(find imu_3dm_gx4)/launch/imu.launch">
+  <include file="$(find imu_3dm_gx4)/launch/imu_filter.launch">
   </include>
 
   <!-- Point the filter to the correct topics of the 3DM -->

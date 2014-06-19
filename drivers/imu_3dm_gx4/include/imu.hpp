@@ -178,6 +178,7 @@ public:
       enum
       {
         Quaternion    = (1 << 0),
+        Bias = (1 << 1),
       };
       
       unsigned int fields;    /**< Which fields are valid in the struct */
@@ -185,6 +186,9 @@ public:
       float quaternion[4];    /**< Orientation quaternion (q0,q1,q2,q3) */
       uint16_t quatStatus;    /**< Quaternion status: 0 = invalid, 1 = valid, 2 = georeferenced to magnetic north */
             
+      float bias[3];          /**< Gyro bias */
+      uint16_t biasStatus;
+      
       FilterData() : fields(0) {}
     };
     
@@ -330,6 +334,11 @@ public:
      * @return 0 on timeout, negative value if NACK is received, positive on success.
      */
     int enableMeasurements(bool accel, bool magnetometer);
+    
+    /**
+     *
+     */
+    int enableBiasEstimation(bool enabled);
     
     /**
      *  @brief enableIMUStream Enable/disable streaming of IMU data

@@ -13,6 +13,8 @@
 #include <sensor_msgs/Imu.h>
 #include <sensor_msgs/MagneticField.h>
 #include <sensor_msgs/FluidPressure.h>
+#include <std_msgs/Float32.h>
+#include <geometry_msgs/Vector3Stamped.h>
 
 #include <tf/transform_broadcaster.h>
 #include <tf/transform_datatypes.h>
@@ -27,14 +29,16 @@ using namespace Eigen;
 AttitudeESKF eskf;
 ros::Publisher pubImu;
 ros::Publisher pubAccel;
+ros::Publisher pubBias;
+ros::Publisher pubAlpha;
 
 boost::shared_ptr<tf::TransformBroadcaster> tfBroadcaster;  //  for broadcasting body frame
 std::string bodyFrameName;
 
 void imu_callback(const sensor_msgs::ImuConstPtr& imu)
 {  
-  Vector3f wm;
-  Vector3f am;
+  Vector3d wm;
+  Vector3d am;
   
   wm[0] = imu->angular_velocity.x;
   wm[1] = imu->angular_velocity.y;
@@ -46,8 +50,8 @@ void imu_callback(const sensor_msgs::ImuConstPtr& imu)
   
   eskf.predict(wm,imu->header.stamp.toSec());
   eskf.update(am);
-  
-  quat Q = eskf.getState(); //  updated quaternion
+ 
+  quat Q = eskf.getQuat(); //  updated quaternion
     
   //  publish IMU topic
   sensor_msgs::Imu filtImu;
@@ -64,18 +68,27 @@ void imu_callback(const sensor_msgs::ImuConstPtr& imu)
   
   for (int i=0; i < 3; i++) {
     for (int j=0; j < 3; j++) {
-      filtImu.orientation_covariance[i*3 + j] = eskf.m_P(i,j);
+      filtImu.orientation_covariance[i*3 + j] = eskf.getCovariance()(i,j);
     }
   }
   
   pubImu.publish(filtImu);
   
   //  publish predicted acceleration
-  geometry_msgs::Vector3 ap;
-  ap.x = eskf.predAccel_[0];
-  ap.y = eskf.predAccel_[1];
-  ap.z = eskf.predAccel_[2];
+  geometry_msgs::Vector3Stamped ap;
+  ap.header.stamp = filtImu.header.stamp;
+  ap.vector.x = 0.0;//eskf.predAccel_[0];
+  ap.vector.y = 0.0;//eskf.predAccel_[1];
+  ap.vector.z = 0.0;//eskf.predAccel_[2];
   pubAccel.publish(ap);
+  
+  //  publish bias
+  geometry_msgs::Vector3Stamped bias;
+  bias.header.stamp = filtImu.header.stamp;
+  bias.vector.x = eskf.getGyroBias()[0];
+  bias.vector.y = eskf.getGyroBias()[1];
+  bias.vector.z = eskf.getGyroBias()[2];
+  pubBias.publish(bias);
   
   //  broadcast frame
   tf::Transform transform;
@@ -87,7 +100,7 @@ void imu_callback(const sensor_msgs::ImuConstPtr& imu)
 
 void field_callback(const sensor_msgs::MagneticFieldConstPtr& field)
 {
-
+  //log_i("%f, %f, %f", field->magnetic_field.x, field->magnetic_field.y, field->magnetic_field.z);
 }
 
 int main(int argc, char ** argv)
@@ -108,10 +121,18 @@ int main(int argc, char ** argv)
     
   //  filtered IMU output
   pubImu = nh.advertise<sensor_msgs::Imu>("filtered_imu", 1);
-  pubAccel = nh.advertise<geometry_msgs::Vector3>("predicted_accel", 1);
+  pubAccel = nh.advertise<geometry_msgs::Vector3Stamped>("predicted_accel", 1);
+  pubBias = nh.advertise<geometry_msgs::Vector3Stamped>("bias", 1);
   
   tfBroadcaster = boost::shared_ptr<tf::TransformBroadcaster>( new tf::TransformBroadcaster() );
   bodyFrameName = ros::this_node::getName() + "/bodyFrame";
+  
+  AttitudeESKF::VarSettings var;
+  var.accel[0] = var.accel[1] = var.accel[2] = 1.0;
+  var.gyro[0] = var.gyro[1] = var.gyro[2] = 0.001;
+  var.gyroBias[0] = var.gyroBias[1] = var.gyroBias[2] = 0.001;
+  var.mag[0] = var.mag[1] = var.mag[2] = 0.01;
+  eskf.setVariances(var);
   
   ros::spin();
   return 0;

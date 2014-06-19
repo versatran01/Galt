@@ -4,6 +4,7 @@
 #include <sensor_msgs/Imu.h>
 #include <sensor_msgs/MagneticField.h>
 #include <sensor_msgs/FluidPressure.h>
+#include <geometry_msgs/Vector3Stamped.h>
 
 #include <string>
 
@@ -18,6 +19,7 @@ ros::Publisher pubIMU;
 ros::Publisher pubMag;
 ros::Publisher pubPressure;
 ros::Publisher pubOrientation;
+ros::Publisher pubBias;
 
 void publish_data(const Imu::IMUData& data)
 {
@@ -68,6 +70,14 @@ void publish_filter(const Imu::FilterData& data)
   orientation.filterStatus = data.quatStatus;
 
   pubOrientation.publish(orientation);
+  
+  geometry_msgs::Vector3Stamped bias;
+  bias.header.stamp = orientation.header.stamp;
+  bias.vector.x = data.bias[0];
+  bias.vector.y = data.bias[1];
+  bias.vector.z = data.bias[2];
+  
+  pubBias.publish(bias);
 }
 
 int main(int argc, char **argv)
@@ -94,6 +104,7 @@ int main(int argc, char **argv)
 
   if (use_filter) {
     pubOrientation = nh.advertise<imu_3dm_gx4::Orientation>("orientation", 1);
+    pubBias = nh.advertise<geometry_msgs::Vector3Stamped>("bias", 1);
   }
 
   Imu imu(device);
@@ -160,7 +171,7 @@ int main(int argc, char **argv)
                         | Imu::IMUData::Magnetometer | Imu::IMUData::Barometer));
 
     log_w("Selecting filter decimation rate: %u", filter_decimation);
-    assert_throw(imu.setFilterDataRate(filter_decimation, Imu::FilterData::Quaternion));
+    assert_throw(imu.setFilterDataRate(filter_decimation, Imu::FilterData::Quaternion | Imu::FilterData::Bias));
 
     log_w("Enabling IMU data stream");
     assert_throw(imu.enableIMUStream(true));
@@ -171,6 +182,9 @@ int main(int argc, char **argv)
 
       log_w("Enabling filter measurements");
       assert_throw(imu.enableMeasurements(true, false));  // TODO: Make this an option
+      
+      log_w("Enabling gyro bias estimation");
+      assert_throw(imu.enableBiasEstimation(true));
     } else {
       log_w("Disabling filter data stream");
       assert_throw(imu.enableFilterStream(false));

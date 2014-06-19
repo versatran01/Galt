@@ -577,6 +577,24 @@ int Imu::enableMeasurements(bool accel, bool magnetometer)
   return sendCommand(p, kTimeout);
 }
 
+int Imu::enableBiasEstimation(bool enabled)
+{
+  Imu::Packet p(0x0D, 0x05);
+  p.payload[0] = 0x05;
+  p.payload[1] = 0x14;
+  p.payload[2] = 0x01;
+  
+  uint16_t flag = 0xFFFE;
+  if (enabled) {
+    flag = 0xFFFF;
+  }
+  
+  encode(&p.payload[3],flag);
+  p.calcChecksum();
+  
+  return sendCommand(p,kTimeout);
+}
+
 int Imu::enableIMUStream(bool enabled)
 {
     Packet p(0x0C, 0x05);
@@ -778,6 +796,15 @@ void Imu::processPacket()
         {
           decode(&packet_.payload[idx+2], 4, filterData.quaternion);
           decode(&packet_.payload[idx+2+sizeof(float)*4], 1, &filterData.quatStatus);
+        }
+        else if (ddesc == 0x06)
+        {
+          decode(&packet_.payload[idx+2], 3, filterData.bias);
+          decode(&packet_.payload[idx+2+sizeof(float)*3], 1, &filterData.biasStatus);
+          
+          if (filterData.biasStatus == 0) {
+            log_i("Bias is invalid");
+          }
         }
         else {
           log_w("Warning: Unsupported data field present in estimator packet");

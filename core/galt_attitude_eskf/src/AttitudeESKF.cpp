@@ -10,18 +10,20 @@
  */
 
 #include "AttitudeESKF.hpp"
+#include <error_handling.hpp>
 
 using namespace std;
 using namespace Eigen;
 
 //	skew symmetric matrix
-static inline Matrix<float,3,3> cross_skew(const Matrix<float,3,1>& w)
+template <typename T>
+static inline Matrix<T,3,3> cross_skew(const Matrix<T,3,1>& w)
 {
-    Matrix<float,3,3> W = Matrix<float,3,3>::Zero();
+    Matrix<T,3,3> W = Matrix<T,3,3>::Zero();
     
     W(0,1) = -w(2);
     W(0,2) = w(1);
-    
+   
     W(1,0) = w(2);
     W(1,2) = -w(0);
     
@@ -32,10 +34,11 @@ static inline Matrix<float,3,3> cross_skew(const Matrix<float,3,1>& w)
 }
 
 //	hardcoded 3x3 invert (unchecked)
-static inline Matrix<float,3,3> invert(const Matrix<float,3,3>& A, float det)
+template <typename T>
+static inline Matrix<T,3,3> invert(const Matrix<T,3,3>& A, T det)
 {
-    Matrix<float,3,3> C;
-    det = 1.0f / det;
+    Matrix<T,3,3> C;
+    det = 1.0 / det;
     
     C(0,0) = (-A(2,1)*A(1,2) + A(1,1)*A(2,2)) * det;
     C(0,1) = (-A(0,1)*A(2,2) + A(0,2)*A(2,1)) * det;
@@ -53,132 +56,164 @@ static inline Matrix<float,3,3> invert(const Matrix<float,3,3>& A, float det)
 }
 
 //	hardcoded determinant
-static inline float determinant(const Matrix<float,3,3>& A)
+template <typename T>
+static inline T determinant(const Matrix<T,3,3>& A)
 {
     return  A(0,0) * ( A(1,1)*A(2,2) - A(1,2)*A(2,1) ) -
             A(0,1) * ( A(1,0)*A(2,2) - A(1,2)*A(2,0) ) +
             A(0,2) * ( A(1,0)*A(2,1) - A(1,1)*A(2,0) );
 }
 
-AttitudeESKF::AttitudeESKF(float varAccel, float varGyro, float varGyroBias) :  m_q(), lastTime_(0.0), m_isStable(true)
+AttitudeESKF::AttitudeESKF() :  
+  q_(), isStable_(true), lastTime_(0.0), steadyCount_(0)
 {
-	m_Q.setIdentity();
-	m_R.setIdentity();
-	m_P.setZero();
+  P_.setZero();
+  b_.setZero();
   
-  m_b.setZero();
-
-	//	gyro
-	m_Q.block<3,3>(0,0) *= varGyro;
-
-	//	gyro bias
-	m_Q.block<3,3>(3,3) *= varGyroBias;
-
-	//	accelerometer
-	m_R *= 10.0f;
+  estBias_ = true;
+  useMag_ = false;
+  
+  angVel_.setZero();
 }
 
-void AttitudeESKF::predict(const Matrix<float,3,1>& wg, double time)
+void AttitudeESKF::predict(const Matrix<scalar_t,3,1>& wg, double time)
 {
-    float dt = 0.01f;
-    if (lastTime_ != 0.0) {
-      dt = static_cast<float>(time - lastTime_);
-    }
-    lastTime_ = time;
+  static const Matrix<scalar_t,3,3> I3 = Matrix<scalar_t,3,3>::Identity(); //  identity R3
   
-    static const Matrix<float,3,3> I3 = Matrix<float,3,3>::Identity();
-    const Matrix<float,3,1> wt = (wg - m_b);	//	true gyro reading
-    
-    //	error-state jacobian
-    Matrix<float,6,6> F;
-    F.setZero();
+  scalar_t dt = 0.01;
+  if (lastTime_ != 0.0 && time > lastTime_) {
+    dt = static_cast<scalar_t>(time - lastTime_);
+  }
+  lastTime_ = time;  
+  angVel_ = wg;
 
-    F.block<3,3>(0,0) = I3 - cross_skew(wt * dt);
-    F.block<3,3>(0,3) = I3 * -dt;
-    F.block<3,3>(3,3) = I3;
-    
-    //  integrate nominal state
-    m_q.integrateRungeKutta4(quat(0, wt[0], wt[1], wt[2]), dt);
-    
-    //  integrate covariance
-    m_P = F * m_P * F.transpose() + m_Q;
+  const Matrix<scalar_t,3,1> wt = (wg - b_);   //	true gyro reading
+  
+  //	error-state jacobian
+  Matrix<scalar_t,6,6> F;
+  F.setZero();
+
+  F.block<3,3>(0,0) = I3 - cross_skew<scalar_t>(wt * dt);
+  F.block<3,3>(0,3) = I3 * -dt;
+  F.block<3,3>(3,3) = I3;
+  
+  //  integrate nominal state
+  q_.integrateRungeKutta4(quat(0.0, wt[0], wt[1], wt[2]), dt);
+  
+  Matrix<scalar_t,6,6> Q;
+  Q.setZero();
+  
+  const bool rotating = angVel_.norm() > 1e-2;
+  for (int i=0; i < 3; i++)
+  {
+    Q(i,i) = var_.gyro[i];
+    Q(i+3,i+3) = (rotating) ? (0.0) : var_.gyroBias[i];
+  }
+  
+  //  integrate covariance  
+  P_ = F * P_ * F.transpose() + Q;
 }
 
-void AttitudeESKF::update(const Matrix<float,3,1>& ab)
-{
-    //  Jacobian of h(x,dx) w.r.t. dx
-    Matrix <float,3,6> H;
+void AttitudeESKF::update(const Matrix<scalar_t,3,1>& ab)
+{   
+  Matrix<scalar_t,6,1> dx;  //  error state, we will calculate
+  Matrix<scalar_t,6,6> A;   //  for updating covariance
+  
+  //  rotation matrix: body -> world
+  const Matrix<scalar_t,3,3> R = q_.to_matrix().cast<scalar_t>();
+  
+  Matrix<scalar_t,3,1> gravity;
+  gravity[0] = 0.0;
+  gravity[1] = 0.0;
+  gravity[2] = 1.0;
+
+  //  predicted gravity vector
+  const Matrix<scalar_t,3,1> aPred = R.transpose() * gravity;
+  
+  if (!useMag_)
+  {   
+    Matrix <scalar_t,3,6> H;
     H.setZero();
     
-    //  rotation matrix: body -> world
-    const Matrix<float,3,3> R = m_q.to_matrix();
-
-    //  normalized measurement & prediction
-    Matrix<float,3,1> a = ab;
-    float anorm = a.norm();
-    if (anorm > 1e-6f) {
-    	a /= anorm;
+    Matrix <scalar_t,3,3> R;
+    R.setZero();
+    for (int i=0; i < 3; i++) {
+      R(i,i) = var_.accel[i];
     }
-
-    Matrix<float,3,1> gravity;
-    gravity[0] = 0.0f;
-    gravity[1] = 0.0f;
-    gravity[2] = 1.0f;
-
-    const Matrix<float,3,1> aPred = R.transpose() * gravity;
-    predAccel_ = aPred;    
     
     //  calculate gravity component of Jacobian and residual
     H.block<3,3>(0,0) = cross_skew(aPred);
-    const Matrix<float,6,3> Ht = H.transpose();
-
-    Matrix<float,3,1> r = a - aPred;
- 
-    Matrix<float,3,3> S = H * m_P * Ht + m_R;
-    const float det = determinant(S);
-
-    if (std::abs(det) <= 1e-6f) {	//	approaching machine epsilon
-    	m_isStable = false;
-    	return;
-    } else {
-    	m_isStable = true;
-    }
-
-    //	invert
-    S = invert(S,det);
-
-    //  calculate kalman gain and error
-    Matrix<float,6,3> K = m_P * Ht * S;
-    Matrix<float,6,1> dx = K * r;
+    const Matrix<scalar_t,3,1> r = ab - aPred;
+  
+    //  solve for the kalman gain using fast 3x3 invert
+    Matrix<scalar_t,3,3> S = H * P_ * H.transpose() + R;
+    Matrix<scalar_t,3,3> Sinv;
     
-    //  covariance update
-    m_P = (Matrix<float,6,6>::Identity() - K * H) * m_P;
-
-    //  state update
-    m_q = m_q * quat(1.0f, dx(0), dx(1), dx(2));
-    m_q /= m_q.norm();
-
-    for (int i=0; i < 3; i++) {
-        //m_b[i] += dx[i+3];
+    const scalar_t det = determinant(S);
+    if (det < 1e-5) {
+      isStable_ = false;
+      return;
+    } else {
+      isStable_ = true;
     }
+    
+    Sinv = invert(S, det);  //  safe to invert
+    const Matrix<scalar_t,6,3> K = P_ * H.transpose() * Sinv;
+    
+    dx = K * r;
+    A = K * H;
+  }
+  else
+  {
+    Matrix <scalar_t,6,6> H;
+    H.setZero();
+  }
+  
+  //  perform state update  
+  P_ = (Matrix<scalar_t,6,6>::Identity() - A) * P_;
+  
+  q_ = q_ * quat(1.0, dx[0], dx[1], dx[2]);
+  q_ /= q_.norm();
+
+  if (angVel_.norm() < 1.0e-2) {  //  angular velocity is small
+    steadyCount_++;
+  } else {
+    steadyCount_ = 0;
+  }
+  
+  if (estBias_ && updateCount_ > 10) //  don't estimate bias on first few updates
+  {
+    if (steadyCount_ > 10) {
+      for (int i=0; i < 3; i++) {
+          b_[i] += dx[i+3];
+      }
+    }
+  }
+  else {
+    b_.setZero();
+  }
+  
+  updateCount_++;
 }
 
-Eigen::Matrix<float,3,1> AttitudeESKF::getRPY() const
-{	
-	const Matrix<float,3,3> R = m_q.to_matrix();
-	Matrix<float,3,1> rpy;
 
-	float sth = -R(2,0);
+//  (world) = Rz * Ry * Rx (body)
+Eigen::Matrix<double,3,1> AttitudeESKF::getRPY() const
+{	
+	const Matrix<double,3,3> R = q_.to_matrix().cast<double>();
+	Matrix<double,3,1> rpy;
+
+	double sth = -R(2,0);
 	if (sth > 1.0f) {
 		sth = 1.0f;
 	} else if (sth < -1.0f) {
 		sth = -1.0f;
 	}
 
-	const float theta = std::asin(sth);
-	const float cth = std::sqrt(1.0f - sth*sth);
+	const double theta = std::asin(sth);
+	const double cth = std::sqrt(1.0f - sth*sth);
 
-	float phi, psi;
+	double phi, psi;
 	if (cth < 1e-6f)
 	{
 		phi = std::atan2(R(0,1), R(1,1));
@@ -190,8 +225,8 @@ Eigen::Matrix<float,3,1> AttitudeESKF::getRPY() const
 		psi = std::atan2(R(1,0), R(0,0));
 	}
 
-	rpy[0] = phi;
-	rpy[1] = theta;
-	rpy[2] = psi;
+	rpy[0] = phi;   //  x
+	rpy[1] = theta; //  y
+	rpy[2] = psi;   //  z
 	return rpy;
 }

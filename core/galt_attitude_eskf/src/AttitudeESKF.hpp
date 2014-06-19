@@ -16,76 +16,130 @@
 
 /**
  *  @class AttitudeESKF
- *  @brief Implementation of an error-state EKF for attidude determination using Quaternions
+ *  @brief Implementation of an error-state EKF for attitude determination using Quaternions
  *  @note Gravity is the attitude vector in this imeplementaiton.
  *  @see 'Attitude Error Representations for Kalman Filtering' F. Landis Markley
  */
 class AttitudeESKF
 {
 public:
-    
-    /**
-     *  @brief Ctor, initializes P,Q and R matrices to reasonable values
-     *
-     *	@param varAccel Estimated variance of accerometer noise
-     *	@param varGyro Estimated variance of gyroscope noise
-     *	@param varGyroBias Estimated variance of gyroscope bias noise
-     */
-    AttitudeESKF(float varAccel = 1.0f, float varGyro = 0.001f, float varGyroBias = 0.001f);
-    
-    /**
-     *  @brief Perform the prediction step
-     *  @param wg Uncorrected gyroscope readings in body frame
-     *  @param time Current time in seconds
-     *
-     *  @note Integrates the nominal state using RK4.
-     */
-    void predict(const Eigen::Matrix<float,3,1>& wg, double time);
-    
-    /**
-     *  @brief Perform the update step
-     *  @param ab Accelerometer reading in body frame (units of Gs)
-     */
-    void update(const Eigen::Matrix<float,3,1>& ab);
-    
-    /**
-     *  @brief Orientation as quaternion
-     */
-    const quat& getState() const { return m_q; }
+  
+  typedef double scalar_t;  /**< Type used for all calculations, change as performance requires */
 
-    /**
-     *	@brief Get Roll-Pitch-Yaw as a 3-element vector
-     */
-    Eigen::Matrix<float,3,1> getRPY() const;
+  static_assert(std::is_fundamental<scalar_t>::value && !std::numeric_limits<scalar_t>::is_integer, 
+                "scalar_t must be non-integer fundamental type");
+  
+  typedef Eigen::Matrix<scalar_t,3,1> vec3; /**< Vector in R3 */
+  
+  /**
+   * @brief The VarSettings struct
+   */
+  struct VarSettings {
+    scalar_t accel[3];
+    scalar_t gyro[3];
+    scalar_t gyroBias[3];
+    scalar_t mag[3];
     
-    /**
-     *  @brief Bias estimate
-     */
-    const Eigen::Matrix<float,3,1>& getGyroBias() const { return m_b; }
-    
-    /**
-     *  @brief Set the steady state estimate of gyro bias
-     */
-    void setGyroBias(const Eigen::Matrix<float,3,1>& bias) { m_b = bias; }
+    VarSettings() {
+      for (int i=0; i < 3; i++) {
+        accel[i] = gyro[i] = gyroBias[i] = mag[i] = 0.0;
+      }
+    }
+  };
+  
+  /**
+   * @brief The MagCalibration struct
+   */
+  struct MagCalibration {
+    scalar_t bias[3];   /**< Magnetometer bias, default [0 0 0] */
+    scalar_t scale[3];
+    scalar_t rstd;
+  };
+  
+  /**
+   *  @brief Ctor, initializes state to all zeros
+   */
+  AttitudeESKF();
 
-    /**
-     *  @brief False if kalman gain becomes singular
-     */
-    bool isStable() const { return m_isStable; }
+  /**
+   *  @brief Perform the prediction step
+   *  @param wg Uncorrected gyroscope readings in body frame
+   *  @param time Current time in seconds
+   *
+   *  @note Integrates the nominal state using RK4.
+   */
+  void predict(const Eigen::Matrix<scalar_t,3,1>& wg, double time);
+  
+  /**
+   *  @brief Perform the update step
+   *  @param ab Accelerometer reading in body frame (units of Gs)
+   */
+  void update(const Eigen::Matrix<scalar_t,3,1>& ab);
+  
+  /**
+   *	@brief Get Roll-Pitch-Yaw as a 3-element vector
+   */
+  Eigen::Matrix<scalar_t,3,1> getRPY() const;
+  
+  /**
+   * @brief setEstimatesBias
+   * @param estBias
+   */
+  void setEstimatesBias(bool estBias) { estBias_ = estBias; }
+  
+  /**
+   * @brief setUsesMagnetometer
+   * @param useMag
+   */
+  void setUsesMagnetometer(bool useMag) { useMag_ = useMag; }
+  
+  /**
+   * @brief setVariances
+   * @param var
+   */
+  void setVariances(const VarSettings& var) { var_ = var; }
+  
+  /**
+   * @brief getQuat
+   * @return 
+   */
+  const quat& getQuat() const { return q_; }
+  
+  /**
+   * @brief getGyroBias
+   * @return 
+   */
+  const Eigen::Matrix<scalar_t,3,1>& getGyroBias() const { return b_; }
+  
+  /**
+   * @brief getCovariance
+   * @return 
+   */
+  const Eigen::Matrix<scalar_t,6,6>& getCovariance() const { return P_; }
+  
+  /**
+   * @brief isStable
+   * @return 
+   */
+  bool isStable() const { return isStable_; }
+  
+private:
+  quat q_;                         /// Orientation
+  Eigen::Matrix<scalar_t,3,1> b_;  /// Gyro bias
+  Eigen::Matrix<scalar_t,6,6> P_;  /// System covariance
     
-//  temp: public
-    
-    quat m_q;
-    Eigen::Matrix<float,3,1> m_b;
-    
-    double lastTime_;
-    Eigen::Vector3f predAccel_;
-    
-    Eigen::Matrix<float,6,6> m_P;
-    Eigen::Matrix<float,6,6> m_Q;
-    Eigen::Matrix<float,3,3> m_R;
-    
-    bool m_isStable;
+  double lastTime_;
+  vec3 angVel_;
+  vec3 magRef_;  //  North
+  
+  unsigned long steadyCount_;
+  unsigned long updateCount_;
+  
+  bool isStable_;
+  bool estBias_;
+  bool useMag_;
+  
+  VarSettings var_;
 };
 
 #endif /* defined(__AttitudeESKF__) */

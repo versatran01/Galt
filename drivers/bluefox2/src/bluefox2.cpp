@@ -15,12 +15,11 @@ Camera::Camera(string serial, mv_params_t mv_params)
       bluefox_settings_(NULL),
       system_settings_(NULL) {
   // Count cameras
-  device_count_ = device_manager_.deviceCount();
 
-  if (device_count_ > 0) {
+  if ((device_count_ = device_manager_.deviceCount()) > 0) {
     if ((id_ = findDeviceId()) >= 0) {
       device_ = device_manager_[id_];
-      std::cout << "Initializing camera" << device_->family.read() << "/"
+      std::cout << "Initializing camera: " << device_->family.read() << "/"
                 << device_->serial.read() << std::endl;
     } else {
       throw std::runtime_error("No device with serial number: " + serial_);
@@ -111,6 +110,9 @@ void Camera::init(bool verbose) {
 }
 
 void Camera::applySettings() {
+  // prefill the capture queue
+  system_settings_->requestCount.write(1);
+
   // AOI
   setAoi(params_.width, params_.height);
 
@@ -121,13 +123,87 @@ void Camera::applySettings() {
 
   // Color
   if (params_.color) {
+    bluefox_settings_->imageDestination.pixelFormat.write(idpfRGB888Packed);
+    if (params_.white_balance == "indoor") {
+      bluefox_settings_->imageProcessing.whiteBalance.write(wbpFluorescent);
+    } else if (params_.white_balance == "outdoor") {
+      bluefox_settings_->imageProcessing.whiteBalance.write(wbpDayLight);
+    }
+  } else {
+    bluefox_settings_->imageDestination.pixelFormat.write(idpfRaw);
   }
 
   // Gain
+  bluefox_settings_->cameraSetting.autoGainControl.write(agcOff);
+  if (params_.gain >= 0.0) {
+    bluefox_settings_->cameraSetting.gain_dB.write(params_.gain);
+  } else {
+    bluefox_settings_->cameraSetting.autoGainControl.write(agcOn);
+  }
 
-  // Exposure
+  // Expose
+  if (params_.auto_expose) {
+    bluefox_settings_->cameraSetting.autoControlParameters.controllerSpeed
+        .write(acsUserDefined);
+    bluefox_settings_->cameraSetting.autoControlParameters.controllerGain.write(
+        0.5);
+    bluefox_settings_->cameraSetting.autoControlParameters
+        .controllerIntegralTime_ms.write(100);
+    bluefox_settings_->cameraSetting.autoControlParameters
+        .controllerDerivativeTime_ms.write(0.0001);
+    bluefox_settings_->cameraSetting.autoControlParameters
+        .desiredAverageGreyValue.write(100);
+    bluefox_settings_->cameraSetting.autoControlParameters
+        .controllerDelay_Images.write(0);
+    bluefox_settings_->cameraSetting.autoControlParameters.exposeLowerLimit_us
+        .write(50);
+    bluefox_settings_->cameraSetting.autoControlParameters.exposeUpperLimit_us
+        .write(params_.expose_us);
+    bluefox_settings_->cameraSetting.autoExposeControl.write(aecOn);
+  } else {
+    bluefox_settings_->cameraSetting.expose_us.write(params_.expose_us);
+  }
 
   // Mode
+  if (params_.mode == "master") {
+    // settings.cameraSetting.triggerMode.write(ctmOnDemand);
+    bluefox_settings_->cameraSetting.flashMode.write(cfmDigout0);
+    bluefox_settings_->cameraSetting.flashType.write(cftStandard);
+    bluefox_settings_->cameraSetting.flashToExposeDelay_us.write(0);
+  } else if (params_.mode == "slave") {
+    bluefox_settings_->cameraSetting.triggerMode.write(ctmOnHighLevel);
+    bluefox_settings_->cameraSetting.triggerSource.write(ctsDigIn0);
+    bluefox_settings_->cameraSetting.frameDelay_us.write(0);
+  }
+
+  // TODO: how to detect if camera supports hdr mode
+  // HDR
+  // std::cout << "hdr" << std::endl;
+  // if (params_.hdr) {
+  //   bluefox_settings_->cameraSetting.getHDRControl().HDRMode.write(cHDRmFixed0);
+  //   bluefox_settings_->cameraSetting.getHDRControl().HDREnable.write(bTrue);
+  //   std::cout << "Enable HDR ..." << std::endl;
+  //   std::cout << "KneePoint 0:" << std::endl;
+  //   std::cout << "  Voltage (mv):      "
+  //             << bluefox_settings_->cameraSetting.getHDRControl()
+  //                    .getHDRKneePoint(0)
+  //                    .HDRControlVoltage_mV.read() << std::endl;
+  //   std::cout << "  Parts per Million: "
+  //             << bluefox_settings_->cameraSetting.getHDRControl()
+  //                    .getHDRKneePoint(0)
+  //                    .HDRExposure_ppm.read() << std::endl;
+  //   std::cout << "KneePoint 1:" << std::endl;
+  //   std::cout << "  Voltage (mv):      "
+  //             << bluefox_settings_->cameraSetting.getHDRControl()
+  //                    .getHDRKneePoint(1)
+  //                    .HDRControlVoltage_mV.read() << std::endl;
+  //   std::cout << "  Parts per Million: "
+  //             << bluefox_settings_->cameraSetting.getHDRControl()
+  //                    .getHDRKneePoint(1)
+  //                    .HDRExposure_ppm.read() << std::endl;
+  // } else {
+  //   bluefox_settings_->cameraSetting.getHDRControl().HDREnable.write(bFalse);
+  // }
 }
 
 void Camera::printSettings() const {}
@@ -165,144 +241,8 @@ void Camera::setAoi(const int &w, const int &h) {
   bluefox_settings_->cameraSetting.aoiWidth.write(w);
   bluefox_settings_->cameraSetting.aoiHeight.write(h);
 }
-/*
-bool Camera::initCamera() {
-  ROS_INFO("Initializing camera: %s(%s)",
-           device_manager_[id_]->family.read().c_str(),
-           device_manager_[id_]->serial.read().c_str());
 
-
-  // Using the "Base" settings (default)
-  mvIMPACT::acquire::SettingsBlueFOX settings(device_manager_[id_]);
-  ROS_INFO("Setting camera...");
-
-  // Height
-  if (height_ > 0) {
-    settings.cameraSetting.aoiHeight.write(height_);
-    ROS_WARN("Height: %d", height_);
-  }
-
-  // Width
-  if (width_ > 0) {
-    settings.cameraSetting.aoiWidth.write(width_);
-    ROS_WARN("Width: %d", width_);
-  }
-
-  // Binning
-  if (use_binning_) {
-    settings.cameraSetting.binningMode.write(cbmBinningHV);
-    ROS_WARN("2X Binning");
-  } else {
-    ROS_WARN("No Binning");
-  }
-
-  // Gain
-  settings.cameraSetting.autoGainControl.write(agcOff);
-  if (gain_ >= 0.0) {
-    settings.cameraSetting.gain_dB.write(gain_);
-    ROS_WARN("Gain: %f", gain_);
-  } else {
-    settings.cameraSetting.autoGainControl.write(agcOn);
-    ROS_WARN("Auto Gain");
-  }
-
-  // Color
-  if (use_color_) {
-    settings.imageDestination.pixelFormat.write(idpfRGB888Packed);
-    if (white_balance_ == "indoor") {
-      settings.imageProcessing.whiteBalance.write(wbpFluorescent);
-    } else if (white_balance_ == "outdoor") {
-      settings.imageProcessing.whiteBalance.write(wbpDayLight);
-    }
-    ROS_WARN("White Balance: %s", white_balance_.c_str());
-    ROS_WARN("Color Images");
-  } else {
-    settings.imageDestination.pixelFormat.write(idpfRaw);
-    ROS_WARN("Grayscale/Bayer Images");
-  }
-
-  // Auto exposure
-  // modified controller for better results, be careful about the minimum
-  // exposure time
-  if (use_auto_exposure_) {
-    settings.cameraSetting.autoControlParameters.controllerSpeed.write(
-        acsUserDefined);
-    settings.cameraSetting.autoControlParameters.controllerGain.write(0.5);
-    settings.cameraSetting.autoControlParameters.controllerIntegralTime_ms
-        .write(100);
-    settings.cameraSetting.autoControlParameters.controllerDerivativeTime_ms
-        .write(0.0001);
-    settings.cameraSetting.autoControlParameters.desiredAverageGreyValue.write(
-        100);
-    settings.cameraSetting.autoControlParameters.controllerDelay_Images.write(
-        0);
-    settings.cameraSetting.autoControlParameters.exposeLowerLimit_us.write(50);
-    settings.cameraSetting.autoControlParameters.exposeUpperLimit_us.write(
-        exposure_time_us_);
-    settings.cameraSetting.autoExposeControl.write(aecOn);
-    ROS_WARN("Auto Exposure w/ Max Exposure Time (us): %d",
-             settings.cameraSetting.autoControlParameters.exposeUpperLimit_us
-                 .read());
-  } else {
-    settings.cameraSetting.expose_us.write(exposure_time_us_);
-    ROS_WARN("Exposure Time (us): %d", settings.cameraSetting.expose_us.read());
-  }
-
-  // HDR
-  if (has_hdr_) {
-    if (use_hdr_) {
-      settings.cameraSetting.getHDRControl().HDRMode.write(cHDRmFixed0);
-      settings.cameraSetting.getHDRControl().HDREnable.write(bTrue);
-      ROS_WARN("Enable HDR ...");
-      ROS_WARN("KneePoint 0:");
-      ROS_WARN("  Voltage (mV):      %d", settings.cameraSetting.getHDRControl()
-                                              .getHDRKneePoint(0)
-                                              .HDRControlVoltage_mV.read());
-      ROS_WARN("  Parts per Million: %d", settings.cameraSetting.getHDRControl()
-                                              .getHDRKneePoint(0)
-                                              .HDRExposure_ppm.read());
-      ROS_WARN("KneePoint 1:");
-      ROS_WARN("  Voltage (mV):      %d", settings.cameraSetting.getHDRControl()
-                                              .getHDRKneePoint(1)
-                                              .HDRControlVoltage_mV.read());
-      ROS_WARN("  Parts per Million: %d", settings.cameraSetting.getHDRControl()
-                                              .getHDRKneePoint(1)
-                                              .HDRExposure_ppm.read());
-    } else {
-      settings.cameraSetting.getHDRControl().HDREnable.write(bFalse);
-      ROS_WARN("HDR Off");
-    }
-  } else {
-    ROS_WARN("No HDR");
-  }
-
-  // prefill the capture queue. There can be more then 1 queue for some device,
-  // but only one for now
-  mvIMPACT::acquire::SystemSettings sys_settings(device_manager_[id_]);
-  sys_settings.requestCount.write(1);
-
-  // Mode
-  if (mode_ == "master") {
-    ROS_WARN("Set Master Camera");
-    // settings.cameraSetting.triggerMode.write(ctmOnDemand);
-    settings.cameraSetting.flashMode.write(cfmDigout0);
-    settings.cameraSetting.flashType.write(cftStandard);
-    settings.cameraSetting.flashToExposeDelay_us.write(0);
-  } else if (mode_ == "slave") {
-    ROS_WARN("Set Slave Camera");
-    settings.cameraSetting.triggerMode.write(ctmOnHighLevel);
-    settings.cameraSetting.triggerSource.write(ctsDigIn0);
-    settings.cameraSetting.frameDelay_us.write(0);
-  } else {
-    ROS_WARN("Standalone Camera");
-  }
-
-  return true;
-}
-*/
-
-/*
-bool Camera::grabImage(sensor_msgs::ImagePtr image) {
+bool Camera::grabImage(mv_image_t &mv_image) {
   bool status = false;
 
   // Request and wait for image
@@ -310,81 +250,54 @@ bool Camera::grabImage(sensor_msgs::ImagePtr image) {
   usleep(10000);  // necessary short sleep to warm up the camera
 
   int requestNr = INVALID_ID;
-  requestNr = func_interface_->imageRequestWaitFor(TIMEOUT);
+  requestNr = func_interface_->imageRequestWaitFor(TIMEOUT_MS);
 
   // Got image
   if (func_interface_->isRequestNrValid(requestNr)) {
-    pRequest_ = func_interface_->getRequest(requestNr);
-    if (pRequest_->isOK()) {
+    request_ = func_interface_->getRequest(requestNr);
+    if (request_->isOK()) {
       // Set image properties
-      int channels = pRequest_->imageChannelCount.read();
-      image->height = pRequest_->imageHeight.read();
-      image->width = pRequest_->imageWidth.read();
-      image->step =
-          pRequest_->imageChannelCount.read() * pRequest_->imageWidth.read();
-      if (channels == 1) {
-        image->encoding = sensor_msgs::image_encodings::MONO8;
-      } else if (channels == 3) {
-        image->encoding = sensor_msgs::image_encodings::BGR8;
-      }
+      mv_image.channel = request_->imageChannelCount.read();
+      mv_image.height = request_->imageHeight.read();
+      mv_image.width = request_->imageWidth.read();
+      mv_image.step = mv_image.channel * mv_image.width;
+
       // Resize image only when necessary
-      if (image->data.size() != image->step * image->height) {
-        image->data.resize(image->step * image->height);
+      if (mv_image.data.size() !=
+          (unsigned int)(mv_image.step * mv_image.height)) {
+        mv_image.data.resize(mv_image.step * mv_image.height);
       }
+
       // Copy data
-      const unsigned char *image_frame = NULL;
-      image_frame = (const unsigned char *)pRequest_->imageData.read();
-      if (use_inverted_) {
-        std::reverse_copy(image_frame,
-                          image_frame + image->width * image->height * channels,
-                          &image->data[0]);
+      const unsigned char *frame = NULL;
+      frame = (const unsigned char *)request_->imageData.read();
+      if (params_.inverted) {
+        std::reverse_copy(frame, frame + mv_image.step * mv_image.height,
+                          &mv_image.data[0]);
       } else {
-        memcpy(&image->data[0], image_frame,
-               image->width * image->height * channels);
+        memcpy(&mv_image.data[0], frame, mv_image.step * mv_image.height);
       }
+
       // Release capture request
       func_interface_->imageRequestUnlock(requestNr);
-      // Set image header
-      image->header.stamp = ros::Time::now();
-      image->header.frame_id = frame_id_;
       status = true;
     } else {
-      ROS_ERROR("Invalid Image");
+      std::cout << "Invalid image" << std::endl;
       // Clear all image received and reset capture
       func_interface_->imageRequestUnlock(requestNr);
       status = false;
     }
   } else {
-    ROS_ERROR("Invalid Image Request");
+    std::cout << "Invalid image request" << std::endl;
     // Clear all image received and reset capture
     if (func_interface_->isRequestNrValid(requestNr)) {
-      pRequest_ = func_interface_->getRequest(requestNr);
+      request_ = func_interface_->getRequest(requestNr);
       func_interface_->imageRequestUnlock(requestNr);
     }
     status = false;
   }
+
   return status;
 }
-*/
-
-/*
-void Camera::feedImage() {
-  sensor_msgs::CameraInfoPtr camera_info(
-      new sensor_msgs::CameraInfo(camera_info_manager_->getCameraInfo()));
-  sensor_msgs::ImagePtr image(new sensor_msgs::Image);
-
-  if (grabImage(image)) {
-    // Only publish height and width if camera not calibrated
-    if (!calibrated_) {
-      camera_info.reset(new sensor_msgs::CameraInfo());
-      camera_info->width = image->width;
-      camera_info->height = image->height;
-    }
-    camera_info->header.stamp = image->header.stamp;
-    camera_info->header.frame_id = image->header.frame_id;
-    camera_pub_.publish(image, camera_info);
-  }
-}
-*/
 
 }  // namepace bluefox2

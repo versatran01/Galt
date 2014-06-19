@@ -103,11 +103,10 @@ void AttitudeESKF::predict(const Matrix<scalar_t,3,1>& wg, double time)
   Matrix<scalar_t,6,6> Q;
   Q.setZero();
   
-  const bool rotating = angVel_.norm() > 1e-2;
   for (int i=0; i < 3; i++)
   {
     Q(i,i) = var_.gyro[i];
-    Q(i+3,i+3) = (rotating) ? (0.0) : var_.gyroBias[i];
+    Q(i+3,i+3) = (inMotion_) ? (0.0) : var_.gyroBias[i];
   }
   
   //  integrate covariance  
@@ -179,6 +178,10 @@ void AttitudeESKF::update(const Matrix<scalar_t,3,1>& ab)
     steadyCount_++;
   } else {
     steadyCount_ = 0;
+  }
+  
+  if (steadyCount_ && std::abs(ab.norm() - 1.0) < 1e-2) {
+    inMotion_ = false;
   }
   
   if (estBias_ && updateCount_ > 10) //  don't estimate bias on first few updates

@@ -138,6 +138,7 @@ private:
   bool isStable_;
   bool estBias_;
   bool useMag_;
+  bool inMotion_;
   
   VarSettings var_;
 };

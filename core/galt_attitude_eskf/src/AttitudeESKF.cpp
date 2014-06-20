@@ -170,11 +170,8 @@ void AttitudeESKF::update(const vec3 &ab, const vec3 &mb)
   }
   else
   {
-    vec3 field;
-    field[0] = 0.317;
-    field[1] = 0;
-    field[2] = 0.682;
-    field = R.transpose() * field;
+    //  m-field predictionn
+    vec3 field = R.transpose() * magRef_;
     
     Matrix<scalar_t,6,1> r;
     r.block<3,1>(0,0) = ab - aPred;
@@ -209,6 +206,7 @@ void AttitudeESKF::update(const vec3 &ab, const vec3 &mb)
     //  generate update
     const Matrix<scalar_t,3,6> K = P_ * H.transpose() * Sinv;
     dx = K * r;
+    A = K * H;
   }
   
   //  perform state update  

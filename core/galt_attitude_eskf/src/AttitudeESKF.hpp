@@ -99,6 +99,12 @@ public:
   void setVariances(const VarSettings& var) { var_ = var; }
   
   /**
+   * @brief setMagneticReference
+   * @param magRef
+   */
+  void setMagneticReference(const vec3& magRef) { magRef_ = magRef; }
+  
+  /**
    * @brief getQuat
    * @return 
    */

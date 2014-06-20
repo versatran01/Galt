@@ -37,12 +37,11 @@ public:
   struct VarSettings {
     scalar_t accel[3];
     scalar_t gyro[3];
-    scalar_t gyroBias[3];
     scalar_t mag[3];
     
     VarSettings() {
       for (int i=0; i < 3; i++) {
-        accel[i] = gyro[i] = gyroBias[i] = mag[i] = 0.0;
+        accel[i] = gyro[i] = mag[i] = 0.0;
       }
     }
   };
@@ -68,13 +67,13 @@ public:
    *
    *  @note Integrates the nominal state using RK4.
    */
-  void predict(const Eigen::Matrix<scalar_t,3,1>& wg, double time);
+  void predict(const vec3& wg, double time);
   
   /**
    *  @brief Perform the update step
    *  @param ab Accelerometer reading in body frame (units of Gs)
    */
-  void update(const Eigen::Matrix<scalar_t,3,1>& ab);
+  void update(const vec3& ab, const vec3& mb = vec3::Zero());
   
   /**
    *	@brief Get Roll-Pitch-Yaw as a 3-element vector
@@ -106,16 +105,22 @@ public:
   const quat& getQuat() const { return q_; }
   
   /**
+   * @brief getAngularVelocity
+   * @return 
+   */
+  const vec3& getAngularVelocity() const { return w_; }
+  
+  /**
    * @brief getGyroBias
    * @return 
    */
-  const Eigen::Matrix<scalar_t,3,1>& getGyroBias() const { return b_; }
-  
+  const vec3& getGyroBias() const { return b_; }
+    
   /**
    * @brief getCovariance
    * @return 
    */
-  const Eigen::Matrix<scalar_t,6,6>& getCovariance() const { return P_; }
+  const Eigen::Matrix<scalar_t,3,3>& getCovariance() const { return P_; }
   
   /**
    * @brief isStable
@@ -125,20 +130,18 @@ public:
   
 private:
   quat q_;                         /// Orientation
-  Eigen::Matrix<scalar_t,3,1> b_;  /// Gyro bias
-  Eigen::Matrix<scalar_t,6,6> P_;  /// System covariance
-    
+  Eigen::Matrix<scalar_t,3,3> P_;  /// System covariance
   double lastTime_;
-  vec3 angVel_;
-  vec3 magRef_;  //  North
   
+  vec3 w_;
+  vec3 b_;
   unsigned long steadyCount_;
-  unsigned long updateCount_;
+
+  vec3 magRef_;  //  North
   
   bool isStable_;
   bool estBias_;
   bool useMag_;
-  bool inMotion_;
   
   VarSettings var_;
 };

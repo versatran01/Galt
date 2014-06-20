@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(galt_attitude_eskf)
-find_package(catkin REQUIRED COMPONENTS roscpp tf geometry_msgs sensor_msgs galt_common)
+find_package(catkin REQUIRED COMPONENTS roscpp tf geometry_msgs sensor_msgs message_filters galt_common)
 
-catkin_package(CATKIN_DEPENDS roscpp tf geometry_msgs sensor_msgs galt_common)
+catkin_package(CATKIN_DEPENDS roscpp tf geometry_msgs sensor_msgs message_filters galt_common)
 
 # include boost
 find_package(Boost REQUIRED)
@@ -19,6 +19,6 @@ include_directories(${galt_common_INCLUDE_DIRS})
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
 add_executable(${PROJECT_NAME} src/quaternion.cpp src/AttitudeESKF.cpp src/galt_attitude_eskf.cpp)
-target_link_libraries(${PROJECT_NAME} ${roscpp_LIBRARIES} ${galt_common_LIBRARIES} ${tf_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} ${roscpp_LIBRARIES} ${galt_common_LIBRARIES} ${tf_LIBRARIES} ${message_filters_LIBRARIES})
 
 #add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS})

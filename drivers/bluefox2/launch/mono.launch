@@ -16,7 +16,7 @@
   <arg name="wbp" default="none" />
 
   <node pkg="bluefox2" type="bluefox2" name="cam_$(arg serial)" output="screen" >
-    <param name="width" type="int" value="752" />
+    <param name="width" type="int" value="640" />
     <param name="height" type="int" value="480" />
     <param name="fps" type="int" value="$(arg fps)" />
     <param name="gain" type="double" value="0.0" />

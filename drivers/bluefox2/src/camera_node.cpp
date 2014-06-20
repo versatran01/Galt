@@ -119,7 +119,7 @@ int main(int argc, char **argv) {
         // Grab image from camera
         camera.grabImage(mv_image);
         publishCamera(mv_image, camera_info, frame_id);
-        if (seq == 100) {
+        if (seq % (10 * camera.fps()) == 0) {
           camera.printStats();
         }
         ros::spinOnce();

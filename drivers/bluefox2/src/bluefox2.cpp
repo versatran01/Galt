@@ -239,9 +239,9 @@ void Camera::printStats() const {
   DISP("--FPS:              ", stats_->framesPerSecond.read());
   DISP("--Capture time:     ", stats_->captureTime_s.read());
   DISP("--Process time:     ", stats_->imageProcTime_s.read());
-  DISP("--Retransmit count: ", stats_->retransmitCount.read());
-  DISP("--Timeout count:    ", stats_->timedOutRequestsCount.read());
-  DISP("--Missing data:     ", stats_->missingDataAverage_pc.read());
+  // DISP("--Retransmit count: ", stats_->retransmitCount.read());
+  // DISP("--Timeout count:    ", stats_->timedOutRequestsCount.read());
+  // DISP("--Missing data:     ", stats_->missingDataAverage_pc.read());
 }
 
 void Camera::printMvErrorMsg(const ImpactAcquireException &e,
@@ -281,7 +281,7 @@ bool Camera::grabImage(mv_image_t &mv_image) {
 
   // Request and wait for image
   func_interface_->imageRequestSingle();
-  usleep(10000);  // necessary short sleep to warm up the camera
+  usleep(100);  // necessary short sleep to warm up the camera
 
   int requestNr = INVALID_ID;
   requestNr = func_interface_->imageRequestWaitFor(TIMEOUT_MS);

@@ -20,6 +20,7 @@ typedef boost::shared_ptr<CameraInfoManager> CameraInfoManagerPtr;
 image_transport::CameraPublisher camera_pub;
 unsigned int seq = 0;
 
+// Read parameters from launch file
 bluefox2::mv_params_t ReadParams(ros::NodeHandle nh) {
   bluefox2::mv_params_t mv_params;
 
@@ -34,7 +35,7 @@ bluefox2::mv_params_t ReadParams(ros::NodeHandle nh) {
   nh.param<int>("fps", mv_params.fps, 20);
   nh.param<double>("gain", mv_params.gain, 0.0);
   nh.param<string>("mode", mv_params.mode, "standalone");
-  nh.param<string>("while_balance", mv_params.white_balance, "default");
+  nh.param<string>("white_balance", mv_params.white_balance, "default");
 
   return mv_params;
 }
@@ -43,6 +44,7 @@ bluefox2::mv_params_t ReadParams(ros::NodeHandle nh) {
 void publishCamera(mv_image_t &mv_image, const CameraInfoPtr &camera_info,
                    const string &frame_id) {
   ImagePtr image(new Image);
+
   image->header.stamp = ros::Time::now();
   image->header.frame_id = frame_id;
   image->header.seq = seq++;
@@ -50,6 +52,7 @@ void publishCamera(mv_image_t &mv_image, const CameraInfoPtr &camera_info,
   image->width = mv_image.width;
   image->step = mv_image.step;
   image->height =  mv_image.height;
+
   if (mv_image.channel == 1) {
     image->encoding = image_encodings::MONO8;
   } else if (mv_image.channel == 3) {
@@ -70,7 +73,7 @@ int main(int argc, char **argv) {
   string serial;
   nh.param<string>("serial", serial, "");
 
-  // Get node information
+  // Set node information
   string topic("image_raw");
   string node = string("cam_") + serial;
 
@@ -103,6 +106,7 @@ int main(int argc, char **argv) {
       if (!camera_info_manager->isCalibrated() ||
           camera_info->width != static_cast<unsigned int>(mv_params.width) ||
           camera_info->height != static_cast<unsigned int>(mv_params.height)) {
+        // Only set dimension if calibration file mismatch
         camera_info.reset(new sensor_msgs::CameraInfo());
         camera_info->width = mv_params.width;
         camera_info->height = mv_params.height;
@@ -115,6 +119,9 @@ int main(int argc, char **argv) {
         // Grab image from camera
         camera.grabImage(mv_image);
         publishCamera(mv_image, camera_info, frame_id);
+        if (seq == 100) {
+          camera.printStats();
+        }
         ros::spinOnce();
         loop_rate.sleep();
       }

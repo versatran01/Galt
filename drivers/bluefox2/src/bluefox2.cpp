@@ -1,7 +1,5 @@
 #include "bluefox2/bluefox2.h"
 
-#define btoa(x) ((x) ? "true" : "false")
-
 namespace bluefox2 {
 
 Camera::Camera(string serial, mv_params_t mv_params)
@@ -12,15 +10,14 @@ Camera::Camera(string serial, mv_params_t mv_params)
       func_interface_(NULL),
       stats_(NULL),
       request_(NULL),
-      bluefox_settings_(NULL),
-      system_settings_(NULL) {
-  // Count cameras
-
+      bf_settings_(NULL),
+      sys_settings_(NULL) {
+  // Locate device
   if ((device_count_ = device_manager_.deviceCount()) > 0) {
     if ((id_ = findDeviceId()) >= 0) {
       device_ = device_manager_[id_];
-      std::cout << "Initializing camera: " << device_->family.read() << "/"
-                << device_->serial.read() << std::endl;
+      std::cout << LABEL << "Initializing camera: " << device_->family.read()
+                << " / " << device_->serial.read() << std::endl;
     } else {
       throw std::runtime_error("No device with serial number: " + serial_);
     }
@@ -68,8 +65,8 @@ bool Camera::open() {
     return false;
   }
 
-  bluefox_settings_ = new SettingsBlueFOX(device_);
-  system_settings_ = new SystemSettings(device_);
+  bf_settings_ = new SettingsBlueFOX(device_);
+  sys_settings_ = new SystemSettings(device_);
 
   return true;
 }
@@ -88,11 +85,11 @@ void Camera::close() {
   if (request_ != NULL) {
     delete request_;
   }
-  if (bluefox_settings_ != NULL) {
-    delete bluefox_settings_;
+  if (bf_settings_ != NULL) {
+    delete bf_settings_;
   }
-  if (system_settings_ != NULL) {
-    delete system_settings_;
+  if (sys_settings_ != NULL) {
+    delete sys_settings_;
   }
   ok_ = false;
 }
@@ -106,109 +103,146 @@ void Camera::init(bool verbose) {
 
   if (verbose) {
     printSettings();
+    printDetails();
   }
 }
 
 void Camera::applySettings() {
   // prefill the capture queue
-  system_settings_->requestCount.write(1);
+  sys_settings_->requestCount.write(1);
 
   // AOI
   setAoi(params_.width, params_.height);
 
   // Binning
   if (params_.binning) {
-    bluefox_settings_->cameraSetting.binningMode.write(cbmBinningHV);
+    bf_settings_->cameraSetting.binningMode.write(cbmBinningHV);
   }
 
   // Color
   if (params_.color) {
-    bluefox_settings_->imageDestination.pixelFormat.write(idpfRGB888Packed);
+    bf_settings_->imageDestination.pixelFormat.write(idpfRGB888Packed);
     if (params_.white_balance == "indoor") {
-      bluefox_settings_->imageProcessing.whiteBalance.write(wbpFluorescent);
+      bf_settings_->imageProcessing.whiteBalance.write(wbpFluorescent);
     } else if (params_.white_balance == "outdoor") {
-      bluefox_settings_->imageProcessing.whiteBalance.write(wbpDayLight);
+      bf_settings_->imageProcessing.whiteBalance.write(wbpDayLight);
     }
   } else {
-    bluefox_settings_->imageDestination.pixelFormat.write(idpfRaw);
+    bf_settings_->imageDestination.pixelFormat.write(idpfRaw);
   }
 
   // Gain
-  bluefox_settings_->cameraSetting.autoGainControl.write(agcOff);
+  bf_settings_->cameraSetting.autoGainControl.write(agcOff);
   if (params_.gain >= 0.0) {
-    bluefox_settings_->cameraSetting.gain_dB.write(params_.gain);
+    bf_settings_->cameraSetting.gain_dB.write(params_.gain);
   } else {
-    bluefox_settings_->cameraSetting.autoGainControl.write(agcOn);
+    bf_settings_->cameraSetting.autoGainControl.write(agcOn);
   }
 
   // Expose
   if (params_.auto_expose) {
-    bluefox_settings_->cameraSetting.autoControlParameters.controllerSpeed
-        .write(acsUserDefined);
-    bluefox_settings_->cameraSetting.autoControlParameters.controllerGain.write(
-        0.5);
-    bluefox_settings_->cameraSetting.autoControlParameters
-        .controllerIntegralTime_ms.write(100);
-    bluefox_settings_->cameraSetting.autoControlParameters
+    bf_settings_->cameraSetting.autoControlParameters.controllerSpeed.write(
+        acsUserDefined);
+    bf_settings_->cameraSetting.autoControlParameters.controllerGain.write(0.5);
+    bf_settings_->cameraSetting.autoControlParameters.controllerIntegralTime_ms
+        .write(100);
+    bf_settings_->cameraSetting.autoControlParameters
         .controllerDerivativeTime_ms.write(0.0001);
-    bluefox_settings_->cameraSetting.autoControlParameters
-        .desiredAverageGreyValue.write(100);
-    bluefox_settings_->cameraSetting.autoControlParameters
-        .controllerDelay_Images.write(0);
-    bluefox_settings_->cameraSetting.autoControlParameters.exposeLowerLimit_us
-        .write(50);
-    bluefox_settings_->cameraSetting.autoControlParameters.exposeUpperLimit_us
-        .write(params_.expose_us);
-    bluefox_settings_->cameraSetting.autoExposeControl.write(aecOn);
+    bf_settings_->cameraSetting.autoControlParameters.desiredAverageGreyValue
+        .write(100);
+    bf_settings_->cameraSetting.autoControlParameters.controllerDelay_Images
+        .write(0);
+    bf_settings_->cameraSetting.autoControlParameters.exposeLowerLimit_us.write(
+        50);
+    bf_settings_->cameraSetting.autoControlParameters.exposeUpperLimit_us.write(
+        params_.expose_us);
+    bf_settings_->cameraSetting.autoExposeControl.write(aecOn);
   } else {
-    bluefox_settings_->cameraSetting.expose_us.write(params_.expose_us);
+    bf_settings_->cameraSetting.expose_us.write(params_.expose_us);
   }
 
   // Mode
   if (params_.mode == "master") {
     // settings.cameraSetting.triggerMode.write(ctmOnDemand);
-    bluefox_settings_->cameraSetting.flashMode.write(cfmDigout0);
-    bluefox_settings_->cameraSetting.flashType.write(cftStandard);
-    bluefox_settings_->cameraSetting.flashToExposeDelay_us.write(0);
+    bf_settings_->cameraSetting.flashMode.write(cfmDigout0);
+    bf_settings_->cameraSetting.flashType.write(cftStandard);
+    bf_settings_->cameraSetting.flashToExposeDelay_us.write(0);
   } else if (params_.mode == "slave") {
-    bluefox_settings_->cameraSetting.triggerMode.write(ctmOnHighLevel);
-    bluefox_settings_->cameraSetting.triggerSource.write(ctsDigIn0);
-    bluefox_settings_->cameraSetting.frameDelay_us.write(0);
+    bf_settings_->cameraSetting.triggerMode.write(ctmOnHighLevel);
+    bf_settings_->cameraSetting.triggerSource.write(ctsDigIn0);
+    bf_settings_->cameraSetting.frameDelay_us.write(0);
   }
 
   // TODO: how to detect if camera supports hdr mode
   // HDR
   // std::cout << "hdr" << std::endl;
   // if (params_.hdr) {
-  //   bluefox_settings_->cameraSetting.getHDRControl().HDRMode.write(cHDRmFixed0);
-  //   bluefox_settings_->cameraSetting.getHDRControl().HDREnable.write(bTrue);
+  //   bf_settings_->cameraSetting.getHDRControl().HDRMode.write(cHDRmFixed0);
+  //   bf_settings_->cameraSetting.getHDRControl().HDREnable.write(bTrue);
   //   std::cout << "Enable HDR ..." << std::endl;
   //   std::cout << "KneePoint 0:" << std::endl;
   //   std::cout << "  Voltage (mv):      "
-  //             << bluefox_settings_->cameraSetting.getHDRControl()
+  //             << bf_settings_->cameraSetting.getHDRControl()
   //                    .getHDRKneePoint(0)
   //                    .HDRControlVoltage_mV.read() << std::endl;
   //   std::cout << "  Parts per Million: "
-  //             << bluefox_settings_->cameraSetting.getHDRControl()
+  //             << bf_settings_->cameraSetting.getHDRControl()
   //                    .getHDRKneePoint(0)
   //                    .HDRExposure_ppm.read() << std::endl;
   //   std::cout << "KneePoint 1:" << std::endl;
   //   std::cout << "  Voltage (mv):      "
-  //             << bluefox_settings_->cameraSetting.getHDRControl()
+  //             << bf_settings_->cameraSetting.getHDRControl()
   //                    .getHDRKneePoint(1)
   //                    .HDRControlVoltage_mV.read() << std::endl;
   //   std::cout << "  Parts per Million: "
-  //             << bluefox_settings_->cameraSetting.getHDRControl()
+  //             << bf_settings_->cameraSetting.getHDRControl()
   //                    .getHDRKneePoint(1)
   //                    .HDRExposure_ppm.read() << std::endl;
   // } else {
-  //   bluefox_settings_->cameraSetting.getHDRControl().HDREnable.write(bFalse);
+  //   bf_settings_->cameraSetting.getHDRControl().HDREnable.write(bFalse);
   // }
 }
 
-void Camera::printSettings() const {}
+void Camera::printDetails() const {
+  DISP("Detials for camera ", serial_);
+  DISP("--Id:               ", device_->deviceID.readS());
+  DISP("--Product:          ", device_->product.readS());
+  DISP("--Family:           ", device_->family.readS());
+  DISP("--Class:            ", device_->deviceClass.readS());
+  // DISP("--Version:          ", device_->deviceVersion.readS());
+  // DISP("--Firmware:         ", device_->firmwareVersion.readS());
+  DISP("--Serial:           ", device_->serial.readS());
+  DISP("--State:            ", device_->state.readS());
+  DISP("--In use:           ", btoa(device_->isInUse()));
+  DISP("--Is open:          ", btoa(device_->isOpen()));
+  // DISP("--Request cnt:      ", device_->defaultRequestCount.readS());
+  // DISP("--Queue cnt:        ", device_->resultQueueCount.readS());
+}
 
-void Camera::printStats() const {}
+void Camera::printSettings() const {
+  DISP("Settings for camera ", serial_);
+  DISP("--Width:            ", params_.width);
+  DISP("--Height:           ", params_.height);
+  DISP("--FPS:              ", params_.fps);
+  DISP("--Mode:             ", params_.mode);
+  DISP("--Gain:             ", params_.gain);
+  DISP("--Color:            ", btoa(params_.color));
+  DISP("--Inverted:         ", btoa(params_.inverted));
+  DISP("--Binning:          ", btoa(params_.binning));
+  DISP("--Auto Expose:      ", btoa(params_.auto_expose));
+  DISP("--Expose Time:      ", params_.expose_us);
+  DISP("--Balance:          ", params_.white_balance);
+}
+
+void Camera::printStats() const {
+  DISP("Stats for camera ", serial_);
+  DISP("--FPS:              ", stats_->framesPerSecond.read());
+  DISP("--Capture time:     ", stats_->captureTime_s.read());
+  DISP("--Process time:     ", stats_->imageProcTime_s.read());
+  DISP("--Retransmit count: ", stats_->retransmitCount.read());
+  DISP("--Timeout count:    ", stats_->timedOutRequestsCount.read());
+  DISP("--Missing data:     ", stats_->missingDataAverage_pc.read());
+}
 
 void Camera::printMvErrorMsg(const ImpactAcquireException &e,
                              const std::string header) const {
@@ -220,10 +254,10 @@ void Camera::printMvErrorMsg(const ImpactAcquireException &e,
 }
 
 void Camera::setAoi(const int &w, const int &h) {
-  int w_max = bluefox_settings_->cameraSetting.aoiWidth.getMaxValue();
-  int w_min = bluefox_settings_->cameraSetting.aoiWidth.getMinValue();
-  int h_max = bluefox_settings_->cameraSetting.aoiHeight.getMaxValue();
-  int h_min = bluefox_settings_->cameraSetting.aoiHeight.getMinValue();
+  int w_max = bf_settings_->cameraSetting.aoiWidth.getMaxValue();
+  int w_min = bf_settings_->cameraSetting.aoiWidth.getMinValue();
+  int h_max = bf_settings_->cameraSetting.aoiHeight.getMaxValue();
+  int h_min = bf_settings_->cameraSetting.aoiHeight.getMinValue();
 
   if (w > w_max || w < w_min || h > h_max || h < h_min) {
     // Invalid settings of width and height
@@ -236,10 +270,10 @@ void Camera::setAoi(const int &w, const int &h) {
   // Set StartX and StartY so that the image is centered
   int x = (w_max - w) / 2;
   int y = (h_max - h) / 2;
-  bluefox_settings_->cameraSetting.aoiStartX.write(x);
-  bluefox_settings_->cameraSetting.aoiStartY.write(y);
-  bluefox_settings_->cameraSetting.aoiWidth.write(w);
-  bluefox_settings_->cameraSetting.aoiHeight.write(h);
+  bf_settings_->cameraSetting.aoiStartX.write(x);
+  bf_settings_->cameraSetting.aoiStartY.write(y);
+  bf_settings_->cameraSetting.aoiWidth.write(w);
+  bf_settings_->cameraSetting.aoiHeight.write(h);
 }
 
 bool Camera::grabImage(mv_image_t &mv_image) {
@@ -282,13 +316,13 @@ bool Camera::grabImage(mv_image_t &mv_image) {
       func_interface_->imageRequestUnlock(requestNr);
       status = true;
     } else {
-      std::cout << "Invalid image" << std::endl;
+      std::cout << LABEL << "Invalid image" << std::endl;
       // Clear all image received and reset capture
       func_interface_->imageRequestUnlock(requestNr);
       status = false;
     }
   } else {
-    std::cout << "Invalid image request" << std::endl;
+    std::cout << LABEL << "Invalid image request" << std::endl;
     // Clear all image received and reset capture
     if (func_interface_->isRequestNrValid(requestNr)) {
       request_ = func_interface_->getRequest(requestNr);

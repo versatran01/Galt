@@ -82,16 +82,10 @@ int main(int argc, char **argv) {
   ROS_INFO("Creating windows");
 #endif
 
-  // This works with ApproximateTime
+  // Use stereo sync policy
   message_filters::Synchronizer<StereoSyncPolicy> sync(
       StereoSyncPolicy(5), image_sub1, image_sub2, cinfo_sub1, cinfo_sub2);
   sync.registerCallback(boost::bind(&sync_callback, _1, _2, _3, _4));
-
-  // This somehow doesn't work
-  // message_filters::TimeSynchronizer<
-  //     sensor_msgs::Image, sensor_msgs::Image, sensor_msgs::CameraInfo,
-  //     sensor_msgs::CameraInfo> sync(image_sub1, image_sub2, cinfo_sub1,
-  //                                   cinfo_sub2, 5);
 
   ros::spin();
 

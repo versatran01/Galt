@@ -12,9 +12,11 @@
 
 #include <mvIMPACT_CPP/mvIMPACT_acquire.h>
 
+#define LABEL ("\033[0;34m[BLFOX] \033[0m")
+#define btoa(x) ((x) ? "true" : "false")
 #define PRESS_A_KEY getchar();
 #define TIMEOUT_MS (300)
-
+#define DISP(name, val) (std::cout << LABEL << name << val << std::endl)
 using std::string;
 using std::vector;
 using namespace mvIMPACT::acquire;
@@ -45,7 +47,7 @@ typedef struct mv_image {
   vector<unsigned char> data;
 } mv_image_t;
 
-// Image class
+// Camera class
 class Camera {
  public:
   Camera(string serial, mv_params_t mv_params);
@@ -53,6 +55,7 @@ class Camera {
   void init(bool verbose);
   void printSettings() const;
   void printStats() const;
+  void printDetails() const;
   bool grabImage(mv_image_t &image);
 
   bool ok() const { return ok_; }
@@ -71,8 +74,8 @@ class Camera {
   FunctionInterface *func_interface_;
   Statistics *stats_;
   Request *request_;
-  SettingsBlueFOX *bluefox_settings_;
-  SystemSettings *system_settings_;
+  SettingsBlueFOX *bf_settings_;
+  SystemSettings *sys_settings_;
 
   int findDeviceId() const;
   bool open();

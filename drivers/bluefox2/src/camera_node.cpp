@@ -64,6 +64,7 @@ void publishCamera(mv_image_t &mv_image, const CameraInfoPtr &camera_info,
   camera_pub.publish(image, camera_info);
 }
 
+// Main
 int main(int argc, char **argv) {
   ros::init(argc, argv, "bluefox2");
   ros::NodeHandle nh("~");

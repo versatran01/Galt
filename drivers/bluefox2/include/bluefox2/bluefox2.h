@@ -50,12 +50,35 @@ typedef struct mv_image {
 // Camera class
 class Camera {
  public:
+  /**
+   * @brief Constructor
+   *
+   * @param serial Serial number of camera
+   * @param mv_params A struct collects all user settings
+   */
   Camera(string serial, mv_params_t mv_params);
+
+  /**
+   * @brief Destructor
+   */
   ~Camera();
+
+  /**
+   * @brief Initialize camera
+   *
+   * @param verbose True for printing detailed settings
+   */
   void init(bool verbose);
   void printSettings() const;
   void printStats() const;
   void printDetails() const;
+
+  /**
+   * @brief Grab single image from device
+   *
+   * @param image A mv image
+   * @return True for successful
+   */
   bool grabImage(mv_image_t &image);
 
   bool ok() const { return ok_; }

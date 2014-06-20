@@ -6,14 +6,18 @@
     <arg name="right" default="25000495" />
     <arg name="rmode" default="standalone" />
 
+    <arg name="fps" default="20" />
+
     <include file="$(find bluefox2)/launch/mono.launch">
         <arg name="serial" value="$(arg left)" />
         <arg name="mode" value="$(arg lmode)" />
+        <arg name="fps" value="$(arg fps)" />
     </include>
 
     <include file="$(find bluefox2)/launch/mono.launch">
         <arg name="serial" value="$(arg right)" />
         <arg name="mode" value="$(arg rmode)" />
+        <arg name="fps" value="$(arg fps)" />
     </include>
 
 </launch>

@@ -12,7 +12,8 @@
 
 using camera_info_manager::CameraInfoManager;
 using image_transport::CameraPublisher;
-using namespace sensor_msgs;
+using sensor_msgs::CameraInfoPtr;
+
 typedef boost::shared_ptr<CameraInfoManager> CameraInfoManagerPtr;
 typedef boost::shared_ptr<bluefox2::Camera> CameraPtr;
 
@@ -20,21 +21,37 @@ namespace bluefox2 {
 
 class CameraRos {
  public:
+  /**
+   * @brief Constructor
+   * @param nh ROS node handle
+   */
   CameraRos(const ros::NodeHandle &nh);
+
+  /**
+   * @brief Destructor
+   */
   ~CameraRos();
+
+  /**
+   * @brief Initialize camera
+   */
   void init();
+
+  /**
+   * @brief Continuously publish image
+   */
   void publish();
 
  private:
   ros::NodeHandle nh_;
   unsigned int seq_;
-  string node_;
-  string calibration_url_;
-  string frame_id_;
-  CameraInfoManagerPtr camera_info_manager_;
+  std::string node_;
+  std::string calibration_url_;
+  std::string frame_id_;
+  CameraPtr camera_;
   CameraInfoPtr camera_info_;
   CameraPublisher camera_pub_;
-  CameraPtr camera_;
+  CameraInfoManagerPtr camera_info_manager_;
 
   mv_params_s readParams();
 

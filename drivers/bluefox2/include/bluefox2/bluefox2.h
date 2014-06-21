@@ -15,9 +15,9 @@
 
 using std::string;
 using std::vector;
-using namespace mvIMPACT::acquire;
 
 namespace bluefox2 {
+
 // Represents a set of camera parameters
 typedef struct mv_params {
   bool color;
@@ -95,13 +95,13 @@ class Camera {
   const mv_params_s params_;
   string label_;
 
-  DeviceManager device_manager_;
-  Device *device_;
-  FunctionInterface *func_interface_;
-  Statistics *stats_;
-  Request *request_;
-  SettingsBlueFOX *bf_settings_;
-  SystemSettings *sys_settings_;
+  mvIMPACT::acquire::DeviceManager device_manager_;
+  mvIMPACT::acquire::Device *device_;
+  mvIMPACT::acquire::FunctionInterface *func_interface_;
+  mvIMPACT::acquire::Statistics *stats_;
+  mvIMPACT::acquire::Request *request_;
+  mvIMPACT::acquire::SettingsBlueFOX *bf_settings_;
+  mvIMPACT::acquire::SystemSettings *sys_settings_;
 
   int findDeviceId() const;
   bool open();

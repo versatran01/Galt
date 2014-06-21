@@ -1,6 +1,8 @@
 #include "bluefox2/bluefox2.h"
 #include "bluefox2/bluefox2_ros.h"
 
+using namespace sensor_msgs;
+
 namespace bluefox2 {
 
 CameraRos::CameraRos(const ros::NodeHandle &nh) : nh_(nh), seq_(0) {

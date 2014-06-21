@@ -2,6 +2,8 @@
 
 namespace bluefox2 {
 
+using namespace mvIMPACT::acquire;
+
 Camera::Camera(string serial, mv_params_s mv_params)
     : ok_(false),
       serial_(serial),

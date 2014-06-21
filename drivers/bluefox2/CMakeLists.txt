@@ -17,7 +17,8 @@ include_directories(${MVIMPACT_DIR})
 include_directories(${OpenCV_INCLUDE_DIRS})
 
 # camera node
-add_executable(${PROJECT_NAME} src/camera_node.cpp src/bluefox2.cpp)
+add_executable(${PROJECT_NAME}
+    src/camera_node.cpp src/bluefox2.cpp src/bluefox2_ros.cpp)
 target_link_libraries(${PROJECT_NAME}
     ${catkin_LIBRARIES}
     ${MVIMPACT_DIR}/lib/x86_64/libmvDeviceManager.so)
@@ -30,7 +31,8 @@ target_link_libraries(stereo_sync ${OpenCV_LIBRARIES})
 # Unit test uses gtest, but needs rostest to create a ROS environment.
 # Hence, it must be created as a normal executable, not using
 # catkin_add_gtest() which runs an additional test without rostest.
-add_executable(rtest_mono tests/rtest_mono.cpp src/bluefox2.cpp)
+add_executable(rtest_mono
+    tests/rtest_mono.cpp src/bluefox2.cpp src/bluefox2_ros.cpp)
 target_link_libraries(rtest_mono
     ${catkin_LIBRARIES}
     ${GTEST_LIBRARIES}

@@ -6,17 +6,13 @@
 #include <algorithm>
 #include <string>
 #include <vector>
-#include <errno.h>
-#include <stdio.h>
-#include <unistd.h>
 
 #include <mvIMPACT_CPP/mvIMPACT_acquire.h>
 
-#define LABEL ("\033[0;34m[BLFOX] \033[0m")
-#define btoa(x) ((x) ? "true" : "false")
-#define PRESS_A_KEY getchar();
 #define TIMEOUT_MS (300)
-#define DISP(name, val) (std::cout << LABEL << name << val << std::endl)
+#define btoa(x) ((x) ? "true" : "false")
+#define DISP(name, val) (std::cout << label_ << name << val << std::endl)
+
 using std::string;
 using std::vector;
 using namespace mvIMPACT::acquire;
@@ -32,7 +28,7 @@ typedef struct mv_params {
   int expose_us;
   int height;
   int width;
-  int fps;
+  double fps;
   double gain;
   string mode;
   string white_balance;
@@ -81,9 +77,15 @@ class Camera {
    */
   bool grabImage(mv_image_t &image);
 
+  /**
+   * @brief All accessors
+   */
   bool ok() const { return ok_; }
   int device_count() const { return device_count_; };
-  int fps() const { return params_.fps; };
+  double fps() const { return params_.fps; };
+  int height() const { return params_.height; };
+  int width() const { return params_.width; };
+  string serial() const { return serial_; };
 
  private:
   int device_count_;
@@ -91,6 +93,7 @@ class Camera {
   bool ok_;
   const string serial_;
   const mv_params_t params_;
+  string label_;
 
   DeviceManager device_manager_;
   Device *device_;
@@ -106,9 +109,9 @@ class Camera {
   void applySettings();
   void setAoi(const int &width, const int &height);
   void printMvErrorMsg(const ImpactAcquireException &e,
-                       const std::string header) const;
+                       const std::string msg) const;
 };  // class Camera
 
-}   // namespace bluefox2
+}  // namespace bluefox2
 
 #endif  // BLUEFOX2_CAMERA_H_

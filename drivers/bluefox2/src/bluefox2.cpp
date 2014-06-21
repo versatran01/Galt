@@ -16,8 +16,8 @@ Camera::Camera(string serial, mv_params_t mv_params)
   if ((device_count_ = device_manager_.deviceCount()) > 0) {
     if ((id_ = findDeviceId()) >= 0) {
       device_ = device_manager_[id_];
-      std::cout << LABEL << "Initializing camera: " << device_->family.read()
-                << " / " << device_->serial.read() << std::endl;
+      label_ = string("\033[0;34m[BLFOX] [") + serial_ + string("]:\033[0m ");
+      DISP("Deivce count:", device_count_);
     } else {
       throw std::runtime_error("No device with serial number: " + serial_);
     }
@@ -98,6 +98,8 @@ void Camera::init(bool verbose) {
   if (!(ok_ = open())) {
     throw std::runtime_error("Failed to open device");
   }
+  DISP("Initializing camera: ",
+       device_->family.read() + " / " + device_->serial.read());
 
   applySettings();
 
@@ -203,56 +205,6 @@ void Camera::applySettings() {
   // }
 }
 
-void Camera::printDetails() const {
-  DISP("Detials for camera ", serial_);
-  DISP("--Id:               ", device_->deviceID.readS());
-  DISP("--Product:          ", device_->product.readS());
-  DISP("--Family:           ", device_->family.readS());
-  DISP("--Class:            ", device_->deviceClass.readS());
-  // DISP("--Version:          ", device_->deviceVersion.readS());
-  // DISP("--Firmware:         ", device_->firmwareVersion.readS());
-  DISP("--Serial:           ", device_->serial.readS());
-  DISP("--State:            ", device_->state.readS());
-  DISP("--In use:           ", btoa(device_->isInUse()));
-  DISP("--Is open:          ", btoa(device_->isOpen()));
-  // DISP("--Request cnt:      ", device_->defaultRequestCount.readS());
-  // DISP("--Queue cnt:        ", device_->resultQueueCount.readS());
-}
-
-void Camera::printSettings() const {
-  DISP("Settings for camera ", serial_);
-  DISP("--Width:            ", params_.width);
-  DISP("--Height:           ", params_.height);
-  DISP("--FPS:              ", params_.fps);
-  DISP("--Mode:             ", params_.mode);
-  DISP("--Gain:             ", params_.gain);
-  DISP("--Color:            ", btoa(params_.color));
-  DISP("--Inverted:         ", btoa(params_.inverted));
-  DISP("--Binning:          ", btoa(params_.binning));
-  DISP("--Auto Expose:      ", btoa(params_.auto_expose));
-  DISP("--Expose Time:      ", params_.expose_us);
-  DISP("--Balance:          ", params_.white_balance);
-}
-
-void Camera::printStats() const {
-  DISP("Stats for camera ", serial_);
-  DISP("--FPS:              ", stats_->framesPerSecond.read());
-  DISP("--Capture time:     ", stats_->captureTime_s.read());
-  DISP("--Process time:     ", stats_->imageProcTime_s.read());
-  // DISP("--Retransmit count: ", stats_->retransmitCount.read());
-  // DISP("--Timeout count:    ", stats_->timedOutRequestsCount.read());
-  // DISP("--Missing data:     ", stats_->missingDataAverage_pc.read());
-}
-
-void Camera::printMvErrorMsg(const ImpactAcquireException &e,
-                             const std::string header) const {
-  std::cout << header << " " << device_manager_[id_]->serial.read()
-            << "(error code: " << e.getErrorCode() << "("
-            << e.getErrorCodeAsString() << "))." << std::endl
-            << "Press [Enter] to end the application..." << std::endl;
-  PRESS_A_KEY;
-}
-
 void Camera::setAoi(const int &w, const int &h) {
   int w_max = bf_settings_->cameraSetting.aoiWidth.getMaxValue();
   int w_min = bf_settings_->cameraSetting.aoiWidth.getMinValue();
@@ -281,7 +233,7 @@ bool Camera::grabImage(mv_image_t &mv_image) {
 
   // Request and wait for image
   func_interface_->imageRequestSingle();
-  usleep(100);  // necessary short sleep to warm up the camera
+  // usleep(100);  // necessary short sleep to warm up the camera
 
   int requestNr = INVALID_ID;
   requestNr = func_interface_->imageRequestWaitFor(TIMEOUT_MS);
@@ -316,13 +268,13 @@ bool Camera::grabImage(mv_image_t &mv_image) {
       func_interface_->imageRequestUnlock(requestNr);
       status = true;
     } else {
-      std::cout << LABEL << "Invalid image" << std::endl;
+      DISP("Invalid image", "");
       // Clear all image received and reset capture
       func_interface_->imageRequestUnlock(requestNr);
       status = false;
     }
   } else {
-    std::cout << LABEL << "Invalid image request" << std::endl;
+    DISP("Invalid image request", "");
     // Clear all image received and reset capture
     if (func_interface_->isRequestNrValid(requestNr)) {
       request_ = func_interface_->getRequest(requestNr);
@@ -332,6 +284,48 @@ bool Camera::grabImage(mv_image_t &mv_image) {
   }
 
   return status;
+}
+
+void Camera::printDetails() const {
+  DISP("Detials for camera:  ", serial_);
+  DISP("--Id:                ", device_->deviceID.readS());
+  DISP("--Product:           ", device_->product.readS());
+  DISP("--Family:            ", device_->family.readS());
+  DISP("--Class:             ", device_->deviceClass.readS());
+  DISP("--Serial:            ", device_->serial.readS());
+  DISP("--State:             ", device_->state.readS());
+  DISP("--In use:            ", btoa(device_->isInUse()));
+  DISP("--Is open:           ", btoa(device_->isOpen()));
+}
+
+void Camera::printSettings() const {
+  DISP("Settings for camera: ", serial_);
+  DISP("--Width:             ", params_.width);
+  DISP("--Height:            ", params_.height);
+  DISP("--FPS:               ", params_.fps);
+  DISP("--Mode:              ", params_.mode);
+  DISP("--Gain:              ", params_.gain);
+  DISP("--Color:             ", btoa(params_.color));
+  DISP("--Inverted:          ", btoa(params_.inverted));
+  DISP("--Binning:           ", btoa(params_.binning));
+  DISP("--Auto Expose:       ", btoa(params_.auto_expose));
+  DISP("--Expose Time:       ", params_.expose_us);
+  DISP("--Balance:           ", params_.white_balance);
+}
+
+void Camera::printStats() const {
+  DISP("Stats for camera:    ", serial_);
+  DISP("--FPS:               ", stats_->framesPerSecond.read());
+  DISP("--Capture time:      ", stats_->captureTime_s.read());
+  DISP("--Process time:      ", stats_->imageProcTime_s.read());
+}
+
+void Camera::printMvErrorMsg(const ImpactAcquireException &e,
+                             const std::string msg) const {
+  std::cout << label_ << msg << " " << device_->serial.read()
+            << "(error code: " << e.getErrorCode() << "("
+            << e.getErrorCodeAsString() << "))." << std::endl
+            << "Press [Enter] to end the application..." << std::endl;
 }
 
 }  // namepace bluefox2

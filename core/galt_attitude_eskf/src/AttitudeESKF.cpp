@@ -71,6 +71,9 @@ AttitudeESKF::AttitudeESKF() :
   b_.setZero();
   w_.setZero();
   
+  magRef_.setZero();
+  predMag_.setZero();
+  
   estBias_ = true;
   useMag_ = false;
 }
@@ -170,8 +173,9 @@ void AttitudeESKF::update(const vec3 &ab, const vec3 &mb)
   }
   else
   {
-    //  m-field predictionn
+    //  m-field prediction
     vec3 field = R.transpose() * magRef_;
+    predMag_ = field;
     
     Matrix<scalar_t,6,1> r;
     r.block<3,1>(0,0) = ab - aPred;

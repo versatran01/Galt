@@ -595,6 +595,33 @@ int Imu::enableBiasEstimation(bool enabled)
   return sendCommand(p,kTimeout);
 }
 
+int Imu::setHardIronOffset(float offset[3])
+{
+  Imu::Packet p(0x0C, 0x0F);
+  p.payload[0] = 0x0F;
+  p.payload[1] = 0x3A;
+  p.payload[2] = 0x01;  //  apply settings
+  
+  encode(&p.payload[3], offset[0], offset[1], offset[2]);
+  p.calcChecksum();
+  
+  return sendCommand(p,kTimeout);
+}
+
+int Imu::setSoftIronMatrix(float matrix[9])
+{
+  Imu::Packet p(0x0C, 0x27);
+  p.payload[0] = 0x27;
+  p.payload[1] = 0x3B;
+  p.payload[2] = 0x01;  //  apply settings
+  
+  encode(&p.payload[3], matrix[0], matrix[1], matrix[2], matrix[3],
+      matrix[4], matrix[5], matrix[6], matrix[7], matrix[8]);
+  
+  p.calcChecksum();
+  return sendCommand(p,kTimeout);
+}
+
 int Imu::enableIMUStream(bool enabled)
 {
     Packet p(0x0C, 0x05);

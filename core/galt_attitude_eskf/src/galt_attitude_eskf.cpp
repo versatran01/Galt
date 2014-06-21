@@ -34,6 +34,7 @@ ros::Publisher pubImu;
 ros::Publisher pubBias;
 ros::Publisher pubAlpha;
 ros::Publisher pubField;
+ros::Publisher pubPredField;
 
 boost::shared_ptr<tf::TransformBroadcaster> tfBroadcaster;  //  for broadcasting body frame
 std::string bodyFrameName;
@@ -129,30 +130,51 @@ static Eigen::Matrix<T,3,3> rotation_y(T angle)
     return R;
 }
 
+/**
+ * @brief geo_to_eigen Convert geometry_msg Vector3 to Eigen Vector3d
+ * @param vec
+ * @return Vector3d
+ */
+Eigen::Vector3d geo_to_eigen(const geometry_msgs::Vector3& vec) {
+  Eigen::Vector3d v3d;
+  v3d[0] = vec.x;
+  v3d[1] = vec.y;
+  v3d[2] = vec.z;
+  return v3d;
+}
+
 void imu_callback(const sensor_msgs::ImuConstPtr& imu, const sensor_msgs::MagneticFieldConstPtr& field)
 {  
   Vector3d wm;  //  measured angular rate
   Vector3d am;  //  measured acceleration
   Vector3d mm;  //  measured magnetic field
   
-  wm[0] = imu->angular_velocity.x;
-  wm[1] = imu->angular_velocity.y;
-  wm[2] = imu->angular_velocity.z;
+  wm = geo_to_eigen(imu->angular_velocity);
+  am = geo_to_eigen(imu->linear_acceleration);
+  mm = geo_to_eigen(field->magnetic_field);
   
-  am[0] = imu->linear_acceleration.x;
-  am[1] = imu->linear_acceleration.y;
-  am[2] = imu->linear_acceleration.z;
-  
-  mm[0] = field->magnetic_field.x;
-  mm[1] = field->magnetic_field.y;
-  mm[2] = field->magnetic_field.z;
-  
-  if (topicMode == MagCalibrated) {
+  if (topicMode == MagNeedsCalibration) {
+    eskf.setUsesMagnetometer(false);
+  } 
+  else if (topicMode == MagCalibrated) {
     for (int i=0; i < 3; i++) {
       mm[i] -= magBias[i];
       mm[i] /= magScale[i];
     }
     eskf.setUsesMagnetometer(true);
+    
+    quat Q = eskf.getQuat();
+    Matrix3d R = Q.to_matrix().cast<double>();
+    Vector3d rpy = getRPY(R);
+    
+    //log_i("heading: %f\n", rpy[2]);
+    
+    //  debug: calc raw heading
+    Matrix3d trans = rotation_y(rpy[1]) * rotation_x(rpy[0]);    
+    Vector3d mw = trans * mm;
+    
+    double ang = std::atan2(mw[1],mw[0]);
+    //log_i("basic heading: %f\n", ang);
   }
   
   eskf.predict(wm,imu->header.stamp.toSec());
@@ -196,7 +218,7 @@ void imu_callback(const sensor_msgs::ImuConstPtr& imu, const sensor_msgs::Magnet
       {
         samples.push_back(i->second.field);
         
-        double r = i->second.field.norm();
+        const double r = i->second.field.norm();
         mean_rad += r;
         mean_rad_sqr += r*r;
       }
@@ -204,7 +226,7 @@ void imu_callback(const sensor_msgs::ImuConstPtr& imu, const sensor_msgs::Magnet
       mean_rad_sqr /= sampleBins.size();
             
       //  standard deviation
-      float std_dev = std::sqrt(mean_rad_sqr - mean_rad*mean_rad);
+      const float std_dev = std::sqrt(mean_rad_sqr - mean_rad*mean_rad);
       
       //  calculate bias term
       for (Vector3d& s : samples) {
@@ -214,13 +236,16 @@ void imu_callback(const sensor_msgs::ImuConstPtr& imu, const sensor_msgs::Magnet
         }
       }
       
-      Vector3d bias = (max + min) / 2;    //  estimate of soft bias            
+      //  estimate of soft bias
+      Vector3d bias = (max + min) / 2;               
       
       //  reject outliers
       auto j = sampleBins.begin();
       for (auto i = samples.begin(); i != samples.end();)
       {
-        if (std::abs(i->norm() - mean_rad) > std_dev*2) {
+        const Vector3d s = *i - bias;
+        
+        if (std::abs(s.norm() - mean_rad) > std_dev*2) {
           i = samples.erase(i);
           j = sampleBins.erase(j);
         } else {          
@@ -231,10 +256,8 @@ void imu_callback(const sensor_msgs::ImuConstPtr& imu, const sensor_msgs::Magnet
             
       log_i("%lu samples left after discarding outliers", samples.size());
       log_i("bias: %f, %f, %f", bias[0], bias[1], bias[2]);
-      
-      magBias = bias;
-      
-      //  attempt to determine scale factors via optimization
+            
+      //  attempt to determine scale factors via GN-NLS
       Vector3d scl;
       scl.setOnes();
       
@@ -285,12 +308,18 @@ void imu_callback(const sensor_msgs::ImuConstPtr& imu, const sensor_msgs::Magnet
         }
       }
       
+      //bias.setZero();
+      //scl.setOnes();
+      
+      magBias = bias;
+      magScale = scl;
+      
       log_i("Adjusted scale: %f, %f, %f", scl[0], scl[1], scl[2]);
       log_i("Adjusted bias: %f, %f, %f", bias[0], bias[1], bias[2]);
       
       double hAvg = 0.0;
       double vAvg = 0.0;
-      long count=0;      
+      long count=0;
       
       //  determine the inertial field
       for (auto i = sampleBins.begin(); i != sampleBins.end(); i++) 
@@ -374,13 +403,21 @@ void imu_callback(const sensor_msgs::ImuConstPtr& imu, const sensor_msgs::Magnet
   bias.vector.z = eskf.getGyroBias()[2];
   pubBias.publish(bias);
   
-  //  publish mag bias
+  //  publish compensated magnetic field
   sensor_msgs::MagneticField fieldOut;
   fieldOut.header.stamp = filtImu.header.stamp;
-  fieldOut.magnetic_field.x = mm[0] - magBias[0];
-  fieldOut.magnetic_field.y = mm[1] - magBias[1];
-  fieldOut.magnetic_field.z = mm[2] - magBias[2];
+  fieldOut.magnetic_field.x = mm[0];
+  fieldOut.magnetic_field.y = mm[1];
+  fieldOut.magnetic_field.z = mm[2];
   pubField.publish(fieldOut);
+  
+  //  publish predicted magnetic field
+  sensor_msgs::MagneticField predFieldOut;
+  predFieldOut.header.stamp = filtImu.header.stamp;
+  predFieldOut.magnetic_field.x = eskf.getPredictedField()[0];
+  predFieldOut.magnetic_field.y = eskf.getPredictedField()[1];
+  predFieldOut.magnetic_field.z = eskf.getPredictedField()[2];
+  pubPredField.publish(predFieldOut);
   
   //  broadcast frame
   tf::Transform transform;
@@ -410,10 +447,7 @@ int main(int argc, char ** argv)
   //  subscribe to indicated topics
   message_filters::Subscriber<sensor_msgs::Imu> imuSub(nh, imu_topic, 1);
   message_filters::Subscriber<sensor_msgs::MagneticField> fieldSub(nh, field_topic, 1);
-  
-  //ros::Subscriber imuSub = nh.subscribe<sensor_msgs::Imu>(imu_topic, 1, &imu_callback);
-  //ros::Subscriber fieldSub = nh.subscribe<sensor_msgs::MagneticField>(field_topic, 1, &field_callback);
-    
+
   message_filters::TimeSynchronizer<sensor_msgs::Imu, sensor_msgs::MagneticField> sync(imuSub, fieldSub, 2);
   sync.registerCallback(boost::bind(&imu_callback, _1, _2));
   
@@ -421,6 +455,7 @@ int main(int argc, char ** argv)
   pubImu = nh.advertise<sensor_msgs::Imu>("filtered_imu", 1);
   pubBias = nh.advertise<geometry_msgs::Vector3Stamped>("bias", 1);
   pubField = nh.advertise<sensor_msgs::MagneticField>("adjusted_field", 1);
+  pubPredField = nh.advertise<sensor_msgs::MagneticField>("predicted_field", 1);
   
   tfBroadcaster = boost::shared_ptr<tf::TransformBroadcaster>( new tf::TransformBroadcaster() );
   bodyFrameName = ros::this_node::getName() + "/bodyFrame";
@@ -428,7 +463,7 @@ int main(int argc, char ** argv)
   AttitudeESKF::VarSettings var;
   var.accel[0] = var.accel[1] = var.accel[2] = 1.0;
   var.gyro[0] = var.gyro[1] = var.gyro[2] = 0.001;
-  var.mag[0] = var.mag[1] = var.mag[2] = 0.1;
+  var.mag[0] = var.mag[1] = var.mag[2] = 0.3;
   
   eskf.setVariances(var);
   eskf.setUsesMagnetometer(false);

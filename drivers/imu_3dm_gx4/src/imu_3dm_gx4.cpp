@@ -6,6 +6,9 @@
 #include <sensor_msgs/FluidPressure.h>
 #include <geometry_msgs/Vector3Stamped.h>
 
+#include <tf/transform_broadcaster.h>
+#include <tf/transform_datatypes.h>
+
 #include <string>
 
 #include <error_handling.hpp>
@@ -20,6 +23,8 @@ ros::Publisher pubMag;
 ros::Publisher pubPressure;
 ros::Publisher pubOrientation;
 ros::Publisher pubBias;
+
+boost::shared_ptr<tf::TransformBroadcaster> tfBroadcaster;
 
 void publish_data(const Imu::IMUData& data)
 {
@@ -70,14 +75,20 @@ void publish_filter(const Imu::FilterData& data)
   orientation.filterStatus = data.quatStatus;
 
   pubOrientation.publish(orientation);
-  
+
   geometry_msgs::Vector3Stamped bias;
   bias.header.stamp = orientation.header.stamp;
   bias.vector.x = data.bias[0];
   bias.vector.y = data.bias[1];
   bias.vector.z = data.bias[2];
-  
+
   pubBias.publish(bias);
+
+  tf::Transform transform;
+  transform.setRotation( tf::Quaternion(data.quaternion[1], data.quaternion[2], data.quaternion[3], data.quaternion[0]) );
+  transform.setOrigin( tf::Vector3(0.0, 0.0, 0.0) );
+
+  tfBroadcaster->sendTransform( tf::StampedTransform(transform, ros::Time::now(), "fixedFrame", "bodyFrame") );
 }
 
 int main(int argc, char **argv)
@@ -106,6 +117,8 @@ int main(int argc, char **argv)
     pubOrientation = nh.advertise<imu_3dm_gx4::Orientation>("orientation", 1);
     pubBias = nh.advertise<geometry_msgs::Vector3Stamped>("bias", 1);
   }
+  
+  tfBroadcaster = boost::shared_ptr<tf::TransformBroadcaster>( new tf::TransformBroadcaster() );
 
   Imu imu(device);
 
@@ -181,10 +194,23 @@ int main(int argc, char **argv)
       assert_throw(imu.enableFilterStream(true));
 
       log_w("Enabling filter measurements");
-      assert_throw(imu.enableMeasurements(true, false));  // TODO: Make this an option
-      
+      assert_throw(imu.enableMeasurements(true, true));  // TODO: Make this an option
+
       log_w("Enabling gyro bias estimation");
       assert_throw(imu.enableBiasEstimation(true));
+      
+      //  temporary for debugging...
+      float bias[3] = {-0.058790, 0.023714, 0.037945};
+      float soft[9] = {0.98624f, 0.0f, 0.0f,
+                       0.0f, 0.983396f, 0.0f,
+                       0.0f, 0.0f, 0.99204f};
+      
+      if (imu.setSoftIronMatrix(soft) <= 0) {
+        log_e("Failed to set soft iron matrix");
+      }
+      if (imu.setHardIronOffset(bias) <= 0) {
+        log_e("Failed to set hard iron offset");
+      }
     } else {
       log_w("Disabling filter data stream");
       assert_throw(imu.enableFilterStream(false));

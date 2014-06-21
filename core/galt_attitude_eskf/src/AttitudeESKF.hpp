@@ -129,6 +129,12 @@ public:
   const Eigen::Matrix<scalar_t,3,3>& getCovariance() const { return P_; }
   
   /**
+   * @brief 
+   * @return
+   */
+  const vec3& getPredictedField() const { return predMag_; }
+  
+  /**
    * @brief isStable
    * @return 
    */
@@ -144,6 +150,7 @@ private:
   unsigned long steadyCount_;
 
   vec3 magRef_;  //  North
+  vec3 predMag_;
   
   bool isStable_;
   bool estBias_;

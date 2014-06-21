@@ -336,9 +336,25 @@ public:
     int enableMeasurements(bool accel, bool magnetometer);
     
     /**
-     *
+     * @brief enableBiasEstimation Enable gyroscope bias estimation
+     * @param enabled If true, bias estimation is enabled
+     * @return 0 on timeout, negative value if NACK is received, positive on success.
      */
     int enableBiasEstimation(bool enabled);
+    
+    /**
+     * @brief setHardIronOffset
+     * @param offset
+     * @return 
+     */
+    int setHardIronOffset(float offset[3]);
+    
+    /**
+     * @brief setSoftIronMatrix
+     * @param matrix
+     * @return 
+     */
+    int setSoftIronMatrix(float matrix[9]);
     
     /**
      *  @brief enableIMUStream Enable/disable streaming of IMU data

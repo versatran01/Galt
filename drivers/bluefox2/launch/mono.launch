@@ -19,7 +19,7 @@
   <!-- White balance parameter, options are: none, indoor, outdoor -->
   <arg name="wbp" default="none"/>
 
-  <node pkg="bluefox2" type="bluefox2" name="cam_$(arg serial)" output="screen">
+  <node pkg="bluefox2" type="bluefox2_node" name="cam_$(arg serial)" output="screen">
     <param name="fps" type="double" value="$(arg fps)"/>
     <param name="gain" type="double" value="0.0"/>
     <param name="color" type="bool" value="$(arg color)"/>

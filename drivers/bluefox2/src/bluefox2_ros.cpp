@@ -12,7 +12,7 @@ CameraRos::CameraRos(const ros::NodeHandle &nh) : nh_(nh), seq_(0) {
   // Set node information
   node_ = string("cam_") + serial;
   // Get settings from launch file
-  mv_params_t mv_params = readParams();
+  mv_params_s mv_params = readParams();
   // Create and initialize camera
   camera_ = CameraPtr(new Camera(serial, mv_params));
 }
@@ -41,7 +41,7 @@ void CameraRos::init() {
 }
 
 void CameraRos::publish() {
-  mv_image_t mv_image;
+  mv_image_s mv_image;
   ros::Rate loop_rate(camera_->fps());
   ROS_INFO("Publishing image topic to /%s/image_raw", node_.c_str());
 
@@ -74,8 +74,8 @@ void CameraRos::publish() {
   }
 }
 
-mv_params_t CameraRos::readParams() {
-  mv_params_t mv_params;
+mv_params_s CameraRos::readParams() {
+  mv_params_s mv_params;
 
   nh_.param<bool>("color", mv_params.color, false);
   nh_.param<bool>("hdr", mv_params.hdr, false);

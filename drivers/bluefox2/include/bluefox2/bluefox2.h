@@ -32,7 +32,7 @@ typedef struct mv_params {
   double gain;
   string mode;
   string white_balance;
-} mv_params_t;
+} mv_params_s;
 
 // Represents image data
 typedef struct mv_image {
@@ -41,7 +41,7 @@ typedef struct mv_image {
   int channel;
   int step;
   vector<unsigned char> data;
-} mv_image_t;
+} mv_image_s;
 
 // Camera class
 class Camera {
@@ -52,7 +52,7 @@ class Camera {
    * @param serial Serial number of camera
    * @param mv_params A struct collects all user settings
    */
-  Camera(string serial, mv_params_t mv_params);
+  Camera(string serial, mv_params_s mv_params);
 
   /**
    * @brief Destructor
@@ -75,7 +75,7 @@ class Camera {
    * @param image A mv image
    * @return True for successful
    */
-  bool grabImage(mv_image_t &image);
+  bool grabImage(mv_image_s &image);
 
   /**
    * @brief All accessors
@@ -92,7 +92,7 @@ class Camera {
   int id_;
   bool ok_;
   const string serial_;
-  const mv_params_t params_;
+  const mv_params_s params_;
   string label_;
 
   DeviceManager device_manager_;

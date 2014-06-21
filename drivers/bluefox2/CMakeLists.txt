@@ -17,11 +17,13 @@ include_directories(${MVIMPACT_DIR})
 include_directories(${OpenCV_INCLUDE_DIRS})
 
 # camera node
-add_executable(${PROJECT_NAME}
-    src/camera_node.cpp src/bluefox2.cpp src/bluefox2_ros.cpp)
-target_link_libraries(${PROJECT_NAME}
-    ${catkin_LIBRARIES}
-    ${MVIMPACT_DIR}/lib/x86_64/libmvDeviceManager.so)
+add_library(${PROJECT_NAME} src/bluefox2.cpp)
+target_link_libraries(${PROJECT_NAME} ${MVIMPACT_DIR}/lib/x86_64/libmvDeviceManager.so)
+
+add_executable(${PROJECT_NAME}_node src/camera_node.cpp src/bluefox2_ros.cpp)
+target_link_libraries(${PROJECT_NAME}_node
+    ${PROJECT_NAME}
+    ${catkin_LIBRARIES})
 
 # stereo sync
 add_executable(stereo_sync src/stereo_sync.cpp)

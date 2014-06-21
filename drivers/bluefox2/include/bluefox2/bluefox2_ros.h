@@ -36,7 +36,7 @@ class CameraRos {
   CameraPublisher camera_pub_;
   CameraPtr camera_;
 
-  mv_params_t readParams();
+  mv_params_s readParams();
 
 };  // class CameraRos
 

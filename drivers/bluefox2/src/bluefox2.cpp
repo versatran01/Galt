@@ -2,7 +2,7 @@
 
 namespace bluefox2 {
 
-Camera::Camera(string serial, mv_params_t mv_params)
+Camera::Camera(string serial, mv_params_s mv_params)
     : ok_(false),
       serial_(serial),
       params_(mv_params),
@@ -228,7 +228,7 @@ void Camera::setAoi(const int &w, const int &h) {
   bf_settings_->cameraSetting.aoiHeight.write(h);
 }
 
-bool Camera::grabImage(mv_image_t &mv_image) {
+bool Camera::grabImage(mv_image_s &mv_image) {
   bool status = false;
 
   // Request and wait for image

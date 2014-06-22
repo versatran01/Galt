@@ -234,7 +234,6 @@ public:
     
     /**
      *  @brief runOnce Poll for input and read packets if available.
-     *  @note kTimeout controls the poll duration, default is 100ms.
      */
     void runOnce();
     
@@ -318,9 +317,9 @@ public:
     
     /**
      *  @brief setFilterDataRate Set estimator data rate for different sources.
-     *  @param decimation Denominator in the update rate value: 1000/x
+     *  @param decimation Denominator in the update rate value: 500/x
      *  @param sources Sources to apply this rate to. May be a bitwise combination of the values:
-     *   Quaternion
+     *   Quaternion, GyroBias
      *
      *  @throw invalid_argument if an invalid source is requested.
      *  @return 0 on timeout, negative value if NACK is received, positive on success.
@@ -343,16 +342,16 @@ public:
     int enableBiasEstimation(bool enabled);
     
     /**
-     * @brief setHardIronOffset
-     * @param offset
-     * @return 
+     * @brief setHardIronOffset Set the hard-iron bias vector for the magnetometer.
+     * @param offset 3x1 vector, units of gauss.
+     * @return 0 on timeout, negative value if NACK is received, positive on success.
      */
     int setHardIronOffset(float offset[3]);
     
     /**
-     * @brief setSoftIronMatrix
-     * @param matrix
-     * @return 
+     * @brief setSoftIronMatrix Set the soft-iron matrix for the magnetometer.
+     * @param matrix 3x3 row-major matrix, default should be identity.
+     * @return 0 on timeout, negative value if NACK is received, positive on success.
      */
     int setSoftIronMatrix(float matrix[9]);
     

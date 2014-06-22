@@ -5,6 +5,7 @@
 #include <sensor_msgs/MagneticField.h>
 #include <sensor_msgs/FluidPressure.h>
 #include <geometry_msgs/Vector3Stamped.h>
+#include <geometry_msgs/QuaternionStamped.h>
 
 #include <tf/transform_broadcaster.h>
 #include <tf/transform_datatypes.h>
@@ -12,7 +13,7 @@
 #include <string>
 
 #include <error_handling.hpp>
-#include <imu_3dm_gx4/Orientation.h>
+#include <imu_3dm_gx4/FilterStatus.h>
 #include "imu.hpp"
 
 using namespace imu_3dm_gx4;
@@ -23,8 +24,10 @@ ros::Publisher pubMag;
 ros::Publisher pubPressure;
 ros::Publisher pubOrientation;
 ros::Publisher pubBias;
+ros::Publisher pubStatus;
 
 boost::shared_ptr<tf::TransformBroadcaster> tfBroadcaster;
+bool broadcast_frame = false;
 
 void publish_data(const Imu::IMUData& data)
 {
@@ -66,13 +69,12 @@ void publish_data(const Imu::IMUData& data)
 
 void publish_filter(const Imu::FilterData& data)
 {
-  imu_3dm_gx4::Orientation orientation;
+  geometry_msgs::QuaternionStamped orientation;
   orientation.header.stamp = ros::Time::now();
   orientation.quaternion.w = data.quaternion[0];
   orientation.quaternion.x = data.quaternion[1];
   orientation.quaternion.y = data.quaternion[2];
   orientation.quaternion.z = data.quaternion[3];
-  orientation.filterStatus = data.quatStatus;
 
   pubOrientation.publish(orientation);
 
@@ -84,11 +86,20 @@ void publish_filter(const Imu::FilterData& data)
 
   pubBias.publish(bias);
 
-  tf::Transform transform;
-  transform.setRotation( tf::Quaternion(data.quaternion[1], data.quaternion[2], data.quaternion[3], data.quaternion[0]) );
-  transform.setOrigin( tf::Vector3(0.0, 0.0, 0.0) );
-
-  tfBroadcaster->sendTransform( tf::StampedTransform(transform, ros::Time::now(), "fixedFrame", "bodyFrame") );
+  imu_3dm_gx4::FilterStatus status;
+  status.quatStatus = data.quatStatus;
+  status.biasStatus = data.biasStatus;
+  
+  pubStatus.publish(status);
+  
+  if (broadcast_frame) {
+    tf::Transform transform;
+    transform.setRotation( tf::Quaternion(data.quaternion[1], data.quaternion[2], data.quaternion[3], data.quaternion[0]) );
+    transform.setOrigin( tf::Vector3(0.0, 0.0, 0.0) );
+    
+    tfBroadcaster->sendTransform( tf::StampedTransform(transform, ros::Time::now(), 
+                                                       "fixedFrame", ros::this_node::getName() + "/bodyFrame") );
+  }
 }
 
 int main(int argc, char **argv)
@@ -100,26 +111,33 @@ int main(int argc, char **argv)
   std::string device;
   int baudrate;
   int imu_decimation, filter_decimation;
-  bool use_filter;
+  bool enable_filter;
+  bool enable_mag_update;
 
   //  load parameters from launch file
   nh.param<std::string>("device", device, "/dev/ttyACM0");
   nh.param<int>("baudrate", baudrate, 115200);
   nh.param<int>("imu_decimation", imu_decimation, 10);
-  nh.param<int>("filter_decimation", filter_decimation, 50);
-  nh.param<bool>("use_filter", use_filter, false);
-
+  nh.param<int>("filter_decimation", filter_decimation, 5);
+  nh.param<bool>("enable_filter", enable_filter, false);
+  nh.param<bool>("broadcast_frame", broadcast_frame, false);
+  nh.param<bool>("enable_mag_update", enable_mag_update, true);
+  
   pubIMU = nh.advertise<sensor_msgs::Imu>("imu", 1);
   pubMag = nh.advertise<sensor_msgs::MagneticField>("magnetic_field", 1);
   pubPressure = nh.advertise<sensor_msgs::FluidPressure>("pressure", 1);
 
-  if (use_filter) {
-    pubOrientation = nh.advertise<imu_3dm_gx4::Orientation>("orientation", 1);
+  if (enable_filter) {
+    pubOrientation = nh.advertise<geometry_msgs::QuaternionStamped>("orientation", 1);
     pubBias = nh.advertise<geometry_msgs::Vector3Stamped>("bias", 1);
+    pubStatus = nh.advertise<imu_3dm_gx4::FilterStatus>("filterStatus", 1);
   }
   
-  tfBroadcaster = boost::shared_ptr<tf::TransformBroadcaster>( new tf::TransformBroadcaster() );
+  if (broadcast_frame) {
+    tfBroadcaster = boost::shared_ptr<tf::TransformBroadcaster>( new tf::TransformBroadcaster() );
+  }
 
+  //  new instance of the IMU
   Imu imu(device);
 
   try
@@ -131,7 +149,6 @@ int main(int argc, char **argv)
 
     Imu::Info info;
     if ( imu.getDeviceInfo(info) ) {
-
         log_w("Retrieved device info:");
         log_w("\tFirmware version: %u", info.firmwareVersion);
         log_w("\tModel name: %s", info.modelName.c_str());
@@ -143,7 +160,7 @@ int main(int argc, char **argv)
 #define assert_throw(command) if ((command) <= 0) { throw std::runtime_error("Failed last command"); }
 
     log_w("Idling the device");
-    assert_throw(imu.idle(100));
+    assert_throw(imu.idle(300));
 
     //  read back data rates
     uint16_t baseRate;
@@ -189,28 +206,15 @@ int main(int argc, char **argv)
     log_w("Enabling IMU data stream");
     assert_throw(imu.enableIMUStream(true));
 
-    if (use_filter) {
+    if (enable_filter) {
       log_w("Enabling filter data stream");
       assert_throw(imu.enableFilterStream(true));
 
       log_w("Enabling filter measurements");
-      assert_throw(imu.enableMeasurements(true, true));  // TODO: Make this an option
+      assert_throw(imu.enableMeasurements(true, enable_mag_update));
 
       log_w("Enabling gyro bias estimation");
       assert_throw(imu.enableBiasEstimation(true));
-      
-      //  temporary for debugging...
-      float bias[3] = {-0.058790, 0.023714, 0.037945};
-      float soft[9] = {0.98624f, 0.0f, 0.0f,
-                       0.0f, 0.983396f, 0.0f,
-                       0.0f, 0.0f, 0.99204f};
-      
-      if (imu.setSoftIronMatrix(soft) <= 0) {
-        log_e("Failed to set soft iron matrix");
-      }
-      if (imu.setHardIronOffset(bias) <= 0) {
-        log_e("Failed to set hard iron offset");
-      }
     } else {
       log_w("Disabling filter data stream");
       assert_throw(imu.enableFilterStream(false));
@@ -223,9 +227,9 @@ int main(int argc, char **argv)
 
     imu.imuDataCallback = publish_data;
     imu.filterDataCallback = publish_filter;
+    
     while (ros::ok()) {
       imu.runOnce();
-      //ros::spinOnce();
     }
     imu.disconnect();
   }

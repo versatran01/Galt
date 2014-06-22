@@ -48,7 +48,7 @@ enum {
 
 struct SampleBin {
   Vector3d field;
-  quat q;
+  quat<double> q;
 };
 
 std::map< std::tuple<int,int>, SampleBin > sampleBins;
@@ -144,7 +144,7 @@ Eigen::Vector3d geo_to_eigen(const geometry_msgs::Vector3& vec) {
 }
 
 void imu_callback(const sensor_msgs::ImuConstPtr& imu, const sensor_msgs::MagneticFieldConstPtr& field)
-{  
+{    
   Vector3d wm;  //  measured angular rate
   Vector3d am;  //  measured acceleration
   Vector3d mm;  //  measured magnetic field
@@ -162,25 +162,12 @@ void imu_callback(const sensor_msgs::ImuConstPtr& imu, const sensor_msgs::Magnet
       mm[i] /= magScale[i];
     }
     eskf.setUsesMagnetometer(true);
-    
-    quat Q = eskf.getQuat();
-    Matrix3d R = Q.to_matrix().cast<double>();
-    Vector3d rpy = getRPY(R);
-    
-    //log_i("heading: %f\n", rpy[2]);
-    
-    //  debug: calc raw heading
-    Matrix3d trans = rotation_y(rpy[1]) * rotation_x(rpy[0]);    
-    Vector3d mw = trans * mm;
-    
-    double ang = std::atan2(mw[1],mw[0]);
-    //log_i("basic heading: %f\n", ang);
   }
   
   eskf.predict(wm,imu->header.stamp.toSec());
   eskf.update(am,mm);   //  mm is ignored when magnetometer uncalibrated
  
-  quat Q = eskf.getQuat();                            //  updated quaternion
+  quat<double> Q = eskf.getQuat();                            //  updated quaternion
   AttitudeESKF::vec3 w = eskf.getAngularVelocity();   //  bias subtracted 
   
   if (topicMode == MagNeedsCalibration)
@@ -200,7 +187,7 @@ void imu_callback(const sensor_msgs::ImuConstPtr& imu, const sensor_msgs::Magnet
     
     sampleBins[std::tuple<int,int>(i,j)] = bin;
     
-    log_i("%lu bins are filled", sampleBins.size() );
+    //log_i("%lu bins are filled", sampleBins.size() );
     if ( sampleBins.size() > std::floor(BIN_DIM*BIN_DIM*0.7) ) 
     {
       log_i("Collected enough bins to calibrate");
@@ -269,9 +256,9 @@ void imu_callback(const sensor_msgs::ImuConstPtr& imu, const sensor_msgs::Magnet
         
         for (size_t i=0; i < samples.size(); i++)
         {
-          double x = (samples[i][0] - bias[0]) / (scl[0]);
-          double y = (samples[i][1] - bias[1]) / (scl[1]);
-          double z = (samples[i][2] - bias[2]) / (scl[2]);
+          double x = (samples[i][0] - bias[0]) / scl[0];
+          double y = (samples[i][1] - bias[1]) / scl[1];
+          double z = (samples[i][2] - bias[2]) / scl[2];
           
           double rad2 = x*x + y*y + z*z;
           r[i] = mean_rad*mean_rad - rad2;
@@ -445,10 +432,10 @@ int main(int argc, char ** argv)
   log_i("Subscribing to %s", field_topic.c_str());
 
   //  subscribe to indicated topics
-  message_filters::Subscriber<sensor_msgs::Imu> imuSub(nh, imu_topic, 1);
-  message_filters::Subscriber<sensor_msgs::MagneticField> fieldSub(nh, field_topic, 1);
+  message_filters::Subscriber<sensor_msgs::Imu> imuSub(nh, imu_topic, 30);
+  message_filters::Subscriber<sensor_msgs::MagneticField> fieldSub(nh, field_topic, 30);
 
-  message_filters::TimeSynchronizer<sensor_msgs::Imu, sensor_msgs::MagneticField> sync(imuSub, fieldSub, 2);
+  message_filters::TimeSynchronizer<sensor_msgs::Imu, sensor_msgs::MagneticField> sync(imuSub, fieldSub, 1);
   sync.registerCallback(boost::bind(&imu_callback, _1, _2));
   
   //  filtered IMU output

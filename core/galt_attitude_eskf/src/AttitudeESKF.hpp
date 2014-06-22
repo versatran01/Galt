@@ -16,9 +16,9 @@
 
 /**
  *  @class AttitudeESKF
- *  @brief Implementation of an error-state EKF for attitude determination using Quaternions
- *  @note Gravity is the attitude vector in this imeplementaiton.
- *  @see 'Attitude Error Representations for Kalman Filtering' F. Landis Markley
+ *  @brief Implementation of an error-state EKF for attitude determination using Quaternions.
+ *  @note Gravity and magnetic field are the supported reference vectors.
+ *  @see 'Attitude Error Representations for Kalman Filtering', F. Landis Markley, JPL
  */
 class AttitudeESKF
 {
@@ -35,9 +35,9 @@ public:
    * @brief The VarSettings struct
    */
   struct VarSettings {
-    scalar_t accel[3];
-    scalar_t gyro[3];
-    scalar_t mag[3];
+    scalar_t accel[3];  /// XYZ variance on acceleration, units of Gs
+    scalar_t gyro[3];   /// XYZ variance on gyroscope, units of rad/s
+    scalar_t mag[3];    /// XYZ variance on magnetometer, units of Gauss
     
     VarSettings() {
       for (int i=0; i < 3; i++) {
@@ -108,7 +108,7 @@ public:
    * @brief getQuat
    * @return 
    */
-  const quat& getQuat() const { return q_; }
+  const quat<scalar_t>& getQuat() const { return q_; }
   
   /**
    * @brief getAngularVelocity
@@ -141,7 +141,7 @@ public:
   bool isStable() const { return isStable_; }
   
 private:
-  quat q_;                         /// Orientation
+  quat<scalar_t> q_;               /// Orientation
   Eigen::Matrix<scalar_t,3,3> P_;  /// System covariance
   double lastTime_;
   

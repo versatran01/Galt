@@ -32,7 +32,7 @@ extern "C" {
 }
 
 #define kTimeout    (100)
-#define kBufferSize (4096)
+#define kBufferSize (10)  //  for full performance this must be kept SMALL!
 
 #define u8(x) static_cast<uint8_t>((x))
 
@@ -188,6 +188,12 @@ void Imu::connect()
     if (fd_ < 0) {
         throw std::runtime_error("Failed to open device : " + device_);
     }
+    
+    //  make sure it is non-blocking
+    if(fcntl(fd_, F_SETFL, FNONBLOCK) < 0) {
+      disconnect();
+      throw io_error( strerror(errno) );
+    }
 
     struct termios toptions;
     if (tcgetattr(fd_, &toptions) < 0) {
@@ -272,7 +278,7 @@ bool Imu::termiosBaudRate(unsigned int baud)
 
 void Imu::runOnce()
 {
-    int sig = pollInput(kTimeout);
+    int sig = pollInput(5);
     if (sig < 0) {
         //  failure in poll/read, device disconnected
         throw io_error( strerror(errno) );
@@ -604,7 +610,6 @@ int Imu::setHardIronOffset(float offset[3])
   
   encode(&p.payload[3], offset[0], offset[1], offset[2]);
   p.calcChecksum();
-  
   return sendCommand(p,kTimeout);
 }
 
@@ -649,7 +654,7 @@ int Imu::enableFilterStream(bool enabled)
 }
 
 int Imu::pollInput(unsigned int to)
-{
+{  
     //  poll socket for inputs
     struct pollfd p;
     p.fd = fd_;
@@ -670,13 +675,13 @@ int Imu::pollInput(unsigned int to)
         //  treat these like timeout errors
         return 0;
     }
-
+    
     //  poll() or read() failed
     return -1;
 }
 
 int Imu::handleRead(size_t bytes_transferred)  //  parses packets out of the input buffer
-{
+{  
     //  read data into queue
     for (size_t i=0; i < bytes_transferred; i++) {
         queue_.push_back(buffer_[i]);
@@ -828,10 +833,6 @@ void Imu::processPacket()
         {
           decode(&packet_.payload[idx+2], 3, filterData.bias);
           decode(&packet_.payload[idx+2+sizeof(float)*3], 1, &filterData.biasStatus);
-          
-          if (filterData.biasStatus == 0) {
-            log_i("Bias is invalid");
-          }
         }
         else {
           log_w("Warning: Unsupported data field present in estimator packet");
@@ -845,10 +846,8 @@ void Imu::processPacket()
       }
     }
     else if ( packet_.is_ack() ) {
-        if (packet_.payload[3] == 0) {
-            //  log_i("Received ACK packet: 0x%02x, 0x%02x\n", packet_.descriptor, packet_.payload[2]);
-        } else {
-            //  log_i("Received NACK packet: 0x%02x, 0x%02x, 0x%02x\n", packet_.descriptor, packet_.payload[2], packet_.payload[3]);
+        if (packet_.payload[3] != 0) {
+            log_e("Received NACK packet: 0x%02x, 0x%02x, 0x%02x\n", packet_.descriptor, packet_.payload[2], packet_.payload[3]);
         }
     }
 }

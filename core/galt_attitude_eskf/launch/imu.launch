@@ -1,7 +1,10 @@
 <launch>
 
   <!-- Launch the 3DM w/ only IMU data streaming -->
-  <include file="$(find imu_3dm_gx4)/launch/imu_filter.launch">
+  <include file="$(find imu_3dm_gx4)/launch/imu.launch">
+    <arg name="device" value="/dev/ttyACM1"/>
+    <arg name="imu_decimation" value="5"/>
+    <arg name="baudrate" value="921600"/>
   </include>
 
   <!-- Point the filter to the correct topics of the 3DM -->

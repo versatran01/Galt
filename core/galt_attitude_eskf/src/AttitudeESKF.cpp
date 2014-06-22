@@ -86,12 +86,12 @@ void AttitudeESKF::predict(const vec3 &wb, double time)
   if (lastTime_ != 0.0 && time > lastTime_) {
     dt = static_cast<scalar_t>(time - lastTime_);
   }
-  lastTime_ = time;  
-
+  lastTime_ = time;
+  
   if (wb.norm() < 1.0e-2) {
     steadyCount_++; //  not rotating, update moving average
     
-    if (estBias_ && steadyCount_ > 20) 
+    if (estBias_ && steadyCount_ > 20)
     {
       b_ = (b_ * (steadyCount_-1) + wb) / steadyCount_;
     }
@@ -107,7 +107,7 @@ void AttitudeESKF::predict(const vec3 &wb, double time)
   F.block<3,3>(0,0) = I3 - cross_skew<scalar_t>(w_ * dt);
 
   //  integrate nominal state
-  q_.integrateRungeKutta4(quat(0.0, w_[0], w_[1], w_[2]), dt);
+  q_.integrateRungeKutta4(quat<scalar_t>(0.0, w_[0], w_[1], w_[2]), dt);
   
   Matrix<scalar_t,3,3> Q;
   Q.setZero();
@@ -216,32 +216,32 @@ void AttitudeESKF::update(const vec3 &ab, const vec3 &mb)
   //  perform state update  
   P_ = (Matrix<scalar_t,3,3>::Identity() - A) * P_;
   
-  q_ = q_ * quat(1.0, dx[0], dx[1], dx[2]);
+  q_ = q_ * quat<scalar_t>(1.0, dx[0], dx[1], dx[2]);
   q_ /= q_.norm();
 }
 
 
 //  (world) = Rz * Ry * Rx (body)
-Eigen::Matrix<double,3,1> AttitudeESKF::getRPY() const
+Eigen::Matrix<AttitudeESKF::scalar_t,3,1> AttitudeESKF::getRPY() const
 {	
-	const Matrix<double,3,3> R = q_.to_matrix().cast<double>();
-	Matrix<double,3,1> rpy;
+	const Matrix<scalar_t,3,3> R = q_.to_matrix();
+	Matrix<scalar_t,3,1> rpy;
 
-	double sth = -R(2,0);
-	if (sth > 1.0f) {
-		sth = 1.0f;
-	} else if (sth < -1.0f) {
-		sth = -1.0f;
+	scalar_t sth = -R(2,0);
+	if (sth > 1.0) {
+		sth = 1.0;
+	} else if (sth < -1.0) {
+		sth = -1.0;
 	}
 
-	const double theta = std::asin(sth);
-	const double cth = std::sqrt(1.0f - sth*sth);
+	const scalar_t theta = std::asin(sth);
+	const scalar_t cth = std::sqrt(1.0 - sth*sth);
 
-	double phi, psi;
-	if (cth < 1e-6f)
+	scalar_t phi, psi;
+	if (cth < 1e-6)
 	{
 		phi = std::atan2(R(0,1), R(1,1));
-		psi = 0.0f;
+		psi = 0.0;
 	}
 	else
 	{

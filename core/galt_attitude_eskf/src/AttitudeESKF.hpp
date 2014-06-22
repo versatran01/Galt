@@ -87,6 +87,12 @@ public:
   void setEstimatesBias(bool estBias) { estBias_ = estBias; }
   
   /**
+   * @brief setGyroBiasThreshold
+   * @param thresh
+   */
+  void setGyroBiasThreshold(scalar_t thresh) { biasThresh_ = thresh; }
+  
+  /**
    * @brief setUsesMagnetometer
    * @param useMag
    */
@@ -148,6 +154,7 @@ private:
   vec3 w_;
   vec3 b_;
   unsigned long steadyCount_;
+  scalar_t biasThresh_;
 
   vec3 magRef_;  //  North
   vec3 predMag_;

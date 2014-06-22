@@ -65,7 +65,7 @@ static inline T determinant(const Matrix<T,3,3>& A)
 }
 
 AttitudeESKF::AttitudeESKF() :  
-  q_(), isStable_(true), lastTime_(0.0), steadyCount_(0)
+  q_(), isStable_(true), lastTime_(0.0), steadyCount_(0), biasThresh_(0.0)
 {
   P_.setZero();
   b_.setZero();
@@ -74,7 +74,7 @@ AttitudeESKF::AttitudeESKF() :
   magRef_.setZero();
   predMag_.setZero();
   
-  estBias_ = true;
+  estBias_ = false;
   useMag_ = false;
 }
 
@@ -88,7 +88,7 @@ void AttitudeESKF::predict(const vec3 &wb, double time)
   }
   lastTime_ = time;
   
-  if (wb.norm() < 1.0e-2) {
+  if (wb.norm() < biasThresh_) {
     steadyCount_++; //  not rotating, update moving average
     
     if (estBias_ && steadyCount_ > 20)

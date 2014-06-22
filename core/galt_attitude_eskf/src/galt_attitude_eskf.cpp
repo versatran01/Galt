@@ -295,9 +295,6 @@ void imu_callback(const sensor_msgs::ImuConstPtr& imu, const sensor_msgs::Magnet
         }
       }
       
-      //bias.setZero();
-      //scl.setOnes();
-      
       magBias = bias;
       magScale = scl;
       
@@ -413,11 +410,6 @@ void imu_callback(const sensor_msgs::ImuConstPtr& imu, const sensor_msgs::Magnet
   
   tfBroadcaster->sendTransform( tf::StampedTransform(transform, filtImu.header.stamp, "fixedFrame", bodyFrameName) );
 }
-
-//void field_callback(const sensor_msgs::MagneticFieldConstPtr& field)
-//{
-//  log_i("%f, %f, %f", field->magnetic_field.x, field->magnetic_field.y, field->magnetic_field.z);
-//}
 
 int main(int argc, char ** argv)
 {

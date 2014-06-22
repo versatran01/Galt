@@ -25,7 +25,7 @@
 #include <galt_attitude_eskf/BeginCalibration.h>
 
 #include <error_handling.hpp> //  galt error handling
-#include <math_utils.hpp>
+#include <math_utils.hpp>     //  galt math utilities
 
 #include "AttitudeESKF.hpp"
 
@@ -90,7 +90,7 @@ bool begin_calibration(galt_attitude_eskf::BeginCalibration::Request& req,
 }
 
 void imu_callback(const sensor_msgs::ImuConstPtr& imu, const sensor_msgs::MagneticFieldConstPtr& field)
-{
+{  
   Vector3d wm;  //  measured angular rate
   Vector3d am;  //  measured acceleration
   Vector3d mm;  //  measured magnetic field
@@ -375,6 +375,11 @@ int main(int argc, char ** argv)
   ros::NodeHandle nh("~");
   ros::NodeHandle nh_pub;  //  public
   ros::ServiceServer calibSrv;
+  
+  //  synchronized subscribers
+  message_filters::Subscriber<sensor_msgs::Imu> imuSub;
+  message_filters::Subscriber<sensor_msgs::MagneticField> fieldSub;
+  message_filters::TimeSynchronizer<sensor_msgs::Imu, sensor_msgs::MagneticField> sync(imuSub,fieldSub,1);
 
   //  find which topics to subscribe to
   std::string imu_topic, field_topic;
@@ -395,9 +400,8 @@ int main(int argc, char ** argv)
       log_i("Subscribing to magnetic field: %s", field_topic.c_str());
       
       //  subscribe to indicated topics using tight timing
-      message_filters::Subscriber<sensor_msgs::Imu> imuSub(nh, imu_topic, 20);
-      message_filters::Subscriber<sensor_msgs::MagneticField> fieldSub(nh, field_topic, 20);
-      message_filters::TimeSynchronizer<sensor_msgs::Imu, sensor_msgs::MagneticField> sync(imuSub, fieldSub, 1);
+      imuSub.subscribe(nh,imu_topic,20);
+      fieldSub.subscribe(nh,field_topic,20);
       sync.registerCallback(boost::bind(&imu_callback, _1, _2));
       
       pubField = nh.advertise<sensor_msgs::MagneticField>("adjusted_field", 1);
@@ -449,7 +453,8 @@ int main(int argc, char ** argv)
   eskf.setEstimatesBias(true);
   eskf.setGyroBiasThreshold(gyro_bias_thresh);
 
-  if (broadcast_frame) {
+  if (broadcast_frame) 
+  {
     tfBroadcaster = boost::shared_ptr<tf::TransformBroadcaster>( new tf::TransformBroadcaster() );
     bodyFrameName = ros::this_node::getName() + "/bodyFrame";
   }

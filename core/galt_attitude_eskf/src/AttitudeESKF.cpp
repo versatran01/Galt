@@ -10,7 +10,6 @@
  */
 
 #include "AttitudeESKF.hpp"
-#include <error_handling.hpp>
 
 using namespace std;
 using namespace Eigen;
@@ -109,15 +108,12 @@ void AttitudeESKF::predict(const vec3 &wb, double time)
   //  integrate nominal state
   q_.integrateRungeKutta4(quat<scalar_t>(0.0, w_[0], w_[1], w_[2]), dt);
   
-  Matrix<scalar_t,3,3> Q;
-  Q.setZero();
-  
-  for (int i=0; i < 3; i++){
-    Q(i,i) = var_.gyro[i];
-  }
-  
   //  integrate covariance  
-  P_ = F * P_ * F.transpose() + Q;
+  P_ = F * P_ * F.transpose();
+  
+  for (int i=0; i < 3; i++) {
+    P_(i,i) += var_.gyro[i];
+  }
 }
 
 void AttitudeESKF::update(const vec3 &ab, const vec3 &mb)
@@ -150,8 +146,7 @@ void AttitudeESKF::update(const vec3 &ab, const vec3 &mb)
     //  calculate jacobian
     H.block<3,3>(0,0) = cross_skew(aPred);
     
-    Matrix<scalar_t,3,1> r;
-    r.block<3,1>(0,0) = ab - aPred;
+    Matrix<scalar_t,3,1> r = ab - aPred;
   
     //  solve for the kalman gain
     Matrix<scalar_t,3,3> S = H * P_ * H.transpose() + covR;

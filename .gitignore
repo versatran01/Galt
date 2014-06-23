@@ -44,6 +44,13 @@ _*.pyc
 *.pbxuser
 *.pbxuser/*
 
+# QTCREATOR PROJECT
+*.includes
+*.creator
+*.creator.user
+*.config
+*.files
+
 # GEANY PROJECTS
 *.geany
 

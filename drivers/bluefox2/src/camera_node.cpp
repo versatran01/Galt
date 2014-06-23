@@ -1,14 +1,21 @@
 #include <ros/ros.h>
 
-#include "camera.h"
+#include "bluefox2/camera.h"
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
   ros::init(argc, argv, "bluefox2");
-  bluefox2::Camera camera(ros::NodeHandle(), ros::NodeHandle("~"));
-  if (camera.isOK()) {
-    camera.feedImages();
+  bluefox2::Camera camera(ros::NodeHandle("~"));
+
+  // Feed image only when camera is initialized
+  if (camera.ok()) {
+    ROS_WARN("Start publishing...");
+    ros::Rate rate(camera.fps());
+    while (ros::ok()) {
+      camera.feedImage();  // Publishing image and cinfo topic
+      ros::spinOnce();
+      rate.sleep();
+    }
   }
+
   return 0;
 }
-

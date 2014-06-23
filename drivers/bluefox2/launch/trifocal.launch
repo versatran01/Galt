@@ -1,0 +1,26 @@
+<launch>
+    <arg name="cam1" default="25000855" />
+    <arg name="mode1" default="standalone" />
+
+    <arg name="cam2" default="25000495" />
+    <arg name="mode2" default="standalone" />
+
+    <arg name="cam3" default="29900130" />
+    <arg name="mode3" default="standalone" />
+
+    <include file="$(find bluefox2)/launch/mono.launch">
+        <arg name="serial" value="$(arg cam1)" />
+        <arg name="mode" value="$(arg mode1)" />
+    </include>
+
+    <include file="$(find bluefox2)/launch/mono.launch">
+        <arg name="serial" value="$(arg cam2)" />
+        <arg name="mode" value="$(arg mode2)" />
+    </include>
+
+    <include file="$(find bluefox2)/launch/mono.launch">
+        <arg name="serial" value="$(arg cam3)" />
+        <arg name="mode" value="$(arg mode3)" />
+    </include>
+
+</launch>

@@ -1,0 +1,21 @@
+<!--
+rostest launch file for bluefox2
+This unit test uses rostest, because the bluefox2 constructor requires a node
+handle.
+
+You need to supply the serial number of your camera as an argument
+ -->
+
+<launch>
+
+    <arg name="serial" type="string" default="25000495" />
+    <arg name="calibration_file" default="calib_$(arg serial).yml" />
+
+    <!-- start unit-test node -->
+    <test pkg="bluefox2" type="rtest_mono" name="rtest_mono"
+        test-name="rtest_mono" time-limit="10.0">
+        <param name="serial" type="string" value="$(arg serial)" />
+        <param name="fps" type="double" value="10.0" />
+    </test>
+
+</launch>

@@ -1,0 +1,20 @@
+<launch>
+
+    <arg name="serial" default="25000495" />
+    <arg name="node" default="cam_$(arg serial)" />
+    <arg name="size" default="8x6" />
+    <arg name="square" default="0.1" />
+    <arg name="fps" value="5.0" />
+
+    <include file="$(find bluefox2)/launch/mono.launch">
+        <arg name="serial" value="$(arg serial)" />
+        <arg name="fps" value="$(arg fps)" />
+    </include>
+
+    <node pkg="camera_calibration" name="cameracalibrator" type="cameracalibrator.py"
+        args="--size $(arg size) --square $(arg square) --no-service-check" >
+        <remap from="image" to="/$(arg node)/image_raw" />
+        <remap from="camera" to="/$(arg node)" />
+    </node>
+
+</launch>

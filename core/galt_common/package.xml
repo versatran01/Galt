@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<package>
+  <name>galt_common</name>
+  <version>0.0.1</version>
+  <description>The galt common package</description>
+
+  <maintainer email="gcross.code@icloud.com">gcross</maintainer>
+  <author>Gareth Cross</author>
+  <license>Proprietary</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <build_depend>roscpp</build_depend>
+  <run_depend>roscpp</run_depend>
+
+  <build_depend>geometry_msgs</build_depend>
+  <run_depend>geometry_msgs</run_depend>
+
+  <export>
+  </export>
+</package>

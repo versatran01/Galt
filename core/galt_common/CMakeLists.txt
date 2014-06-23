@@ -7,4 +7,5 @@ catkin_package(INCLUDE_DIRS include
                LIBRARIES ${PROJECT_NAME}
                CATKIN_DEPENDS roscpp)
 
+include_directories(include)
 add_library(${PROJECT_NAME} src/galt_common.cpp)

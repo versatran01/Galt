@@ -10,3 +10,4 @@
  */
 
 #include "error_handling.hpp"
+#include "math_utils.hpp"

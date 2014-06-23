@@ -178,6 +178,7 @@ public:
       enum
       {
         Quaternion    = (1 << 0),
+        Bias = (1 << 1),
       };
       
       unsigned int fields;    /**< Which fields are valid in the struct */
@@ -185,6 +186,9 @@ public:
       float quaternion[4];    /**< Orientation quaternion (q0,q1,q2,q3) */
       uint16_t quatStatus;    /**< Quaternion status: 0 = invalid, 1 = valid, 2 = georeferenced to magnetic north */
             
+      float bias[3];          /**< Gyro bias */
+      uint16_t biasStatus;
+      
       FilterData() : fields(0) {}
     };
     
@@ -230,7 +234,6 @@ public:
     
     /**
      *  @brief runOnce Poll for input and read packets if available.
-     *  @note kTimeout controls the poll duration, default is 100ms.
      */
     void runOnce();
     
@@ -314,9 +317,9 @@ public:
     
     /**
      *  @brief setFilterDataRate Set estimator data rate for different sources.
-     *  @param decimation Denominator in the update rate value: 1000/x
+     *  @param decimation Denominator in the update rate value: 500/x
      *  @param sources Sources to apply this rate to. May be a bitwise combination of the values:
-     *   Quaternion
+     *   Quaternion, GyroBias
      *
      *  @throw invalid_argument if an invalid source is requested.
      *  @return 0 on timeout, negative value if NACK is received, positive on success.
@@ -330,6 +333,27 @@ public:
      * @return 0 on timeout, negative value if NACK is received, positive on success.
      */
     int enableMeasurements(bool accel, bool magnetometer);
+    
+    /**
+     * @brief enableBiasEstimation Enable gyroscope bias estimation
+     * @param enabled If true, bias estimation is enabled
+     * @return 0 on timeout, negative value if NACK is received, positive on success.
+     */
+    int enableBiasEstimation(bool enabled);
+    
+    /**
+     * @brief setHardIronOffset Set the hard-iron bias vector for the magnetometer.
+     * @param offset 3x1 vector, units of gauss.
+     * @return 0 on timeout, negative value if NACK is received, positive on success.
+     */
+    int setHardIronOffset(float offset[3]);
+    
+    /**
+     * @brief setSoftIronMatrix Set the soft-iron matrix for the magnetometer.
+     * @param matrix 3x3 row-major matrix, default should be identity.
+     * @return 0 on timeout, negative value if NACK is received, positive on success.
+     */
+    int setSoftIronMatrix(float matrix[9]);
     
     /**
      *  @brief enableIMUStream Enable/disable streaming of IMU data

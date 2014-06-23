@@ -149,78 +149,78 @@ int main(int argc, char **argv)
 
     Imu::Info info;
     if ( imu.getDeviceInfo(info) ) {
-        log_w("Retrieved device info:");
-        log_w("\tFirmware version: %u", info.firmwareVersion);
-        log_w("\tModel name: %s", info.modelName.c_str());
-        log_w("\tModel number: %s", info.modelNumber.c_str());
-        log_w("\tSerial number: %s", info.serialNumber.c_str());
-        log_w("\tDevice options: %s", info.deviceOptions.c_str());
+        log_i("Retrieved device info:");
+        log_i("\tFirmware version: %u", info.firmwareVersion);
+        log_i("\tModel name: %s", info.modelName.c_str());
+        log_i("\tModel number: %s", info.modelNumber.c_str());
+        log_i("\tSerial number: %s", info.serialNumber.c_str());
+        log_i("\tDevice options: %s", info.deviceOptions.c_str());
     }
 
 #define assert_throw(command) if ((command) <= 0) { throw std::runtime_error("Failed last command"); }
 
-    log_w("Idling the device");
+    log_i("Idling the device");
     assert_throw(imu.idle(300));
 
     //  read back data rates
     uint16_t baseRate;
     if (imu.getIMUDataBaseRate(baseRate) > 0) {
-      log_w("IMU data base rate: %u Hz", baseRate);
+      log_i("IMU data base rate: %u Hz", baseRate);
     }
     if (imu.getFilterDataBaseRate(baseRate) > 0) {
-      log_w("Filter data base rate: %u Hz", baseRate);
+      log_i("Filter data base rate: %u Hz", baseRate);
     }
     Imu::DiagnosticFields fields;
     if (imu.getDiagnosticInfo(fields) > 0) {
-      log_w("Diagnostic fields:");
-      log_w("\tModel number: %u", fields.modelNumber);
-      log_w("\tSelector flags: %u", fields.selector);
-      log_w("\tStatus flags: %u", fields.statusFlags);
-      log_w("\tSystem timer (ms): %u", fields.systemTimer);
-      log_w("\tNumber of 1PPS pulses since boot: %u", fields.num1PPSPulses);
-      log_w("\tLast 1PPS pulse (ms): %u", fields.last1PPSPulse);
-      log_w("\tIMU stream enabled: %u", fields.imuStreamEnabled);
-      log_w("\tFilter stream enabled: %u", fields.filterStreamEnabled);
-      log_w("\tIMU packets dropped: %u", fields.imuPacketsDropped);
-      log_w("\tFilter packets dropped: %u", fields.filterPacketsDropped);
-      log_w("\tCOM bytes written: %u", fields.comBytesWritten);
-      log_w("\tCOM bytes read: %u", fields.comBytesRead);
-      log_w("\tCOM number of write overruns: %u", fields.comNumWriteOverruns);
-      log_w("\tCOM number of read overruns: %u", fields.comNumReadOverruns);
-      log_w("\tUSB bytes written: %u", fields.usbBytesWritten);
-      log_w("\tUSB bytes read: %u", fields.usbBytesRead);
-      log_w("\tUSB number of write overruns: %u", fields.usbNumWriteOverruns);
-      log_w("\tUSB number of read overruns: %u", fields.usbNumReadOverruns);
-      log_w("\tNumber of IMU parse errors: %u", fields.numIMUParseErrors);
-      log_w("\tNumber of IMU messages: %u", fields.totalIMUMessages);
-      log_w("\tLast IMU message (ms): %u", fields.lastIMUMessage);
+      log_i("Diagnostic fields:");
+      log_i("\tModel number: %u", fields.modelNumber);
+      log_i("\tSelector flags: %u", fields.selector);
+      log_i("\tStatus flags: %u", fields.statusFlags);
+      log_i("\tSystem timer (ms): %u", fields.systemTimer);
+      log_i("\tNumber of 1PPS pulses since boot: %u", fields.num1PPSPulses);
+      log_i("\tLast 1PPS pulse (ms): %u", fields.last1PPSPulse);
+      log_i("\tIMU stream enabled: %u", fields.imuStreamEnabled);
+      log_i("\tFilter stream enabled: %u", fields.filterStreamEnabled);
+      log_i("\tIMU packets dropped: %u", fields.imuPacketsDropped);
+      log_i("\tFilter packets dropped: %u", fields.filterPacketsDropped);
+      log_i("\tCOM bytes written: %u", fields.comBytesWritten);
+      log_i("\tCOM bytes read: %u", fields.comBytesRead);
+      log_i("\tCOM number of write overruns: %u", fields.comNumWriteOverruns);
+      log_i("\tCOM number of read overruns: %u", fields.comNumReadOverruns);
+      log_i("\tUSB bytes written: %u", fields.usbBytesWritten);
+      log_i("\tUSB bytes read: %u", fields.usbBytesRead);
+      log_i("\tUSB number of write overruns: %u", fields.usbNumWriteOverruns);
+      log_i("\tUSB number of read overruns: %u", fields.usbNumReadOverruns);
+      log_i("\tNumber of IMU parse errors: %u", fields.numIMUParseErrors);
+      log_i("\tNumber of IMU messages: %u", fields.totalIMUMessages);
+      log_i("\tLast IMU message (ms): %u", fields.lastIMUMessage);
     }
 
-    log_w("Selecting IMU decimation rate: %u", imu_decimation);
+    log_i("Selecting IMU decimation rate: %u", imu_decimation);
     assert_throw(imu.setIMUDataRate(imu_decimation, Imu::IMUData::Accelerometer | Imu::IMUData::Gyroscope
                         | Imu::IMUData::Magnetometer | Imu::IMUData::Barometer));
 
-    log_w("Selecting filter decimation rate: %u", filter_decimation);
+    log_i("Selecting filter decimation rate: %u", filter_decimation);
     assert_throw(imu.setFilterDataRate(filter_decimation, Imu::FilterData::Quaternion | Imu::FilterData::Bias));
 
-    log_w("Enabling IMU data stream");
+    log_i("Enabling IMU data stream");
     assert_throw(imu.enableIMUStream(true));
 
     if (enable_filter) {
-      log_w("Enabling filter data stream");
+      log_i("Enabling filter data stream");
       assert_throw(imu.enableFilterStream(true));
 
-      log_w("Enabling filter measurements");
+      log_i("Enabling filter measurements");
       assert_throw(imu.enableMeasurements(true, enable_mag_update));
 
-      log_w("Enabling gyro bias estimation");
+      log_i("Enabling gyro bias estimation");
       assert_throw(imu.enableBiasEstimation(true));
     } else {
-      log_w("Disabling filter data stream");
+      log_i("Disabling filter data stream");
       assert_throw(imu.enableFilterStream(false));
     }
 
-    log_w("Resuming the device");
+    log_i("Resuming the device");
     assert_throw(imu.resume(300));
 
 #undef assert_throw

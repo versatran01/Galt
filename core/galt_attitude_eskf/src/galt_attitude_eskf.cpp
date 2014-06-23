@@ -16,6 +16,8 @@
 
 #include <geometry_msgs/Vector3Stamped.h>
 
+#include <eigen_conversions/eigen_msg.h>
+
 #include <message_filters/subscriber.h>
 #include <message_filters/time_synchronizer.h>
 
@@ -54,33 +56,21 @@ enum {
 } topicMode = MagIdle;
 bool subscribe_mag = false; //  use the magnetometer or not?
 
-#define BIN_DIM_VERT  (4)
-#define BIN_DIM_HORZ  (20)
+#define BIN_DIM  (40)
 
 struct SampleBin {
   Vector3d field; //  field measured in this sample
   quat<double> q; //  unreferenced quaternion for this sample
 };
 
-std::map<std::tuple<int,int>, SampleBin> sampleBins;
+std::map<int, SampleBin> binsYaw;
+std::map<int, SampleBin> binsPitch;
+std::map<int, SampleBin> binsRoll;
 
 //  default bias and scale
 Vector3d magBias = Vector3d::Zero();
 Vector3d magScale = Vector3d::Ones();
 Vector3d magReference = Vector3d::Zero();
-
-/**
- * @brief geo_to_eigen Convert geometry_msg Vector3 to Eigen Vector3d
- * @param vec
- * @return Vector3d
- */
-Eigen::Vector3d geo_to_eigen(const geometry_msgs::Vector3& vec) {
-  Eigen::Vector3d v3d;
-  v3d[0] = vec.x;
-  v3d[1] = vec.y;
-  v3d[2] = vec.z;
-  return v3d;
-}
 
 bool begin_calibration(galt_attitude_eskf::BeginCalibration::Request& req,
                        galt_attitude_eskf::BeginCalibration::Response& resp)
@@ -101,11 +91,11 @@ void imu_callback(const sensor_msgs::ImuConstPtr& imu, const sensor_msgs::Magnet
   Vector3d am;  //  measured acceleration
   Vector3d mm;  //  measured magnetic field
 
-  wm = geo_to_eigen(imu->angular_velocity);
-  am = geo_to_eigen(imu->linear_acceleration);
+  tf::vectorMsgToEigen(imu->angular_velocity, wm);
+  tf::vectorMsgToEigen(imu->linear_acceleration, am);
   
   if (subscribe_mag) {
-    mm = geo_to_eigen(field->magnetic_field);
+    tf::vectorMsgToEigen(field->magnetic_field, mm);
   } else {
     mm.setZero(); //  safe default
   }
@@ -134,33 +124,54 @@ void imu_callback(const sensor_msgs::ImuConstPtr& imu, const sensor_msgs::Magnet
   if (topicMode == MagInCalibration)
   {
     //  normalized magnetic direction vector
-    Vector3d ref = mm;
-    ref /= ref.norm();
+    //Vector3d ref = mm;
+    //ref /= ref.norm();
     
     //  spherical coordinates
-    double theta = std::acos(ref[2]);         //  [0,pi]
-    double psi = std::atan2(ref[1], ref[0]);  //  [-pi, pi]
+    //double theta = std::acos(ref[2]);         //  [0,pi]
+    //double psi = std::atan2(ref[1], ref[0]);  //  [-pi, pi]
     
-    int idx_i=-1, idx_j=-1;
+    //int idx_i=-1, idx_j=-1;
     
     //Vector3d ang = galt::getRPY(Q.to_matrix());
     
     ///idx_i = ang[0]
     
-    idx_i = std::floor( theta / M_PI * BIN_DIM_VERT );
-    idx_j = std::floor( (psi + M_PI) / (2 * M_PI) * BIN_DIM_HORZ );
+    //idx_i = std::floor( theta / M_PI * BIN_DIM_VERT );
+    //idx_j = std::floor( (psi + M_PI) / (2 * M_PI) * BIN_DIM_HORZ );
     
-    if (idx_i >= 0 && idx_j >= 0)
+    Vector3d angs = galt::getRPY(Q.to_matrix());
+    
+    int idx_roll = std::floor( (angs[0] + M_PI) / (2*M_PI) * BIN_DIM );
+    int idx_pitch = std::floor( (angs[1] + M_PI/2) / M_PI * BIN_DIM );
+    int idx_yaw = std::floor( (angs[2] + M_PI) / (2*M_PI) * BIN_DIM );
+    
     {
       SampleBin bin;
       bin.field = mm;
       bin.q = Q;
     
-      sampleBins[std::tuple<int,int>(idx_i,idx_j)] = bin;
-    
-      log_i("%lu bins are filled", sampleBins.size() );
-      if ( sampleBins.size() > std::floor(BIN_DIM_VERT*BIN_DIM_HORZ*0.9) )
+      binsRoll[idx_roll] = bin;
+      binsYaw[idx_yaw] = bin;
+      binsPitch[idx_pitch] = bin;      
+          
+      log_i("R: %lu, P: %lu, Y: %lu", binsRoll.size(), binsPitch.size(), binsYaw.size());
+      
+      bool enough = (binsRoll.size() > BIN_DIM*0.9) && (binsPitch.size() > BIN_DIM*0.9) && (binsYaw.size() > BIN_DIM*0.9);
+      
+      if ( enough )
       {
+        std::vector<SampleBin> sampleBins;
+        for (auto it : binsRoll) {
+          sampleBins.push_back(it.second);
+        }        
+        for (auto it : binsYaw) {
+          sampleBins.push_back(it.second);
+        }
+        for (auto it : binsPitch) {
+          sampleBins.push_back(it.second);
+        }
+        
         log_i("Collected enough bins to calibrate");
     
         vector<Vector3d> samples;
@@ -174,9 +185,9 @@ void imu_callback(const sensor_msgs::ImuConstPtr& imu, const sensor_msgs::Magnet
     
         for (auto i = sampleBins.begin(); i != sampleBins.end(); i++)
         {
-          samples.push_back(i->second.field);
+          samples.push_back(i->field);
     
-          const double r = i->second.field.norm();
+          const double r = i->field.norm();
           mean_rad += r;
           mean_rad_sqr += r*r;
         }
@@ -282,7 +293,7 @@ void imu_callback(const sensor_msgs::ImuConstPtr& imu, const sensor_msgs::Magnet
         //  determine the inertial field
         for (auto i = sampleBins.begin(); i != sampleBins.end(); i++)
         {
-          const SampleBin& bin = i->second;
+          const SampleBin& bin = *i;
     
           Matrix3d wRb = bin.q.to_matrix().cast<double>();
     
@@ -322,6 +333,8 @@ void imu_callback(const sensor_msgs::ImuConstPtr& imu, const sensor_msgs::Magnet
         vRef[0] = hAvg;
         vRef[2] = vAvg;
     
+        magReference = vRef;
+        
         //  save to rosparam
         for (int i=0; i < 3; i++) {
           cur_nh->setParam("mag_calib/bias/"+sfx[i],magBias[i]);

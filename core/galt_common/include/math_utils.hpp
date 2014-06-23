@@ -53,9 +53,9 @@ Eigen::Matrix<T,3,1> getRPY(const Eigen::Matrix<T,3,3>& R)
 		psi = std::atan2(R(1,0), R(0,0));
 	}
 
-	rpy[0] = phi;   //  x
-	rpy[1] = theta; //  y
-	rpy[2] = psi;   //  z
+	rpy[0] = phi;   //  x, [-pi,pi]
+	rpy[1] = theta; //  y	[-pi/2,pi/2]
+	rpy[2] = psi;   //  z, [-pi,pi]
 	return rpy;
 }
 

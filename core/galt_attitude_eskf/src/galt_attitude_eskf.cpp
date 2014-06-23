@@ -23,6 +23,7 @@
 #include <tf/transform_datatypes.h>
 
 #include <galt_attitude_eskf/BeginCalibration.h>
+#include <galt_attitude_eskf/Status.h>
 
 #include <error_handling.hpp> //  galt error handling
 #include <math_utils.hpp>     //  galt math utilities
@@ -35,8 +36,12 @@ using namespace Eigen;
 AttitudeESKF eskf;
 ros::Publisher pubImu;
 ros::Publisher pubBias;
-ros::Publisher pubAlpha;
 ros::Publisher pubField;
+ros::Publisher pubStatus;
+
+ros::NodeHandle* cur_nh;  //  temp hack
+
+const std::string sfx[] = {"x", "y", "z"};  //  suffixes
 
 boost::shared_ptr<tf::TransformBroadcaster> tfBroadcaster;  //  for broadcasting body frame
 std::string bodyFrameName;
@@ -44,13 +49,13 @@ bool broadcast_frame = false;
 
 enum {
   MagIdle=0,
-  MagNeedsCalibration=1,
+  MagInCalibration=1,
   MagCalibrated=2,
 } topicMode = MagIdle;
-bool subscribe_mag = false;
+bool subscribe_mag = false; //  use the magnetometer or not?
 
-#define BIN_DIM_VERT  (5)
-#define BIN_DIM_HORZ  (30)
+#define BIN_DIM_VERT  (4)
+#define BIN_DIM_HORZ  (20)
 
 struct SampleBin {
   Vector3d field; //  field measured in this sample
@@ -62,6 +67,7 @@ std::map<std::tuple<int,int>, SampleBin> sampleBins;
 //  default bias and scale
 Vector3d magBias = Vector3d::Zero();
 Vector3d magScale = Vector3d::Ones();
+Vector3d magReference = Vector3d::Zero();
 
 /**
  * @brief geo_to_eigen Convert geometry_msg Vector3 to Eigen Vector3d
@@ -79,10 +85,10 @@ Eigen::Vector3d geo_to_eigen(const geometry_msgs::Vector3& vec) {
 bool begin_calibration(galt_attitude_eskf::BeginCalibration::Request& req,
                        galt_attitude_eskf::BeginCalibration::Response& resp)
 {
-  if (topicMode == MagNeedsCalibration) {
+  if (topicMode == MagInCalibration) {
     resp.errorCode = -1;  //  already calibrating
   } else {
-    topicMode = MagNeedsCalibration;
+    topicMode = MagInCalibration;
     resp.errorCode = 0; //  transition to calibration mode
   }
   
@@ -104,15 +110,18 @@ void imu_callback(const sensor_msgs::ImuConstPtr& imu, const sensor_msgs::Magnet
     mm.setZero(); //  safe default
   }
 
-  if (topicMode == MagCalibrated && subscribe_mag) 
+  if (subscribe_mag && (topicMode == MagCalibrated)) 
   {
+    //  utilize magnetometer parameters
     for (int i=0; i < 3; i++) {
       mm[i] -= magBias[i];
       mm[i] /= magScale[i];
     }
+    eskf.setMagneticReference(magReference);
     eskf.setUsesMagnetometer(true);
   }
   else {
+    //  fall back to simply gravity correction
     eskf.setUsesMagnetometer(false);
   }
 
@@ -122,7 +131,7 @@ void imu_callback(const sensor_msgs::ImuConstPtr& imu, const sensor_msgs::Magnet
   quat<double> Q = eskf.getQuat();                    //  updated quaternion
   AttitudeESKF::vec3 w = eskf.getAngularVelocity();   //  bias subtracted
 
-  if (topicMode == MagNeedsCalibration)
+  if (topicMode == MagInCalibration)
   {
     //  normalized magnetic direction vector
     Vector3d ref = mm;
@@ -133,7 +142,11 @@ void imu_callback(const sensor_msgs::ImuConstPtr& imu, const sensor_msgs::Magnet
     double psi = std::atan2(ref[1], ref[0]);  //  [-pi, pi]
     
     int idx_i=-1, idx_j=-1;
-      
+    
+    //Vector3d ang = galt::getRPY(Q.to_matrix());
+    
+    ///idx_i = ang[0]
+    
     idx_i = std::floor( theta / M_PI * BIN_DIM_VERT );
     idx_j = std::floor( (psi + M_PI) / (2 * M_PI) * BIN_DIM_HORZ );
     
@@ -253,8 +266,8 @@ void imu_callback(const sensor_msgs::ImuConstPtr& imu, const sensor_msgs::Magnet
           }
         }
     
-        bias.setZero();
-        scl.setOnes();
+        //bias.setZero();
+        //scl.setOnes();
         
         magBias = bias;
         magScale = scl;
@@ -309,8 +322,14 @@ void imu_callback(const sensor_msgs::ImuConstPtr& imu, const sensor_msgs::Magnet
         vRef[0] = hAvg;
         vRef[2] = vAvg;
     
+        //  save to rosparam
+        for (int i=0; i < 3; i++) {
+          cur_nh->setParam("mag_calib/bias/"+sfx[i],magBias[i]);
+          cur_nh->setParam("mag_calib/scale/"+sfx[i],magScale[i]);
+          cur_nh->setParam("mag_calib/reference/"+sfx[i],magReference[i]);
+        }
+        
         eskf.setMagneticReference(vRef);
-    
         topicMode = MagCalibrated;
       }
     }
@@ -340,7 +359,7 @@ void imu_callback(const sensor_msgs::ImuConstPtr& imu, const sensor_msgs::Magnet
     }
   }
   pubImu.publish(filtImu);
-
+  
   //  publish bias
   geometry_msgs::Vector3Stamped bias;
   bias.header.stamp = filtImu.header.stamp;
@@ -349,6 +368,12 @@ void imu_callback(const sensor_msgs::ImuConstPtr& imu, const sensor_msgs::Magnet
   bias.vector.z = eskf.getGyroBias()[2];
   pubBias.publish(bias);
 
+  //  publish status
+  galt_attitude_eskf::Status status;
+  status.header.stamp = filtImu.header.stamp;
+  status.magStatus = topicMode;
+  pubStatus.publish(status);
+  
   //  publish compensated magnetic field
   if (subscribe_mag) {
     sensor_msgs::MagneticField fieldOut;
@@ -375,6 +400,7 @@ int main(int argc, char ** argv)
   ros::NodeHandle nh("~");
   ros::NodeHandle nh_pub;  //  public
   ros::ServiceServer calibSrv;
+  cur_nh = &nh;
   
   //  synchronized subscribers
   message_filters::Subscriber<sensor_msgs::Imu> imuSub;
@@ -392,6 +418,7 @@ int main(int argc, char ** argv)
   //  filtered IMU output
   pubImu = nh.advertise<sensor_msgs::Imu>("filtered_imu", 1);
   pubBias = nh.advertise<geometry_msgs::Vector3Stamped>("bias", 1);
+  pubStatus = nh.advertise<galt_attitude_eskf::Status>("status", 1);
   
   try
   {
@@ -427,27 +454,35 @@ int main(int argc, char ** argv)
   //  load all parameters
   nh.param("broadcast_frame", broadcast_frame, false);
   
-  nh.param("noise_std/accel/x", var.accel[0], 1.0); //  Gs
-  nh.param("noise_std/accel/y", var.accel[1], 1.0);
-  nh.param("noise_std/accel/z", var.accel[2], 1.0);
-  
-  nh.param("noise_std/gyro/x", var.gyro[0], 0.001); //  rad/s
-  nh.param("noise_std/gyro/y", var.gyro[1], 0.001);
-  nh.param("noise_std/gyro/z", var.gyro[2], 0.001);
-  
-  nh.param("noise_std/mag/x", var.mag[0], 0.1); //  gauss
-  nh.param("noise_std/mag/y", var.mag[1], 0.1);
-  nh.param("noise_std/mag/z", var.mag[2], 0.1);
-  
+  //  noise parameters
+  for (int i=0; i < 3; i++) {
+    nh.param("noise_std/accel/"+sfx[i], var.accel[i], 1.0);
+    nh.param("noise_std/gyro/"+sfx[i], var.gyro[i], 0.001);
+    nh.param("noise_std/mag/"+sfx[i], var.mag[i], 0.1);
+  }
   nh.param("gyro_bias_thresh", gyro_bias_thresh, 1e-2); //  rad/s
 
-  nh.param("mag_calib/bias/x", magBias[0], 0.0);
-  nh.param("mag_calib/bias/y", magBias[1], 0.0);
-  nh.param("mag_calib/bias/z", magBias[2], 0.0);
-  
-  nh.param("mag_calib/scale/x", magScale[0], 1.0);
-  nh.param("mag_calib/scale/y", magScale[1], 1.0);
-  nh.param("mag_calib/scale/z", magScale[2], 1.0);
+  if (subscribe_mag)
+  {
+    if (nh.hasParam("mag_calib/bias") && 
+        nh.hasParam("mag_calib/scale") && 
+        nh.hasParam("mag_calib/reference")) 
+    {
+      log_i("Loading mag bias and scale terms from rosparam");
+      topicMode = MagCalibrated;
+    } 
+    else {
+      log_w("Warning: No calibration parameters found. Did you load your yaml file?");
+      topicMode = MagIdle;
+    }
+    
+    //  magnetometer calibration
+    for (int i=0; i < 3; i++) {
+      nh.param("mag_calib/bias/"+sfx[i], magBias[i], 0.0);
+      nh.param("mag_calib/scale/"+sfx[i], magScale[i], 1.0);
+      nh.param("mag_calib/reference/"+sfx[i], magReference[i], 0.0);
+    }
+  }
   
   eskf.setVariances(var);
   eskf.setEstimatesBias(true);

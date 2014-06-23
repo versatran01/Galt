@@ -18,18 +18,3 @@ noise_std:
 
 # Threshold used to enable bias calculation
 gyro_bias_thresh: 0.01
-
-# Magnetometer calibration
-mag_calib:
-  bias:
-    x: 0.0
-    y: 0.0
-    z: 0.0
-  scale:
-    x: 1.0
-    y: 1.0
-    z: 1.0
-  north:
-    x: 0.0
-    y: 0.0
-    z: 0.0

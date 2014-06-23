@@ -25,9 +25,6 @@ class AttitudeESKF
 public:
   
   typedef double scalar_t;  /**< Type used for all calculations, change as performance requires */
-
-  static_assert(std::is_fundamental<scalar_t>::value && !std::numeric_limits<scalar_t>::is_integer, 
-                "scalar_t must be non-integer fundamental type");
   
   typedef Eigen::Matrix<scalar_t,3,1> vec3; /**< Vector in R3 */
   
@@ -44,15 +41,6 @@ public:
         accel[i] = gyro[i] = mag[i] = 0.0;
       }
     }
-  };
-  
-  /**
-   * @brief The MagCalibration struct
-   */
-  struct MagCalibration {
-    scalar_t bias[3];   /**< Magnetometer bias, default [0 0 0] */
-    scalar_t scale[3];
-    scalar_t rstd;
   };
   
   /**

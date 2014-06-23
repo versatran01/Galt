@@ -4,6 +4,7 @@ find_package(catkin REQUIRED COMPONENTS roscpp tf geometry_msgs sensor_msgs mess
 
 # generate messages
 add_service_files(FILES BeginCalibration.srv)
+add_message_files(FILES Status.msg)
 generate_messages(DEPENDENCIES std_msgs)
 
 catkin_package(CATKIN_DEPENDS roscpp tf geometry_msgs sensor_msgs message_filters galt_common)

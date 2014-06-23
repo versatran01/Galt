@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8.3)
 project(galt_attitude_eskf)
 find_package(catkin REQUIRED COMPONENTS roscpp tf geometry_msgs sensor_msgs
                                         message_filters galt_common message_generation
-                                        eigen_conversions)
+                                        eigen_conversions kr_math)
 
 # generate messages
 add_service_files(FILES BeginCalibration.srv)
@@ -16,14 +16,8 @@ find_package(Boost REQUIRED)
 link_directories(${Boost_LIBRARY_DIR})
 include_directories(${Boost_INCLUDE_DIR})
 
-# include EIGEN
-find_package(Eigen3 REQUIRED)
-include_directories(${Eigen3_INCLUDE_DIR})
-
 # include headers
-include_directories(${galt_common_INCLUDE_DIRS})
-
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -O3")
+include_directories(${galt_common_INCLUDE_DIRS} ${kr_math_INCLUDE_DIRS})
 
 # build shared library
 add_library(AttitudeESKF src/AttitudeESKF.cpp)

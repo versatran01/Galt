@@ -2,14 +2,14 @@
     <!-- Specify camera options -->
     <arg name="left" default="25000855" />
     <arg name="lmode" default="standalone" />
-    <arg name="lnode" value="cam$(arg left)" />
+    <arg name="lnode" value="cam_$(arg left)" />
 
     <arg name="right" default="25000495" />
     <arg name="rmode" default="standalone" />
-    <arg name="rnode" value="cam$(arg right)" />
+    <arg name="rnode" value="cam_$(arg right)" />
 
     <!-- Use lower fps for calibration -->
-    <arg name="fps" value="5.0" />
+    <arg name="fps" value="5" />
     <arg name="size" default="8x6" />
     <arg name="square" default="0.025" />
 

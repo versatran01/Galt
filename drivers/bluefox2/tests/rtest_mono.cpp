@@ -1,13 +1,11 @@
 #include <ros/ros.h>
 #include <gtest/gtest.h>
-#include "bluefox2/camera.h"
+#include "bluefox2/bluefox2_ros.h"
 
-TEST(CameraTest, construstor)
-{
+TEST(CameraTest, construstor) {
   ros::NodeHandle nh("~");
-  bluefox2::Camera camera(nh);
-  EXPECT_EQ(10.0, camera.fps());
-  EXPECT_TRUE(camera.ok());
+  bluefox2::CameraRos camera_ros(nh);
+  camera_ros.init();
 }
 
 int main(int argc, char **argv)

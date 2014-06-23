@@ -1,20 +1,20 @@
 #include <ros/ros.h>
 
-#include "bluefox2/camera.h"
+#include "bluefox2/bluefox2_ros.h"
 
 int main(int argc, char **argv) {
   ros::init(argc, argv, "bluefox2");
-  bluefox2::Camera camera(ros::NodeHandle("~"));
+  ros::NodeHandle nh("~");
 
-  // Feed image only when camera is initialized
-  if (camera.ok()) {
-    ROS_WARN("Start publishing...");
-    ros::Rate rate(camera.fps());
-    while (ros::ok()) {
-      camera.feedImage();  // Publishing image and cinfo topic
-      ros::spinOnce();
-      rate.sleep();
-    }
+  try {
+    // Here we use the wrapper class to hide all the ros stuff
+    bluefox2::CameraRos camera_ros(nh);
+
+    camera_ros.init();     // Initialize camera
+    camera_ros.publish();  // Continuous publish images
+  }
+  catch (const std::exception &e) {
+    ROS_ERROR("bluefox2: %s", e.what());
   }
 
   return 0;

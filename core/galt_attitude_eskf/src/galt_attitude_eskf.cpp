@@ -60,7 +60,7 @@ bool subscribe_mag = false; //  use the magnetometer or not?
 
 struct SampleBin {
   Vector3d field; //  field measured in this sample
-  quat<double> q; //  unreferenced quaternion for this sample
+  kr::quat<double> q; //  unreferenced quaternion for this sample
 };
 
 std::map<int, SampleBin> binsYaw;
@@ -81,26 +81,26 @@ bool begin_calibration(galt_attitude_eskf::BeginCalibration::Request& req,
     topicMode = MagInCalibration;
     resp.errorCode = 0; //  transition to calibration mode
   }
-  
+
   return true;
 }
 
 void imu_callback(const sensor_msgs::ImuConstPtr& imu, const sensor_msgs::MagneticFieldConstPtr& field)
-{  
+{
   Vector3d wm;  //  measured angular rate
   Vector3d am;  //  measured acceleration
   Vector3d mm;  //  measured magnetic field
 
   tf::vectorMsgToEigen(imu->angular_velocity, wm);
   tf::vectorMsgToEigen(imu->linear_acceleration, am);
-  
+
   if (subscribe_mag) {
     tf::vectorMsgToEigen(field->magnetic_field, mm);
   } else {
     mm.setZero(); //  safe default
   }
 
-  if (subscribe_mag && (topicMode == MagCalibrated)) 
+  if (subscribe_mag && (topicMode == MagCalibrated))
   {
     //  utilize magnetometer parameters
     for (int i=0; i < 3; i++) {
@@ -118,85 +118,68 @@ void imu_callback(const sensor_msgs::ImuConstPtr& imu, const sensor_msgs::Magnet
   eskf.predict(wm,imu->header.stamp.toSec());
   eskf.update(am,mm);
 
-  quat<double> Q = eskf.getQuat();                    //  updated quaternion
+  kr::quat<double> Q = eskf.getQuat();                    //  updated quaternion
   AttitudeESKF::vec3 w = eskf.getAngularVelocity();   //  bias subtracted
 
   if (topicMode == MagInCalibration)
   {
-    //  normalized magnetic direction vector
-    //Vector3d ref = mm;
-    //ref /= ref.norm();
-    
-    //  spherical coordinates
-    //double theta = std::acos(ref[2]);         //  [0,pi]
-    //double psi = std::atan2(ref[1], ref[0]);  //  [-pi, pi]
-    
-    //int idx_i=-1, idx_j=-1;
-    
-    //Vector3d ang = galt::getRPY(Q.to_matrix());
-    
-    ///idx_i = ang[0]
-    
-    //idx_i = std::floor( theta / M_PI * BIN_DIM_VERT );
-    //idx_j = std::floor( (psi + M_PI) / (2 * M_PI) * BIN_DIM_HORZ );
-    
     Vector3d angs = galt::getRPY(Q.to_matrix());
-    
+
     int idx_roll = std::floor( (angs[0] + M_PI) / (2*M_PI) * BIN_DIM );
     int idx_pitch = std::floor( (angs[1] + M_PI/2) / M_PI * BIN_DIM );
     int idx_yaw = std::floor( (angs[2] + M_PI) / (2*M_PI) * BIN_DIM );
-    
+
     {
       SampleBin bin;
       bin.field = mm;
       bin.q = Q;
-    
+
       binsRoll[idx_roll] = bin;
       binsYaw[idx_yaw] = bin;
-      binsPitch[idx_pitch] = bin;      
-          
+      binsPitch[idx_pitch] = bin;
+
       log_i("R: %lu, P: %lu, Y: %lu", binsRoll.size(), binsPitch.size(), binsYaw.size());
-      
+
       bool enough = (binsRoll.size() > BIN_DIM*0.9) && (binsPitch.size() > BIN_DIM*0.9) && (binsYaw.size() > BIN_DIM*0.9);
-      
+
       if ( enough )
       {
         std::vector<SampleBin> sampleBins;
         for (auto it : binsRoll) {
           sampleBins.push_back(it.second);
-        }        
+        }
         for (auto it : binsYaw) {
           sampleBins.push_back(it.second);
         }
         for (auto it : binsPitch) {
           sampleBins.push_back(it.second);
         }
-        
+
         log_i("Collected enough bins to calibrate");
-    
+
         vector<Vector3d> samples;
-    
+
         Vector3d max,min;
         min[0] = min[1] = min[2] = std::numeric_limits<double>::infinity();
         max[0] = max[1] = max[2] = -min[0]; //  -infinity
-    
+
         double mean_rad = 0.0;
         double mean_rad_sqr = 0.0;
-    
+
         for (auto i = sampleBins.begin(); i != sampleBins.end(); i++)
         {
           samples.push_back(i->field);
-    
+
           const double r = i->field.norm();
           mean_rad += r;
           mean_rad_sqr += r*r;
         }
         mean_rad /= sampleBins.size();      //  mean radius
         mean_rad_sqr /= sampleBins.size();
-    
+
         //  standard deviation
         const float std_dev = std::sqrt(mean_rad_sqr - mean_rad*mean_rad);
-    
+
         //  calculate bias term
         for (Vector3d& s : samples) {
           for (int j=0; j < 3; j++) {
@@ -204,16 +187,16 @@ void imu_callback(const sensor_msgs::ImuConstPtr& imu, const sensor_msgs::Magnet
             min[j] = std::min(min[j], s[j]);
           }
         }
-    
+
         //  estimate of soft bias
         Vector3d bias = (max + min) / 2;
-    
+
         //  reject outliers
         auto j = sampleBins.begin();
         for (auto i = samples.begin(); i != samples.end();)
         {
           const Vector3d s = *i - bias;
-    
+
           if (std::abs(s.norm() - mean_rad) > std_dev*2) {
             i = samples.erase(i);
             j = sampleBins.erase(j);
@@ -222,126 +205,126 @@ void imu_callback(const sensor_msgs::ImuConstPtr& imu, const sensor_msgs::Magnet
             j++;
           }
         }
-    
+
         log_i("%lu samples left after discarding outliers", samples.size());
         log_i("bias: %f, %f, %f", bias[0], bias[1], bias[2]);
-    
+
         //  attempt to determine scale factors via GN-NLS
         Vector3d scl;
         scl.setOnes();
-    
+
         int num_iter = 0;
         while (num_iter++ < 10)
         {
           MatrixXd J(samples.size(), 6);
           VectorXd r(samples.size());
-    
+
           for (size_t i=0; i < samples.size(); i++)
           {
             double x = (samples[i][0] - bias[0]) / scl[0];
             double y = (samples[i][1] - bias[1]) / scl[1];
             double z = (samples[i][2] - bias[2]) / scl[2];
-    
+
             double rad2 = x*x + y*y + z*z;
             r[i] = mean_rad*mean_rad - rad2;
-    
+
             J(i,0) = -2 * x*x / scl[0];
             J(i,1) = -2 * y*y / scl[1];
             J(i,2) = -2 * z*z / scl[2];
-    
+
             J(i,3) = -2 * x / scl[0];
             J(i,4) = -2 * y / scl[1];
             J(i,5) = -2 * z / scl[2];
           }
-    
+
           Matrix<double,6,6> H = J.transpose() * J;
           for (int i=0; i < H.rows(); i++) {
             H(i,i) *= 1.01;
           }
-    
+
           bool invertible;
           decltype(H) Hinv;
-    
+
           auto LU = H.fullPivLu();
           invertible = LU.isInvertible();
           Hinv = LU.inverse();
-    
+
           Matrix<double,6,1> update = Hinv * J.transpose() * r;
-    
+
           bias += update.block<3,1>(3,0);
           scl += update.block<3,1>(0,0);
-    
+
           if (!invertible) {
             log_e("Failed to optimize");
             return;
           }
         }
-    
+
         //bias.setZero();
         //scl.setOnes();
-        
+
         magBias = bias;
         magScale = scl;
-    
+
         log_i("Adjusted scale: %f, %f, %f", scl[0], scl[1], scl[2]);
         log_i("Adjusted bias: %f, %f, %f", bias[0], bias[1], bias[2]);
-    
+
         double hAvg = 0.0;
         double vAvg = 0.0;
         long count=0;
-    
+
         //  determine the inertial field
         for (auto i = sampleBins.begin(); i != sampleBins.end(); i++)
         {
           const SampleBin& bin = *i;
-    
+
           Matrix3d wRb = bin.q.to_matrix().cast<double>();
-    
+
           Vector3d acc = wRb.transpose().block<3,1>(0,2); //  body frame gravity vector
           if (acc[2] < -0.8f)
           {
             //  close to the vertical, use this sample
             Vector3d rpy = galt::getRPY(wRb);
-    
+
             //  rotate back to level
             Matrix3d trans = galt::rotation_y(rpy[1]) * galt::rotation_x(rpy[0]);
             Vector3d f = bin.field;
-    
+
             for (int j=0; j < 3; j++) {
               f[j] -= bias[j];
               f[j] /= scl[j];
             }
-    
+
             Vector3d mw = trans * f;
-    
+
             double horz = std::sqrt(mw[0]*mw[0] + mw[1]*mw[1]);
             double vert = mw[2];
-    
+
             hAvg += horz;
             vAvg += vert;
             count++;
-    
+
             log_i("H: %f, V: %f", horz, vert);
           }
         }
-    
+
         hAvg /= count;
         vAvg /= count;
-    
+
         Eigen::Matrix<double,3,1> vRef;
         vRef.setZero();
         vRef[0] = hAvg;
         vRef[2] = vAvg;
-    
+
         magReference = vRef;
-        
+
         //  save to rosparam
         for (int i=0; i < 3; i++) {
           cur_nh->setParam("mag_calib/bias/"+sfx[i],magBias[i]);
           cur_nh->setParam("mag_calib/scale/"+sfx[i],magScale[i]);
           cur_nh->setParam("mag_calib/reference/"+sfx[i],magReference[i]);
         }
-        
+
         eskf.setMagneticReference(vRef);
         topicMode = MagCalibrated;
       }
@@ -372,7 +355,7 @@ void imu_callback(const sensor_msgs::ImuConstPtr& imu, const sensor_msgs::Magnet
     }
   }
   pubImu.publish(filtImu);
-  
+
   //  publish bias
   geometry_msgs::Vector3Stamped bias;
   bias.header.stamp = filtImu.header.stamp;
@@ -386,7 +369,7 @@ void imu_callback(const sensor_msgs::ImuConstPtr& imu, const sensor_msgs::Magnet
   status.header.stamp = filtImu.header.stamp;
   status.magStatus = topicMode;
   pubStatus.publish(status);
-  
+
   //  publish compensated magnetic field
   if (subscribe_mag) {
     sensor_msgs::MagneticField fieldOut;
@@ -396,13 +379,13 @@ void imu_callback(const sensor_msgs::ImuConstPtr& imu, const sensor_msgs::Magnet
     fieldOut.magnetic_field.z = mm[2];
     pubField.publish(fieldOut);
   }
-  
+
   //  broadcast frame
   if (broadcast_frame) {
     tf::Transform transform;
     transform.setRotation( tf::Quaternion(Q.b(), Q.c(), Q.d(), Q.a()) );
     transform.setOrigin( tf::Vector3(0.0, 0.0, 0.0) );
-    
+
     tfBroadcaster->sendTransform( tf::StampedTransform(transform, filtImu.header.stamp, "fixedFrame", bodyFrameName) );
   }
 }
@@ -414,7 +397,7 @@ int main(int argc, char ** argv)
   ros::NodeHandle nh_pub;  //  public
   ros::ServiceServer calibSrv;
   cur_nh = &nh;
-  
+
   //  synchronized subscribers
   message_filters::Subscriber<sensor_msgs::Imu> imuSub;
   message_filters::Subscriber<sensor_msgs::MagneticField> fieldSub;
@@ -425,27 +408,27 @@ int main(int argc, char ** argv)
   nh.param("imu_topic", imu_topic, std::string("/imu/imu"));
   nh.param("field_topic", field_topic, std::string("/imu/magnetic_field"));
   nh.param("enable_magnetometer", subscribe_mag, false);
-  
+
   log_i("Subscribing to IMU: %s", imu_topic.c_str());
-  
+
   //  filtered IMU output
   pubImu = nh.advertise<sensor_msgs::Imu>("filtered_imu", 1);
   pubBias = nh.advertise<geometry_msgs::Vector3Stamped>("bias", 1);
   pubStatus = nh.advertise<galt_attitude_eskf::Status>("status", 1);
-  
+
   try
   {
-    if (subscribe_mag) 
+    if (subscribe_mag)
     {
       log_i("Subscribing to magnetic field: %s", field_topic.c_str());
-      
+
       //  subscribe to indicated topics using tight timing
       imuSub.subscribe(nh,imu_topic,20);
       fieldSub.subscribe(nh,field_topic,20);
       sync.registerCallback(boost::bind(&imu_callback, _1, _2));
-      
+
       pubField = nh.advertise<sensor_msgs::MagneticField>("adjusted_field", 1);
-      
+
       //  service for triggering calibration
       calibSrv = nh_pub.advertiseService(ros::this_node::getName() + "/begin_calibration", begin_calibration);
     }
@@ -463,10 +446,10 @@ int main(int argc, char ** argv)
 
   AttitudeESKF::VarSettings var;
   double gyro_bias_thresh;
-  
+
   //  load all parameters
   nh.param("broadcast_frame", broadcast_frame, false);
-  
+
   //  noise parameters
   for (int i=0; i < 3; i++) {
     nh.param("noise_std/accel/"+sfx[i], var.accel[i], 1.0);
@@ -477,18 +460,18 @@ int main(int argc, char ** argv)
 
   if (subscribe_mag)
   {
-    if (nh.hasParam("mag_calib/bias") && 
-        nh.hasParam("mag_calib/scale") && 
-        nh.hasParam("mag_calib/reference")) 
+    if (nh.hasParam("mag_calib/bias") &&
+        nh.hasParam("mag_calib/scale") &&
+        nh.hasParam("mag_calib/reference"))
     {
       log_i("Loading mag bias and scale terms from rosparam");
       topicMode = MagCalibrated;
-    } 
+    }
     else {
       log_w("Warning: No calibration parameters found. Did you load your yaml file?");
       topicMode = MagIdle;
     }
-    
+
     //  magnetometer calibration
     for (int i=0; i < 3; i++) {
       nh.param("mag_calib/bias/"+sfx[i], magBias[i], 0.0);
@@ -496,17 +479,17 @@ int main(int argc, char ** argv)
       nh.param("mag_calib/reference/"+sfx[i], magReference[i], 0.0);
     }
   }
-  
+
   eskf.setVariances(var);
   eskf.setEstimatesBias(true);
   eskf.setGyroBiasThreshold(gyro_bias_thresh);
 
-  if (broadcast_frame) 
+  if (broadcast_frame)
   {
     tfBroadcaster = boost::shared_ptr<tf::TransformBroadcaster>( new tf::TransformBroadcaster() );
     bodyFrameName = ros::this_node::getName() + "/bodyFrame";
   }
-  
+
   ros::spin();
   return 0;
 }

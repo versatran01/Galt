@@ -1,0 +1,34 @@
+<!--
+  Name: kr_attitude_eskf.launch
+  Author: Gareth
+  Triggers:
+    * imu_3dm_gx4
+    * kr_attitude_eskf
+
+  Brief: Launches the attitude filter and microstrain IMU.
+-->
+
+<launch>
+
+  <!-- Launch the 3DM w/ only IMU data streaming, 200Hz -->
+  <include file="$(find imu_3dm_gx4)/launch/imu.launch">
+    <!-- remap namespace to 'imu' -->
+    <arg name="imu_node" value="imu"/>
+    <arg name="device" value="/dev/ttyACM0"/>
+    <arg name="imu_decimation" value="5"/>
+    <arg name="baudrate" value="921600"/>
+  </include>
+
+  <!-- Launch the filter -->
+  <include file="$(find kr_attitude_eskf)/launch/attitude_eskf.launch">
+      <arg name="imu_topic" value="/imu/imu"/>
+      <arg name="field_topic" value="/imu/magnetic_field"/>
+
+      <arg name="enable_magnetometer" value="true"/>
+      <arg name="calibrate_magnetometer" value="none"/>
+
+      <!-- Noise parameters -->
+      <arg name="param_file" value="$(find galt_setup)/config/params_3dm_gx4_25.yaml"/>
+    </include>
+
+</launch>

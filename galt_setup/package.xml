@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<package>
+  <name>galt_setup</name>
+  <version>0.0.0</version>
+  <description>The galt_setup package</description>
+
+  <maintainer email="galt@todo.todo">galt</maintainer>
+
+
+  <license>Proprietary</license>
+
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+</package>

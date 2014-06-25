@@ -27,8 +27,8 @@ message(STATUS "OO LIB DIR: ${OCEAN_OPTICS_LIB_DIR}")
 message(STATUS "JVM LIB DIR: ${JVM_LIB_DIR}")
 
 link_directories(
-  ${OCEAN_OPTICS_LIB_DIR}
   ${JVM_LIB_DIR}
+  ${OCEAN_OPTICS_LIB_DIR}
 )
 
 # add necessary definitions
@@ -38,4 +38,4 @@ add_definitions("-Wall -Wunused -DLINUX -fpic -g")
 set(CMAKE_INSTALL_RPATH ${OCEAN_OPTICS_LIB_DIR} ${JVM_LIB_DIR})
 
 add_executable(ocean_optics src/ocean_optics_node.cpp)
-target_link_libraries(ocean_optics jvm common OmniDriver)
+target_link_libraries(ocean_optics common OmniDriver jvm)

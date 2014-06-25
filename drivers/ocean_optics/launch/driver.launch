@@ -1,0 +1,6 @@
+<launch>
+  <env name="JAVA_HOME" value="/opt/jdk1.6.0_01"/>
+
+  <node pkg="ocean_optics" name="ocean_optics" type="ocean_optics" output="screen">
+  </node>
+</launch>

@@ -1,0 +1,19 @@
+<!--
+
+This launch file will start the urg_node with a usb hokuyo
+
+You may have to change the serial port
+
+Refer to the wiki for more details
+
+If you want to have a visualization, use hokuyo_rviz.launch
+
+-->
+
+<launch>
+
+    <node name="urg_node" pkg="urg_node" type="urg_node" respawn="false" output="screen">
+        <param name="serial_port" type="string" value="/dev/ttyACM0"/>
+    </node>
+
+</launch>

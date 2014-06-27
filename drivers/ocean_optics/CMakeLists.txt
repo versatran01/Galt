@@ -4,7 +4,12 @@ project(ocean_optics)
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   std_msgs
+  message_generation
 )
+
+# generate messages
+add_message_files(FILES Spectrum.msg)
+generate_messages(DEPENDENCIES std_msgs)
 
 catkin_package()
 
@@ -23,8 +28,8 @@ include_directories(
 set(OCEAN_OPTICS_LIB_DIR $ENV{OOI_HOME})
 set(JVM_LIB_DIR $ENV{OMNIDRIVER_HOME}/_jvm/lib/amd64/server)
 
-message(STATUS "OO LIB DIR: ${OCEAN_OPTICS_LIB_DIR}")
-message(STATUS "JVM LIB DIR: ${JVM_LIB_DIR}")
+message(STATUS "OceanOptics LIB DIR: ${OCEAN_OPTICS_LIB_DIR}")
+message(STATUS "JavaVM LIB DIR: ${JVM_LIB_DIR}")
 
 link_directories(
   ${JVM_LIB_DIR}
@@ -39,3 +44,7 @@ set(CMAKE_INSTALL_RPATH ${OCEAN_OPTICS_LIB_DIR} ${JVM_LIB_DIR})
 
 add_executable(ocean_optics src/ocean_optics_node.cpp)
 target_link_libraries(ocean_optics common OmniDriver jvm)
+target_link_libraries(ocean_optics ${roscpp_LIBRARIES})
+
+# ensures messages are generated before hand
+add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS})

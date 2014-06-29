@@ -20,21 +20,25 @@
 
 #include <cv_bridge/cv_bridge.h>
 
+#include "circle_tracker/Circle.h"
 #include "elliptical_fit.hpp"
 
 ros::NodeHandlePtr nh;  //  private node handle
+ros::Publisher circPub;
 
 //  global parameters
 bool displayGui = true;
 
-double lowCannyThresh = 20.0;
+double lowCannyThresh = 0.0;
 double highCannyThresh = 120.0;
-int pointCountThresh = 2;
+int pointCountThresh = 6;
 double areaThreshold = 0.001;
 double circThresh = 0.85;
 
 struct Circle {
-  
+  cv::Point2f center;
+  double radius;
+  double score;
 };
 
 //  based on optical_flow_circle.cpp
@@ -64,7 +68,7 @@ void camera_callback(const sensor_msgs::Image::ConstPtr &img,
   
   //  blur to reduce noise
   cv::Mat blurredImage;
-  cv::GaussianBlur(bridgedImage.image,blurredImage,cv::Size(3,3),0);
+  cv::GaussianBlur(bridgedImage.image,blurredImage,cv::Size(7,7),0);
   
   //  find edges
   cv::Mat edgeImage;
@@ -80,7 +84,9 @@ void camera_callback(const sensor_msgs::Image::ConstPtr &img,
   
   cv::findContours(edgeImage,contours,CV_RETR_CCOMP,CV_CHAIN_APPROX_NONE);
   
+  std::vector <Circle> matches;
   int idx=0;
+  
   for (const std::vector<cv::Point>& contour : contours)
   {
     if (contour.size() > static_cast<size_t>(pointCountThresh))
@@ -97,51 +103,64 @@ void camera_callback(const sensor_msgs::Image::ConstPtr &img,
       for (const cv::Point2d& p : undist) {
         undist_d.push_back(cv::Point2d(p.x,p.y));
       }
+                  
+      //cv::drawContours(contourImage,contours,idx,cv::Scalar(rand()&255,rand()&255,rand()&255));
       
-      //  apply area threshold
-      const double A = std::abs( cv::contourArea(undist) );
-      if (A > areaThreshold) {
-        
-        //  try to fit to ellipse
-        std::array<double,6> params;
-        std::vector<double> residuals;
-        if ( elliptical_fit(undist_d,params,residuals,10) ) {
+      if (undist.size() > static_cast<size_t>(pointCountThresh))
+      {
+        //  apply area threshold
+        const double A = std::abs( cv::contourArea(undist) );
+        if (A > areaThreshold) {
+          const double C = cv::arcLength(undist,true);  //  circumference
+          const double score = 4*M_PI*A / (C*C);
           
-          double mag_r=0.0;
-          for (double r : residuals) {
-            mag_r += r*r;
-          }
-          mag_r = std::sqrt(mag_r);
-                   
-          if (mag_r < 0.001) {
+          //  determine circular-ity (1 for a real circle)
+          if (score > circThresh) {
+            
+            Circle circ;
+            
+            //  calculate moments
+            cv::Moments moment = cv::moments(undist);
+            double inv_m00 = 1 / moment.m00;
+            circ.center = cv::Point2d(moment.m10 * inv_m00, moment.m01 * inv_m00);
+            circ.radius = std::sqrt(A / M_PI);
+            circ.score = score;
+            matches.push_back(circ);
+            
             if (displayGui) {
-              cv::drawContours(contourImage,contours,idx,cv::Scalar(255,0,0));
+              cv::drawContours(contourImage,contours,idx,cv::Scalar(0,255,0));
             }
           }
-        } else {
-          ROS_WARN("Failed to fit to ellipse");
         }
-        
-        /*const double C = cv::arcLength(undist,true);
-        
-        //  determine circular-ity (1 for a real circle)
-        const double score = 4*M_PI*A / (C*C);
-        if (score > circThresh) {
-          
-          
-          
-          if (displayGui) {
-            cv::drawContours(contourImage,contours,idx,cv::Scalar(255,0,0));
-          }
-        }*/
       }
     }
     
     idx++;
   }
   
+  //  take best circle
+  if (!matches.empty())
+  {
+    std::sort(matches.begin(), matches.end(), [](const Circle& a, const Circle& b) -> bool {
+      return std::abs(a.score - 1.0) < std::abs(b.score - 1.0);
+    });
+    
+    Circle result = matches.front();
+
+    //  publish
+    circle_tracker::Circle message;
+    message.header = img->header; //  repeat timestamp and seq #
+    message.centerX = result.center.x;
+    message.centerY = result.center.y;
+    message.radius = result.radius;
+    message.score = result.score;
+    
+    circPub.publish(message);
+  }
+  
   if (displayGui) {
-    cv::imshow("input_image", edgeImage);
+    cv::imshow("input_image", bridgedImage.image);
+    cv::imshow("edge_image", edgeImage);
     cv::imshow("contour_image", contourImage);
     cv::waitKey(1);
   }
@@ -152,6 +171,8 @@ int main(int argc, char ** argv)
   ros::init(argc, argv, "circle_tracker_node");
   nh = ros::NodeHandlePtr( new ros::NodeHandle("~") );
 
+  circPub = nh->advertise<circle_tracker::Circle>("circle", 1);
+  
   //  subscribe to image feed
   image_transport::ImageTransport it(*nh);
   image_transport::CameraSubscriber camSub;

@@ -19,11 +19,14 @@
 
 #include <opencv2/opencv.hpp>
 #include <Eigen/Dense>
+#include <Eigen/SVD>
+#include <Eigen/QR>
 
 template <typename Scalar>
 bool elliptical_fit(std::vector<cv::Point_<Scalar>>& points, 
                     std::array<Scalar,6>& params,
                     std::vector<Scalar>& residuals,
+                    bool leastSquaresEst = false,
                     unsigned int max_iter = 10, 
                     Scalar thresh=1e-2) {
   
@@ -32,44 +35,108 @@ bool elliptical_fit(std::vector<cv::Point_<Scalar>>& points,
   
   const size_t N = points.size();
   
-  point_ mean = point_(0,0), max, min;
-  min.y = min.x = std::numeric_limits<Scalar>::infinity();
-  max.y = max.x = -min.x;
-  
-  //  find max,min and mean points
-  for (const point_& p : points) {
-    max.x = std::max(p.x,max.x);
-    max.y = std::max(p.y,max.y);
-    min.x = std::min(p.x,min.x);
-    min.y = std::min(p.y,min.y);
-    mean.x += p.x;
-    mean.y += p.y;
-  }
-  mean.x /= N;
-  mean.y /= N;
-  
-  //  initial guess
-  const Scalar sx = (max.x - min.x) / 2;
-  const Scalar sy = (max.y - min.y) / 2;
-  const Scalar cx = mean.x;
-  const Scalar cy = mean.y;
-  
   //  parameters of ellipse
   Scalar A,B,C,D,E,F;
  
-  //  initial guess
-  A = 1.0 / (sx * sx);
-  B = 0.0;
-  C = 1.0 / (sy * sy);
-  D = -2* cx / (sx * sx);
-  E = -2* cy / (sy * sy);
-  F = (cx*cx)/(sx*sx) + (cy*cy)/(sy*sy) - 1;
-  B /= A;
-  C /= A;
-  D /= A;
-  E /= A;
-  F /= A;
-  A = 1.0;
+  if (!leastSquaresEst) {
+    //  simple min-max initial guess
+    point_ mean = point_(0,0), max, min;
+    min.y = min.x = std::numeric_limits<Scalar>::infinity();
+    max.y = max.x = -min.x;
+    
+    //  find max,min and mean points
+    for (const point_& p : points) {
+      max.x = std::max(p.x,max.x);
+      max.y = std::max(p.y,max.y);
+      min.x = std::min(p.x,min.x);
+      min.y = std::min(p.y,min.y);
+      mean.x += p.x;
+      mean.y += p.y;
+    }
+    mean.x /= N;
+    mean.y /= N;
+    
+    //  initial guess
+    const Scalar sx = (max.x - min.x) / 2;
+    const Scalar sy = (max.y - min.y) / 2;
+    const Scalar cx = mean.x;
+    const Scalar cy = mean.y;
+    
+    //  initial guess
+    A = 1.0;
+    B = 0.0;
+    C = 1.0 * (sx * sx) / (sy * sy);
+    D = -2 * cx;
+    E = -2 * cy * (sx * sx) / (sy * sy);
+    F = (cx*cx) + (cy*cy)*(sx*sx)/(sy*sy) - 1*(sx*sx);
+  }
+  else {
+    //  use linear least squares initial estimate
+    //  TODO: check size of data here...
+    
+    //  build the S matrix
+    Matrix<Scalar,Eigen::Dynamic,6> S(N,6);
+    const Scalar sqrt2 = std::sqrt(static_cast<Scalar>(2.0));
+    for (size_t i=0; i < N; i++) {
+      const Scalar x = points[i].x;
+      const Scalar y = points[i].y;
+      
+      //  v
+      S(i,0) = x;
+      S(i,1) = y;
+      S(i,2) = 1;
+      
+      //  w
+      S(i,3) = x*x;
+      S(i,4) = sqrt2*x*y;
+      S(i,5) = y*y;
+    }
+    
+    auto QR = S.householderQr();
+    Matrix<Scalar,Eigen::Dynamic,Eigen::Dynamic> matQR = QR.matrixQR();
+    assert(matQR.rows() >= 6 || matQR.cols() == 6);
+    
+    Matrix<Scalar,3,3> R11 = matQR.template block<3,3>(0,0);
+    Matrix<Scalar,3,3> R12 = matQR.template block<3,3>(0,3);
+    Matrix<Scalar,3,3> R22 = matQR.template block<3,3>(3,3);
+    
+    //  zero under the diagonal to eliminate temporary work values
+    //  see documentation of lapack function `geqrf` for reasoning
+    for (int i=0; i < 3; i++) {
+      for (int j=0; j < 3; j++) {
+        if (j < i) {
+          R11(i,j) = 0;
+          R22(i,j) = 0;
+        }
+      }
+    }
+        
+    //  solve for vector w
+    auto SVD = R22.jacobiSvd(Eigen::ComputeFullV);
+    Matrix<Scalar,3,3> V = SVD.matrixV();
+    Matrix<Scalar,3,1> w = V.template block<3,1>(0,2);
+    
+    //  solve for vector v
+    Matrix <Scalar,3,3> R11inv;
+    bool invertible;
+    
+    R11.computeInverseWithCheck(R11inv,invertible);
+    if (!invertible) {
+      //  TODO: deal with this...
+    }
+    
+    Matrix <Scalar,3,1> v = -R11inv * R12 * w;
+    
+    A = w[0];
+    B = sqrt2* w[1] / A;
+    C = w[2] / A;
+    D = v[0] / A;
+    E = v[1] / A;
+    F = v[2] / A;
+    A = 1.0;
+  }
+  
+  //ROS_INFO("Initial guess: %f, %f, %f, %f, %f, %f", A, B, C, D, E, F);
   
   //  perform non-linear regression
   Matrix <Scalar,Eigen::Dynamic,5> J(N,5);
@@ -113,8 +180,8 @@ bool elliptical_fit(std::vector<cv::Point_<Scalar>>& points,
     }
   }
   
-  ROS_INFO("params: %f,%f,%f,%f,%f,%f", A, B, C, D, E, F);
-  ROS_INFO("res norm: %f", r.norm()); 
+  //ROS_INFO("params: %f,%f,%f,%f,%f,%f", A, B, C, D, E, F);
+  //ROS_INFO("res norm: %f", r.norm()); 
  
   //  done
   params[0] = A;

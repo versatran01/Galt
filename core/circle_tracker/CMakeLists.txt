@@ -8,7 +8,12 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   std_msgs
   cv_bridge
+  message_generation
 )
+
+# generate messages
+add_message_files(FILES Circle.msg)
+generate_messages(DEPENDENCIES std_msgs)
 
 catkin_package()
 
@@ -30,3 +35,6 @@ target_link_libraries(${PROJECT_NAME}
   ${image_transport_LIBRARIES}
   ${cv_bridge_LIBRARIES}
 )
+
+# ensures messages are generated before hand
+add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS})

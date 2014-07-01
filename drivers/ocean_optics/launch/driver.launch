@@ -1,0 +1,19 @@
+<!--
+  Name: driver.launch
+  Author: Gareth
+  Triggers:
+    * ocean_optics
+
+  Brief: Launch the ocean optics driver.
+-->
+<launch>
+
+  <!-- This is necessary for the node to link correctly at runtime -->
+  <env name="JAVA_HOME" value="/opt/jdk1.6.0_01"/>
+
+  <!-- Namespace of the node -->
+  <arg name="spec_node" value="spectrometer"/>
+
+  <node pkg="ocean_optics" name="$(arg spec_node)" type="ocean_optics" output="screen">
+  </node>
+</launch>

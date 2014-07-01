@@ -1,0 +1,20 @@
+<!--
+  Name: white_bag.launch
+  Author: Gareth
+  Triggers:
+    * circle_tracker
+    * rosbag (play mode)
+
+  Brief: Launch the circle tracker with test bagfile.
+-->
+<launch>
+
+  <node name="player" pkg="rosbag" type="play" output="screen"
+        args="--clock -r 1 $(find circle_tracker)/bags/white.bag"/>
+
+  <node name="circle_tracker" pkg="circle_tracker" type="circle_tracker" output="screen">
+
+    <remap from="~image_raw" to="/cam_25000495/image_raw"/>
+  </node>
+
+</launch>

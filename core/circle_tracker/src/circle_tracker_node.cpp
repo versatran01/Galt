@@ -41,6 +41,25 @@ struct Circle {
   double score;
 };
 
+static void calc_gradient(int16_t * destX, int16_t * destY, size_t w, size_t h, size_t step, const uchar * data)
+{
+    int16_t hx,lx,hy,ly;
+    
+    for (size_t i=1; i < h-1; i++)         //  rows
+    {
+        for (size_t j=1; j < w-1; j++)     //  cols
+        {
+            hx = data[(j+1) + i*step];
+            lx = data[(j-1) + i*step];
+            hy = data[j + (i+1)*step];
+            ly = data[j + (i-1)*step];
+            
+            destX[j + i*w] = std::abs(hx - lx);  //  destination rows are densely packed
+            destY[j + i*w] = std::abs(hy - ly);
+        }
+    }
+}
+
 //  based on optical_flow_circle.cpp
 void camera_callback(const sensor_msgs::Image::ConstPtr &img,
                      const sensor_msgs::CameraInfo::ConstPtr &camInfo) {
@@ -66,13 +85,42 @@ void camera_callback(const sensor_msgs::Image::ConstPtr &img,
   
   cv::Mat distCoeffs(camInfo->D.size(), 1, CV_64F, const_cast<double*>(camInfo->D.data()));
   
+  cv::Mat gradX(bridgedImage.image.size(), CV_16S);
+  cv::Mat gradY(bridgedImage.image.size(), CV_16S);
+  memset(gradX.ptr(), 0, sizeof(int16_t)*bridgedImage.image.rows*bridgedImage.image.cols);
+  memset(gradY.ptr(), 0, sizeof(int16_t)*bridgedImage.image.rows*bridgedImage.image.cols);
+  
+  calc_gradient(gradX.ptr<int16_t>(),gradY.ptr<int16_t>(),gradX.cols,gradY.rows,gradX.cols,bridgedImage.image.ptr());
+  
+  double min;
+  double max;
+  cv::minMaxIdx(gradX, &min, &max);
+  cv::Mat adjMap(gradX.size(), CV_8UC1);
+ 
+  for (int i=0; i < adjMap.rows; i++)
+  {
+    for (int j=0; j < adjMap.cols; j++)
+    {
+      adjMap.at<uint8_t>(i,j) = static_cast<uint8_t>((gradY.at<int16_t>(i,j) - min) / (max - min) * 255);
+    }
+  }
+  
+  
   //  blur to reduce noise
   cv::Mat blurredImage;
-  cv::GaussianBlur(bridgedImage.image,blurredImage,cv::Size(7,7),0);
+  cv::GaussianBlur(bridgedImage.image,blurredImage,cv::Size(3,3),0);
   
   //  find edges
   cv::Mat edgeImage;
   cv::Canny(blurredImage,edgeImage,lowCannyThresh,highCannyThresh);
+  
+  //  blur the gradient
+  ///cv::GaussianBlur(adjMap,adjMap,cv::Size(3,3),0);
+  
+  cv::Mat edge2;
+  cv::threshold(adjMap,edge2,25.0,255.0,CV_THRESH_BINARY);
+  cv::imshow("Out", edge2);
+  
   
   //  find contours
   std::vector<std::vector<cv::Point>> contours;
@@ -162,7 +210,7 @@ void camera_callback(const sensor_msgs::Image::ConstPtr &img,
     cv::imshow("input_image", bridgedImage.image);
     cv::imshow("edge_image", edgeImage);
     cv::imshow("contour_image", contourImage);
-    cv::waitKey(1);
+      cv::waitKey(1);
   }
 }
              

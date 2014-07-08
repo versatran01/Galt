@@ -23,6 +23,8 @@
 #include <kr_math/quaternion.hpp>
 #include <kr_math/SO3.hpp>
 
+#include "calibrate_line.hpp"
+
 ros::NodeHandlePtr nh;
 
 int main(int argc, char ** argv) {

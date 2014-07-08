@@ -13,14 +13,16 @@
 #define CALIBRATE_POSE_HPP_
 
 #include <vector>
+#include <array>
+
 #include <opencv2/opencv.hpp>
-#include <pose.hpp> //  kr_math
+#include <kr_math/pose.hpp> //  kr_math
 
 struct CalibData {
   kr::Pose<double> pose;  /**< Pose of camera during this observation */
   cv::Point2d meas;       /**< Point (in normalized coordinates) of observation */
 };
 
-kr::Pose<double> calibrate_pose(std::vector<CalibData> observations);
+std::array<double, 6> calibrate_pose(const std::vector<CalibData>& observations);
 
 #endif // CALIBRATE_POSE_HPP_

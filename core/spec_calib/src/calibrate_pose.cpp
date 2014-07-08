@@ -10,4 +10,14 @@
  */
 
 #include "calibrate_pose.hpp"
+#include <galt_common/error_handling.hpp>
 
+std::array<double, 6> calibrate_pose(const std::vector<CalibData>& observations)
+{
+  dbg_assert( observations.size() >= 2 );
+
+  std::vector <cv::Point2d> camPoints;
+
+  //  calculate depths
+
+}

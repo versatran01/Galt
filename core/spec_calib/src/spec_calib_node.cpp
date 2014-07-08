@@ -20,8 +20,8 @@
 #include <ocean_optics/Spectrum.h>
 
 // kr_math
-#include <quaternion.hpp>
-#include <SO3.hpp>
+#include <kr_math/quaternion.hpp>
+#include <kr_math/SO3.hpp>
 
 ros::NodeHandlePtr nh;
 

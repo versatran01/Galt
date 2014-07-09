@@ -10,7 +10,7 @@
 <launch>
 
   <node name="player" pkg="rosbag" type="play" output="screen"
-        args="--clock -r 1 $(find circle_tracker)/bags/white.bag"/>
+        args="--clock -r 1 $(find circle_tracker)/bags/new1.bag"/>
 
   <node name="circle_tracker" pkg="circle_tracker" type="circle_tracker" output="screen">
 

@@ -25,6 +25,8 @@ using namespace std;
 ros::NodeHandlePtr nh;
 ros::Publisher specPub;
 
+uint32_t seq=0;
+
 int main(int argc, char ** argv)
 {
   ros::init(argc,argv,"ocean_optics");
@@ -110,6 +112,8 @@ int main(int argc, char ** argv)
   while (ros::ok())
   {
     ocean_optics::Spectrum specMsg;
+    specMsg.header.stamp = ros::Time::now();
+    specMsg.header.seq = seq++;
     specMsg.boardTemp = -1.0;
     specMsg.detectorTemp = -1.0;
     specMsg.integrationTime = integrationTime;

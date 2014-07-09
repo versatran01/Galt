@@ -28,7 +28,7 @@ add_definitions("-Wall -Wunused")
 # build node
 add_executable(${PROJECT_NAME}
   src/spec_calib_node.cpp
-  src/calibrate_pose.cpp
+  src/calibrate_line.cpp
 )
 target_link_libraries(${PROJECT_NAME}
   ${roscpp_LIBRARIES}

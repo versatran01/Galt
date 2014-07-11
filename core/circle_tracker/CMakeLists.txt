@@ -12,7 +12,7 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 # generate messages
-add_message_files(FILES Circle.msg)
+add_message_files(FILES Circle.msg Circles.msg)
 generate_messages(DEPENDENCIES std_msgs)
 
 catkin_package()

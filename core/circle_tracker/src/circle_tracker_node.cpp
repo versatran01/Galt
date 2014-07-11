@@ -21,44 +21,29 @@
 #include <cv_bridge/cv_bridge.h>
 
 #include "circle_tracker/Circle.h"
+#include "circle_tracker/Circles.h"
+
 #include "elliptical_fit.hpp"
+
+using namespace std;
 
 ros::NodeHandlePtr nh;  //  private node handle
 ros::Publisher circPub;
 
 //  global parameters
-bool displayGui = true;
+bool displayGui;
 
 double lowCannyThresh = 0.0;
-double highCannyThresh = 120.0;
-int pointCountThresh = 6;
-double areaThreshold = 0.001;
-double circThresh = 0.85;
+double highCannyThresh;
+int pointCountThresh;
+double areaThreshold;
+double circThresh;
 
 struct Circle {
   cv::Point2f center;
   double radius;
   double score;
 };
-
-static void calc_gradient(int16_t * destX, int16_t * destY, size_t w, size_t h, size_t step, const uchar * data)
-{
-    int16_t hx,lx,hy,ly;
-    
-    for (size_t i=1; i < h-1; i++)         //  rows
-    {
-        for (size_t j=1; j < w-1; j++)     //  cols
-        {
-            hx = data[(j+1) + i*step];
-            lx = data[(j-1) + i*step];
-            hy = data[j + (i+1)*step];
-            ly = data[j + (i-1)*step];
-            
-            destX[j + i*w] = std::abs(hx - lx);  //  destination rows are densely packed
-            destY[j + i*w] = std::abs(hy - ly);
-        }
-    }
-}
 
 //  based on optical_flow_circle.cpp
 void camera_callback(const sensor_msgs::Image::ConstPtr &img,
@@ -85,42 +70,15 @@ void camera_callback(const sensor_msgs::Image::ConstPtr &img,
   
   cv::Mat distCoeffs(camInfo->D.size(), 1, CV_64F, const_cast<double*>(camInfo->D.data()));
   
-  cv::Mat gradX(bridgedImage.image.size(), CV_16S);
-  cv::Mat gradY(bridgedImage.image.size(), CV_16S);
-  memset(gradX.ptr(), 0, sizeof(int16_t)*bridgedImage.image.rows*bridgedImage.image.cols);
-  memset(gradY.ptr(), 0, sizeof(int16_t)*bridgedImage.image.rows*bridgedImage.image.cols);
-  
-  calc_gradient(gradX.ptr<int16_t>(),gradY.ptr<int16_t>(),gradX.cols,gradY.rows,gradX.cols,bridgedImage.image.ptr());
-  
-  double min;
-  double max;
-  cv::minMaxIdx(gradX, &min, &max);
-  cv::Mat adjMap(gradX.size(), CV_8UC1);
- 
-  for (int i=0; i < adjMap.rows; i++)
-  {
-    for (int j=0; j < adjMap.cols; j++)
-    {
-      adjMap.at<uint8_t>(i,j) = static_cast<uint8_t>((gradY.at<int16_t>(i,j) - min) / (max - min) * 255);
-    }
-  }
-  
-  
   //  blur to reduce noise
   cv::Mat blurredImage;
-  cv::GaussianBlur(bridgedImage.image,blurredImage,cv::Size(3,3),0);
+  blurredImage = bridgedImage.image;
+  //cv::GaussianBlur(bridgedImage.image,blurredImage,cv::Size(2,2),0);
   
   //  find edges
   cv::Mat edgeImage;
+  //cv::threshold(blurredImage,edgeImage,15.0,255.0,CV_THRESH_BINARY);
   cv::Canny(blurredImage,edgeImage,lowCannyThresh,highCannyThresh);
-  
-  //  blur the gradient
-  ///cv::GaussianBlur(adjMap,adjMap,cv::Size(3,3),0);
-  
-  cv::Mat edge2;
-  cv::threshold(adjMap,edge2,25.0,255.0,CV_THRESH_BINARY);
-  cv::imshow("Out", edge2);
-  
   
   //  find contours
   std::vector<std::vector<cv::Point>> contours;
@@ -151,14 +109,13 @@ void camera_callback(const sensor_msgs::Image::ConstPtr &img,
       for (const cv::Point2d& p : undist) {
         undist_d.push_back(cv::Point2d(p.x,p.y));
       }
-                  
-      //cv::drawContours(contourImage,contours,idx,cv::Scalar(rand()&255,rand()&255,rand()&255));
-      
+            
       if (undist.size() > static_cast<size_t>(pointCountThresh))
       {
         //  apply area threshold
         const double A = std::abs( cv::contourArea(undist) );
         if (A > areaThreshold) {
+          
           const double C = cv::arcLength(undist,true);  //  circumference
           const double score = 4*M_PI*A / (C*C);
           
@@ -176,7 +133,7 @@ void camera_callback(const sensor_msgs::Image::ConstPtr &img,
             matches.push_back(circ);
             
             if (displayGui) {
-              cv::drawContours(contourImage,contours,idx,cv::Scalar(0,255,0));
+              cv::drawContours(contourImage,contours,idx,cv::Scalar(0,0,255));
             }
           }
         }
@@ -186,31 +143,35 @@ void camera_callback(const sensor_msgs::Image::ConstPtr &img,
     idx++;
   }
   
-  //  take best circle
+  //  sort circles from best to worst
   if (!matches.empty())
   {
     std::sort(matches.begin(), matches.end(), [](const Circle& a, const Circle& b) -> bool {
       return std::abs(a.score - 1.0) < std::abs(b.score - 1.0);
     });
     
-    Circle result = matches.front();
-
-    //  publish
-    circle_tracker::Circle message;
-    message.header = img->header; //  repeat timestamp and seq #
-    message.centerX = result.center.x;
-    message.centerY = result.center.y;
-    message.radius = result.radius;
-    message.score = result.score;
+    circle_tracker::Circles circlesMsg;
+    circlesMsg.header = img->header;
     
-    circPub.publish(message);
+    for (const Circle& match : matches) {
+      circle_tracker::Circle message;
+      
+      message.centerX = match.center.x;
+      message.centerY = match.center.y;
+      message.radius = match.radius;
+      message.score = match.score;
+      
+      circlesMsg.circles.push_back(message);
+    }
+  
+    circPub.publish(circlesMsg);
   }
   
   if (displayGui) {
     cv::imshow("input_image", bridgedImage.image);
     cv::imshow("edge_image", edgeImage);
     cv::imshow("contour_image", contourImage);
-      cv::waitKey(1);
+    cv::waitKey(1);
   }
 }
              
@@ -219,7 +180,14 @@ int main(int argc, char ** argv)
   ros::init(argc, argv, "circle_tracker_node");
   nh = ros::NodeHandlePtr( new ros::NodeHandle("~") );
 
-  circPub = nh->advertise<circle_tracker::Circle>("circle", 1);
+  //  load parameters
+  nh->param(string("high_canny_threshold"), highCannyThresh, 120.0);
+  nh->param(string("point_count_threshold"), pointCountThresh, 6);
+  nh->param(string("area_threshold"), areaThreshold, 0.0005);
+  nh->param(string("circle_threshold"), circThresh, 0.70);
+  nh->param(string("display_gui"), displayGui, false);
+  
+  circPub = nh->advertise<circle_tracker::Circles>("circles", 1);
   
   //  subscribe to image feed
   image_transport::ImageTransport it(*nh);

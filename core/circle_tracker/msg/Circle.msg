@@ -1,5 +1,4 @@
 # Detected circle message
-Header header
 
 # Position in normalized image coordinates
 float64 centerX

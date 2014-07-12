@@ -143,15 +143,14 @@ void camera_callback(const sensor_msgs::Image::ConstPtr &img,
     idx++;
   }
   
-  //  sort circles from best to worst
+  circle_tracker::Circles circlesMsg;
+  circlesMsg.header = img->header;
   if (!matches.empty())
   {
+    //  sort circles from best to worst    
     std::sort(matches.begin(), matches.end(), [](const Circle& a, const Circle& b) -> bool {
       return std::abs(a.score - 1.0) < std::abs(b.score - 1.0);
     });
-    
-    circle_tracker::Circles circlesMsg;
-    circlesMsg.header = img->header;
     
     for (const Circle& match : matches) {
       circle_tracker::Circle message;
@@ -163,9 +162,8 @@ void camera_callback(const sensor_msgs::Image::ConstPtr &img,
       
       circlesMsg.circles.push_back(message);
     }
-  
-    circPub.publish(circlesMsg);
   }
+  circPub.publish(circlesMsg);  //  publish even when empty  
   
   if (displayGui) {
     cv::imshow("input_image", bridgedImage.image);

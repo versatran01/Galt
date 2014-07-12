@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 2.8.3)
 project(spec_calib)
 
 # include QT
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
 find_package(Qt5Widgets REQUIRED)
 
 # find OpenCV separately

@@ -26,14 +26,17 @@ set(${PROJECT_NAME}_SOURCES
   src/main.cpp
   src/calibrate_line.cpp
   src/qt/mainwindow.cpp
-  src/qt/customwidget.cpp
+  src/qt/posecalibrationview.cpp
+  src/qt/cvimagewidget.cpp
 )
 set(${PROJECT_NAME}_HEADERS
-  src/qt/mainwindow.hpp
-  src/qt/customwidget.hpp
+  src/qt/mainwindow.h
+  src/qt/posecalibrationview.h
+  src/qt/cvimagewidget.h
 )
 set(${PROJECT_NAME}_FORMS
   forms/mainwindow.ui
+  forms/posecalibrationview.ui
 )
 
 # invoke MOC and UI
@@ -59,8 +62,8 @@ include_directories(
   ${OpenCV_INCLUDE_DIRS}
 )
 
-# additional warnings
-add_definitions("-Wall -Wunused")
+# additional warnings and cpp11
+add_definitions("-Wall -Wunused -std=c++11")
 
 # build node
 add_executable(${PROJECT_NAME}

@@ -6,34 +6,17 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>400</width>
-    <height>300</height>
+    <width>618</width>
+    <height>427</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>Multispec Calibrator 9000</string>
   </property>
   <widget class="QWidget" name="centralWidget">
    <layout class="QVBoxLayout" name="verticalLayout_2">
     <item>
-     <layout class="QHBoxLayout" name="horizontalLayout">
-      <item>
-       <widget class="CustomWidget" name="widget" native="true">
-        <property name="minimumSize">
-         <size>
-          <width>120</width>
-          <height>80</height>
-         </size>
-        </property>
-        <property name="maximumSize">
-         <size>
-          <width>300</width>
-          <height>300</height>
-         </size>
-        </property>
-       </widget>
-      </item>
-     </layout>
+     <layout class="QHBoxLayout" name="horizontalLayout"/>
     </item>
    </layout>
   </widget>
@@ -42,24 +25,10 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>400</width>
+     <width>618</width>
      <height>29</height>
     </rect>
    </property>
-   <widget class="QMenu" name="menuThis_is_stuff">
-    <property name="title">
-     <string>This is stuff</string>
-    </property>
-    <widget class="QMenu" name="menuEven_more_stuff">
-     <property name="title">
-      <string>Even more stuff</string>
-     </property>
-     <addaction name="actionYo_momma"/>
-    </widget>
-    <addaction name="actionMore_Stuff"/>
-    <addaction name="menuEven_more_stuff"/>
-   </widget>
-   <addaction name="menuThis_is_stuff"/>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
   <action name="actionMore_Stuff">
@@ -74,14 +43,6 @@
   </action>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
- <customwidgets>
-  <customwidget>
-   <class>CustomWidget</class>
-   <extends>QWidget</extends>
-   <header>customwidget.hpp</header>
-   <container>1</container>
-  </customwidget>
- </customwidgets>
  <resources/>
  <connections/>
 </ui>

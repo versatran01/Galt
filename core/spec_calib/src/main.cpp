@@ -12,7 +12,7 @@
 #include <QApplication>
 #include <ros/ros.h>
 
-#include "mainwindow.hpp"
+#include "mainwindow.h"
 
 ros::NodeHandlePtr nh;
 

@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>400</width>
+    <height>300</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>MainWindow</string>
+  </property>
+  <widget class="QWidget" name="centralWidget">
+   <layout class="QVBoxLayout" name="verticalLayout_2">
+    <item>
+     <layout class="QHBoxLayout" name="horizontalLayout">
+      <item>
+       <widget class="CustomWidget" name="widget" native="true">
+        <property name="minimumSize">
+         <size>
+          <width>120</width>
+          <height>80</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>300</width>
+          <height>300</height>
+         </size>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menuBar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>400</width>
+     <height>29</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuThis_is_stuff">
+    <property name="title">
+     <string>This is stuff</string>
+    </property>
+    <widget class="QMenu" name="menuEven_more_stuff">
+     <property name="title">
+      <string>Even more stuff</string>
+     </property>
+     <addaction name="actionYo_momma"/>
+    </widget>
+    <addaction name="actionMore_Stuff"/>
+    <addaction name="menuEven_more_stuff"/>
+   </widget>
+   <addaction name="menuThis_is_stuff"/>
+  </widget>
+  <widget class="QStatusBar" name="statusBar"/>
+  <action name="actionMore_Stuff">
+   <property name="text">
+    <string>More Stuff</string>
+   </property>
+  </action>
+  <action name="actionYo_momma">
+   <property name="text">
+    <string>Yo momma</string>
+   </property>
+  </action>
+ </widget>
+ <layoutdefault spacing="6" margin="11"/>
+ <customwidgets>
+  <customwidget>
+   <class>CustomWidget</class>
+   <extends>QWidget</extends>
+   <header>customwidget.hpp</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>

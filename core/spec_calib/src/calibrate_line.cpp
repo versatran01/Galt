@@ -10,12 +10,11 @@
  */
 
 #include "calibrate_line.hpp"
-#include <galt_common/error_handling.hpp>
 
 using namespace Eigen;
 
 std::vector<double> calibrate_line(const std::vector<CalibData>& observations, double reps, double aeps) {
-  dbg_assert( observations.size() >= 2 );
+  assert( observations.size() >= 2 );
 
   std::vector <cv::Point3d> camPoints;
   camPoints.resize(observations.size());
@@ -35,7 +34,7 @@ std::vector<double> calibrate_line(const std::vector<CalibData>& observations, d
     v /= v.norm();
 
     //  transform ground plane to camera coordinates
-    bRw = data.pose.q.toMatrix();
+    bRw = data.pose.q.matrix();
     n = bRw.block<3,1>(0,2);
     p0 = bRw * -data.pose.p;
 

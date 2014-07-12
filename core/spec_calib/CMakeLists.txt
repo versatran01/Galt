@@ -14,6 +14,7 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   geometry_msgs
   image_transport
+  cv_bridge
   circle_tracker
   ocean_optics
   monocular_pose_estimator

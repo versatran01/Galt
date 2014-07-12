@@ -1,0 +1,9 @@
+<launch>
+  <node name="player" pkg="rosbag" type="play" output="screen"
+    args="--clock -r 1 $(find circle_tracker)/bags/laser.bag"/>
+
+  <node pkg="spec_calib" type="spec_calib" name="spec_calib" output="screen">
+    <remap from="~image" to="/mono/mv_25000495/image_raw"/>
+    <remap from="~camera_info" to="/mono/mv_25000495/camera_info"/>
+  </node>
+</launch>

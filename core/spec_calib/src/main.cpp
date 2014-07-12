@@ -10,6 +10,7 @@
  */
 
 #include <QApplication>
+#include <QThread>
 #include <ros/ros.h>
 
 #include "mainwindow.h"
@@ -22,9 +23,9 @@ int main(int argc, char *argv[])
   nh = ros::NodeHandlePtr(new ros::NodeHandle("~"));
   
   QApplication a(argc, argv);
-  MainWindow w;
+  MainWindow w(0, nh);
   w.show();
-
+  
   while ( ros::ok() ) {
     a.processEvents();
     ros::spinOnce();

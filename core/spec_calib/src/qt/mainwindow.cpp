@@ -4,20 +4,35 @@
 #include "posecalibrationview.h"
 #include "cvimagewidget.h"
 
-MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),
-  ui(new Ui::MainWindow)
+MainWindow::MainWindow(QWidget *parent, const ros::NodeHandlePtr& nhp) : QMainWindow(parent),
+  ui(new Ui::MainWindow), mode_(None), nodeHandle_(nhp)
 {
   ui->setupUi(this);
   
-  QStatusBar * bar = this->statusBar();
-  bar->showMessage(tr("Hey there!"));
-  
-  CVImageWidget * view = new CVImageWidget(this);
-  //PoseCalibrationView * view = new PoseCalibrationView(this);
-  ui->horizontalLayout->addWidget(view);  
+  setMode(CalibratePose);
 }
 
 MainWindow::~MainWindow()
 {
   delete ui;
+}
+
+void MainWindow::setMode(Mode mode) {
+  if (mode != mode_) {
+    
+    if (mode_ == CalibratePose) {
+      delete poseView_;
+      poseView_=0;
+    }
+    
+    mode_ = mode;
+    if (mode_ == CalibratePose) {
+      poseView_ = new PoseCalibrationView(this, nodeHandle_);
+      ui->horizontalLayout->addWidget(poseView_);
+      this->statusBar()->showMessage("Calibrating pose");
+    }
+    else if (mode_ == CalibrateSpectrum) {
+      //  add other view here
+    }
+  }
 }

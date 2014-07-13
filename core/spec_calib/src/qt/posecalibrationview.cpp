@@ -55,10 +55,17 @@ PoseCalibrationView::PoseCalibrationView(QWidget *parent, const ros::NodeHandleP
   subImage_.subscribe(*imgTransport_, "image", kROSQueueSize);
   subCamInfo_.subscribe(*nhp, "camera_info", kROSQueueSize);
   subCircles_.subscribe(*nhp, "circles", kROSQueueSize);
+  subPose_.subscribe(*nhp, "pose", kROSQueueSize);
+  subPixels_.subscribe(*nhp, "pixels", kROSQueueSize);
   
   //  subscribe to synchronized topics
-  sync_ = std::make_shared<message_filters::Synchronizer<TimeSyncPolicy>>(TimeSyncPolicy(kROSQueueSize), subImage_, subCamInfo_, subCircles_);
-  sync_->registerCallback( boost::bind(&PoseCalibrationView::syncCallback, this, _1, _2, _3) );  
+  sync_ = std::make_shared<message_filters::Synchronizer<TimeSyncPolicy>>(TimeSyncPolicy(kROSQueueSize), 
+                                                                          subImage_, 
+                                                                          subCamInfo_, 
+                                                                          subCircles_,
+                                                                          subPose_,
+                                                                          subPixels_);
+  sync_->registerCallback( boost::bind(&PoseCalibrationView::syncCallback, this, _1, _2, _3, _4, _5) );  
   
   ROS_INFO("Subscribing to ~image, ~camera_info, ~circles");
 }
@@ -69,7 +76,10 @@ PoseCalibrationView::~PoseCalibrationView()
 }
 
 void PoseCalibrationView::syncCallback(const sensor_msgs::ImageConstPtr& img,
-                  const sensor_msgs::CameraInfoConstPtr &info, const circle_tracker::CirclesConstPtr &circles)
+                  const sensor_msgs::CameraInfoConstPtr &info, 
+                  const circle_tracker::CirclesConstPtr &circles, 
+                  const geometry_msgs::PoseWithCovarianceStampedConstPtr &pose,
+                  const monocular_pose_estimator::PixelArrayConstPtr& pixels)
 {
   //  convert image to OpenCV format
   cv_bridge::CvImageConstPtr bridgedImagePtr = cv_bridge::toCvCopy(img,"rgb8");
@@ -84,21 +94,24 @@ void PoseCalibrationView::syncCallback(const sensor_msgs::ImageConstPtr& img,
   double cx = info->K[2];
   double fy = info->K[4];
   double cy = info->K[5];
-  double f = std::sqrt(fx*fy);
+  double f = (fx+fy)/2;
   std::vector<double> distCoeffs = info->D;
   
   //  draw some circles
   for (const circle_tracker::Circle& circ : circles->circles) {
+    
     cv::Point2d p(circ.centerX,circ.centerY);
-    p = distortPoint(distCoeffs,p);
+    p = distortPoint(distCoeffs, p);  //  apply camera model
     
     double x = fx*p.x + cx;
     double y = fy*p.y + cy;
     double rad = circ.radius * f;
     
-    cv::circle(image, cv::Point2d(x,y),rad,cv::Scalar(255,0,0),3);
+    cv::circle(image, cv::Point2d(x,y), rad, cv::Scalar(255,0,0), 3);
   }
   
   //  update ui
   ui->imageWidget->setImage(image);
+
+  ROS_INFO("Callback!");
 }

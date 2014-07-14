@@ -276,7 +276,7 @@ void PoseCalibrator::addObservation(const kr::Pose<double> &pose, const Circle& 
   
   if (v[2] < 0.0) {
     v *= -1;
-  }  
+  }
   
   auto compare = [=](const Observation& obvs) -> bool {
     if (std::abs(obvs.depth - d) < depthThreshold_) { //  depth threshold

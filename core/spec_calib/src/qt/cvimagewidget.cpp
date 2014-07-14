@@ -30,9 +30,9 @@ void CVImageWidget::setImage(const cv::Mat& image) {
   temp_ = image; 
   
   QImage::Format format = QImage::Format_RGB888;
-  size_t step = temp_.ptr(1) - temp_.ptr(0);
+  const size_t step = temp_.ptr(1) - temp_.ptr(0);
   image_ = QImage(temp_.ptr(),temp_.cols,temp_.rows,step,format);
-  image_ = image_.rgbSwapped();
+  //image_ = image_.rgbSwapped();
   
   repaint();
 }
@@ -44,6 +44,17 @@ void CVImageWidget::paintEvent(QPaintEvent *)
   
   //  fill blank background
   painter.fillRect(QRect(0,0,width(),height()),QColor(229,233,238));
+  
+  //  draw border
+  QPainterPath path;
+  path.addRect(QRect(0,0,width(),height()));
+  QPen pen;
+  pen.setWidth(1);
+  pen.setColor(QColor(0,0,0));
+  pen.setStyle(Qt::SolidLine);
+  
+  painter.setPen(pen);
+  painter.drawPath(path);
   
   if (!image_.isNull()) {    
     int draw_width = image_.width();

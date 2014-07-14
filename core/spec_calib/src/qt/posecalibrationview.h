@@ -34,6 +34,10 @@ public slots:
   
   void calibrateButtonPressed(bool);
   
+  void resetButtonPressed(bool);
+  
+  void saveButtonPressed(bool);
+  
 private:
   Ui::PoseCalibrationView *ui;
   PoseCalibrator * poseCalib_;

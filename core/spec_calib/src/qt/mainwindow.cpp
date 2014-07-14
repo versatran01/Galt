@@ -42,7 +42,7 @@ void MainWindow::setMode(Mode mode) {
       poseView_ = new PoseCalibrationView(this, poseCalib_);
       
       ui->horizontalLayout->addWidget(poseView_);
-      this->statusBar()->showMessage("Calibrating pose");
+      this->statusBar()->showMessage("Pose calibration mode");
     }
     else if (mode_ == CalibrateSpectrum) {
       //  add other view here

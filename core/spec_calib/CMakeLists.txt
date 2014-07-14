@@ -25,7 +25,6 @@ catkin_package()
 
 set(${PROJECT_NAME}_SOURCES
   src/main.cpp
-  src/calibrate_line.cpp
   src/qt/mainwindow.cpp
   src/qt/posecalibrationview.cpp
   src/qt/posecalibrator.cpp

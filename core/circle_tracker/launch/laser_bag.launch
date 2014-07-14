@@ -10,7 +10,7 @@
 <launch>
 
   <node name="player" pkg="rosbag" type="play" output="screen"
-        args="--clock -r 1 $(find circle_tracker)/bags/laser.bag"/>
+        args="--clock -l -r 1 $(find circle_tracker)/bags/laser.bag"/>
 
   <include file="$(find circle_tracker)/launch/circle_tracker.launch">
     <arg name="display_gui" value="true"/>

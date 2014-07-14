@@ -1,0 +1,4 @@
+<launch>
+    <node pkg="flir_gige" type="flir_node" name="flir" output="screen">
+    </node>
+</launch>

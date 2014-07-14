@@ -16,6 +16,8 @@ If you want to have a visualization, use hokuyo_rviz.launch
 
     <node name="urg_node" pkg="urg_node" type="urg_node" respawn="false" output="screen">
         <param name="ip_address" type="string" value="192.168.0.10"/>
+        <!--<param name="angle_min" type="double" value="-1.5"/>-->
+        <!--<param name="angle_max" type="double" value="1.5"/>-->
     </node>
 
 </launch>

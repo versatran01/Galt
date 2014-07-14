@@ -1,3 +1,14 @@
+/*
+ * cvimagewidget.h
+ *
+ *  Copyright (c) 2014 Nouka Technologies. All rights reserved.
+ *
+ *  This file is part of galt.
+ *
+ *  Created on: 11/7/2014
+ *      Author: gareth
+ */
+
 #ifndef CVIMAGEWIDGET_H
 #define CVIMAGEWIDGET_H
 

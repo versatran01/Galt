@@ -1,7 +1,7 @@
 /*
  * spec_calib_node.cpp
  *
- *  Copyright (c) 2014 Kumar Robotics. All rights reserved.
+ *  Copyright (c) 2014 Nouka Technologies. All rights reserved.
  *
  *  This file is part of galt.
  *
@@ -41,20 +41,20 @@ ros::NodeHandlePtr nh;
 
 int main(int argc, char ** argv) {
   ros::init(argc, argv, "spec_calib_node");
-  nh = ros::NodeHandlePtr( new ros::NodeHandle("~") );  
-  
+  nh = ros::NodeHandlePtr( new ros::NodeHandle("~") );
+
   //  subscribe to circles, pose, pixels and image
   image_transport::SubscriberFilter imgSub("image");
   message_filters::Subscriber <sensor_msgs::CameraInfo> camInfoSub("camera_info");
   message_filters::Subscriber <monocular_pose_estimator::PixelArray> pixSub("pixel_array");
   message_filters::Subscriber <circle_tracker::Circles> circSub("circles");
-  
+
   typedef message_filters::sync_policies::ExactTime<sensor_msgs::Image,
       sensor_msgs::CameraInfo, monocular_pose_estimator::PixelArray,
       circle_tracker::Circles> TimeSyncPolicy;
-  
-  message_filters::Synchronizer<TimeSyncPolicy> 
-  
+
+  message_filters::Synchronizer<TimeSyncPolicy>
+
   ros::spin();
   return 0;
 }

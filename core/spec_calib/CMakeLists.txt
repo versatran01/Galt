@@ -28,11 +28,13 @@ set(${PROJECT_NAME}_SOURCES
   src/calibrate_line.cpp
   src/qt/mainwindow.cpp
   src/qt/posecalibrationview.cpp
+  src/qt/posecalibrator.cpp
   src/qt/cvimagewidget.cpp
 )
 set(${PROJECT_NAME}_HEADERS
   src/qt/mainwindow.h
   src/qt/posecalibrationview.h
+  src/qt/posecalibrator.h
   src/qt/cvimagewidget.h
 )
 set(${PROJECT_NAME}_FORMS
@@ -79,9 +81,6 @@ target_link_libraries(${PROJECT_NAME}
   ${catkin_LIBRARIES}
   ${OpenCV_LIBRARIES}
 )
-#${roscpp_LIBRARIES}
-#${image_transport_LIBRARIES}
-#
 
 # depends on messages from spectrometer
 add_dependencies(${PROJECT_NAME} ${ocean_optics_EXPORTED_TARGETS})

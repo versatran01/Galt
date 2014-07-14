@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include <ros/ros.h>
 
+#include "posecalibrator.h"
 #include "posecalibrationview.h"
 
 namespace Ui {
@@ -26,6 +27,8 @@ private:
     CalibratePose,
     CalibrateSpectrum,
   } mode_;
+  
+  PoseCalibrator * poseCalib_;
   PoseCalibrationView * poseView_;
   
   ros::NodeHandlePtr nodeHandle_;

@@ -27,7 +27,9 @@ void MainWindow::setMode(Mode mode) {
     
     mode_ = mode;
     if (mode_ == CalibratePose) {
-      poseView_ = new PoseCalibrationView(this, nodeHandle_);
+      poseCalib_ = new PoseCalibrator(0, nodeHandle_);
+      poseView_ = new PoseCalibrationView(this, poseCalib_);
+      
       ui->horizontalLayout->addWidget(poseView_);
       this->statusBar()->showMessage("Calibrating pose");
     }

@@ -1,0 +1,40 @@
+<launch>
+
+  <!-- test bagfile -->
+  <node name="player" pkg="rosbag" type="play" output="screen"
+    args="--clock -l -r 1 $(find spec_calib)/bags/leds2.bag"/>
+
+  <!-- circle tracker -->
+  <include file="$(find circle_tracker)/launch/circle_tracker.launch">
+    <arg name="display_gui" value="false"/>
+    <arg name="image_topic" value="/cam_25001110/image_raw"/>
+  </include>
+
+  <!-- pose estimator -->
+  <group ns="monocular_pose_estimator">
+    <node name="monocular_pose_estimator" pkg="monocular_pose_estimator" respawn="false" type="monocular_pose_estimator" output="screen">
+        <remap from="/camera/image_raw" to="/cam_25001110/image_raw"/>
+        <remap from="/camera/camera_info" to="/cam_25001110/camera_info"/>
+        <rosparam command="load" file="$(find monocular_pose_estimator)/marker_positions/calib_marker.yaml"/>
+        <param name="threshold_value" value="140"/>
+        <param name="gaussian_sigma" value="0.6"/>
+        <param name="min_blob_area" value="10"/>
+        <param name="max_blob_area" value="200"/>
+        <param name="max_width_height_distortion" value="0.5"/>
+        <param name="max_circular_distortion" value="0.5"/>
+        <param name="back_projection_pixel_tolerance" value="10"/>
+        <param name="nearest_neighbour_pixel_tolerance" value="10"/>
+        <param name="certainty_threshold" value="0.75"/>
+        <param name="valid_correspondence_threshold" value="0.7"/>
+    </node>
+  </group>
+
+  <!-- spec calib node -->
+  <node pkg="spec_calib" type="spec_calib" name="spec_calib" output="screen">
+    <remap from="~image" to="/cam_25001110/image_raw"/>
+    <remap from="~camera_info" to="/cam_25001110/camera_info"/>
+    <remap from="~circles" to="/circle_tracker/circles"/>
+    <remap from="~pose" to="/monocular_pose_estimator/estimated_pose"/>
+    <remap from="~pixels" to="/monocular_pose_estimator/detected_led"/>
+  </node>
+</launch>

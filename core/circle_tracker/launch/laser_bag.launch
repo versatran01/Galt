@@ -1,0 +1,20 @@
+<!--
+  Name: laser_bag.launch
+  Author: Gareth
+  Triggers:
+    * circle_tracker
+    * rosbag (play mode)
+
+  Brief: Launch the circle tracker with laser test bagfile.
+-->
+<launch>
+
+  <node name="player" pkg="rosbag" type="play" output="screen"
+        args="--clock -l -r 1 $(find circle_tracker)/bags/laser.bag"/>
+
+  <include file="$(find circle_tracker)/launch/circle_tracker.launch">
+    <arg name="display_gui" value="true"/>
+    <arg name="image_topic" value="/mono/mv_25000495/image_raw"/>
+  </include>
+
+</launch>

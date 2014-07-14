@@ -137,8 +137,8 @@ PoseCalibrator::Circle PoseCalibrator::projectWithPose(const kr::Pose<double>& p
   double d = (del[0]*n[0] + del[1]*n[1] + del[2]*n[2]);
   d /= (ln_[0]*n[0] + ln_[1]*n[1] + ln_[2]*n[2]);
   
-  const kr::vec3<double> p_cam = l0_ + ln_*d;
-  
+  kr::vec3<double> p_cam = l0_ + ln_*d;
+
   double fx = camInfo_->K[0];
   double cx = camInfo_->K[2];
   double fy = camInfo_->K[4];
@@ -262,7 +262,11 @@ void PoseCalibrator::addObservation(const kr::Pose<double> &pose, const Circle& 
   //  intersect for depth
   double d = (o[0]*n[0] + o[1]*n[1] + o[2]*n[2]) / (v[0]*n[0] + v[1]*n[1] + v[2]*n[2]);
   v *= d;
-    
+  
+  if (v[2] < 0.0) {
+    v *= -1;
+  }  
+  
   auto compare = [=](const Observation& obvs) -> bool {
     if (std::abs(obvs.depth - d) < depthThreshold_) { //  depth threshold
       return true;

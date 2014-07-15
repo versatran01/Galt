@@ -39,7 +39,6 @@ private:
     CalibrateSpectrum,
   } mode_;
   
-  PoseCalibrator * poseCalib_;
   PoseCalibrationView * poseView_;
   
   ros::NodeHandlePtr nodeHandle_;

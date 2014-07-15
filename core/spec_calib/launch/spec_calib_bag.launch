@@ -19,7 +19,7 @@
         <param name="threshold_value" value="140"/>
         <param name="gaussian_sigma" value="0.6"/>
         <param name="min_blob_area" value="10"/>
-        <param name="max_blob_area" value="200"/>
+        <param name="max_blob_area" value="240"/>
         <param name="max_width_height_distortion" value="0.5"/>
         <param name="max_circular_distortion" value="0.5"/>
         <param name="back_projection_pixel_tolerance" value="10"/>

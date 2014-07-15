@@ -63,7 +63,7 @@ public:
     
   bool hasCalibration() const;
   
-  Circle projectWithPose(const kr::Pose<double>& pose);
+  std::pair<Circle,bool> projectWithPose(const kr::Pose<double>& pose);
   
 signals:
   void receivedMessage();
@@ -104,10 +104,13 @@ private:
     Circle circle;
     cv::Point3d p;  //  camera coordinates
     double depth;
+    
+    //  compare using depth
+    bool operator < (const Observation& b) const { return depth < b.depth; }
   };
   
   //  add new observation to current set
-  void addObservation(const kr::Pose<double> &pose, const Circle& circle);
+  bool addObservation(const kr::Pose<double> &pose, const Circle& circle);
   
   cv::Mat image_;
   

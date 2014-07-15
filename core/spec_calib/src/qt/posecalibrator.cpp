@@ -104,6 +104,9 @@ void PoseCalibrator::calibrate() {
     throw std::runtime_error("calibrate() called before sufficient points collected");
   }
   
+  //  sort observations by depth
+  std::sort(observations_.begin(), observations_.end());
+  
   //  take all observations and fit them to a line w/ least squares
   std::vector<cv::Point3f> camPoints;
   for (const Observation& o : observations_) {
@@ -123,9 +126,28 @@ void PoseCalibrator::calibrate() {
     kr::vec3<double> perp = (del - ln_ * (del.transpose() * ln_));
     err_ += perp[0]*perp[0] + perp[1]*perp[1] + perp[2]*perp[2];
   }
+  err_ = std::sqrt(err_);
   
   //  calculate field-of-view of laser
+  double fov_avg=0.0;
   
+  const Observation& ref = observations_.front();
+  const double d1 = ref.depth;
+  const double r1 = ref.circle.radiusCam;
+  
+  size_t i;
+  for (i=1; i < observations_.size(); i++) {
+    double d2 = observations_[i].depth;
+    double r2 = observations_[i].circle.radiusCam;
+    
+    double tan = (d2*r2 - d1*r1) / (d2 - d1);
+    fov_avg += 2*std::atan(tan);
+    
+  }
+  fov_avg /= (i - 1);
+  
+  ROS_INFO("Field of view (degrees) : %f", fov_avg * 180 / M_PI);
+  fov_ = fov_avg;
   
   hasCalibration_=true;
 }
@@ -134,22 +156,28 @@ bool PoseCalibrator::hasCalibration() const {
   return hasCalibration_;
 }
 
-PoseCalibrator::Circle PoseCalibrator::projectWithPose(const kr::Pose<double>& pose) {
+std::pair<PoseCalibrator::Circle, bool> PoseCalibrator::projectWithPose(const kr::Pose<double>& pose) {
   if (!hasCalibration()) {
     throw std::runtime_error("projectWithPose() called before calibration completed");
   }
   
   //  determine plane position
-  kr::vec3<double> o = pose.translation();
+  kr::vec3<double> o = pose.p;
   kr::vec3<double> n = pose.q.matrix() * kr::vec3<double>(0,0,1);
   
   //  intersect to get position in camera
   kr::vec3<double> del = o - l0_;
   double d = (del[0]*n[0] + del[1]*n[1] + del[2]*n[2]);
   d /= (ln_[0]*n[0] + ln_[1]*n[1] + ln_[2]*n[2]);
-  
-  kr::vec3<double> p_cam = l0_ + ln_*d;
 
+  kr::vec3<double> p_cam = l0_ + ln_*d;
+  ROS_INFO("Projected point: %f, %f, %f\n", p_cam[0], p_cam[1], p_cam[2]);
+  
+  if (p_cam[2] < 0.0f) {
+    ROS_WARN("Got a shit solution yo!");
+    return std::pair<Circle,bool>(Circle(),false);
+  }
+  
   double fx = camInfo_->K[0];
   double cx = camInfo_->K[2];
   double fy = camInfo_->K[4];
@@ -161,13 +189,15 @@ PoseCalibrator::Circle PoseCalibrator::projectWithPose(const kr::Pose<double>& p
   proj.x = p_cam[0] / p_cam[2];
   proj.y = p_cam[1] / p_cam[2];
   circle.xy = proj;
-  
+  circle.radiusCam = 2*std::tan(fov_/2) * p_cam[2];
+    
   proj = distortPoint(camInfo_->D, proj);
   proj.x = fx*proj.x + cx;
   proj.y = fy*proj.y + cy;
   circle.uv = proj;
+  circle.radiusPix = circle.radiusCam * (fx+fy)/2;
   
-  return circle;
+  return std::pair<Circle, bool>(circle, true);
 }
 
 void PoseCalibrator::syncCallback(const sensor_msgs::ImageConstPtr& img,
@@ -250,8 +280,10 @@ void PoseCalibrator::syncCallback(const sensor_msgs::ImageConstPtr& img,
   }
   
   if (hasCalibration()) {
-    Circle output = projectWithPose(pose);
-    cv::circle(image, output.uv, 20.0, cv::Scalar(0,255,0), 2);
+    std::pair<Circle,bool> output = projectWithPose(pose);
+    if (output.second) {
+      cv::circle(image, output.first.uv, output.first.radiusPix, cv::Scalar(0,255,0), 2);
+    }
   }
   
   image_ = image;
@@ -260,23 +292,25 @@ void PoseCalibrator::syncCallback(const sensor_msgs::ImageConstPtr& img,
   emit receivedMessage();
 }
 
-void PoseCalibrator::addObservation(const kr::Pose<double> &pose, const Circle& circle) {
+bool PoseCalibrator::addObservation(const kr::Pose<double> &pose, const Circle& circle) {
     
   kr::vec3<double> v; //  vector to feature, camera frame
   v = kr::vec3<double>(circle.xy.x, circle.xy.y, 1.0);
   v /= v.norm();
   
   //  plane values, in camera frame
-  kr::vec3<double> o = pose.translation();
+  kr::vec3<double> o = pose.p;  //translation();
   kr::vec3<double> n = pose.q.matrix() * kr::vec3<double>(0,0,1);
-  
+   
   //  intersect for depth
   double d = (o[0]*n[0] + o[1]*n[1] + o[2]*n[2]) / (v[0]*n[0] + v[1]*n[1] + v[2]*n[2]);
   v *= d;
   
   if (v[2] < 0.0) {
-    v *= -1;
+    return false; //  reject positive signed solutions
   }
+  
+  //ROS_INFO("%f, %f, %f (%f)\n", o[0], o[1], o[2], d);  
   
   auto compare = [=](const Observation& obvs) -> bool {
     if (std::abs(obvs.depth - d) < depthThreshold_) { //  depth threshold
@@ -300,5 +334,8 @@ void PoseCalibrator::addObservation(const kr::Pose<double> &pose, const Circle& 
     observations_.push_back(obvs);
     
     ROS_INFO("Adding observation: %f, %f, %f", v[0], v[1], v[2]);
+    return true;
   }
+  
+  return false;
 }

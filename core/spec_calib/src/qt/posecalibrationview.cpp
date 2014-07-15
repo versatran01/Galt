@@ -12,23 +12,22 @@
 #include "posecalibrationview.h"
 #include "ui_posecalibrationview.h"
 #include <QException>
+#include <iostream>
 
-PoseCalibrationView::PoseCalibrationView(QWidget *parent, PoseCalibrator *poseCalib) :
+PoseCalibrationView::PoseCalibrationView(QWidget *parent, const ros::NodeHandlePtr &nhp) :
   QWidget(parent),
-  ui(new Ui::PoseCalibrationView), poseCalib_(poseCalib)
+  ui(new Ui::PoseCalibrationView), nhp_(nhp)
 {
   ui->setupUi(this);
   
-  if (!poseCalib) {
-    throw std::invalid_argument("poseCalib cannot be null");
-  }
+  poseCalib_ = new PoseCalibrator(this, nhp);
   
   ui->calibrateButton->setEnabled(false);
   
   QObject::connect(ui->calibrateButton, SIGNAL(clicked(bool)),
                    this, SLOT(calibrateButtonPressed(bool)));
   
-  QObject::connect(poseCalib, SIGNAL(receivedMessage()),
+  QObject::connect(poseCalib_, SIGNAL(receivedMessage()),
                    this, SLOT(calibratorUpdatedState()));
   
   //  trigger an initial update
@@ -79,7 +78,16 @@ void PoseCalibrationView::calibrateButtonPressed(bool checked) {
 }
 
 void PoseCalibrationView::resetButtonPressed(bool checked) {
+ 
+  if (poseCalib_) {
+    delete poseCalib_;
+  }
+  poseCalib_ = new PoseCalibrator(this, nhp_);
   
+  QObject::connect(poseCalib_, SIGNAL(receivedMessage()),
+                   this, SLOT(calibratorUpdatedState()));
+  
+  calibratorUpdatedState();
 }
 
 void PoseCalibrationView::saveButtonPressed(bool checked) {

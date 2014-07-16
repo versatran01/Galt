@@ -22,7 +22,7 @@ include_directories(
 )
 
 set(${PROJECT_NAME}_sources
-  src/SensorPoseConfig.cpp
+  src/SpectrometerPose.cpp
 )
 
 # build a shared library

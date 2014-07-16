@@ -17,6 +17,7 @@ find_package(catkin REQUIRED COMPONENTS
   cv_bridge
   circle_tracker
   ocean_optics
+  galt_spectral
   monocular_pose_estimator
   kr_math
 )

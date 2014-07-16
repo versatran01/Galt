@@ -115,9 +115,10 @@ void PoseCalibrator::calibrate() {
     kr::vec3d perp = (del - ln * (del.transpose() * ln));
     err += perp[0]*perp[0] + perp[1]*perp[1] + perp[2]*perp[2];
   }
+  err /= observations_.size();
   
   //  calculate spectrometer position in camera coordinates
-  double lambda = -(l0[0]*ln[0] + l0[1]*ln[1] + l0[2]*ln[2]);
+  const double lambda = -(l0[0]*ln[0] + l0[1]*ln[1] + l0[2]*ln[2]);
   kr::vec3d specPos = l0 + ln*lambda;
   
   ROS_INFO("Spectrometer position: %f, %f, %f", specPos[0], specPos[1], specPos[2]);
@@ -136,7 +137,7 @@ void PoseCalibrator::calibrate() {
   
   ROS_INFO("Spectrometer FOV: %f", fov*180 / M_PI);
   
-  //pose_ = galt::SpectrometerPose(l0,ln,fov,err);
+  pose_ = galt::SpectrometerPose(l0,ln,fov,err);
   hasCalibration_=true;
 }
 
@@ -156,11 +157,6 @@ PoseCalibrator::Circle PoseCalibrator::projectWithPose(const kr::Pose<double>& p
   //  determine plane position
   kr::vec3d o = pose.p;
   kr::vec3d n = pose.q.matrix() * kr::vec3d(0,0,1);
-  
-  //  intersect to get position in camera
-  /*kr::vec3d del = o - l0_;
-  double d = (del[0]*n[0] + del[1]*n[1] + del[2]*n[2]);
-  d /= (ln_[0]*n[0] + ln_[1]*n[1] + ln_[2]*n[2]);*/
   
   const double d = pose_.distanceToPlane(o,n);
   

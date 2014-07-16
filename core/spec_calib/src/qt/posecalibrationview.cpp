@@ -9,10 +9,13 @@
  *      Author: gareth
  */
 
-#include "posecalibrationview.h"
-#include "ui_posecalibrationview.h"
 #include <QException>
 #include <iostream>
+
+#include "posecalibrationview.h"
+#include "ui_posecalibrationview.h"
+
+#include <yaml-cpp/yaml.h>
 
 PoseCalibrationView::PoseCalibrationView(QWidget *parent, const ros::NodeHandlePtr &nhp) :
   QWidget(parent),
@@ -29,6 +32,9 @@ PoseCalibrationView::PoseCalibrationView(QWidget *parent, const ros::NodeHandleP
   
   QObject::connect(poseCalib_, SIGNAL(receivedMessage()),
                    this, SLOT(calibratorUpdatedState()));
+  
+  QObject::connect(ui->saveButton, SIGNAL(clicked(bool)),
+                   this, SLOT(saveButtonPressed(bool)));
   
   //  trigger an initial update
   calibratorUpdatedState();
@@ -93,5 +99,20 @@ void PoseCalibrationView::resetButtonPressed(bool checked) {
 }
 
 void PoseCalibrationView::saveButtonPressed(bool checked) {
+  if (poseCalib_ && poseCalib_->hasCalibration()) {
   
+    YAML::Node node(poseCalib_->getSpectrometerPose());
+    
+    if (node.IsSequence()) {
+      ROS_INFO("Sequence!\n");
+    }
+    
+    YAML::Emitter emitter;
+    emitter.SetSeqFormat(YAML::Flow);
+    emitter << node;
+    
+    FILE* test = fopen("/home/gareth/test.file", "w");
+    fprintf(test,"%s", emitter.c_str());
+    fclose(test);
+  }
 }

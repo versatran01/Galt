@@ -29,21 +29,34 @@ class MainWindow : public QMainWindow
 public:
   explicit MainWindow(QWidget *parent, const ros::NodeHandlePtr& nhp);
   ~MainWindow();
-    
+   
+protected:
+  void closeEvent(QCloseEvent *event);
+  
+  void quit();
+  
+signals:
+  
+public slots:
+  void calibratePoseAction(bool);
+  void calibrateSpectrumAction(bool);
+  void quitAction(bool);
+  
 private:
   Ui::MainWindow *ui;
   
+  //  active widget
+  QWidget * mainWidget_;
+  
   enum Mode {
-    None=0,
-    CalibratePose,
-    CalibrateSpectrum,
-  } mode_;
+    CalibratePose=0,
+    CalibrateSpectrum
+  } mode_;  
   
-  PoseCalibrationView * poseView_;
-  
+  //  main ros node
   ros::NodeHandlePtr nodeHandle_;
   
-  //  set the current application mode
+  //  select calibration mode
   void setMode(Mode mode);
 };
 

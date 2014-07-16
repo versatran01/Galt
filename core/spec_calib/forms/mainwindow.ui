@@ -29,16 +29,34 @@
      <height>29</height>
     </rect>
    </property>
+   <property name="nativeMenuBar">
+    <bool>false</bool>
+   </property>
+   <widget class="QMenu" name="menuFile">
+    <property name="title">
+     <string>File</string>
+    </property>
+    <addaction name="actionCalibrate_Pose"/>
+    <addaction name="actionCalibrate_spectrum"/>
+    <addaction name="separator"/>
+    <addaction name="actionQuit"/>
+   </widget>
+   <addaction name="menuFile"/>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
-  <action name="actionMore_Stuff">
+  <action name="actionCalibrate_Pose">
    <property name="text">
-    <string>More Stuff</string>
+    <string>Calibrate Pose</string>
    </property>
   </action>
-  <action name="actionYo_momma">
+  <action name="actionCalibrate_spectrum">
    <property name="text">
-    <string>Yo momma</string>
+    <string>Calibrate Spectrum</string>
+   </property>
+  </action>
+  <action name="actionQuit">
+   <property name="text">
+    <string>Quit</string>
    </property>
   </action>
  </widget>

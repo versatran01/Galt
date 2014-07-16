@@ -29,6 +29,7 @@ int main(int argc, char *argv[])
   while ( ros::ok() ) {
     a.processEvents();
     ros::spinOnce();
+    usleep(500);
   }
 
   return 0;

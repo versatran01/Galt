@@ -16,9 +16,13 @@
 #include "cvimagewidget.h"
 
 MainWindow::MainWindow(QWidget *parent, const ros::NodeHandlePtr& nhp) : QMainWindow(parent),
-  ui(new Ui::MainWindow), mode_(None), nodeHandle_(nhp)
+  ui(new Ui::MainWindow), mainWidget_(0), nodeHandle_(nhp)
 {
   ui->setupUi(this);
+  
+  QObject::connect(ui->actionCalibrate_Pose,SIGNAL(triggered(bool)),this,SLOT(calibratePoseAction(bool)));
+  QObject::connect(ui->actionCalibrate_spectrum,SIGNAL(triggered(bool)),this,SLOT(calibrateSpectrumAction(bool)));
+  QObject::connect(ui->actionQuit,SIGNAL(triggered(bool)),this,SLOT(quitAction(bool)));  
   
   setMode(CalibratePose);
 }
@@ -28,23 +32,53 @@ MainWindow::~MainWindow()
   delete ui;
 }
 
-void MainWindow::setMode(Mode mode) {
-  if (mode != mode_) {
+void MainWindow::closeEvent(QCloseEvent *event)
+{  
+  //  trigger quit when window closed
+  quit();
+  QMainWindow::closeEvent(event);
+}
+
+void MainWindow::quit() {
+  ros::shutdown();
+}
+
+void MainWindow::calibratePoseAction(bool) {
+  //  switch modes
+  setMode(MainWindow::CalibratePose);
+}
+
+void MainWindow::calibrateSpectrumAction(bool) {
+  setMode(MainWindow::CalibrateSpectrum);
+}
+
+void MainWindow::quitAction(bool) {
+  quit(); 
+}
+
+void MainWindow::setMode(MainWindow::Mode mode) {
+  
+  if (mode != mode_ || !mainWidget_) {
     
-    if (mode_ == CalibratePose) {
-      delete poseView_;
-      poseView_=0;
+    if (mainWidget_) {
+      delete mainWidget_;
+      mainWidget_=0;
     }
-    
     mode_ = mode;
+    
+    QString statusMessage;
     if (mode_ == CalibratePose) {
-      poseView_ = new PoseCalibrationView(this, nodeHandle_);
-      
-      ui->horizontalLayout->addWidget(poseView_);
-      this->statusBar()->showMessage("Pose calibration mode");
+      mainWidget_ = new PoseCalibrationView(this, nodeHandle_);
+      statusMessage = "Calibrating pose";
+    } else if (mode == CalibrateSpectrum) {
+      //mainWidget_ = new Spec
+      statusMessage = "Calibrating spectrum";
     }
-    else if (mode_ == CalibrateSpectrum) {
-      //  add other view here
+    
+    //  add to window
+    if (mainWidget_) {
+      ui->horizontalLayout->addWidget(mainWidget_);
     }
+    this->statusBar()->showMessage(statusMessage);
   }
 }

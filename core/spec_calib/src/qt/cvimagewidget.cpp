@@ -25,7 +25,7 @@ CVImageWidget::~CVImageWidget() {
 
 void CVImageWidget::setImage(const cv::Mat& image) {
   if (image.type() != CV_8UC3) {
-    throw std::invalid_argument("Image format must be RBG8");
+    throw std::invalid_argument("Image format must be RGB8");
   }
   temp_ = image; 
   

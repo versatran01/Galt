@@ -34,7 +34,7 @@
     <remap from="~image" to="/cam_25001110/image_raw"/>
     <remap from="~camera_info" to="/cam_25001110/camera_info"/>
     <remap from="~circles" to="/circle_tracker/circles"/>
-    <remap from="~pose" to="/monocular_pose_estimator/estimated_pose"/>
+    <remap from="~pose" to="/monocular_pose_estimator/estimated_pose_cov"/>
     <remap from="~pixels" to="/monocular_pose_estimator/detected_led"/>
   </node>
 </launch>

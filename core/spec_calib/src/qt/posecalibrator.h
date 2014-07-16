@@ -107,6 +107,12 @@ private:
     
     //  compare using depth
     bool operator < (const Observation& b) const { return depth < b.depth; }
+    
+    //  distance along line
+    double calcDistance(const kr::vec3<double>& l0, const kr::vec3<double>& ln) const {
+      const kr::vec3<double> del = kr::vec3<double>(p.x,p.y,p.z) - l0;
+      return del[0]*ln[0] + del[1]*ln[1] + del[2]*ln[2];
+    }
   };
   
   //  add new observation to current set

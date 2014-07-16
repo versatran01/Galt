@@ -128,27 +128,13 @@ void PoseCalibrator::calibrate() {
   }
   err_ = std::sqrt(err_);
   
-  //  calculate field-of-view of laser
-  double fov_avg=0.0;
+  //  calculate spectrometer position in camera coordinates
+  double lambda = -(l0_[0]*ln_[0] + l0_[1]*ln_[1] + l0_[2]*ln_[2]);
+  kr::vec3<double> specPos = l0_ + ln_*lambda;
   
-  const Observation& ref = observations_.front();
-  const double d1 = ref.depth;
-  const double r1 = ref.circle.radiusCam;
+  ROS_INFO("Spectrometer position: %f, %f, %f", specPos[0], specPos[1], specPos[2]);
   
-  size_t i;
-  for (i=1; i < observations_.size(); i++) {
-    double d2 = observations_[i].depth;
-    double r2 = observations_[i].circle.radiusCam;
-    
-    double tan = (d2*r2 - d1*r1) / (d2 - d1);
-    fov_avg += 2*std::atan(tan);
-    
-  }
-  fov_avg /= (i - 1);
-  
-  ROS_INFO("Field of view (degrees) : %f", fov_avg * 180 / M_PI);
-  fov_ = fov_avg;
-  
+  l0_ = specPos;  //  <- pick spectrometer centre as the new point on the line
   hasCalibration_=true;
 }
 
@@ -171,7 +157,7 @@ std::pair<PoseCalibrator::Circle, bool> PoseCalibrator::projectWithPose(const kr
   d /= (ln_[0]*n[0] + ln_[1]*n[1] + ln_[2]*n[2]);
 
   kr::vec3<double> p_cam = l0_ + ln_*d;
-  ROS_INFO("Projected point: %f, %f, %f\n", p_cam[0], p_cam[1], p_cam[2]);
+  //ROS_INFO("Projected point: %f, %f, %f\n", p_cam[0], p_cam[1], p_cam[2]);
   
   if (p_cam[2] < 0.0f) {
     ROS_WARN("Got a shit solution yo!");
@@ -309,9 +295,7 @@ bool PoseCalibrator::addObservation(const kr::Pose<double> &pose, const Circle& 
   if (v[2] < 0.0) {
     return false; //  reject positive signed solutions
   }
-  
-  //ROS_INFO("%f, %f, %f (%f)\n", o[0], o[1], o[2], d);  
-  
+    
   auto compare = [=](const Observation& obvs) -> bool {
     if (std::abs(obvs.depth - d) < depthThreshold_) { //  depth threshold
       return true;

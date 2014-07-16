@@ -21,7 +21,7 @@ int main(int argc, char *argv[])
 {
   ros::init(argc, argv, "spec_calib");
   nh = ros::NodeHandlePtr(new ros::NodeHandle("~"));
-  
+    
   QApplication a(argc, argv);
   MainWindow w(0, nh);
   w.show();

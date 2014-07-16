@@ -47,8 +47,10 @@ void PoseCalibrationView::calibratorUpdatedState(void) {
   
   ui->calibrateButton->setEnabled(poseCalib_->canCalibrate());
   
-  auto linePoint = poseCalib_->getLineOrigin();
-  auto lineNormal = poseCalib_->getLineNormal();
+  auto pose = poseCalib_->getSpectrometerPose();
+  
+  auto linePoint = pose.getPosition();
+  auto lineNormal = pose.getDirection();
   
   char buf[1000];
   sprintf(buf, "%lu", poseCalib_->observationCount());
@@ -67,7 +69,7 @@ void PoseCalibrationView::calibratorUpdatedState(void) {
   ui->lineNormal->setText(QString(buf));
   
   sprintf(buf, "%.5e",
-      poseCalib_->getError());
+      std::sqrt(0.0));//pose.getSquaredError()));
   ui->rSquared->setText(QString(buf));
 }
 

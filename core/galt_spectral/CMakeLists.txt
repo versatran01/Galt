@@ -25,12 +25,12 @@ set(${PROJECT_NAME}_sources
   src/SpectrometerPose.cpp
 )
 
-# build a shared library
+# build library
+add_definitions("-Wall -Wunused -std=c++11 -fPIC")
 add_library(${PROJECT_LIBRARY_NAME} SHARED
   ${${PROJECT_NAME}_sources}
 )
 
 target_link_libraries(${PROJECT_LIBRARY_NAME}
   ${catkin_LIBRARIES}
-  yaml-cpp
 )

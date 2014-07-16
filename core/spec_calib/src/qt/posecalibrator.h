@@ -22,11 +22,13 @@
 #include <message_filters/subscriber.h>
 #include <message_filters/time_synchronizer.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
+#include <opencv2/opencv.hpp>
 
 #include <circle_tracker/Circles.h>
+#include <spectral/SpectrometerPose.hpp>
+
 #include <monocular_pose_estimator/PixelArray.h>
 
-#include <opencv2/opencv.hpp>
 
 #include <kr_math/pose.hpp>
 
@@ -51,19 +53,15 @@ public:
   
   size_t observationCount() const;
   
-  kr::vec3<double> getLineOrigin() const;
-  
-  kr::vec3<double> getLineNormal() const;
-  
-  double getError() const;
-  
   bool canCalibrate() const;
   
   void calibrate();
     
   bool hasCalibration() const;
   
-  std::pair<Circle,bool> projectWithPose(const kr::Pose<double>& pose);
+  const galt::SpectrometerPose& getSpectrometerPose() const;
+  
+  Circle projectWithPose(const kr::Pose<double>& pose);
   
 signals:
   void receivedMessage();
@@ -109,8 +107,8 @@ private:
     bool operator < (const Observation& b) const { return depth < b.depth; }
     
     //  distance along line
-    double calcDistance(const kr::vec3<double>& l0, const kr::vec3<double>& ln) const {
-      const kr::vec3<double> del = kr::vec3<double>(p.x,p.y,p.z) - l0;
+    double calcDistance(const kr::vec3d& l0, const kr::vec3d& ln) const {
+      const kr::vec3d del = kr::vec3d(p.x,p.y,p.z) - l0;
       return del[0]*ln[0] + del[1]*ln[1] + del[2]*ln[2];
     }
   };
@@ -123,11 +121,8 @@ private:
   //  measurements collected
   std::vector <Observation> observations_;
   
-  //  resulting line
-  kr::vec3<double> l0_;
-  kr::vec3<double> ln_;
-  double fov_;
-  double err_;
+  //  calibration
+  galt::SpectrometerPose pose_;
   bool hasCalibration_;
 };
 

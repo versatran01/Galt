@@ -1,5 +1,5 @@
 /*
- * SensorPoseConfig.hpp
+ * SpectrometerPose.hpp
  *
  *  Copyright (c) 2014 Nouka Technologies. All rights reserved.
  *
@@ -9,8 +9,8 @@
  *      Author: gareth
  */
 
-#ifndef GALT_SPECTRAL_SENSORPOSECONFIG_HPP_
-#define GALT_SPECTRAL_SENSORPOSECONFIG_HPP_
+#ifndef GALT_SPECTRAL_SPECTROMETERPOSE_HPP_
+#define GALT_SPECTRAL_SPECTROMETERPOSE_HPP_
 
 #include <kr_math/base_types.hpp>
 #include <kr_math/yaml.hpp>
@@ -25,18 +25,30 @@ public:
   SpectrometerPose();
 
   SpectrometerPose(const kr::vec3d &position, const kr::vec3d &direction,
-                   double fov);
+                   double fov, double squaredError);
 
-  kr::vec3d getPosition() const;
+  const kr::vec3d& getPosition() const;
 
-  kr::vec3d getDirection() const;
+  const kr::vec3d& getDirection() const;
 
-  double getFov() const;
+  const double& getFov() const;
+  
+  const double& getSquaredError() const;
 
+  /**
+   * @brief distanceToPlane Distance to plane defined by [o,n].
+   * @param o A point in the plane, in camera frame.
+   * @param n Normal of the plane, in camera frame.
+   * @return Distance along the spectrometer direction to the plane, or
+   *  std::numeric_limits::infinity() if the plane is perp. to the sensor.
+   */
+  double distanceToPlane(const kr::vec3d& o, const kr::vec3d& n) const;
+  
 private:
   kr::vec3d position_;
   kr::vec3d direction_;
   double fov_;
+  double squaredError_;
 };
 
 } // namespace galt
@@ -52,4 +64,4 @@ template <> struct convert<galt::SpectrometerPose> {
 };
 }
 
-#endif // GALT_SPECTRAL_SENSORPOSECONFIG_HPP_
+#endif // GALT_SPECTRAL_SPECTROMETERPOSE_HPP_

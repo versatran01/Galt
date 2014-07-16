@@ -17,9 +17,8 @@ find_package(catkin REQUIRED COMPONENTS
   cv_bridge
   circle_tracker
   ocean_optics
-  galt_spectral
   monocular_pose_estimator
-  kr_math
+  galt_spectral
 )
 
 catkin_package()
@@ -56,6 +55,7 @@ include_directories(
 )
 # defintions
 add_definitions(${Qt5Widgets_DEFINITIONS})
+
 # compiler flags for QT5
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${Qt5Widgets_EXECUTABLE_COMPILE_FLAGS}")
 
@@ -80,7 +80,10 @@ target_link_libraries(${PROJECT_NAME}
   Qt5::Widgets
   ${catkin_LIBRARIES}
   ${OpenCV_LIBRARIES}
+  yaml-cpp
 )
+
+message(STATUS "Spectral library: ${galt_spectral_LIBRARIES}")
 
 # depends on messages from spectrometer
 add_dependencies(${PROJECT_NAME} ${ocean_optics_EXPORTED_TARGETS})

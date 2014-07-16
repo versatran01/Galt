@@ -134,7 +134,20 @@ void PoseCalibrator::calibrate() {
   
   ROS_INFO("Spectrometer position: %f, %f, %f", specPos[0], specPos[1], specPos[2]);
   
-  l0_ = specPos;  //  <- pick spectrometer centre as the new point on the line
+  l0_ = specPos;  //  <- pick spec. centre as the new point on the line
+  
+  //  calculate field of view of the spectrometer
+  double fov=0.0;
+  for (const Observation& o : observations_) {
+    const double specDist = o.calcDistance(l0_,ln_);
+    const double rad = o.depth*o.circle.radiusCam;
+  
+    fov += 2.0 * std::atan(rad / specDist);
+  }
+  fov_ = fov / observations_.size();
+  
+  ROS_INFO("Spectrometer FOV: %f", fov_*180 / M_PI);
+  
   hasCalibration_=true;
 }
 
@@ -157,7 +170,6 @@ std::pair<PoseCalibrator::Circle, bool> PoseCalibrator::projectWithPose(const kr
   d /= (ln_[0]*n[0] + ln_[1]*n[1] + ln_[2]*n[2]);
 
   kr::vec3<double> p_cam = l0_ + ln_*d;
-  //ROS_INFO("Projected point: %f, %f, %f\n", p_cam[0], p_cam[1], p_cam[2]);
   
   if (p_cam[2] < 0.0f) {
     ROS_WARN("Got a shit solution yo!");
@@ -175,7 +187,7 @@ std::pair<PoseCalibrator::Circle, bool> PoseCalibrator::projectWithPose(const kr
   proj.x = p_cam[0] / p_cam[2];
   proj.y = p_cam[1] / p_cam[2];
   circle.xy = proj;
-  circle.radiusCam = 2*std::tan(fov_/2) * p_cam[2];
+  circle.radiusCam = std::tan(fov_/2) * d / p_cam[2];
     
   proj = distortPoint(camInfo_->D, proj);
   proj.x = fx*proj.x + cx;

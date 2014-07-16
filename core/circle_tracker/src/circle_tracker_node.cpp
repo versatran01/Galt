@@ -65,10 +65,17 @@ void dynamicParamsCallback(circle_tracker::CircleTrackerConfig& config,
 void camera_callback(const sensor_msgs::Image::ConstPtr &img,
                      const sensor_msgs::CameraInfo::ConstPtr &camInfo) {
 
-  cv_bridge::CvImageConstPtr bridgedImagePtr = cv_bridge::toCvShare(img,"mono8");
-  if (!bridgedImagePtr) {
-    ROS_ERROR("Failed to convert image with cv_bridge");
-    ros::shutdown();
+  cv_bridge::CvImageConstPtr bridgedImagePtr;
+  try {
+    bridgedImagePtr = cv_bridge::toCvShare(img,"mono8");
+    
+    if (!bridgedImagePtr) {
+      ROS_ERROR("cv_bridge failed to convert image to mono8");
+      return;
+    }
+  }
+  catch (std::exception& e) {
+    ROS_WARN("Warning: toCvShare threw an exception: %s", e.what());
     return;
   }
 

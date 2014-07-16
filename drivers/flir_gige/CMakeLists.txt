@@ -36,16 +36,20 @@ include_directories(
     ${EBUS_INCLUDE_DIRS}
     )
 
-## flir_nodedd_executable(flir_node src/flir_node.cpp)
-add_executable(flir_node src/flir_node.cpp)
-target_link_libraries(flir_node
+add_library(${PROJECT_NAME} src/gige_camera.cpp)
+target_link_libraries(${PROJECT_NAME} ${EBUS_LIBRARIES})
+
+add_executable(${PROJECT_NAME}_node src/flir_gige_node.cpp)
+target_link_libraries(${PROJECT_NAME}_node
     ${catkin_LIBRARIES}
+    ${PROJECT_NAME}
     )
 
 ## Add cmake target dependencies of the executable/library
-add_dependencies(flir_node ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_gencfg)
+add_dependencies(${PROJECT_NAME}_node
+    ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_gencfg)
 
-## Add gtest based cpp test target and link libraries
+## Add gtest based cpp test }target and link libraries
 # catkin_add_gtest(${PROJECT_NAME}-test test/test_flir.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})

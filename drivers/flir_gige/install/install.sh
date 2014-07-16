@@ -17,7 +17,7 @@ sleep 1
 
 # version=$(lsb_release -r | awk '{print $2}')
 # echo -e "${version}"
-# need to link libudev
+# need to link libudev and liblog4cxx
 
 # Check to see if we are running with root privileges
 if [[ $(id -u) -ne 0 ]] ; then

@@ -8,7 +8,7 @@
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
-#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/contrib/contrib.hpp>
 
 #define BUFFER_COUNT (16)
 
@@ -42,9 +42,9 @@ void GigeCamera::Disconnect() {
   device_.reset();
 }
 
-void GigeCamera::Configure() {
+void GigeCamera::Configure(const bool color) {
   // Do nothing now, just print something
-  cout << "In configure." << endl;
+  color_ = color;
 }
 
 void GigeCamera::Start() {
@@ -285,17 +285,20 @@ void GigeCamera::AcquireImages() {
           image->Attach(image_raw.data, image->GetWidth(), image->GetHeight(),
                         PvPixelMono8, image->GetPaddingX(),
                         image->GetPaddingY());
-          // Send image to be published by ros
-          use_image(image_raw);
+          if (color_) {
+            cv::Mat image_color;
+            cv::applyColorMap(image_raw, image_color, cv::COLORMAP_JET);
+            use_image(image_color);
+          } else {
+            // Send image to be published by ros
+            use_image(image_raw);
+          }
           // Display image
           // cv::imshow("flir", image_raw);
           // if (cv::waitKey(5) >= 0) break;
         } else {
           cout << label_ << "Buffer does not contain image" << endl;
         }
-        // cout << "  " << frame_rate_val << " FPS " << (band_width_val /
-        // 100000.0)
-        //      << " Mb/s" << endl;
       } else {
         cout << label_ << "Non Ok operation result" << endl;
       }

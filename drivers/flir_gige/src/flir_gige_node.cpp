@@ -50,8 +50,10 @@ class FlirNode {
   FlirNode &operator=(const FlirNode &) = delete;  // No assignment operator
 
   void Init() {
+    bool color;
+    nh_.param<bool>("color", color, false);
     camera_->Connect();
-    camera_->Configure();
+    camera_->Configure(color);
     camera_->Start();
   }
 
@@ -65,7 +67,11 @@ class FlirNode {
     cv_ptr->header.frame_id = frame_id_;
     cv_ptr->header.seq = seq++;
     cv_ptr->image = image;
-    cv_ptr->encoding = sensor_msgs::image_encodings::MONO8;
+    if (image.channels() == 1) {
+      cv_ptr->encoding = sensor_msgs::image_encodings::MONO8;
+    } else if (image.channels() == 3) {
+      cv_ptr->encoding = sensor_msgs::image_encodings::BGR8;
+    }
     // Convert to ros image msg and publish
     image_msg_ = cv_ptr->toImageMsg();
     image_pub_.publish(image_msg_);
@@ -88,7 +94,7 @@ class FlirNode {
     // Reconnect to the camera
     camera_->Connect();
     // Reconfigure the camera
-    camera_->Configure();
+    camera_->Configure(config.color);
     // Restart the camera
     camera_->Start();
   }

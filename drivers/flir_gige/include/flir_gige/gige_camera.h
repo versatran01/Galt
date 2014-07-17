@@ -38,14 +38,14 @@ struct FreeStream {
 
 class GigeCamera {
  public:
-  GigeCamera(const std::string &ip_address = "");
+  GigeCamera(const std::string &ip_address);
   GigeCamera(const GigeCamera &) = delete;             // No copy constructor
   GigeCamera &operator=(const GigeCamera &) = delete;  // No assignment operator
 
   // Find and connect to device, create PvDevice, PvStream and PvPipeline
   void Connect();
   // Configure the camera before image acquisition
-  void Configure();
+  void Configure(const bool color);
   // Enable stream
   void Start();
   // Stop image acquisition
@@ -72,7 +72,8 @@ class GigeCamera {
   typedef std::unique_ptr<PvPipeline> PvPipelinePtr;
   typedef std::unique_ptr<std::thread> ThreadPtr;
 
-  bool acquire_ = false;
+  bool acquire_{false};
+  bool color_{false};
   std::string label_{"\033[0;35m[ FLIR]:\033[0m "};
   std::string ip_address_;
   PvSystem system_;

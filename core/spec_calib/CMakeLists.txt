@@ -5,6 +5,13 @@ project(spec_calib)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 find_package(Qt5Widgets REQUIRED)
 
+# Technical widgets
+# Uncomment if libqwt is not installed by apt-get.
+#  set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+#  find_package(qwt REQUIRED)
+#  message(STATUS "QWT Library: ${QWT_LIBRARIES}")
+#  message(STATUS "QWT Headers: ${QWT_INCLUDE_DIR}")
+
 # find OpenCV separately
 find_package(OpenCV REQUIRED)
 
@@ -29,16 +36,19 @@ set(${PROJECT_NAME}_SOURCES
   src/qt/posecalibrationview.cpp
   src/qt/posecalibrator.cpp
   src/qt/cvimagewidget.cpp
+  src/qt/spectrumcalibrationview.cpp
 )
 set(${PROJECT_NAME}_HEADERS
   src/qt/mainwindow.h
   src/qt/posecalibrationview.h
   src/qt/posecalibrator.h
   src/qt/cvimagewidget.h
+  src/qt/spectrumcalibrationview.h
 )
 set(${PROJECT_NAME}_FORMS
   forms/mainwindow.ui
   forms/posecalibrationview.ui
+  forms/spectrumcalibrationview.ui
 )
 
 # invoke MOC and UI
@@ -81,6 +91,7 @@ target_link_libraries(${PROJECT_NAME}
   ${catkin_LIBRARIES}
   ${OpenCV_LIBRARIES}
   yaml-cpp
+  qwt
 )
 
 message(STATUS "Spectral library: ${galt_spectral_LIBRARIES}")

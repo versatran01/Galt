@@ -17,32 +17,43 @@
 
 #include <yaml-cpp/yaml.h>
 
+#include <qwt/qwt_plot.h>
+
 PoseCalibrationView::PoseCalibrationView(QWidget *parent, const ros::NodeHandlePtr &nhp) :
   QWidget(parent),
-  ui(new Ui::PoseCalibrationView), nhp_(nhp)
+  ui(new Ui::PoseCalibrationView), nhp_(nhp), poseCalib_(0)
 {
   ui->setupUi(this);
+   
+  //  initialize a new pose estimator
+  reset();
   
-  poseCalib_ = new PoseCalibrator(this, nhp);
-  
-  ui->calibrateButton->setEnabled(false);
-  
+  //  configure UI objects
   QObject::connect(ui->calibrateButton, SIGNAL(clicked(bool)),
                    this, SLOT(calibrateButtonPressed(bool)));
   
-  QObject::connect(poseCalib_, SIGNAL(receivedMessage()),
-                   this, SLOT(calibratorUpdatedState()));
+  QObject::connect(ui->resetButton, SIGNAL(clicked(bool)), 
+                   this, SLOT(resetButtonPressed(bool)));
   
   QObject::connect(ui->saveButton, SIGNAL(clicked(bool)),
                    this, SLOT(saveButtonPressed(bool)));
-  
-  //  trigger an initial update
-  calibratorUpdatedState();
 }
 
 PoseCalibrationView::~PoseCalibrationView()
 {
   delete ui;
+}
+
+void PoseCalibrationView::reset() {
+  if (poseCalib_) {
+    delete poseCalib_;
+  }
+  poseCalib_ = new PoseCalibrator(this, nhp_);
+  
+  QObject::connect(poseCalib_, SIGNAL(receivedMessage()),
+                   this, SLOT(calibratorUpdatedState()));
+  
+  calibratorUpdatedState();
 }
 
 void PoseCalibrationView::calibratorUpdatedState(void) {
@@ -52,6 +63,7 @@ void PoseCalibrationView::calibratorUpdatedState(void) {
   }
   
   ui->calibrateButton->setEnabled(poseCalib_->canCalibrate());
+  ui->saveButton->setEnabled(poseCalib_->hasCalibration());
   
   auto pose = poseCalib_->getSpectrometerPose();
   
@@ -62,21 +74,24 @@ void PoseCalibrationView::calibratorUpdatedState(void) {
   sprintf(buf, "%lu", poseCalib_->observationCount());
   ui->numSamples->setText(QString(buf));
   
-  sprintf(buf, "%.3e, %.3e, %.3e", 
+  sprintf(buf, "%.4f, %.4f, %.4f", 
       linePoint[0], 
       linePoint[1], 
       linePoint[2]);
   ui->lineOrigin->setText(QString(buf));
 
-  sprintf(buf, "%.3e, %.3e, %.3e",
+  sprintf(buf, "%.4f, %.4f, %.4f",
       lineNormal[0],
       lineNormal[1],
       lineNormal[2]);
   ui->lineNormal->setText(QString(buf));
   
-  sprintf(buf, "%.5e",
-      std::sqrt(0.0));//pose.getSquaredError()));
-  ui->rSquared->setText(QString(buf));
+  sprintf(buf, "%.4f", pose.getFov() * 180 / M_PI);
+  ui->fieldOfView->setText(QString(buf));
+  
+  sprintf(buf, "%.5f",
+      std::sqrt(pose.getSquaredError()));
+  ui->error->setText(QString(buf));
 }
 
 void PoseCalibrationView::calibrateButtonPressed(bool checked) {
@@ -86,16 +101,7 @@ void PoseCalibrationView::calibrateButtonPressed(bool checked) {
 }
 
 void PoseCalibrationView::resetButtonPressed(bool checked) {
- 
-  if (poseCalib_) {
-    delete poseCalib_;
-  }
-  poseCalib_ = new PoseCalibrator(this, nhp_);
-  
-  QObject::connect(poseCalib_, SIGNAL(receivedMessage()),
-                   this, SLOT(calibratorUpdatedState()));
-  
-  calibratorUpdatedState();
+  reset();
 }
 
 void PoseCalibrationView::saveButtonPressed(bool checked) {

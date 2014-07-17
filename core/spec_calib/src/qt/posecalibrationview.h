@@ -27,6 +27,8 @@ public:
   explicit PoseCalibrationView(QWidget *parent, const ros::NodeHandlePtr& nhp);
   ~PoseCalibrationView();
   
+  void reset();
+  
 signals:
   
 public slots:

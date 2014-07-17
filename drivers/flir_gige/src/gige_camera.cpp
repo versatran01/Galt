@@ -42,7 +42,7 @@ void GigeCamera::Disconnect() {
   device_.reset();
 }
 
-void GigeCamera::Configure(const bool color) {
+void GigeCamera::Configure(bool color) {
   // Do nothing now, just print something
   color_ = color;
 }

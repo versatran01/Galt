@@ -45,12 +45,12 @@ class GigeCamera {
   // Find and connect to device, create PvDevice, PvStream and PvPipeline
   void Connect();
   // Configure the camera before image acquisition
-  void Configure(const bool color);
-  // Enable stream
+  void Configure(bool color);
+  // Start pipeline, enable stream and start acquisition
   void Start();
-  // Stop image acquisition
+  // Stop acquisition, disable stream and stop pipeline
   void Stop();
-  // Release all resources we hold
+  // Release all resources we hold (PvDevice, PvStream and PvPipleline)
   void Disconnect();
   // Return Acquisition status
   const bool IsAcquire() const { return acquire_; }

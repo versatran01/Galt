@@ -38,15 +38,27 @@ include_directories(
     ${OpenCV_INCLUDE_DIRS}
     )
 
-add_library(${PROJECT_NAME} src/gige_camera.cpp)
-target_link_libraries(${PROJECT_NAME}
+# libgige_camera
+add_library(gige_camera
+    src/gige_camera.cpp
+    )
+target_link_libraries(gige_camera
     ${EBUS_LIBRARIES}
     ${OpenCV_LIBRARIES}
     )
 
+# libflir_gige
+add_library(${PROJECT_NAME}
+    src/flir_gige.cpp
+    )
+target_link_libraries(${PROJECT_NAME}
+    ${catkin_LIBRARIES}
+    ${OpenCV_LIBRARIES}
+    gige_camera
+    )
+
 add_executable(${PROJECT_NAME}_node src/flir_gige_node.cpp)
 target_link_libraries(${PROJECT_NAME}_node
-    ${catkin_LIBRARIES}
     ${PROJECT_NAME}
     )
 

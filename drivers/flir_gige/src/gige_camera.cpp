@@ -25,14 +25,21 @@ GigeCamera::GigeCamera(const std::string &ip_address)
     error_msg << "PvSystem::Find Error: " << result.GetCodeString().GetAscii();
     throw runtime_error(error_msg.str());
   }
+  FindDevice();
 }
 
 void GigeCamera::Connect() {
-  FindDevice();
   ConnectDevice();
   OpenStream();
   ConfigureStream();
   CreatePipeline();
+}
+
+void GigeCamera::Disconnect() {
+  // Release all the recourses we had
+  pipeline_.reset();
+  stream_.reset();
+  device_.reset();
 }
 
 void GigeCamera::Configure() {
@@ -202,8 +209,6 @@ void GigeCamera::CreatePipeline() {
 }
 
 void GigeCamera::StartAcquisition() {
-  // Get device parameters need to control streaming
-  PvGenParameterArray *device_params = device_->GetParameters();
   // Set device in Mono8
   //device_params->SetEnumValue("PixelFormat", PvPixelMono8);
   // Note: the pipeline must be initialized before we start acquisition
@@ -214,6 +219,8 @@ void GigeCamera::StartAcquisition() {
   device_->StreamEnable();
   // Start acquisition
   cout << "Start acquisition" << endl;
+  // Get device parameters need to control streaming
+  PvGenParameterArray *device_params = device_->GetParameters();
   device_params->ExecuteCommand("AcquisitionStart");
 }
 
@@ -247,7 +254,7 @@ void GigeCamera::AcquireImages() {
 
 
   // Create a cv::Mat to pass back to ros
-  cv::namedWindow("flir", cv::WINDOW_AUTOSIZE);
+//  cv::namedWindow("flir", cv::WINDOW_AUTOSIZE);
   int64_t height = 0, width = 0;
   device_params->GetIntegerValue("Width", width);
   device_params->GetIntegerValue("Height", height);
@@ -283,13 +290,13 @@ void GigeCamera::AcquireImages() {
           // Send image to be published by ros
           use_image(image_raw);
           // Display image
-          cv::imshow("flir", image_raw);
-          if (cv::waitKey(5) >= 0) break;
+//          cv::imshow("flir", image_raw);
+//          if (cv::waitKey(5) >= 0) break;
         } else {
           cout << "Buffer does not contain image" << endl;
         }
-        cout << "  " << frame_rate_val << " FPS " << (band_width_val / 100000.0)
-             << " Mb/s" << endl;
+        // cout << "  " << frame_rate_val << " FPS " << (band_width_val / 100000.0)
+        //      << " Mb/s" << endl;
       } else {
         cout << "Non Ok operation result" << endl;
       }

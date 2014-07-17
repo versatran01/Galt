@@ -50,7 +50,7 @@ class GigeCamera {
   void Start();
   // Stop image acquisition
   void Stop();
-  // No need for a disconnect method
+  void Disconnect();
   // Return Acquisition status
   const bool IsAcquire() const { return acquire_; }
 

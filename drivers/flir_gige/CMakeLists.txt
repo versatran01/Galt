@@ -19,6 +19,7 @@ find_package(catkin REQUIRED
     COMPONENTS roscpp sensor_msgs image_transport camera_info_manager
     dynamic_reconfigure
     )
+find_package(OpenCV)
 
 # Dynamic reconfigure option, as to be placed right before catkin_package
 generate_dynamic_reconfigure_options(cfg/Flir.cfg)
@@ -34,10 +35,13 @@ include_directories(include)
 include_directories(
     ${catkin_INCLUDE_DIRS}
     ${EBUS_INCLUDE_DIRS}
+    ${OpenCV_INCLUDE_DIRS}
     )
 
 add_library(${PROJECT_NAME} src/gige_camera.cpp)
-target_link_libraries(${PROJECT_NAME} ${EBUS_LIBRARIES})
+target_link_libraries(${PROJECT_NAME}
+    ${EBUS_LIBRARIES}
+    ${OpenCV_LIBRARIES})
 
 add_executable(${PROJECT_NAME}_node src/flir_gige_node.cpp)
 target_link_libraries(${PROJECT_NAME}_node

@@ -25,19 +25,34 @@ class FlirNode {
 
  public:
   FlirNode(const ros::NodeHandle &nh) : nh_{nh}, it_{nh} {
+    // Create a camera
     std::string ip_address;
     nh_.param("ip_address", ip_address, std::string(""));
     camera_ = std::make_shared<flir_gige::GigeCamera>(ip_address);
+    // Setup image publisher and dynamic reconfigure callback
     image_pub_ = it_.advertise("image_raw", 1);
-  }
-
-  bool init() {
-    camera_->FindDevice();
-    return true;
+    server_.setCallback(
+        boost::bind(&FlirNode::ReconfigureCallback, this, _1, _2));
   }
 
   FlirNode(const FlirNode &) = delete;             // No copy constructor
   FlirNode &operator=(const FlirNode &) = delete;  // No assignment operator
+
+  bool init() {
+    camera_->FindDevice();
+    camera_->ConnectDevice();
+    camera_->OpenStream();
+    camera_->ConfigureStream();
+    camera_->CreatePipeline();
+    camera_->AcquireImages();
+    return true;
+  }
+
+  void ReconfigureCallback(flir_gige::FlirConfig &config, int level) {
+    ROS_INFO("%s", "In reconfigure callback");
+    ROS_INFO_STREAM("Level " << level << "Width " << config.width
+                             << " Height " << config.height);
+  }
 };
 
 }  // namespace flir_gige

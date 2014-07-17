@@ -28,32 +28,31 @@ namespace flir_gige {
 
 // Functor for free PvDevice
 struct FreeDevice {
-  void operator() (PvDevice *device) const {
-    PvDevice::Free(device);
-  }
+  void operator()(PvDevice *device) const { PvDevice::Free(device); }
 };
 
 // Functor for free PvStream
 struct FreeStream {
-  void operator() (PvStream *stream) const {
-    PvStream::Free(stream);
-  }
+  void operator()(PvStream *stream) const { PvStream::Free(stream); }
 };
 
 class GigeCamera {
  public:
   GigeCamera(const std::string &ip_address = "");
-  GigeCamera(const GigeCamera&) = delete;  // No copy constructor
-  GigeCamera& operator=(const GigeCamera&) = delete;  // No assignment operator
+  GigeCamera(const GigeCamera &) = delete;             // No copy constructor
+  GigeCamera &operator=(const GigeCamera &) = delete;  // No assignment operator
 
   // Find and connect to device, create PvDevice, PvStream and PvPipeline
   void Connect();
-  //
+  // Configure the camera before image acquisition
   void Configure();
   //
   void Start();
+  // Stop image acquisition
   void Stop();
-  void Disconnect();
+  // No need for a disconnect method
+  // Return Acquisition status
+  const bool IsAcquire() const { return acquire_; }
 
   std::function<void(const cv::Mat &image)> use_image;
 
@@ -63,17 +62,19 @@ class GigeCamera {
   void OpenStream();
   void ConfigureStream();
   void CreatePipeline();
+  void StartAcquisition();
+  void StopAcquisition();
   void AcquireImages();
-  void ImageThread();
 
   typedef std::unique_ptr<PvDevice, FreeDevice> PvDevicePtr;
   typedef std::unique_ptr<PvStream, FreeStream> PvStreamPtr;
   typedef std::unique_ptr<PvPipeline> PvPipelinePtr;
   typedef std::unique_ptr<std::thread> ThreadPtr;
 
+  bool acquire_ = false;
   std::string ip_address_;
   PvSystem system_;
-  const PvDeviceInfo *device_info_;
+  const PvDeviceInfo *dinfo_;
   PvDevicePtr device_;
   PvStreamPtr stream_;
   PvPipelinePtr pipeline_;

@@ -1,5 +1,6 @@
 #include <memory>
 #include <stdexcept>
+#include <functional>
 
 #include <ros/ros.h>
 #include <ros/node_handle.h>
@@ -37,6 +38,7 @@ class FlirNode {
     std::string ip_address;
     nh_.param<std::string>("ip_address", ip_address, std::string(""));
     camera_ = std::make_shared<flir_gige::GigeCamera>(ip_address);
+    camera_->use_image = std::bind(&FlirNode::PublishImage, this, std::placeholders::_1);
     // Setup image publisher and dynamic reconfigure callback
     image_pub_ = it_.advertise("image_raw", 1);
     server_.setCallback(
@@ -46,14 +48,10 @@ class FlirNode {
   FlirNode(const FlirNode &) = delete;             // No copy constructor
   FlirNode &operator=(const FlirNode &) = delete;  // No assignment operator
 
-  bool init() {
-    //    camera_->FindDevice();
-    //    camera_->ConnectDevice();
-    //    camera_->OpenStream();
-    //    camera_->ConfigureStream();
-    //    camera_->CreatePipeline();
-    //    camera_->AcquireImages();
-    return true;
+  void Init() {
+    camera_->Connect();
+    camera_->Configure();
+    camera_->Start();
   }
 
   void PublishImage(const cv::Mat &image) {
@@ -61,7 +59,7 @@ class FlirNode {
       ros::shutdown();
     }
     // Construct a cv image
-    cv_bridge::CvImagePtr cv_ptr;
+    cv_bridge::CvImagePtr cv_ptr(new cv_bridge::CvImage());
     cv_ptr->header.stamp = ros::Time::now();
     cv_ptr->header.frame_id = frame_id_;
     cv_ptr->header.seq = seq++;
@@ -70,14 +68,28 @@ class FlirNode {
     // Convert to ros image msg and publish
     image_msg_ = cv_ptr->toImageMsg();
     image_pub_.publish(image_msg_);
+    rate_.sleep();
   }
 
   void ReconfigureCallback(flir_gige::FlirConfig &config, int level) {
-    ROS_INFO("%s", "In reconfigure callback");
-    ROS_INFO_STREAM("Level " << level << "Width " << config.width << " Height "
-                             << config.height);
+    // Do nothing when first starting
+    if (level < 0) {
+      ROS_INFO("Starting reconfigure server.");
+      return;
+    }
+
+    // Stop the camera if in acquisition
+    if (camera_->IsAcquire()) {
+      // Stop the image thread
+      camera_->Stop();
+    }
+    // Reconfigure the camera
+    camera_->Configure();
+    // Restart the camera
+    camera_->Start();
   }
-};
+
+};  // class FlirNode
 
 }  // namespace flir_gige
 
@@ -90,7 +102,7 @@ int main(int argc, char *argv[]) {
 
   try {
     flir_gige::FlirNode flir_node(nh, fps);
-    flir_node.init();
+    flir_node.Init();
     ros::spin();
   }
   catch (const std::exception &e) {

@@ -82,7 +82,3 @@ void CVImageWidget::paintEvent(QPaintEvent *)
     painter.drawImage(targetRect,image_);
   }
 }
-
-void CVImageWidget::resizeEvent(QResizeEvent *)
-{
-}

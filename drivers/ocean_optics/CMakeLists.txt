@@ -5,13 +5,19 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   std_msgs
   message_generation
+  dynamic_reconfigure
 )
+
+# generate reconfigure options
+generate_dynamic_reconfigure_options(cfg/OceanOptics.cfg)
 
 # generate messages
 add_message_files(FILES Spectrum.msg)
 generate_messages(DEPENDENCIES std_msgs)
 
-catkin_package()
+catkin_package(
+  CATKIN_DEPENDS dynamic_reconfigure
+)
 
 include_directories(
   ${catkin_INCLUDE_DIRS}
@@ -37,14 +43,17 @@ link_directories(
 )
 
 # add necessary definitions
-add_definitions("-Wall -Wunused -DLINUX -fpic -g")
+add_definitions("-Wall -Wunused -DLINUX -fpic -g -std=c++11")
 
 # point RPATH to correct location for deprecated JVM
 set(CMAKE_INSTALL_RPATH ${OCEAN_OPTICS_LIB_DIR} ${JVM_LIB_DIR})
 
 add_executable(ocean_optics src/ocean_optics_node.cpp)
 target_link_libraries(ocean_optics common OmniDriver jvm)
-target_link_libraries(ocean_optics ${roscpp_LIBRARIES})
+target_link_libraries(ocean_optics ${catkin_LIBRARIES})
 
 # ensures messages are generated before hand
-add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS})
+add_dependencies(${PROJECT_NAME}
+  ${${PROJECT_NAME}_EXPORTED_TARGETS}
+  ${PROJECT_NAME}_gencf
+)

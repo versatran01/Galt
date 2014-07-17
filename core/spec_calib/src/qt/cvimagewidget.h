@@ -26,7 +26,6 @@ public:
   
 protected:
   void paintEvent(QPaintEvent *);
-  void resizeEvent(QResizeEvent *);
   
 private:
   cv::Mat temp_;

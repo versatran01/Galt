@@ -41,7 +41,8 @@ include_directories(
 add_library(${PROJECT_NAME} src/gige_camera.cpp)
 target_link_libraries(${PROJECT_NAME}
     ${EBUS_LIBRARIES}
-    ${OpenCV_LIBRARIES})
+    ${OpenCV_LIBRARIES}
+    )
 
 add_executable(${PROJECT_NAME}_node src/flir_gige_node.cpp)
 target_link_libraries(${PROJECT_NAME}_node
@@ -51,7 +52,9 @@ target_link_libraries(${PROJECT_NAME}_node
 
 ## Add cmake target dependencies of the executable/library
 add_dependencies(${PROJECT_NAME}_node
-    ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_gencfg)
+    ${catkin_EXPORTED_TARGETS}
+    ${PROJECT_NAME}_gencfg
+    )
 
 ## Add gtest based cpp test }target and link libraries
 # catkin_add_gtest(${PROJECT_NAME}-test test/test_flir.cpp)

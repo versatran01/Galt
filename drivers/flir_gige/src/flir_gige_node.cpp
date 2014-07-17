@@ -38,8 +38,8 @@ class FlirNode {
     std::string ip_address;
     nh_.param<std::string>("ip_address", ip_address, std::string(""));
     camera_ = std::make_shared<flir_gige::GigeCamera>(ip_address);
-    camera_->use_image = std::bind(&FlirNode::PublishImage, this,
-                                   std::placeholders::_1);
+    camera_->use_image =
+        std::bind(&FlirNode::PublishImage, this, std::placeholders::_1);
     // Setup image publisher and dynamic reconfigure callback
     image_pub_ = it_.advertise("image_raw", 1);
     server_.setCallback(
@@ -81,13 +81,11 @@ class FlirNode {
 
     // Stop the camera if in acquisition
     if (camera_->IsAcquire()) {
-      //Stop the image thread
+      // Stop the image thread if camera is running
       camera_->Stop();
-      std::cout << "Stop camera" << std::endl;
       camera_->Disconnect();
-      std::cout << "Disconnect camera" << std::endl;
     }
-    // Reconnect the camera
+    // Reconnect to the camera
     camera_->Connect();
     // Reconfigure the camera
     camera_->Configure();

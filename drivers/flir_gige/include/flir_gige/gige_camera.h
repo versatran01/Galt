@@ -46,10 +46,11 @@ class GigeCamera {
   void Connect();
   // Configure the camera before image acquisition
   void Configure();
-  //
+  // Enable stream
   void Start();
   // Stop image acquisition
   void Stop();
+  // Release all resources we hold
   void Disconnect();
   // Return Acquisition status
   const bool IsAcquire() const { return acquire_; }
@@ -72,6 +73,7 @@ class GigeCamera {
   typedef std::unique_ptr<std::thread> ThreadPtr;
 
   bool acquire_ = false;
+  std::string label_{"\033[0;35m[ FLIR]:\033[0m "};
   std::string ip_address_;
   PvSystem system_;
   const PvDeviceInfo *dinfo_;

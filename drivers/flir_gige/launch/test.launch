@@ -4,6 +4,7 @@
     <arg name="fps" default="20.0"/>
     <arg name="height" default="320"/>
     <arg name="width" default="256"/>
+    <arg name="color" default="false"/>
 
     <node pkg="flir_gige" type="flir_gige_node" name="flir_gige" output="screen">
         <param name="ip_address" type="string" value="$(arg ip_address)"/>
@@ -11,5 +12,6 @@
         <param name="fps" type="double" value="$(arg fps)"/>
         <param name="height" type="int" value="$(arg height)"/>
         <param name="width" type="int" value="$(arg width)"/>
+        <param name="color" type="bool" value="$(arg color)"/>
     </node>
 </launch>

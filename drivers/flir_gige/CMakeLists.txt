@@ -17,7 +17,7 @@ endif(CMAKE_SIZEOF_VOID_P EQUAL 8)
 
 find_package(catkin REQUIRED
     COMPONENTS roscpp sensor_msgs image_transport camera_info_manager
-    dynamic_reconfigure
+    dynamic_reconfigure cv_bridge
     )
 find_package(OpenCV)
 

@@ -1,3 +1,6 @@
+#ifndef FLIR_GIGE_FLIR_GIGE_H_
+#define FLIR_GIGE_FLIR_GIGE_H_
+
 #include <memory>
 
 #include <ros/ros.h>
@@ -39,3 +42,5 @@ class FlirNode {
 };  // class FlirNode
 
 }  // namespace flir_gige
+
+#endif  // FLIR_GIGE_FLIR_GIGE_H_

@@ -11,6 +11,7 @@
 #include <cv_bridge/cv_bridge.h>
 #include <opencv2/core/core.hpp>
 
+#include "flir_gige/gige_camera.h"
 #include "flir_gige/FlirConfig.h"
 
 namespace flir_gige {

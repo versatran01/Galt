@@ -6,6 +6,8 @@
  *  Created on: 12/7/2014
  *      Author: Chao Qu
  */
+#ifndef FLIR_GIGE_GIGE_CAMERA_H_
+#define FLIR_GIGE_GIGE_CAMERA_H_
 
 #include <string>
 #include <memory>
@@ -85,3 +87,5 @@ class GigeCamera {
 };  // class GigeCamera
 
 }  // namespace flir_gige
+
+#endif  // FLIR_GIGE_GIGE_CAMERA_H_

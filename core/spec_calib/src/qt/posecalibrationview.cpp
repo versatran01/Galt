@@ -9,7 +9,6 @@
  *      Author: gareth
  */
 
-#include <QException>
 #include <iostream>
 
 #include "posecalibrationview.h"

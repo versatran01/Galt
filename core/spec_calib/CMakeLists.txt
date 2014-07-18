@@ -3,7 +3,8 @@ project(spec_calib)
 
 # include QT
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
-find_package(Qt5Widgets REQUIRED)
+find_package(Qt4 REQUIRED)
+include(${QT_USE_FILE})
 
 # Technical widgets
 # Uncomment if libqwt is not installed by apt-get.
@@ -52,8 +53,8 @@ set(${PROJECT_NAME}_FORMS
 )
 
 # invoke MOC and UI
-QT5_WRAP_CPP(${PROJECT_NAME}_MOCSrcs ${${PROJECT_NAME}_HEADERS})
-QT5_WRAP_UI(${PROJECT_NAME}_UISrcs ${${PROJECT_NAME}_FORMS})
+QT4_WRAP_CPP(${PROJECT_NAME}_MOCSrcs ${${PROJECT_NAME}_HEADERS})
+QT4_WRAP_UI(${PROJECT_NAME}_UISrcs ${${PROJECT_NAME}_FORMS})
 
 # QT Declarations
 include_directories(
@@ -64,7 +65,7 @@ include_directories(
   ${Qt5Widgets}_INCLUDE_DIRS
 )
 # defintions
-add_definitions(${Qt5Widgets_DEFINITIONS})
+#add_definitions(${Qt5Widgets_DEFINITIONS})
 
 # compiler flags for QT5
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${Qt5Widgets_EXECUTABLE_COMPILE_FLAGS}")
@@ -88,7 +89,7 @@ add_executable(${PROJECT_NAME}
 
 # link QT and ROS
 target_link_libraries(${PROJECT_NAME}
-  Qt5::Widgets
+  ${QT_LIBRARIES}
   ${catkin_LIBRARIES}
   ${OpenCV_LIBRARIES}
   yaml-cpp

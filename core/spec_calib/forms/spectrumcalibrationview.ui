@@ -29,7 +29,7 @@
      <item>
       <layout class="QVBoxLayout" name="verticalLayout">
        <item>
-        <widget class="QFrame" name="frame">
+        <widget class="QwtPlot" name="plot">
          <property name="minimumSize">
           <size>
            <width>320</width>
@@ -52,6 +52,12 @@
    <class>CVImageWidget</class>
    <extends>QWidget</extends>
    <header>cvimagewidget.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>QwtPlot</class>
+   <extends>QFrame</extends>
+   <header location="global">qwt/qwt_plot.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

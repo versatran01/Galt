@@ -72,7 +72,7 @@ void MainWindow::setMode(MainWindow::Mode mode) {
       statusMessage = "Calibrating pose";
     } 
     else if (mode_ == CalibrateSpectrum) {
-      //mainWidget_ = new SpectrumCalibrationView(this);
+      mainWidget_ = new SpectrumCalibrationView(this);
       statusMessage = "Calibrating spectrum";
     }
     

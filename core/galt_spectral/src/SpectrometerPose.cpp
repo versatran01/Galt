@@ -36,14 +36,14 @@ const double &SpectrometerPose::getSquaredError() const { return squaredError_; 
 double SpectrometerPose::distanceToPlane(const kr::vec3d &o,
                                          const kr::vec3d &n) const {
   const kr::vec3d del = o - position_;
-  
+
   const double num = (del[0]*n[0] + del[1]*n[1] + del[2]*n[2]);
   const double den = (direction_[0]*n[0] + direction_[1]*n[1] + direction_[2]*n[2]);
-  
+
   if (std::abs(den) < std::numeric_limits<double>::epsilon()*10) {
     return std::numeric_limits<double>::infinity();
   }
-  
+
   return num / den;
 }
 

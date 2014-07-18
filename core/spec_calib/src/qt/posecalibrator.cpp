@@ -57,7 +57,7 @@ PoseCalibrator::PoseCalibrator(QObject *parent, const ros::NodeHandlePtr &nhp) :
   subImage_.subscribe(*imgTransport_, "image", kROSQueueSize);
   subCamInfo_.subscribe(*nhp, "camera_info", kROSQueueSize);
   subCircles_.subscribe(*nhp, "circles", kROSQueueSize);
-  subPose_.subscribe(*nhp, "pose", kROSQueueSize);
+  subPose_.subscribe(*nhp, "pose_leds", kROSQueueSize);
   subPixels_.subscribe(*nhp, "pixels", kROSQueueSize);
   
   //  subscribe to synchronized topics
@@ -69,7 +69,7 @@ PoseCalibrator::PoseCalibrator(QObject *parent, const ros::NodeHandlePtr &nhp) :
                                                                           subPixels_);
   sync_->registerCallback( boost::bind(&PoseCalibrator::syncCallback, this, _1, _2, _3, _4, _5) );  
   
-  ROS_INFO("Subscribing to ~image, ~camera_info, ~circles, ~pose and ~pixels");
+  ROS_INFO("Subscribing to ~image, ~camera_info, ~circles, ~pose_leds and ~pixels");
 }
 
 PoseCalibrator::~PoseCalibrator() {
@@ -187,7 +187,7 @@ PoseCalibrator::Circle PoseCalibrator::projectWithPose(const kr::Pose<double>& p
 void PoseCalibrator::syncCallback(const sensor_msgs::ImageConstPtr& img,
                   const sensor_msgs::CameraInfoConstPtr &info, 
                   const circle_tracker::CirclesConstPtr &circ, 
-                  const geometry_msgs::PoseWithCovarianceStampedConstPtr &poseWithCov,
+                  const geometry_msgs::PoseStampedConstPtr &poseStamped,
                   const monocular_pose_estimator::PixelArrayConstPtr& pixels)
 {
   //  convert image to OpenCV format
@@ -245,7 +245,7 @@ void PoseCalibrator::syncCallback(const sensor_msgs::ImageConstPtr& img,
   }
   
   //  sort remaining circles by area, lowest to highest, picking the largest
-  kr::Pose<double> pose(poseWithCov->pose.pose);
+  kr::Pose<double> pose(poseStamped->pose);
   if (!circlesCulled.empty())
   {
     std::sort(circlesCulled.begin(), circlesCulled.end());

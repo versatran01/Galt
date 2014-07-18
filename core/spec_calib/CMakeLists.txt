@@ -38,6 +38,7 @@ set(${PROJECT_NAME}_SOURCES
   src/qt/posecalibrator.cpp
   src/qt/cvimagewidget.cpp
   src/qt/spectrumcalibrationview.cpp
+  src/qt/spectrumcalibrator.cpp
 )
 set(${PROJECT_NAME}_HEADERS
   src/qt/mainwindow.h
@@ -45,6 +46,7 @@ set(${PROJECT_NAME}_HEADERS
   src/qt/posecalibrator.h
   src/qt/cvimagewidget.h
   src/qt/spectrumcalibrationview.h
+  src/qt/spectrumcalibrator.h
 )
 set(${PROJECT_NAME}_FORMS
   forms/mainwindow.ui
@@ -77,7 +79,6 @@ include_directories(
 )
 
 # additional warnings and cpp11
-# must disable QWT OpenGL and SVG support or we SEGFAULT on launch
 add_definitions("-Wall -Wunused -std=c++11 -DQWT_NO_OPENGL -DQWT_NO_SVG")
 
 # build node

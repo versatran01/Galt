@@ -12,7 +12,7 @@
   <env name="JAVA_HOME" value="/opt/jdk1.6.0_01"/>
 
   <!-- Namespace of the node -->
-  <arg name="spec_node" value="spectrometer"/>
+  <arg name="spec_node" default="spectrometer"/>
 
   <node pkg="ocean_optics" name="$(arg spec_node)" type="ocean_optics" output="screen">
   </node>

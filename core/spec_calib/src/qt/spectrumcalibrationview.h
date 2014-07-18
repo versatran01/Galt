@@ -13,6 +13,7 @@
 #define SPECTRUMCALIBRATIONVIEW_H
 
 #include <QWidget>
+#include "spectrumcalibrator.h"
 
 namespace Ui {
 class SpectrumCalibrationView;
@@ -26,6 +27,8 @@ public:
   explicit SpectrumCalibrationView(QWidget *parent = 0);
   ~SpectrumCalibrationView();
   
+  void reset();
+  
 signals:
   
 public slots:
@@ -33,6 +36,7 @@ public slots:
   
 private:
   Ui::SpectrumCalibrationView *ui;
+  SpectrumCalibrator * specCalib_;
 };
 
 #endif // SPECTRUMCALIBRATIONVIEW_H

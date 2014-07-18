@@ -31,11 +31,17 @@ SpectrumCalibrator::SpectrumCalibrator(QObject *parent) :
                                                                           subPose_,
                                                                           subSpectrum_);
   sync_->registerCallback(boost::bind(&SpectrumCalibrator::syncCallback, this, _1, _2, _3, _4));
+  
+  ROS_INFO("Subscribing to ~image, ~camera_info, ~pose_tags and ~spectrum");
 }
 
 void SpectrumCalibrator::setSpectrometerPose(const galt::SpectrometerPose& pose) {
   pose_ = pose;
   hasPose_ = true;  //  todo: this is ugly, find a better way...
+}
+
+const cv::Mat& SpectrumCalibrator::lastImage() const {
+  return image_; 
 }
 
 void SpectrumCalibrator::syncCallback(const sensor_msgs::ImageConstPtr& img,
@@ -49,9 +55,8 @@ void SpectrumCalibrator::syncCallback(const sensor_msgs::ImageConstPtr& img,
     return;
   }  
   cv::Mat image = bridgedImagePtr->image;
-  
-  ROS_INFO("Message received!");
-  
+  image_ = image;
+    
   if (hasPose_) {
     
     

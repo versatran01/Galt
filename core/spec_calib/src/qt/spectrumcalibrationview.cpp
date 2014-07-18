@@ -17,9 +17,10 @@
 
 SpectrumCalibrationView::SpectrumCalibrationView(QWidget *parent) :
   QWidget(parent),
-  ui(new Ui::SpectrumCalibrationView)
+  ui(new Ui::SpectrumCalibrationView), specCalib_(0)
 {
   ui->setupUi(this);
+  reset();
   
   QwtPlot * plot = ui->plot;
   
@@ -35,6 +36,19 @@ SpectrumCalibrationView::~SpectrumCalibrationView()
   delete ui;
 }
 
-void SpectrumCalibrationView::calibratorUpdateState(void) {
+void SpectrumCalibrationView::reset() {
+  if (specCalib_) {
+    delete specCalib_;
+  }
+  specCalib_ = new SpectrumCalibrator(this);
   
+  QObject::connect(specCalib_,SIGNAL(receivedMessage()),this,SLOT(calibratorUpdateState()));
+}
+
+
+void SpectrumCalibrationView::calibratorUpdateState(void) {
+  const cv::Mat& image = specCalib_->lastImage();
+  if (!image.empty()) {
+    ui->imageWidget->setImage(image);
+  }
 }

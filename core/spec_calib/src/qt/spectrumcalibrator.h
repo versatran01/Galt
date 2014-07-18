@@ -15,6 +15,7 @@
 #include <QObject>
 
 #include <ros/ros.h>
+#include <opencv2/opencv.hpp>
 #include <image_transport/image_transport.h>
 #include <image_transport/subscriber_filter.h>
 #include <message_filters/subscriber.h>
@@ -33,6 +34,8 @@ public:
   
   void setSpectrometerPose(const galt::SpectrometerPose& pose);
   
+  const cv::Mat& lastImage() const;
+  
 signals:
   void receivedMessage();
   
@@ -40,6 +43,7 @@ public slots:
   
 private:
   std::shared_ptr<image_transport::ImageTransport> imgTransport_;
+  cv::Mat image_;
   
   galt::SpectrometerPose pose_;
   bool hasPose_;

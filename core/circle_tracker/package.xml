@@ -6,7 +6,7 @@
 
   <maintainer email="gcross.code@icloud.com">gareth</maintainer>
 
-  <license>Proprietary</license>
+  <license>Proprietary - Not for redistribution</license>
 
   <buildtool_depend>catkin</buildtool_depend>
   <build_depend>geometry_msgs</build_depend>
@@ -16,6 +16,8 @@
   <build_depend>std_msgs</build_depend>
   <build_depend>cv_bridge</build_depend>
   <build_depend>message_generation</build_depend>
+  <build_depend>dynamic_reconfigure</build_depend>
+
   <run_depend>geometry_msgs</run_depend>
   <run_depend>image_transport</run_depend>
   <run_depend>opencv2</run_depend>
@@ -23,6 +25,7 @@
   <run_depend>std_msgs</run_depend>
   <run_depend>cv_bridge</run_depend>
   <run_depend>message_runtime</run_depend>
+  <run_depend>dynamic_reconfigure</run_depend>
 
   <export>
   </export>

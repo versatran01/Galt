@@ -1,0 +1,42 @@
+<!--
+  Name: circle_tracker.launch
+  Author: Gareth
+  Triggers:
+    * circle_tracker
+
+  Brief: Launch the circle_tracker node w/ supported params.
+-->
+<launch>
+
+  <!-- Topic of the camera -->
+  <arg name="image_topic" default="/camera/image_raw"/>
+
+  <!-- High threshold to use in canny edge detection -->
+  <arg name="high_canny_threshold" default="120.0"/>
+
+  <!-- Countour point count threshold -->
+  <arg name="point_count_threshold" default="6"/>
+
+  <!-- Area threshold, normalized coordinates -->
+  <arg name="area_threshold" default="170"/>
+
+  <!-- Gaussian blur std dev -->
+  <arg name="blur_sigma" default="0"/>
+
+  <!-- Circularity threshold (4*pi*area / circ^2) -->
+  <arg name="circle_threshold" default="0.75"/>
+
+  <!-- Display images? -->
+  <arg name="display_gui" default="false"/>
+
+  <node name="circle_tracker" pkg="circle_tracker" type="circle_tracker" output="screen">
+
+    <param name="high_canny_threshold" type="double" value="$(arg high_canny_threshold)"/>
+    <param name="point_count_threshold" type="int" value="$(arg point_count_threshold)"/>
+    <param name="area_threshold" type="double" value="$(arg area_threshold)"/>
+    <param name="circle_threshold" type="double" value="$(arg circle_threshold)"/>
+    <param name="blur_sigma" type="double" value="$(arg blur_sigma)"/>
+    <param name="display_gui" type="bool" value="$(arg display_gui)"/>
+    <remap from="~image_raw" to="$(arg image_topic)"/>
+  </node>
+</launch>

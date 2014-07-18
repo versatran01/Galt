@@ -1,0 +1,7 @@
+<launch>
+    <include file="$(find imu_3dm_gx4)/launch/imu.launch"/>
+    <include file="$(find ublox_gps)/launch/test.launch"/>
+    <include file="$(find galt_setup)/launch/hokuyo_eth.launch"/>
+    <include file="$(find bluefox2)/launch/trifocal.launch"/>
+    <include file="$(find ocean_optics)/launch/driver.launch"/>
+</launch>

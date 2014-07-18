@@ -1,5 +1,13 @@
 <launch>
-    <include file="$(find flir_gige)/launch/test.launch"/>
+    <arg name="ip_address" default="192.168.0.11"/>
+    <arg name="fps" default="20.0"/>
+    <arg name="color" default="false"/>
+
+    <include file="$(find flir_gige)/launch/node.launch">
+        <arg name="ip_address" value="$(arg ip_address)"/>
+        <arg name="fps" value="$(arg fps)"/>
+        <arg name="color" value="$(arg color)"/>
+    </include>
 
     <node pkg="image_view" type="image_view" name="viewer"
         args="image:=/flir_gige/image_raw">

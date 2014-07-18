@@ -27,7 +27,7 @@ class FlirGige {
   std::string frame_id_;
   unsigned seq = 0;
   // Flir Camera
-  std::shared_ptr<flir_gige::GigeCamera> camera_;
+  std::unique_ptr<flir_gige::GigeCamera> camera_;
 
  public:
   FlirGige(const ros::NodeHandle &nh);

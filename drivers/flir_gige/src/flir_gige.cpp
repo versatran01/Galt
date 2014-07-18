@@ -16,8 +16,7 @@
 
 namespace flir_gige {
 
-FlirGige::FlirGige(const ros::NodeHandle &nh)
-    : nh_{nh}, it_{nh} {
+FlirGige::FlirGige(const ros::NodeHandle &nh) : nh_{nh}, it_{nh} {
   // Get ros parameteres
   nh_.param<std::string>("frame_id", frame_id_, std::string("flir"));
   double fps;
@@ -27,7 +26,7 @@ FlirGige::FlirGige(const ros::NodeHandle &nh)
   // Create a camera
   std::string ip_address;
   nh_.param<std::string>("ip_address", ip_address, std::string(""));
-  camera_ = std::make_shared<flir_gige::GigeCamera>(ip_address);
+  camera_.reset(new flir_gige::GigeCamera(ip_address));
   camera_->use_image =
       std::bind(&FlirGige::PublishImage, this, std::placeholders::_1);
   // Setup image publisher and dynamic reconfigure callback
@@ -45,11 +44,13 @@ void FlirGige::Run() {
 }
 
 void FlirGige::PublishImage(const cv::Mat &image) {
-  if (!ros::ok()) {
-    camera_->Stop();
-    camera_->Disconnect();
-    ros::shutdown();
-  }
+//  if (!ros::ok()) {
+//    camera_->Stop();
+//    camera_->Disconnect();
+//    ROS_WARN("I am here!");
+    // Not sure if this shutdown is needed, seems to work fine without it
+//    ros::shutdown();
+//  }
   // Construct a cv image
   cv_bridge::CvImagePtr cv_ptr(new cv_bridge::CvImage());
   cv_ptr->header.stamp = ros::Time::now();

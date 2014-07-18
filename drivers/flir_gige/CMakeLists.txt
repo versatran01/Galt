@@ -17,7 +17,7 @@ endif(CMAKE_SIZEOF_VOID_P EQUAL 8)
 
 find_package(catkin REQUIRED
     COMPONENTS roscpp sensor_msgs image_transport camera_info_manager
-    dynamic_reconfigure cv_bridge
+               dynamic_reconfigure cv_bridge nodelet
     )
 find_package(OpenCV)
 
@@ -57,8 +57,19 @@ target_link_libraries(${PROJECT_NAME}
     gige_camera
     )
 
-add_executable(${PROJECT_NAME}_node src/flir_gige_node.cpp)
+# node
+add_executable(${PROJECT_NAME}_node
+    src/flir_gige_node.cpp
+    )
 target_link_libraries(${PROJECT_NAME}_node
+    ${PROJECT_NAME}
+    )
+
+# nodelet
+add_library(${PROJECT_NAME}_nodelet
+    src/flir_gige_nodelet.cpp
+    )
+target_link_libraries(${PROJECT_NAME}_nodelet
     ${PROJECT_NAME}
     )
 

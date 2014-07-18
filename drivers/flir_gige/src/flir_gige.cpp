@@ -40,6 +40,8 @@ void FlirNode::Init() {
 
 void FlirNode::PublishImage(const cv::Mat &image) {
   if (!ros::ok()) {
+    camera_->Stop();
+    camera_->Disconnect();
     ros::shutdown();
   }
   // Construct a cv image
@@ -62,7 +64,6 @@ void FlirNode::PublishImage(const cv::Mat &image) {
 void FlirNode::ReconfigureCallback(flir_gige::FlirConfig &config, int level) {
   // Do nothing when first starting
   if (level < 0) {
-    ROS_INFO("Starting reconfigure server.");
     return;
   }
 

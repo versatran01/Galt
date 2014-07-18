@@ -11,12 +11,12 @@ namespace flir_gige {
 FlirNodelet::FlirNodelet() : nodelet::Nodelet() {}
 
 FlirNodelet::~FlirNodelet() {
-  flir_thread_->join();
+  flir_gige_->End();
 }
 
 void FlirNodelet::onInit() {
   flir_gige_.reset(new FlirGige(getPrivateNodeHandle()));
-  flir_thread_.reset(new std::thread(&FlirGige::Run, flir_gige_.get()));
+  flir_gige_->Run();
 }
 
 }  // namespace flir_gige

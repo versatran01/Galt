@@ -43,14 +43,12 @@ void FlirGige::Run() {
   camera_->Start();
 }
 
+void FlirGige::End() {
+  camera_->Stop();
+  camera_->Disconnect();
+}
+
 void FlirGige::PublishImage(const cv::Mat &image) {
-//  if (!ros::ok()) {
-//    camera_->Stop();
-//    camera_->Disconnect();
-//    ROS_WARN("I am here!");
-    // Not sure if this shutdown is needed, seems to work fine without it
-//    ros::shutdown();
-//  }
   // Construct a cv image
   cv_bridge::CvImagePtr cv_ptr(new cv_bridge::CvImage());
   cv_ptr->header.stamp = ros::Time::now();

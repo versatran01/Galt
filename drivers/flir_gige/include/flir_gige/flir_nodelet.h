@@ -19,7 +19,6 @@ class FlirNodelet : public nodelet::Nodelet {
 
  private:
   std::unique_ptr<flir_gige::FlirGige> flir_gige_;
-  std::unique_ptr<std::thread> flir_thread_;
 
 };  // class FlirNodelet
 

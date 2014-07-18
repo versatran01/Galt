@@ -36,6 +36,7 @@ class FlirGige {
   FlirGige &operator=(const FlirGige &) = delete;  // No assignment operator
 
   void Run();
+  void End();
   void PublishImage(const cv::Mat &image);
   void ReconfigureCallback(flir_gige::FlirConfig &config, int level);
 

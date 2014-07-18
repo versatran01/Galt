@@ -1,4 +1,5 @@
 #include <stdexcept>
+#include <unistd.h>
 
 #include <ros/ros.h>
 
@@ -13,6 +14,7 @@ int main(int argc, char *argv[]) {
     flir_gige::FlirGige flir_gige(nh);
     flir_gige.Run();
     ros::spin();
+    flir_gige.End();
   }
   catch (const std::exception &e) {
     ROS_ERROR_STREAM(e.what());

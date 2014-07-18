@@ -27,6 +27,12 @@
 #include <opencv2/core/core.hpp>
 
 namespace flir_gige {
+// Config struct
+struct GigeConfig {
+  bool color{false};
+  int width{320};
+  int height{256};
+};
 
 // Functor for free PvDevice
 struct FreeDevice {
@@ -47,7 +53,7 @@ class GigeCamera {
   // Find and connect to device, create PvDevice, PvStream and PvPipeline
   void Connect();
   // Configure the camera before image acquisition
-  void Configure(bool color);
+  void Configure(const GigeConfig &config);
   // Start pipeline, enable stream and start acquisition
   void Start();
   // Stop acquisition, disable stream and stop pipeline
@@ -68,6 +74,8 @@ class GigeCamera {
   void StartAcquisition();
   void StopAcquisition();
   void AcquireImages();
+
+  void SetAoi(int width, int height);
 
   typedef std::unique_ptr<PvDevice, FreeDevice> PvDevicePtr;
   typedef std::unique_ptr<PvStream, FreeStream> PvStreamPtr;

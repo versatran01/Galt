@@ -1,5 +1,6 @@
 #include "flir_gige/gige_camera.h"
 
+#include <unistd.h>
 #include <iostream>
 #include <stdexcept>
 #include <sstream>
@@ -9,6 +10,9 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/contrib/contrib.hpp>
+
+#include <PvGenParameterArray.h>
+#include <PvGenParameter.h>
 
 #define BUFFER_COUNT (16)
 
@@ -42,10 +46,14 @@ void GigeCamera::Disconnect() {
   device_.reset();
 }
 
-void GigeCamera::Configure(bool color) {
-  // Do nothing now, just print something
-  color_ = color;
+void GigeCamera::Configure(const GigeConfig &config) {
+  color_ = config.color;
+  // Set device parameters according to config
+  cout << label_ << "Color: " << config.color << " Width: " << config.width
+       << " Height: " << config.height << endl;
+  SetAoi(config.width, config.height);
 }
+
 
 void GigeCamera::Start() {
   StartAcquisition();
@@ -241,15 +249,15 @@ void GigeCamera::AcquireImages() {
   // Get device parameters need to control streaming
   PvGenParameterArray *device_params = device_->GetParameters();
   // Get stream parameters
-  PvGenParameterArray *stream_params = stream_->GetParameters();
-
+//  PvGenParameterArray *stream_params = stream_->GetParameters();
+//  auto *spot = dynamic_cast<PvGenFloat *>(device_params->Get("Spot"));
   // Map a few GenICam stats counters
-  double frame_rate_val = 0;
-  double band_width_val = 0;
-  auto *frame_rate =
-      dynamic_cast<PvGenFloat *>(stream_params->Get("AcquisitionRate"));
-  auto *band_width =
-      dynamic_cast<PvGenFloat *>(stream_params->Get("Bandwidth"));
+//  double frame_rate_val = 0;
+//  double band_width_val = 0;
+//  auto *frame_rate =
+//      dynamic_cast<PvGenFloat *>(stream_params->Get("AcquisitionRate"));
+//  auto *band_width =
+//      dynamic_cast<PvGenFloat *>(stream_params->Get("Bandwidth"));
 
   // Create a cv::Mat to pass back to ros
   //  cv::namedWindow("flir", cv::WINDOW_AUTOSIZE);
@@ -264,21 +272,27 @@ void GigeCamera::AcquireImages() {
     PvBuffer *buffer;
     PvResult op_result;
 
+//    double spot_val = 0;
+//    spot->GetValue(spot_val);
+//    cout << "spot: " << spot_val << endl;
+//    int64_t contrast = 0, brightness = 0;
+//    device_params->GetIntegerValue("Contrast", contrast);
+//    device_params->GetIntegerValue("Brightness", brightness);
+//    cout << "Contrast: " << contrast
+//         << " Brightness: " << brightness << endl;
+
     // Retrieve next buffer
     PvResult result = pipeline_->RetrieveNextBuffer(&buffer, 1000, &op_result);
 
     if (result.IsOK()) {
       if (op_result.IsOK()) {
-        PvPayloadType payload_type;
         // We now have a valid buffer. This is where you would typically
         // process the buffer
-        frame_rate->GetValue(frame_rate_val);
-        band_width->GetValue(band_width_val);
+//        frame_rate->GetValue(frame_rate_val);
+//        band_width->GetValue(band_width_val);
 
         // If the buffer contains an image, display the width and height
-        payload_type = buffer->GetPayloadType();
-
-        if (payload_type == PvPayloadTypeImage) {
+        if ((buffer->GetPayloadType()) == PvPayloadTypeImage) {
           // Get image specific buffer interface
           PvImage *image = buffer->GetImage();
           // Attach PvBuffer to an external memory
@@ -306,6 +320,29 @@ void GigeCamera::AcquireImages() {
       pipeline_->ReleaseBuffer(buffer);
     } else {
       cout << label_ << "Retrieve buffer failure" << endl;
+    }
+  }
+}
+
+void GigeCamera::SetAoi(int width, int height) {
+  PvGenParameterArray *device_params = device_->GetParameters();
+  // Get width and height parameter
+  auto *width_param = dynamic_cast<PvGenInteger*>(device_params->Get("Width"));
+  auto *height_param = dynamic_cast<PvGenInteger*>(device_params->Get("Height"));
+  // Get current width and height
+  int64_t current_width = 0;
+  int64_t current_height = 0;
+  width_param->GetValue(current_width);
+  height_param->GetValue(current_height);
+  // Check to see if it's necessary to change width and height
+  if (current_width != width) {
+    if (width_param->SetValue(width).IsFailure()) {
+      cout << label_ << "failed to set width" << endl;
+    }
+  }
+  if (current_height != height) {
+    if (height_param->SetValue(height).IsFailure()) {
+      cout << label_ << "failed to set height" << endl;
     }
   }
 }

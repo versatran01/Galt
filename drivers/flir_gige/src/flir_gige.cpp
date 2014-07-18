@@ -36,10 +36,12 @@ FlirGige::FlirGige(const ros::NodeHandle &nh) : nh_{nh}, it_{nh} {
 }
 
 void FlirGige::Run() {
-  bool color;
-  nh_.param<bool>("color", color, false);
+  GigeConfig config;
+  nh_.param<bool>("color", config.color, false);
+  nh_.param<int>("width", config.width, 320);
+  nh_.param<int>("height", config.height, 256);
   camera_->Connect();
-  camera_->Configure(color);
+  camera_->Configure(config);
   camera_->Start();
 }
 
@@ -71,7 +73,11 @@ void FlirGige::ReconfigureCallback(flir_gige::FlirConfig &config, int level) {
   if (level < 0) {
     return;
   }
-
+  // Get config
+  GigeConfig gige_config;
+  gige_config.color = config.color;
+  gige_config.width = config.width;
+  gige_config.height = config.height;
   // Stop the camera if in acquisition
   if (camera_->IsAcquire()) {
     // Stop the image thread if camera is running
@@ -81,7 +87,7 @@ void FlirGige::ReconfigureCallback(flir_gige::FlirConfig &config, int level) {
   // Reconnect to the camera
   camera_->Connect();
   // Reconfigure the camera
-  camera_->Configure(config.color);
+  camera_->Configure(gige_config);
   // Restart the camera
   camera_->Start();
 }

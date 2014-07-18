@@ -4,8 +4,8 @@
     <arg name="ip_address" default="192.168.0.11"/>
     <arg name="frame_id" default="flir"/>
     <arg name="fps" default="20.0"/>
-    <arg name="height" default="320"/>
-    <arg name="width" default="256"/>
+    <arg name="width" default="320"/>
+    <arg name="height" default="256"/>
     <arg name="color" default="false"/>
 
     <!--run as standalone-->

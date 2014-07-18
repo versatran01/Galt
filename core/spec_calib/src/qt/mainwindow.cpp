@@ -66,12 +66,13 @@ void MainWindow::setMode(MainWindow::Mode mode) {
     }
     mode_ = mode;
     
-    QString statusMessage = "";
+    QString statusMessage;
     if (mode_ == CalibratePose) {
       mainWidget_ = new PoseCalibrationView(this, nodeHandle_);
       statusMessage = "Calibrating pose";
-    } else if (mode == CalibrateSpectrum) {
-      mainWidget_ = new SpectrumCalibrationView(this);
+    } 
+    else if (mode_ == CalibrateSpectrum) {
+      //mainWidget_ = new SpectrumCalibrationView(this);
       statusMessage = "Calibrating spectrum";
     }
     

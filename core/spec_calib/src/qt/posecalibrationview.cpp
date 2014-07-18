@@ -17,8 +17,6 @@
 
 #include <yaml-cpp/yaml.h>
 
-#include <qwt/qwt_plot.h>
-
 PoseCalibrationView::PoseCalibrationView(QWidget *parent, const ros::NodeHandlePtr &nhp) :
   QWidget(parent),
   ui(new Ui::PoseCalibrationView), nhp_(nhp), poseCalib_(0)
@@ -94,17 +92,17 @@ void PoseCalibrationView::calibratorUpdatedState(void) {
   ui->error->setText(QString(buf));
 }
 
-void PoseCalibrationView::calibrateButtonPressed(bool checked) {
+void PoseCalibrationView::calibrateButtonPressed(bool) {
   if (poseCalib_->canCalibrate()) {
     poseCalib_->calibrate();
   }
 }
 
-void PoseCalibrationView::resetButtonPressed(bool checked) {
+void PoseCalibrationView::resetButtonPressed(bool) {
   reset();
 }
 
-void PoseCalibrationView::saveButtonPressed(bool checked) {
+void PoseCalibrationView::saveButtonPressed(bool) {
   if (poseCalib_ && poseCalib_->hasCalibration()) {
   
     YAML::Node node(poseCalib_->getSpectrometerPose());

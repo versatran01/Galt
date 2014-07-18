@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>400</width>
-    <height>300</height>
+    <width>823</width>
+    <height>441</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,12 +17,29 @@
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
-      <widget class="CVImageWidget" name="imageWidget" native="true"/>
+      <widget class="CVImageWidget" name="imageWidget" native="true">
+       <property name="minimumSize">
+        <size>
+         <width>320</width>
+         <height>240</height>
+        </size>
+       </property>
+      </widget>
      </item>
      <item>
       <layout class="QVBoxLayout" name="verticalLayout">
        <item>
-        <widget class="QwtPlot" name="frame"/>
+        <widget class="QFrame" name="frame">
+         <property name="minimumSize">
+          <size>
+           <width>320</width>
+           <height>240</height>
+          </size>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <layout class="QFormLayout" name="formLayout"/>
        </item>
       </layout>
      </item>
@@ -35,12 +52,6 @@
    <class>CVImageWidget</class>
    <extends>QWidget</extends>
    <header>cvimagewidget.h</header>
-   <container>1</container>
-  </customwidget>
-  <customwidget>
-   <class>QwtPlot</class>
-   <extends>QFrame</extends>
-   <header>qwt/qwt_plot.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

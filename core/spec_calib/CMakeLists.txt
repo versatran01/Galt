@@ -76,7 +76,8 @@ include_directories(
 )
 
 # additional warnings and cpp11
-add_definitions("-Wall -Wunused -std=c++11")
+# must disable QWT OpenGL and SVG support or we SEGFAULT on launch
+add_definitions("-Wall -Wunused -std=c++11 -DQWT_NO_OPENGL -DQWT_NO_SVG")
 
 # build node
 add_executable(${PROJECT_NAME}
@@ -94,6 +95,7 @@ target_link_libraries(${PROJECT_NAME}
   qwt
 )
 
+message(STATUS "Qt5::Widgets Library: ${Qt5Widgets_LIBRARIES}")
 message(STATUS "Spectral library: ${galt_spectral_LIBRARIES}")
 
 # depends on messages from spectrometer

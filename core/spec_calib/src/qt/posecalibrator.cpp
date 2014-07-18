@@ -42,23 +42,21 @@ cv::Point_<Scalar> distortPoint(const std::vector<Scalar>& coeffs, const cv::Poi
   return dst;
 }
 
-PoseCalibrator::PoseCalibrator(QObject *parent, const ros::NodeHandlePtr &nhp) :
+PoseCalibrator::PoseCalibrator(QObject *parent) :
   QObject(parent), pose_(), hasCalibration_(false)
 {
-  if (!nhp) {
-    throw std::invalid_argument("Node handle pointer cannot be null");
-  }
+  ros::NodeHandle nhp("~");
   
   //  load options
-  nhp->param("depth_threshold", depthThreshold_, 0.1);
-  nhp->param("pixel_threshold", pixelThreshold_, 3.0);
+  nhp.param("depth_threshold", depthThreshold_, 0.1);
+  nhp.param("pixel_threshold", pixelThreshold_, 3.0);
   
-  imgTransport_ = std::make_shared<image_transport::ImageTransport>(*nhp);
+  imgTransport_ = std::make_shared<image_transport::ImageTransport>(nhp);
   subImage_.subscribe(*imgTransport_, "image", kROSQueueSize);
-  subCamInfo_.subscribe(*nhp, "camera_info", kROSQueueSize);
-  subCircles_.subscribe(*nhp, "circles", kROSQueueSize);
-  subPose_.subscribe(*nhp, "pose_leds", kROSQueueSize);
-  subPixels_.subscribe(*nhp, "pixels", kROSQueueSize);
+  subCamInfo_.subscribe(nhp, "camera_info", kROSQueueSize);
+  subCircles_.subscribe(nhp, "circles", kROSQueueSize);
+  subPose_.subscribe(nhp, "pose_leds", kROSQueueSize);
+  subPixels_.subscribe(nhp, "pixels", kROSQueueSize);
   
   //  subscribe to synchronized topics
   sync_ = std::make_shared<message_filters::Synchronizer<TimeSyncPolicy>>(TimeSyncPolicy(kROSQueueSize), 

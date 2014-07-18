@@ -23,7 +23,7 @@ int main(int argc, char *argv[])
   nh = ros::NodeHandlePtr(new ros::NodeHandle("~"));
     
   QApplication a(argc, argv);
-  MainWindow w(0, nh);
+  MainWindow w;
   w.show();
 
   while ( ros::ok() ) {

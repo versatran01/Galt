@@ -34,3 +34,7 @@ SpectrumCalibrationView::~SpectrumCalibrationView()
 {
   delete ui;
 }
+
+void SpectrumCalibrationView::calibratorUpdateState(void) {
+  
+}

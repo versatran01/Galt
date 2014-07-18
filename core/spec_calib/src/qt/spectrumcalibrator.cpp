@@ -12,20 +12,18 @@
 #include "spectrumcalibrator.h"
 #include <cv_bridge/cv_bridge.h>
 
-SpectrumCalibrator::SpectrumCalibrator(QObject *parent, const ros::NodeHandlePtr &nhp) :
-  QObject(parent), nhp_(nhp), hasPose_(false)
+SpectrumCalibrator::SpectrumCalibrator(QObject *parent) :
+  QObject(parent), hasPose_(false)
 {
-  if (!nhp) {
-    throw std::invalid_argument("Node handle pointer cannot be null");
-  }
+  ros::NodeHandle nh("~");
   
   //  TODO: Add some error checking mechanism to this
   //  for now we just hope it works
-  imgTransport_ = std::make_shared<image_transport::ImageTransport>(*nhp);
+  imgTransport_ = std::make_shared<image_transport::ImageTransport>(nh);
   subImage_.subscribe(*imgTransport_, "image", kROSQueueSize);
-  subCamInfo_.subscribe(*nhp, "camera_info", kROSQueueSize);
-  subPose_.subscribe(*nhp, "pose_tags", kROSQueueSize);
-  subSpectrum_.subscribe(*nhp, "spectrum", kROSQueueSize);
+  subCamInfo_.subscribe(nh, "camera_info", kROSQueueSize);
+  subPose_.subscribe(nh, "pose_tags", kROSQueueSize);
+  subSpectrum_.subscribe(nh, "spectrum", kROSQueueSize);
   
   sync_ = std::make_shared<message_filters::Synchronizer<TimeSyncPolicy>>(TimeSyncPolicy(kROSQueueSize),
                                                                           subImage_,
@@ -51,6 +49,8 @@ void SpectrumCalibrator::syncCallback(const sensor_msgs::ImageConstPtr& img,
     return;
   }  
   cv::Mat image = bridgedImagePtr->image;
+  
+  ROS_INFO("Message received!");
   
   if (hasPose_) {
     

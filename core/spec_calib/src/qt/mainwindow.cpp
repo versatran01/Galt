@@ -15,8 +15,8 @@
 #include "posecalibrationview.h"
 #include "spectrumcalibrationview.h"
 
-MainWindow::MainWindow(QWidget *parent, const ros::NodeHandlePtr& nhp) : QMainWindow(parent),
-  ui(new Ui::MainWindow), mainWidget_(0), nodeHandle_(nhp)
+MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),
+  ui(new Ui::MainWindow), mainWidget_(0)
 {
   ui->setupUi(this);
   
@@ -68,7 +68,7 @@ void MainWindow::setMode(MainWindow::Mode mode) {
     
     QString statusMessage;
     if (mode_ == CalibratePose) {
-      mainWidget_ = new PoseCalibrationView(this, nodeHandle_);
+      mainWidget_ = new PoseCalibrationView(this);
       statusMessage = "Calibrating pose";
     } 
     else if (mode_ == CalibrateSpectrum) {

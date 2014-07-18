@@ -13,7 +13,6 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include <ros/ros.h>
 
 #include "posecalibrator.h"
 #include "posecalibrationview.h"
@@ -27,7 +26,7 @@ class MainWindow : public QMainWindow
   Q_OBJECT
 
 public:
-  explicit MainWindow(QWidget *parent, const ros::NodeHandlePtr& nhp);
+  explicit MainWindow(QWidget *parent=0);
   ~MainWindow();
    
 protected:
@@ -52,9 +51,6 @@ private:
     CalibratePose=0,
     CalibrateSpectrum
   } mode_;  
-  
-  //  main ros node
-  ros::NodeHandlePtr nodeHandle_;
   
   //  select calibration mode
   void setMode(Mode mode);

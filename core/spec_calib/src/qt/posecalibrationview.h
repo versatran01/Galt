@@ -24,7 +24,7 @@ class PoseCalibrationView : public QWidget
   Q_OBJECT
   
 public:
-  explicit PoseCalibrationView(QWidget *parent, const ros::NodeHandlePtr& nhp);
+  explicit PoseCalibrationView(QWidget *parent=0);
   ~PoseCalibrationView();
   
   void reset();
@@ -42,7 +42,6 @@ public slots:
   
 private:
   Ui::PoseCalibrationView *ui;
-  ros::NodeHandlePtr nhp_;
   PoseCalibrator * poseCalib_;
 };
 

@@ -16,9 +16,9 @@
 
 #include <yaml-cpp/yaml.h>
 
-PoseCalibrationView::PoseCalibrationView(QWidget *parent, const ros::NodeHandlePtr &nhp) :
+PoseCalibrationView::PoseCalibrationView(QWidget *parent) :
   QWidget(parent),
-  ui(new Ui::PoseCalibrationView), nhp_(nhp), poseCalib_(0)
+  ui(new Ui::PoseCalibrationView), poseCalib_(0)
 {
   ui->setupUi(this);
    
@@ -45,7 +45,7 @@ void PoseCalibrationView::reset() {
   if (poseCalib_) {
     delete poseCalib_;
   }
-  poseCalib_ = new PoseCalibrator(this, nhp_);
+  poseCalib_ = new PoseCalibrator(this);
   
   QObject::connect(poseCalib_, SIGNAL(receivedMessage()),
                    this, SLOT(calibratorUpdatedState()));

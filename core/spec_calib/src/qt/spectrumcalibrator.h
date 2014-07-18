@@ -29,7 +29,7 @@ class SpectrumCalibrator : public QObject
 {
   Q_OBJECT
 public:
-  explicit SpectrumCalibrator(QObject *parent, const ros::NodeHandlePtr& nhp);
+  explicit SpectrumCalibrator(QObject *parent=0);
   
   void setSpectrometerPose(const galt::SpectrometerPose& pose);
   
@@ -39,7 +39,6 @@ signals:
 public slots:
   
 private:
-  ros::NodeHandlePtr nhp_;
   std::shared_ptr<image_transport::ImageTransport> imgTransport_;
   
   galt::SpectrometerPose pose_;

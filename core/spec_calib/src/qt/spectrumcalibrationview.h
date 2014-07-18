@@ -26,6 +26,11 @@ public:
   explicit SpectrumCalibrationView(QWidget *parent = 0);
   ~SpectrumCalibrationView();
   
+signals:
+  
+public slots:
+  void calibratorUpdateState(void);
+  
 private:
   Ui::SpectrumCalibrationView *ui;
 };

@@ -45,7 +45,7 @@ public:
     bool operator < (const Circle& b) const { return radiusPix < b.radiusPix; }
   };
   
-  explicit PoseCalibrator(QObject *parent, const ros::NodeHandlePtr& nhp);
+  explicit PoseCalibrator(QObject *parent=0);
   virtual ~PoseCalibrator();
   
   const cv::Mat& lastImage() const;
@@ -68,7 +68,6 @@ signals:
 public slots:
   
 private:
-  ros::NodeHandlePtr nodeHandle_;
   std::shared_ptr<image_transport::ImageTransport> imgTransport_;
   
   //  ROS subscribers

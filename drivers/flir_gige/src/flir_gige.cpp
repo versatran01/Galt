@@ -16,22 +16,27 @@
 
 namespace flir_gige {
 
-FlirNode::FlirNode(const ros::NodeHandle &nh, const double fps)
-    : nh_{nh}, it_{nh}, rate_{fps} {
+FlirGige::FlirGige(const ros::NodeHandle &nh)
+    : nh_{nh}, it_{nh} {
+  // Get ros parameteres
   nh_.param<std::string>("frame_id", frame_id_, std::string("flir"));
+  double fps;
+  nh_.param<double>("fps", fps, 20.0);
+  ROS_ASSERT_MSG(fps > 0, "FlirGige: fps must be greater than 0");
+  rate_.reset(new ros::Rate(fps));
   // Create a camera
   std::string ip_address;
   nh_.param<std::string>("ip_address", ip_address, std::string(""));
   camera_ = std::make_shared<flir_gige::GigeCamera>(ip_address);
   camera_->use_image =
-      std::bind(&FlirNode::PublishImage, this, std::placeholders::_1);
+      std::bind(&FlirGige::PublishImage, this, std::placeholders::_1);
   // Setup image publisher and dynamic reconfigure callback
   image_pub_ = it_.advertise("image_raw", 1);
   server_.setCallback(
-      boost::bind(&FlirNode::ReconfigureCallback, this, _1, _2));
+      boost::bind(&FlirGige::ReconfigureCallback, this, _1, _2));
 }
 
-void FlirNode::Init() {
+void FlirGige::Run() {
   bool color;
   nh_.param<bool>("color", color, false);
   camera_->Connect();
@@ -39,7 +44,7 @@ void FlirNode::Init() {
   camera_->Start();
 }
 
-void FlirNode::PublishImage(const cv::Mat &image) {
+void FlirGige::PublishImage(const cv::Mat &image) {
   if (!ros::ok()) {
     camera_->Stop();
     camera_->Disconnect();
@@ -59,10 +64,10 @@ void FlirNode::PublishImage(const cv::Mat &image) {
   // Convert to ros image msg and publish
   image_msg_ = cv_ptr->toImageMsg();
   image_pub_.publish(image_msg_);
-  rate_.sleep();
+  rate_->sleep();
 }
 
-void FlirNode::ReconfigureCallback(flir_gige::FlirConfig &config, int level) {
+void FlirGige::ReconfigureCallback(flir_gige::FlirConfig &config, int level) {
   // Do nothing when first starting
   if (level < 0) {
     return;

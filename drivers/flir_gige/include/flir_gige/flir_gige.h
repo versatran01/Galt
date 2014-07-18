@@ -15,7 +15,7 @@
 
 namespace flir_gige {
 
-class FlirNode {
+class FlirGige {
  private:
   // ROS related
   ros::NodeHandle nh_;
@@ -23,19 +23,19 @@ class FlirNode {
   image_transport::Publisher image_pub_;
   sensor_msgs::ImagePtr image_msg_;
   dynamic_reconfigure::Server<flir_gige::FlirConfig> server_;
-  ros::Rate rate_;
+  std::unique_ptr<ros::Rate> rate_;
   std::string frame_id_;
   unsigned seq = 0;
   // Flir Camera
   std::shared_ptr<flir_gige::GigeCamera> camera_;
 
  public:
-  FlirNode(const ros::NodeHandle &nh, const double fps);
+  FlirGige(const ros::NodeHandle &nh);
 
-  FlirNode(const FlirNode &) = delete;             // No copy constructor
-  FlirNode &operator=(const FlirNode &) = delete;  // No assignment operator
+  FlirGige(const FlirGige &) = delete;             // No copy constructor
+  FlirGige &operator=(const FlirGige &) = delete;  // No assignment operator
 
-  void Init();
+  void Run();
   void PublishImage(const cv::Mat &image);
   void ReconfigureCallback(flir_gige::FlirConfig &config, int level);
 

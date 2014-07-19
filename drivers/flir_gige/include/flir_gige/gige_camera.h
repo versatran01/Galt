@@ -66,7 +66,7 @@ class GigeCamera {
   std::function<void(const cv::Mat &image)> use_image;
 
  private:
-  void FindDevice();
+  void FindDevice(const std::string &ip);
   void ConnectDevice();
   void OpenStream();
   void ConfigureStream();
@@ -85,7 +85,7 @@ class GigeCamera {
   bool acquire_{false};
   bool color_{false};
   std::string label_{"\033[0;35m[ FLIR]:\033[0m "};
-  std::string ip_address_;
+//  std::string ip_address_;
   PvSystem system_;
   const PvDeviceInfo *dinfo_;
   PvDevicePtr device_;

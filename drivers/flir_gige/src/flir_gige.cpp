@@ -6,7 +6,9 @@
 #include <ros/ros.h>
 #include <image_transport/image_transport.h>
 #include <sensor_msgs/Image.h>
+#include <sensor_msgs/CameraInfo.h>
 #include <sensor_msgs/image_encodings.h>
+#include <camera_info_manager/camera_info_manager.h>
 #include <dynamic_reconfigure/server.h>
 #include <cv_bridge/cv_bridge.h>
 #include <opencv2/core/core.hpp>
@@ -16,21 +18,35 @@
 
 namespace flir_gige {
 
+using sensor_msgs::CameraInfo;
+using sensor_msgs::CameraInfoPtr;
+using camera_info_manager::CameraInfoManager;
+
 FlirGige::FlirGige(const ros::NodeHandle &nh) : nh_{nh}, it_{nh} {
   // Get ros parameteres
-  nh_.param<std::string>("frame_id", frame_id_, std::string("flir"));
+  nh_.param<std::string>("frame_id", frame_id_, std::string("flir_a5"));
   double fps;
   nh_.param<double>("fps", fps, 20.0);
   ROS_ASSERT_MSG(fps > 0, "FlirGige: fps must be greater than 0");
   rate_.reset(new ros::Rate(fps));
+
   // Create a camera
   std::string ip_address;
   nh_.param<std::string>("ip_address", ip_address, std::string(""));
   camera_.reset(new flir_gige::GigeCamera(ip_address));
   camera_->use_image =
       std::bind(&FlirGige::PublishImage, this, std::placeholders::_1);
-  // Setup image publisher and dynamic reconfigure callback
-  image_pub_ = it_.advertise("image_raw", 1);
+
+  // Setup camera publisher and dynamic reconfigure callback
+  std::string calib_url;
+  nh_.param<std::string>("calib_url", calib_url, "");
+  CameraInfoManager cinfo_manager(nh_, frame_id_, calib_url);
+  if (!cinfo_manager.isCalibrated()) {
+    ROS_WARN_STREAM("FlirGige: " << frame_id_ << " not calibrated");
+  }
+  cinfo_ = CameraInfoPtr(new CameraInfo(cinfo_manager.getCameraInfo()));
+
+  camera_pub_ = it_.advertiseCamera("image_raw", 1);
   server_.setCallback(
       boost::bind(&FlirGige::ReconfigureCallback, this, _1, _2));
 }
@@ -55,16 +71,16 @@ void FlirGige::PublishImage(const cv::Mat &image) {
   cv_bridge::CvImagePtr cv_ptr(new cv_bridge::CvImage());
   cv_ptr->header.stamp = ros::Time::now();
   cv_ptr->header.frame_id = frame_id_;
-  cv_ptr->header.seq = seq++;
+  cv_ptr->header.seq = seq_++;
   cv_ptr->image = image;
   if (image.channels() == 1) {
     cv_ptr->encoding = sensor_msgs::image_encodings::MONO8;
   } else if (image.channels() == 3) {
     cv_ptr->encoding = sensor_msgs::image_encodings::BGR8;
   }
-  // Convert to ros image msg and publish
-  image_msg_ = cv_ptr->toImageMsg();
-  image_pub_.publish(image_msg_);
+  // Convert to ros image msg and publish camera
+  image_ = cv_ptr->toImageMsg();
+  camera_pub_.publish(image_, cinfo_);
   rate_->sleep();
 }
 

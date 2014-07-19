@@ -30,10 +30,8 @@ class SpectrumCalibrator : public QObject
 {
   Q_OBJECT
 public:
-  explicit SpectrumCalibrator(QObject *parent=0);
-  
-  void setSpectrometerPose(const galt::SpectrometerPose& pose);
-  
+  explicit SpectrumCalibrator(QObject *parent, const galt::SpectrometerPose& specPose);
+    
   const cv::Mat& lastImage() const;
   
 signals:
@@ -45,8 +43,7 @@ private:
   std::shared_ptr<image_transport::ImageTransport> imgTransport_;
   cv::Mat image_;
   
-  galt::SpectrometerPose pose_;
-  bool hasPose_;
+  galt::SpectrometerPose specPose_;
   
   //  ROS subscribers
   static constexpr uint32_t kROSQueueSize = 10;

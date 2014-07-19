@@ -75,3 +75,15 @@ YAML::convert<galt::SpectrometerPose>::decode(const YAML::Node &node,
 
   return true;
 }
+
+YAML::Emitter& operator << (YAML::Emitter& out, 
+                            const galt::SpectrometerPose& pose) {
+  out << YAML::Block;
+  out << YAML::BeginMap;
+  out << YAML::Key << "position" << YAML::Value << pose.getPosition();
+  out << YAML::Key << "direction" << YAML::Value << pose.getDirection();
+  out << YAML::Key << "fov" << YAML::Value << pose.getFov();
+  out << YAML::Key << "squared_error" << YAML::Value << pose.getSquaredError();
+  out << YAML::EndMap;
+  return out;
+}

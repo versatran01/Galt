@@ -12,8 +12,8 @@
 #include "spectrumcalibrator.h"
 #include <cv_bridge/cv_bridge.h>
 
-SpectrumCalibrator::SpectrumCalibrator(QObject *parent) :
-  QObject(parent), hasPose_(false)
+SpectrumCalibrator::SpectrumCalibrator(QObject *parent, const galt::SpectrometerPose &specPose) :
+  QObject(parent), specPose_(specPose)
 {
   ros::NodeHandle nh("~");
   
@@ -35,11 +35,6 @@ SpectrumCalibrator::SpectrumCalibrator(QObject *parent) :
   ROS_INFO("Subscribing to ~image, ~camera_info, ~pose_tags and ~spectrum");
 }
 
-void SpectrumCalibrator::setSpectrometerPose(const galt::SpectrometerPose& pose) {
-  pose_ = pose;
-  hasPose_ = true;  //  todo: this is ugly, find a better way...
-}
-
 const cv::Mat& SpectrumCalibrator::lastImage() const {
   return image_; 
 }
@@ -57,11 +52,7 @@ void SpectrumCalibrator::syncCallback(const sensor_msgs::ImageConstPtr& img,
   cv::Mat image = bridgedImagePtr->image;
   image_ = image;
     
-  if (hasPose_) {
-    
-    
-    
-  }
+  
   
   emit receivedMessage();
 }

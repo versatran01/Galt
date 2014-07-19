@@ -27,13 +27,13 @@ public:
   SpectrometerPose(const kr::vec3d &position, const kr::vec3d &direction,
                    double fov, double squaredError);
 
-  const kr::vec3d& getPosition() const;
+  const kr::vec3d &getPosition() const;
 
-  const kr::vec3d& getDirection() const;
+  const kr::vec3d &getDirection() const;
 
-  const double& getFov() const;
-  
-  const double& getSquaredError() const;
+  const double &getFov() const;
+
+  const double &getSquaredError() const;
 
   /**
    * @brief distanceToPlane Distance to plane defined by [o,n].
@@ -42,8 +42,8 @@ public:
    * @return Distance along the spectrometer direction to the plane, or
    *  std::numeric_limits::infinity() if the plane is perp. to the sensor.
    */
-  double distanceToPlane(const kr::vec3d& o, const kr::vec3d& n) const;
-  
+  double distanceToPlane(const kr::vec3d &o, const kr::vec3d &n) const;
+
 private:
   kr::vec3d position_;
   kr::vec3d direction_;
@@ -63,5 +63,14 @@ template <> struct convert<galt::SpectrometerPose> {
   static bool decode(const Node &node, galt::SpectrometerPose &rhs);
 };
 }
+
+/**
+ * @brief Emit YAML for a spectrometer pose.
+ * @param out Emitter to encode to.
+ * @param pose Pose to encode.
+ * @return Emitter.
+ */
+YAML::Emitter &operator<<(YAML::Emitter &out,
+                          const galt::SpectrometerPose &pose);
 
 #endif // GALT_SPECTRAL_SPECTROMETERPOSE_HPP_

@@ -9,7 +9,11 @@
  *      Author: gareth
  */
 
+#include <QDateTime>
+#include <QTime>
+
 #include <iostream>
+#include <ros/package.h>
 
 #include "posecalibrationview.h"
 #include "ui_posecalibrationview.h"
@@ -95,6 +99,7 @@ void PoseCalibrationView::calibrateButtonPressed(bool) {
   if (poseCalib_->canCalibrate()) {
     poseCalib_->calibrate();
   }
+  calibratorUpdatedState();
 }
 
 void PoseCalibrationView::resetButtonPressed(bool) {
@@ -104,18 +109,38 @@ void PoseCalibrationView::resetButtonPressed(bool) {
 void PoseCalibrationView::saveButtonPressed(bool) {
   if (poseCalib_ && poseCalib_->hasCalibration()) {
   
-    YAML::Node node(poseCalib_->getSpectrometerPose());
+    //  serial for the camera we are calibrating
+    ros::NodeHandle nh("~");
+    std::string camSerial;
+    nh.param("camera_serial", camSerial, std::string("this_is_an_error"));
     
-    if (node.IsSequence()) {
-      ROS_INFO("Sequence!\n");
-    }
+    //  path to the package
+    const std::string path = ros::package::getPath("spec_calib");
     
+    //  pretty-print the date        
+    QDateTime dt = QDateTime::currentDateTime();
+    QString str = dt.toString(Qt::ISODate);
+    const std::string formattedDate(str.toAscii());
+    
+    //  nice formatted YAML output
     YAML::Emitter emitter;
     emitter.SetSeqFormat(YAML::Flow);
-    emitter << node;
+    emitter << YAML::Comment("Spectrometer pose configuration") << YAML::Newline;
+    emitter << YAML::Comment("Camera: " + camSerial) << YAML::Newline;
+    emitter << YAML::Comment("Generated on: " + formattedDate) << YAML::Newline;
+    emitter << poseCalib_->getSpectrometerPose();
     
-    FILE* test = fopen("/home/gareth/test.file", "w");
-    fprintf(test,"%s", emitter.c_str());
-    fclose(test);
+    const std::string filePath = path + "/config/pose_" + camSerial + ".yaml";
+    
+    FILE* output = fopen(filePath.c_str(), "w");
+    if (!output) {
+      //  TODO: add an error dialog here...
+      ROS_ERROR("Failed to open %s. Reason: %s", filePath.c_str(), strerror(errno));
+      return;
+    }
+    
+    //  write to file
+    fprintf(output,"%s", emitter.c_str());
+    fclose(output);
   }
 }

@@ -16,11 +16,16 @@
 
 namespace galt {
 
+/**
+ * @brief Describes measured intensity of the spectrum at certain wavelengths.
+ */
 class Spectrum {
 public:
   
   Spectrum();
   
+  Spectrum(const std::vector<double>& wavelengths, 
+           const std::vector<double>& intensities);
   
 private:
   std::vector<double> wavelengths_;

@@ -15,5 +15,7 @@ namespace galt {
 
 Spectrum::Spectrum() : wavelengths_(), intensities_() {}
 
-
+Spectrum::Spectrum(const std::vector<double> &wavelengths,
+                   const std::vector<double> &intensities)
+    : wavelengths_(wavelengths), intensities_(intensities) {}
 }

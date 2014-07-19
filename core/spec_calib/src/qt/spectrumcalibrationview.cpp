@@ -12,6 +12,7 @@
 #include "spectrumcalibrationview.h"
 #include "ui_spectrumcalibrationview.h"
 
+#include <ros/package.h>
 #include <qwt/qwt.h>
 #include <qwt/qwt_plot.h>
 
@@ -39,9 +40,25 @@ SpectrumCalibrationView::~SpectrumCalibrationView()
 void SpectrumCalibrationView::reset() {
   if (specCalib_) {
     delete specCalib_;
+    specCalib_=0;
   }
-  specCalib_ = new SpectrumCalibrator(this);
   
+  //  load the configuration file for the pose
+  //  TODO: refactor this kind of functionality into a class...
+  const std::string path = ros::package::getPath("spec_calib");
+  
+  ros::NodeHandle nh("~");
+  std::string camSerial;
+  //nh.param("camera_serial",camSerial,"this_is_an_error");
+  
+  const std::string filePath = path + "/config/pose_" + camSerial + ".yaml";
+  
+  //  load the pose information
+  ///FILE * input = fopen(filePath.c_str(), "r");
+  //fscanf(input,)
+  
+  galt::SpectrometerPose pose;
+  specCalib_ = new SpectrumCalibrator(this,pose);
   QObject::connect(specCalib_,SIGNAL(receivedMessage()),this,SLOT(calibratorUpdateState()));
 }
 

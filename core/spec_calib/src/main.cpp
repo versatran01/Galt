@@ -22,6 +22,12 @@ int main(int argc, char *argv[])
   ros::init(argc, argv, "spec_calib");
   nh = ros::NodeHandlePtr(new ros::NodeHandle("~"));
     
+  //  check for camera serial parameter
+  if (!nh->hasParam("camera_serial")) {
+    ROS_ERROR("Error: You must supply the camera_serial paremeter");
+    return -1;
+  }
+  
   QApplication a(argc, argv);
   MainWindow w;
   w.show();

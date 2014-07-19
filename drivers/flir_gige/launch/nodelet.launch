@@ -1,13 +1,19 @@
+<!--This is the launch file for launch a single flir_gige nodelet-->
 <launch>
+    <!--Specifies whether to run nodelet as plugin or standalone-->
     <arg name="plugin" default="false"/>
-
+    <!--Controls output tag of the node-->
+    <arg name="disp" default="screen"/>
+    <!--Camera settings-->
     <arg name="ip_address" default="192.168.0.11"/>
-    <arg name="frame_id" default="flir"/>
+    <arg name="frame_id" default="flir_a5"/>
     <arg name="fps" default="20.0"/>
+    <arg name="color" default="false"/>
+    <arg name="calib_file" default="$(arg frame_id).yaml"/>
+    <arg name="calib_url" default="package://flir_gige/calib/$(arg calib_file)"/>
+    <!--Notice that camera will be uncalibrated if you change dimension-->
     <arg name="width" default="320"/>
     <arg name="height" default="256"/>
-    <arg name="color" default="false"/>
-
     <!--run as standalone-->
     <node unless="$(arg plugin)" pkg="nodelet" type="nodelet" name="flir_gige"
         args="standalone flir_gige/FlirNodelet" output="screen">
@@ -17,16 +23,21 @@
         <param name="height" type="int" value="$(arg height)"/>
         <param name="width" type="int" value="$(arg width)"/>
         <param name="color" type="bool" value="$(arg color)"/>
+        <param name="calib_url" type="string" value="$(arg calib_url)"/>
     </node>
 
     <!--run as plugin-->
+    <node if="$(arg plugin)" pkg="nodelet" type="nodelet" name="flir_nodelet"
+        output="screen">
+    </node>
     <node if="$(arg plugin)" pkg="nodelet" type="nodelet" name="flir_gige"
-        args="load flir_gige/FlirNodelet" output="screen">
+        args="load flir_gige/FlirNodelet flir_nodelet" output="screen">
         <param name="ip_address" type="string" value="$(arg ip_address)"/>
         <param name="frame_id" type="string" value="$(arg frame_id)"/>
         <param name="fps" type="double" value="$(arg fps)"/>
         <param name="height" type="int" value="$(arg height)"/>
         <param name="width" type="int" value="$(arg width)"/>
         <param name="color" type="bool" value="$(arg color)"/>
+        <param name="calib_url" type="string" value="$(arg calib_url)"/>
     </node>
 </launch>

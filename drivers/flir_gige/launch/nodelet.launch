@@ -14,7 +14,6 @@
     <!--Notice that camera will be uncalibrated if you change dimension-->
     <arg name="width" default="320"/>
     <arg name="height" default="256"/>
-    <arg name="color" default="false"/>
 
     <!--run as standalone-->
     <node unless="$(arg plugin)" pkg="nodelet" type="nodelet" name="flir_gige"
@@ -30,7 +29,7 @@
 
     <!--run as plugin-->
     <node if="$(arg plugin)" pkg="nodelet" type="nodelet" name="flir_nodelet"
-        output="screen">
+        args="manager" output="screen">
     </node>
     <node if="$(arg plugin)" pkg="nodelet" type="nodelet" name="flir_gige"
         args="load flir_gige/FlirNodelet flir_nodelet" output="screen">

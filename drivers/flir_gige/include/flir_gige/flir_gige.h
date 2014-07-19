@@ -6,6 +6,8 @@
 #include <ros/ros.h>
 #include <image_transport/image_transport.h>
 #include <sensor_msgs/Image.h>
+#include <sensor_msgs/CameraInfo.h>
+#include <camera_info_manager/camera_info_manager.h>
 #include <dynamic_reconfigure/server.h>
 #include <cv_bridge/cv_bridge.h>
 #include <opencv2/core/core.hpp>

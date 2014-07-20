@@ -10,9 +10,9 @@
  */
 
 #include <stdexcept>
-#include <algorithm>
-#include <utility>
+#include <limits>
 #include <spectral/Spectrum.hpp>
+#include <assert.h>
 
 namespace galt {
 
@@ -21,93 +21,109 @@ Spectrum::Spectrum() : wavelengths_(), intensities_() {}
 Spectrum::Spectrum(const std::vector<double> &wavelengths,
                    const std::vector<double> &intensities)
     : wavelengths_(wavelengths), intensities_(intensities) {
-  
+
   if (wavelengths.size() != intensities.size()) {
     throw std::invalid_argument("Wavelength and intensity sizes must match");
   }
 
-  for (size_t i=0; i < wavelengths.size(); i++) {
-    
-  }
-  
-  if ( !std::is_sorted(wavelengths.begin(), wavelengths.end()) ) {
-    throw std::invalid_argument("Wavelengths must be sorted");
+  if (!wavelengths.empty()) {
+    for (size_t i = 0; i < wavelengths.size() - 1; i++) {
+      if (wavelengths[i] >= wavelengths[i + 1]) {
+        throw std::invalid_argument("Wavelengths must be sorted and unique");
+      }
+    }
   }
 }
 
-const std::vector<double> Spectrum::getWavelengths() const {
+const std::vector<double> &Spectrum::getWavelengths() const {
   return wavelengths_;
 }
 
-const std::vector<double>& Spectrum::getIntensities() const {
+const std::vector<double> &Spectrum::getIntensities() const {
   return intensities_;
 }
 
 std::size_t Spectrum::size() const { return wavelengths_.size(); }
 
-void Spectrum::resample(Spectrum& out, const std::vector<double>& wavelengths) {
+void Spectrum::resample(const std::vector<double> &wavelengths) {
   if (wavelengths.empty()) {
     throw std::invalid_argument("Sample wavelengths cannot be empty");
   }
-  
-  out.wavelengths_.resize(wavelengths.size());
-  out.intensities_.resize(wavelengths.size());
-  
-  auto I = wavelengths_.begin();
+
+  //  storage for result
+  std::vector<double> wOut;
+  std::vector<double> iOut;
+  wOut.reserve(wavelengths.size());
+  iOut.reserve(wavelengths.size());
+
+  size_t I = 0;
   for (const double lambda : wavelengths) {
-    double mul = 0.0;
-    
+    double val = std::numeric_limits<double>::quiet_NaN();
+
     //  first element greater than lambda
-    const auto greater = std::upper_bound(I, wavelengths_.end(), lambda);
-    if (greater == wavelengths_.end()) {
+    for (; I < wavelengths_.size(); I++) {
+      if (wavelengths_[I] > lambda) {
+        break;
+      }
+    }
+
+    if (I == wavelengths_.size()) {
       //  edge case: equal to last value
       if (wavelengths_.back() == lambda) {
-        mul = 1.0;
+        val = intensities_.back();
       } else {
-        //  no values greater than lambda (0 multiplier)
+        //  no values greater than lambda
+        val = 0.0;
       }
     } else {
-      auto leq = greater;
-      
-      while (leq > wavelengths_.begin() && *leq > lambda) {
-        leq--;
-      }
-      
-      if (leq == wavelengths_.begin()) {
+      if (I > 0) {
+        //  linearly interpolate
+        const double x0 = wavelengths_[I - 1];
+        const double x1 = wavelengths_[I];
+        const double i0 = intensities_[I - 1];
+        const double i1 = intensities_[I];
+
+        val = (i1 - i0) * (lambda - x0) / (x1 - x0) + i0;
+      } else { //  (I == 0)
         //  edge case: equal to first value
-        if (wavelengths_.front() == leq) {
-          
+        if (wavelengths_.front() == lambda) {
+          val = intensities_.front();
         } else {
-          //  no values less than lambda
-          
+          val = 0.0;
         }
       }
-      
     }
-    
-    I = greater;
+
+    //  check above logic
+    assert(val != std::numeric_limits<double>::quiet_NaN());
+
+    wOut.push_back(lambda);
+    iOut.push_back(val);
   }
-  
-  return out;
+
+  std::swap(wavelengths_, wOut);
+  std::swap(intensities_, iOut);
 }
 
-Spectrum Spectrum::multiply(const Spectrum& s) const {
-  Spectrum result;
-  result.wavelengths_.resize( size() );
-  result.intensities_.resize( size() );
-  
-  //  re-sample the right hand side spectrum
-  size_t lIndex;
-  ssize_t rIndex = 0;
-  for (lIndex=0; lIndex < size(); lIndex++) {
-    
-    const double lhs = wavelengths_[lIndex];
-    while (lhs > s.wavelengths_[rIndex]) {
-       
+void Spectrum::multiply(const Spectrum &s) {
+
+  if (size() == s.size()) {
+    if (std::equal(wavelengths_.begin(), wavelengths_.end(),
+                   s.wavelengths_.begin())) {
+      //  no need to resample
+      for (size_t i = 0; i < size(); i++) {
+        intensities_[i] *= s.intensities_[i];
+      }
+      return;
     }
   }
   
-  return result;
+  //  wavelengths are not equal, need to resample
+  Spectrum rhs = s;
+  rhs.resample(wavelengths_);
+  
+  for (size_t i=0; i < size(); i++) {
+    intensities_[i] *= rhs.intensities_[i];
+  }
 }
-
 }

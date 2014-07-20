@@ -113,6 +113,11 @@ void SpectrumCalibrationView::reset() {
 void SpectrumCalibrationView::calibratorUpdateState(void) {
   const cv::Mat& image = specCalib_->lastImage(); //  RGB image
   
+  std::vector<double> wavelengths;
+  for (double i= 600.0; i < 800.0; i += 0.25) {
+    wavelengths.push_back(i);
+  }
+  
   //  get range of spectrum
   galt::Spectrum spec = specCalib_->lastSpectrum();
   

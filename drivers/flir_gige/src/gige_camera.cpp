@@ -57,10 +57,8 @@ void GigeCamera::Configure(const GigeConfig &config) {
   SetPixelFormat(static_cast<BitSize>(config.bit));
   // Set device parameters according to config
   cout << label_ << "Color: " << config.color << " Bit: " << config.bit
-       << " Width: " << config.width << " Height: " << config.height
-       << endl;
+       << " Width: " << config.width << " Height: " << config.height << endl;
 }
-
 
 void GigeCamera::Start() {
   StartAcquisition();
@@ -113,11 +111,10 @@ void GigeCamera::FindDevice(const string &ip) {
     throw runtime_error("GigeCamera: No device found");
   }
   // Try finding the device with the correct ip address
-  const auto it =
-      find_if(dinfo_gev_vec.cbegin(), dinfo_gev_vec.cend(),
-              [ip](const PvDeviceInfoGEV *dinfo) {
-        return ip == dinfo->GetIPAddress().GetAscii();
-      });
+  const auto it = find_if(dinfo_gev_vec.cbegin(), dinfo_gev_vec.cend(),
+                          [ip](const PvDeviceInfoGEV *dinfo) {
+    return ip == dinfo->GetIPAddress().GetAscii();
+  });
 
   if (it == dinfo_gev_vec.end()) {
     // Did not find device with given ip address
@@ -250,9 +247,19 @@ void GigeCamera::StopAcquisition() {
 
 void GigeCamera::AcquireImages() {
   // Get device parameters need to control streaming
-//  PvGenParameterArray *device_params = device_->GetParameters();
-//  auto *spot = dynamic_cast<PvGenFloat *>(device_params->Get("Spot"));
-//  cv::Mat image_raw(cv::Size(width, height), CV_8UC1);
+  PvGenParameterArray *device_params = device_->GetParameters();
+  int64_t width{0}, height{0};
+  int64_t R{0};
+  double F{0.0}, B{0.0}, O{0.0};
+  double spot{0};
+  device_params->GetFloatValue("Spot", spot);
+  device_params->GetIntegerValue("Width", width);
+  device_params->GetIntegerValue("Height", height);
+  device_params->GetIntegerValue("R", R);
+  device_params->GetFloatValue("F", F);
+  device_params->GetFloatValue("B", B);
+  device_params->GetFloatValue("O", O);
+  cout << "R: " << R << " F: " << F << " B: " << B << " O: " << O << endl;
 
   // Start loop for acquisition
   while (acquire_) {
@@ -272,13 +279,22 @@ void GigeCamera::AcquireImages() {
           PvImage *image = buffer->GetImage();
           memcpy(image_raw_->data, image->GetDataPointer(),
                  image->GetImageSize());
-          // Send image to be published by ros
-          if (color_) {
-            cv::Mat image_color;
-            cv::applyColorMap(*image_raw_, image_color, cv::COLORMAP_JET);
-            use_image(image_color);
-          } else {
+          // Use the image for temperature calculation only in raw data mode
+          if (raw_) {
+            uint16_t spot_pixel = (*image_raw_).at<uint16_t>(width / 2, height / 2);
+            double temp = GetSpotTemperature(static_cast<double>(spot_pixel),
+                                             R, F, B, O);
+            cout << "Spot: " << spot << " Temp: " << temp << endl;
             use_image(*image_raw_);
+          } else {
+            // For display purpose in non raw data mode
+            if (color_) {
+              cv::Mat image_color;
+              cv::applyColorMap(*image_raw_, image_color, cv::COLORMAP_JET);
+              use_image(image_color);
+            } else {
+              use_image(*image_raw_);
+            }
           }
         } else {
           cout << label_ << "Buffer does not contain image" << endl;
@@ -297,8 +313,9 @@ void GigeCamera::AcquireImages() {
 void GigeCamera::SetAoi(int width, int height) {
   PvGenParameterArray *device_params = device_->GetParameters();
   // Get width and height parameter
-  auto *width_param = dynamic_cast<PvGenInteger*>(device_params->Get("Width"));
-  auto *height_param = dynamic_cast<PvGenInteger*>(device_params->Get("Height"));
+  auto *width_param = dynamic_cast<PvGenInteger *>(device_params->Get("Width"));
+  auto *height_param =
+      dynamic_cast<PvGenInteger *>(device_params->Get("Height"));
   // Get current width and height
   int64_t current_width = 0;
   int64_t current_height = 0;
@@ -326,19 +343,28 @@ void GigeCamera::SetPixelFormat(BitSize bit) {
     cout << "8 bit" << endl;
     // Set digital output and pixel format
     device_params->SetEnumValue("PixelFormat", PvPixelMono8);
-    device_params->SetEnumValue("DigitalOutput", static_cast<int64_t>(bit)); // 2  - bit8bit
+    device_params->SetEnumValue("DigitalOutput",
+                                static_cast<int64_t>(bit));  // 2  - bit8bit
     image_raw_.reset(new cv::Mat(cv::Size(width, height), CV_8UC1));
+    raw_ = false;
   } else if (bit == BIT14BIT) {
     cout << "16 bit" << endl;
     device_params->SetEnumValue("PixelFormat", PvPixelMono14);
-    device_params->SetEnumValue("DigitalOutput", static_cast<int64_t>(bit)); // 3  - bit14bit
+    device_params->SetEnumValue("DigitalOutput",
+                                static_cast<int64_t>(bit));  // 3  - bit14bit
     image_raw_.reset(new cv::Mat(cv::Size(width, height), CV_16UC1));
+    raw_ = true;
   }
   // Create a cv::Mat to pass back to ros
   PvString digital_output;
   device_params->GetEnumValue("DigitalOutput", digital_output);
   cout << label_ << "Width: " << width << " Height: " << height
        << " Bit: " << digital_output.GetAscii() << endl;
+}
+
+double GigeCamera::GetSpotTemperature(double pixel, double R, double F,
+                                      double B, double O) {
+  return pixel;
 }
 
 }  // namespace flir_gige

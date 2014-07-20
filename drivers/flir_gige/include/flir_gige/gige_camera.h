@@ -9,6 +9,8 @@
 #ifndef FLIR_GIGE_GIGE_CAMERA_H_
 #define FLIR_GIGE_GIGE_CAMERA_H_
 
+#include <stdint.h>
+
 #include <string>
 #include <memory>
 #include <thread>
@@ -28,10 +30,7 @@
 
 namespace flir_gige {
 // Digital output big
-enum BitSize {
-  BIT8BIT = 2,
-  BIT14BIT
-};
+enum BitSize { BIT8BIT = 2, BIT14BIT };
 
 // Config struct
 struct GigeConfig {
@@ -81,6 +80,8 @@ class GigeCamera {
   void StartAcquisition();
   void StopAcquisition();
   void AcquireImages();
+  double GetSpotTemperature(double pixel, double R, double F, double B,
+                            double O);
 
   void SetAoi(int width, int height);
   void SetPixelFormat(BitSize bit);
@@ -91,6 +92,7 @@ class GigeCamera {
   typedef std::unique_ptr<std::thread> ThreadPtr;
   typedef std::unique_ptr<cv::Mat> MatPtr;
 
+  bool raw_{false};
   bool acquire_{false};
   bool color_{false};  // false - grayscale, true - jet
   std::string label_{"\033[0;35m[ FLIR]:\033[0m "};

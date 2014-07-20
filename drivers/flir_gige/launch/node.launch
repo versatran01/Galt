@@ -7,7 +7,7 @@
     <arg name="ip_address" default="192.168.0.11"/>
     <arg name="frame_id" default="flir_a5"/>
     <arg name="fps" default="20.0"/>
-    <arg name="bit" default="0"/>
+    <arg name="bit" default="2"/>
     <arg name="color" default="false"/>
     <arg name="calib_file" default="$(arg frame_id).yaml"/>
     <arg name="calib_url" default="package://flir_gige/calib/$(arg calib_file)"/>

@@ -57,7 +57,7 @@ void FlirGige::Run() {
   nh_.param<bool>("color", config.color, false);
   nh_.param<int>("width", config.width, 320);
   nh_.param<int>("height", config.height, 256);
-  nh_.param<int>("bit", config.bit, 0);
+  nh_.param<int>("bit", config.bit, 2);
   camera_->Connect();
   camera_->Configure(config);
   camera_->Start();
@@ -79,11 +79,6 @@ void FlirGige::PublishImage(const cv::Mat &image) {
   cv_ptr->image = image;
   cinfo_->header = header;
   cv_ptr->encoding = GetImageEncoding(image);
-//  if (image.channels() == 1) {
-//    cv_ptr->encoding = sensor_msgs::image_encodings::MONO8;
-//  } else if (image.channels() == 3) {
-//    cv_ptr->encoding = sensor_msgs::image_encodings::BGR8;
-//  }
   // Convert to ros image msg and publish camera
   image_ = cv_ptr->toImageMsg();
   camera_pub_.publish(image_, cinfo_);
@@ -101,9 +96,6 @@ std::string FlirGige::GetImageEncoding(const cv::Mat &image) {
       break;
     case CV_16UC1:
       encoding = sensor_msgs::image_encodings::MONO16;
-      break;
-    case CV_16UC3:
-      encoding = sensor_msgs::image_encodings::BGR16;
       break;
     default:
       encoding = sensor_msgs::image_encodings::MONO8;

@@ -80,8 +80,14 @@ void FlirGige::PublishImage(const cv::Mat &image) {
   }
   // Convert to ros image msg and publish camera
   image_ = cv_ptr->toImageMsg();
+  cinfo_->header = image_->header;
   camera_pub_.publish(image_, cinfo_);
   rate_->sleep();
+}
+
+std::string GetImageEncoding(const cv::Mat &image) {
+  // Does nothing for now
+  return {""};
 }
 
 void FlirGige::ReconfigureCallback(flir_gige::FlirConfig &config, int level) {

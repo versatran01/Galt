@@ -9,6 +9,7 @@
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/highgui/highgui.hpp>
 #include <opencv2/contrib/contrib.hpp>
 
 #include <PvGenParameterArray.h>
@@ -211,8 +212,9 @@ void GigeCamera::CreatePipeline() {
 }
 
 void GigeCamera::StartAcquisition() {
+  PvGenParameterArray *device_params = device_->GetParameters();
   // Set device in Mono8
-  // device_params->SetEnumValue("PixelFormat", PvPixelMono8);
+  device_params->SetEnumValue("PixelFormat", PvPixelMono8);
   // Note: the pipeline must be initialized before we start acquisition
   cout << label_ << "Starting pipeline ... ";
   pipeline_->Start();
@@ -222,7 +224,6 @@ void GigeCamera::StartAcquisition() {
   // Start acquisition
   cout << "Start acquisition ... ";
   // Get device parameters need to control streaming
-  PvGenParameterArray *device_params = device_->GetParameters();
   device_params->ExecuteCommand("AcquisitionStart");
   cout << "Done" << endl;
 }
@@ -245,19 +246,9 @@ void GigeCamera::StopAcquisition() {
 void GigeCamera::AcquireImages() {
   // Get device parameters need to control streaming
   PvGenParameterArray *device_params = device_->GetParameters();
-  // Get stream parameters
-//  PvGenParameterArray *stream_params = stream_->GetParameters();
 //  auto *spot = dynamic_cast<PvGenFloat *>(device_params->Get("Spot"));
-  // Map a few GenICam stats counters
-//  double frame_rate_val = 0;
-//  double band_width_val = 0;
-//  auto *frame_rate =
-//      dynamic_cast<PvGenFloat *>(stream_params->Get("AcquisitionRate"));
-//  auto *band_width =
-//      dynamic_cast<PvGenFloat *>(stream_params->Get("Bandwidth"));
 
   // Create a cv::Mat to pass back to ros
-  //  cv::namedWindow("flir", cv::WINDOW_AUTOSIZE);
   int64_t height = 0, width = 0;
   device_params->GetIntegerValue("Width", width);
   device_params->GetIntegerValue("Height", height);
@@ -269,15 +260,6 @@ void GigeCamera::AcquireImages() {
     PvBuffer *buffer;
     PvResult op_result;
 
-//    double spot_val = 0;
-//    spot->GetValue(spot_val);
-//    cout << "spot: " << spot_val << endl;
-//    int64_t contrast = 0, brightness = 0;
-//    device_params->GetIntegerValue("Contrast", contrast);
-//    device_params->GetIntegerValue("Brightness", brightness);
-//    cout << "Contrast: " << contrast
-//         << " Brightness: " << brightness << endl;
-
     // Retrieve next buffer
     PvResult result = pipeline_->RetrieveNextBuffer(&buffer, 1000, &op_result);
 
@@ -285,17 +267,16 @@ void GigeCamera::AcquireImages() {
       if (op_result.IsOK()) {
         // We now have a valid buffer. This is where you would typically
         // process the buffer
-//        frame_rate->GetValue(frame_rate_val);
-//        band_width->GetValue(band_width_val);
-
         // If the buffer contains an image, display the width and height
         if ((buffer->GetPayloadType()) == PvPayloadTypeImage) {
           // Get image specific buffer interface
           PvImage *image = buffer->GetImage();
           // Attach PvBuffer to an external memory
-          image->Attach(image_raw.data, image->GetWidth(), image->GetHeight(),
-                        PvPixelMono8, image->GetPaddingX(),
-                        image->GetPaddingY());
+//          memset(image_raw.data, 0, image_raw.cols * image_raw.rows * 1);
+//          image->Attach(image_raw.data, image->GetWidth(), image->GetHeight(),
+//                        PvPixelMono8, image->GetPaddingX(),
+//                        image->GetPaddingY());
+          memcpy(image_raw.data, image->GetDataPointer(), image->GetImageSize());
           if (color_) {
             cv::Mat image_color;
             cv::applyColorMap(image_raw, image_color, cv::COLORMAP_JET);
@@ -305,8 +286,8 @@ void GigeCamera::AcquireImages() {
             use_image(image_raw);
           }
           // Display image
-          // cv::imshow("flir", image_raw);
-          // if (cv::waitKey(5) >= 0) break;
+//           cv::imshow("flir", image_raw);
+//           if (cv::waitKey(5) >= 0) break;
         } else {
           cout << label_ << "Buffer does not contain image" << endl;
         }

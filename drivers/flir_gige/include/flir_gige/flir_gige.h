@@ -38,7 +38,7 @@ class FlirGige {
 
   void Run();
   void End();
-  void PublishImage(const cv::Mat &image);
+  void PublishImage(const cv::Mat &image, const std::vector<double> &planck);
   std::string GetImageEncoding(const cv::Mat &image);
   void ReconfigureCallback(flir_gige::FlirConfig &config, int level);
 

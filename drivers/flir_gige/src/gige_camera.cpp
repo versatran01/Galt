@@ -299,17 +299,17 @@ void GigeCamera::AcquireImages() {
     if (raw_) {
       device_params->GetFloatValue("Spot", spot);
       double S = GetSpotPixel(*image_raw_);
-      double t = GetSpotTemperature(S, B, F, O, R);
-      cout << "Spot: " << spot << " Temp: " << t << endl;
-      use_image(*image_raw_);
+      double t = GetSpotTemperature(S, planck_constant);
+//      cout << "Spot: " << spot << " Temp: " << t << endl;
+      use_image(*image_raw_, planck_constant);
     } else {
       // For display purpose in non raw data mode
       if (color_) {
         cv::Mat image_color;
         cv::applyColorMap(*image_raw_, image_color, cv::COLORMAP_JET);
-        use_image(image_color);
+        use_image(image_color, planck_constant);
       } else {
-        use_image(*image_raw_);
+        use_image(*image_raw_, planck_constant);
       }
     }
     // Release the buffer back to the pipeline
@@ -369,8 +369,11 @@ void GigeCamera::SetPixelFormat(BitSize bit) {
        << " Bit: " << digital_output.GetAscii() << endl;
 }
 
-double GigeCamera::GetSpotTemperature(double S, double B, double F, double O,
-                                      double R) {
+double GigeCamera::GetSpotTemperature(double S, const std::vector<double> &planck) {
+  double B = planck[0];
+  double F = planck[1];
+  double O = planck[2];
+  double R = planck[3];
   double T = B / std::log(R / (S - O) + F);
   return T - 273.15;
 }

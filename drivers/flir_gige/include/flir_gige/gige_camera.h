@@ -69,7 +69,8 @@ class GigeCamera {
   // Return Acquisition status
   const bool IsAcquire() const { return acquire_; }
 
-  std::function<void(const cv::Mat &image)> use_image;
+  std::function<void(const cv::Mat &image, const std::vector<double> &planck)>
+      use_image;
 
  private:
   void FindDevice(const std::string &ip);
@@ -81,7 +82,7 @@ class GigeCamera {
   void StopAcquisition();
   void AcquireImages();
   double GetSpotPixel(const cv::Mat &image);
-  double GetSpotTemperature(double S, double B, double F, double O, double R);
+  double GetSpotTemperature(double S, const std::vector<double> &planck);
 
   void SetAoi(int width, int height);
   void SetPixelFormat(BitSize bit);

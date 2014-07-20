@@ -9,6 +9,7 @@
     <arg name="frame_id" default="flir_a5"/>
     <arg name="fps" default="20.0"/>
     <arg name="color" default="false"/>
+    <arg name="bit" default="2"/>
     <arg name="calib_file" default="$(arg frame_id).yaml"/>
     <arg name="calib_url" default="package://flir_gige/calib/$(arg calib_file)"/>
     <!--Notice that camera will be uncalibrated if you change dimension-->
@@ -24,6 +25,7 @@
         <param name="height" type="int" value="$(arg height)"/>
         <param name="width" type="int" value="$(arg width)"/>
         <param name="color" type="bool" value="$(arg color)"/>
+        <param name="bit" type="int" value="$(arg bit)"/>
         <param name="calib_url" type="string" value="$(arg calib_url)"/>
     </node>
 
@@ -40,6 +42,7 @@
         <param name="height" type="int" value="$(arg height)"/>
         <param name="width" type="int" value="$(arg width)"/>
         <param name="color" type="bool" value="$(arg color)"/>
+        <param name="bit" type="int" value="$(arg bit)"/>
         <param name="calib_url" type="string" value="$(arg calib_url)"/>
     </node>
 </launch>

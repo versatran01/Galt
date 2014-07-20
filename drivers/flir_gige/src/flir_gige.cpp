@@ -35,8 +35,8 @@ FlirGige::FlirGige(const ros::NodeHandle &nh) : nh_{nh}, it_{nh} {
   std::string ip_address;
   nh_.param<std::string>("ip_address", ip_address, std::string(""));
   camera_.reset(new flir_gige::GigeCamera(ip_address));
-  camera_->use_image =
-      std::bind(&FlirGige::PublishImage, this, std::placeholders::_1);
+  camera_->use_image = std::bind(&FlirGige::PublishImage, this,
+                                 std::placeholders::_1, std::placeholders::_2);
 
   // Setup camera publisher and dynamic reconfigure callback
   std::string calib_url;
@@ -68,7 +68,8 @@ void FlirGige::End() {
   camera_->Disconnect();
 }
 
-void FlirGige::PublishImage(const cv::Mat &image) {
+void FlirGige::PublishImage(const cv::Mat &image,
+                            const std::vector<double> &planck) {
   // Construct a cv image
   cv_bridge::CvImagePtr cv_ptr(new cv_bridge::CvImage());
   std_msgs::Header header;
@@ -78,6 +79,7 @@ void FlirGige::PublishImage(const cv::Mat &image) {
   cv_ptr->header = header;
   cv_ptr->image = image;
   cinfo_->header = header;
+  cinfo_->D = planck;
   cv_ptr->encoding = GetImageEncoding(image);
   // Convert to ros image msg and publish camera
   image_ = cv_ptr->toImageMsg();

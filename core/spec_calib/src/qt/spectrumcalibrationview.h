@@ -42,7 +42,7 @@ private:
   Ui::SpectrumCalibrationView *ui;
   SpectrumCalibrator * specCalib_;
   
-  QwtPlotCurve * curve_, * filterCurve_;
+  QwtPlotCurve * curve_, * filterCurve_, * predictedCurve_;
   double currentMax_;
 };
 

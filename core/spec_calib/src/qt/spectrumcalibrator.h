@@ -41,6 +41,8 @@ public:
 
   const galt::FilterProfile &getFilterProfile() const;
 
+  const galt::Spectrum &getPredictedSpectrum() const;
+  
 signals:
   void receivedMessage();
 
@@ -53,6 +55,7 @@ private:
   galt::Spectrum spectrum_;
   galt::SpectrometerPose specPose_;
   galt::FilterProfile filterProfile_;
+  galt::Spectrum predictedSpectrum_;
 
   //  ROS subscribers
   static constexpr uint32_t kROSQueueSize = 100;

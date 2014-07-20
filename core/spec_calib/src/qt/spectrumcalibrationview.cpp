@@ -77,6 +77,14 @@ SpectrumCalibrationView::SpectrumCalibrationView(QWidget *parent) :
   filterCurve_->setSymbol( new QwtSymbol() );
   
   filterCurve_->attach( plot );
+  
+  predictedCurve_ = new QwtPlotCurve();
+  predictedCurve_->setTitle("predicted_spectrum");
+  predictedCurve_->setPen( QPen(Qt::green, 2) );
+  predictedCurve_->setRenderHint( QwtPlotItem::RenderAntialiased, true);
+  predictedCurve_->setSymbol( new QwtSymbol() );
+  
+  predictedCurve_->attach( plot );
 }
 
 SpectrumCalibrationView::~SpectrumCalibrationView()
@@ -180,6 +188,15 @@ void SpectrumCalibrationView::calibratorUpdateState(void) {
     points.push_back(QPointF(wavelen,intensity));
   }
   filterCurve_->setSamples(points);
+  
+  points.clear();
+  const galt::Spectrum& pred = specCalib_->getPredictedSpectrum();
+  for (size_t i=0; i < pred.size(); i++) {
+    double wavelen = pred.getWavelengths()[i];
+    double intensity = pred.getIntensities()[i];
+    points.push_back(QPointF(wavelen,intensity));
+  }
+  predictedCurve_->setSamples(points);
   
   plot->replot();
   

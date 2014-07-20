@@ -45,6 +45,10 @@ const galt::FilterProfile &SpectrumCalibrator::getFilterProfile() const {
   return filterProfile_;
 }
 
+const galt::Spectrum &SpectrumCalibrator::getPredictedSpectrum() const {
+  return predictedSpectrum_;
+}
+
 void SpectrumCalibrator::syncCallback(
     const sensor_msgs::ImageConstPtr &img,
     const sensor_msgs::CameraInfoConstPtr &info,
@@ -66,6 +70,11 @@ void SpectrumCalibrator::syncCallback(
 
   //  spectrometer measurement
   spectrum_ = galt::Spectrum(spec->wavelengths, spec->spectrum);
-
+  
+  //  apply the filter profile to get prediction
+  galt::Spectrum specPred = spectrum_;
+  specPred.multiply(filterProfile_.getSpectrum());
+  predictedSpectrum_ = specPred;
+  
   emit receivedMessage();
 }

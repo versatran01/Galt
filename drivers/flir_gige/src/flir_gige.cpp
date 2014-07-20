@@ -5,6 +5,7 @@
 
 #include <ros/ros.h>
 #include <image_transport/image_transport.h>
+#include <std_msgs/Header.h>
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/CameraInfo.h>
 #include <sensor_msgs/image_encodings.h>
@@ -69,10 +70,13 @@ void FlirGige::End() {
 void FlirGige::PublishImage(const cv::Mat &image) {
   // Construct a cv image
   cv_bridge::CvImagePtr cv_ptr(new cv_bridge::CvImage());
-  cv_ptr->header.stamp = ros::Time::now();
-  cv_ptr->header.frame_id = frame_id_;
-  cv_ptr->header.seq = seq_++;
+  std_msgs::Header header;
+  header.stamp = ros::Time::now();
+  header.frame_id = frame_id_;
+  header.seq = seq_++;
+  cv_ptr->header = header;
   cv_ptr->image = image;
+  cinfo_->header = header;
   if (image.channels() == 1) {
     cv_ptr->encoding = sensor_msgs::image_encodings::MONO8;
   } else if (image.channels() == 3) {
@@ -80,7 +84,6 @@ void FlirGige::PublishImage(const cv::Mat &image) {
   }
   // Convert to ros image msg and publish camera
   image_ = cv_ptr->toImageMsg();
-  cinfo_->header = image_->header;
   camera_pub_.publish(image_, cinfo_);
   rate_->sleep();
 }

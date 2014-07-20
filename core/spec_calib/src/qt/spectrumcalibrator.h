@@ -26,52 +26,53 @@
 
 #include <spectral/SpectrometerPose.hpp>
 #include <spectral/Spectrum.hpp>
+#include <spectral/FilterProfile.hpp>
 
-class SpectrumCalibrator : public QObject
-{
+class SpectrumCalibrator : public QObject {
   Q_OBJECT
 public:
-  explicit SpectrumCalibrator(QObject *parent, 
-                              const galt::SpectrometerPose& specPose,
-                              const galt::Spectrum& filterProfile);
-    
-  const cv::Mat& lastImage() const;
-  
-  const galt::Spectrum& lastSpectrum() const;
-  
-  const galt::Spectrum& getFilterProfile() const;
-  
+  explicit SpectrumCalibrator(QObject *parent,
+                              const galt::SpectrometerPose &specPose,
+                              const galt::FilterProfile &filterProfile);
+
+  const cv::Mat &lastImage() const;
+
+  const galt::Spectrum &lastSpectrum() const;
+
+  const galt::FilterProfile &getFilterProfile() const;
+
 signals:
   void receivedMessage();
-  
+
 public slots:
-  
+
 private:
   std::shared_ptr<image_transport::ImageTransport> imgTransport_;
   cv::Mat image_;
-  
+
   galt::Spectrum spectrum_;
   galt::SpectrometerPose specPose_;
-  galt::Spectrum filterProfile_;
-  
+  galt::FilterProfile filterProfile_;
+
   //  ROS subscribers
   static constexpr uint32_t kROSQueueSize = 100;
-  
+
   image_transport::SubscriberFilter subImage_;
-  message_filters::Subscriber <sensor_msgs::CameraInfo> subCamInfo_;
-  message_filters::Subscriber <geometry_msgs::PoseStamped> subPose_;
-  message_filters::Subscriber <ocean_optics::Spectrum> subSpectrum_;
-  
+  message_filters::Subscriber<sensor_msgs::CameraInfo> subCamInfo_;
+  message_filters::Subscriber<geometry_msgs::PoseStamped> subPose_;
+  message_filters::Subscriber<ocean_optics::Spectrum> subSpectrum_;
+
   //  time sync policy
-  typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::Image,
-      sensor_msgs::CameraInfo, geometry_msgs::PoseStamped, ocean_optics::Spectrum> TimeSyncPolicy;
+  typedef message_filters::sync_policies::ApproximateTime<
+      sensor_msgs::Image, sensor_msgs::CameraInfo, geometry_msgs::PoseStamped,
+      ocean_optics::Spectrum> TimeSyncPolicy;
   std::shared_ptr<message_filters::Synchronizer<TimeSyncPolicy>> sync_;
-  
+
   //  synchronized callback
-  void syncCallback(const sensor_msgs::ImageConstPtr& img,
-                    const sensor_msgs::CameraInfoConstPtr &info, 
+  void syncCallback(const sensor_msgs::ImageConstPtr &img,
+                    const sensor_msgs::CameraInfoConstPtr &info,
                     const geometry_msgs::PoseStampedConstPtr &poseStamped,
-                    const ocean_optics::SpectrumConstPtr& spec);
+                    const ocean_optics::SpectrumConstPtr &spec);
 };
 
 #endif // SPECTRUMCALIBRATOR_H

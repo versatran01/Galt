@@ -28,7 +28,7 @@ T loadYAMLNode(const std::string& filePath) {
   
   QFile f(filePath.c_str());
   if (!f.open(QFile::ReadOnly | QFile::Text)) {
-    throw std::runtime_error("Unable to load camera pose file: " + filePath);
+    throw std::runtime_error("Unable to load file: " + filePath);
   }
   else if (f.size() > 2*1024*1024) {
     throw std::runtime_error("File exceeds 2MB limit");
@@ -124,15 +124,17 @@ void SpectrumCalibrationView::reset() {
     return;
   }
   
-  galt::Spectrum filterSpectrum;
+  galt::FilterProfile filterProfile;
   try {
-    filterSpectrum = loadYAMLNode<galt::Spectrum>(filterPath);
+    filterProfile = loadYAMLNode<galt::FilterProfile>(filterPath);
   } catch (std::exception& e) {
     ROS_ERROR("Failed to load filter: %s", e.what());
     return;
   }
   
-  specCalib_ = new SpectrumCalibrator(this,pose,filterSpectrum);
+  ROS_INFO("Loaded filter: %s", filterProfile.getName().c_str());
+  
+  specCalib_ = new SpectrumCalibrator(this,pose,filterProfile);
   QObject::connect(specCalib_,SIGNAL(receivedMessage()),this,SLOT(calibratorUpdateState()));
 }
 
@@ -171,7 +173,7 @@ void SpectrumCalibrationView::calibratorUpdateState(void) {
   
   //  update filter plot
   points.clear();
-  const galt::Spectrum& profile = specCalib_->getFilterProfile();
+  const galt::Spectrum& profile = specCalib_->getFilterProfile().getSpectrum();
   for (size_t i=0; i < profile.size(); i++) {
     double wavelen = profile.getWavelengths()[i];
     double intensity = profile.getIntensities()[i] * maxIntensity;

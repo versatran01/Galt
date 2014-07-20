@@ -43,6 +43,7 @@ private:
   SpectrumCalibrator * specCalib_;
   
   QwtPlotCurve * curve_;
+  double currentMax_;
 };
 
 #endif // SPECTRUMCALIBRATIONVIEW_H

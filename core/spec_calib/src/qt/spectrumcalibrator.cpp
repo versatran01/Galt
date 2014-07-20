@@ -47,10 +47,9 @@ void SpectrumCalibrator::syncCallback(const sensor_msgs::ImageConstPtr& img,
                   const sensor_msgs::CameraInfoConstPtr &info, 
                   const geometry_msgs::PoseStampedConstPtr &poseStamped,
                   const ocean_optics::SpectrumConstPtr& spec)
-{
-  ROS_INFO("Update!");
-  
-  cv_bridge::CvImageConstPtr bridgedImagePtr = cv_bridge::toCvCopy(img,"rgb8");
+{  
+  //  lazy: regardless of input format, convert to rgb8 then mono
+  cv_bridge::CvImageConstPtr bridgedImagePtr = cv_bridge::toCvCopy(img, "rgb8");
   if (!bridgedImagePtr) {
     ROS_ERROR("Failed to convert image to rgb8 with cv_bridge");
     return;
@@ -62,7 +61,10 @@ void SpectrumCalibrator::syncCallback(const sensor_msgs::ImageConstPtr& img,
   cv::Mat monoImage;
   cv::cvtColor(image_, monoImage, CV_RGB2GRAY);
   
+  //  spectrometer measurement
   spectrum_ = galt::Spectrum(spec->wavelengths, spec->spectrum);
-    
+  
+  
+  
   emit receivedMessage();
 }

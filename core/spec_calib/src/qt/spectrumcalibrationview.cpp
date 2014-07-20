@@ -25,7 +25,7 @@
 
 SpectrumCalibrationView::SpectrumCalibrationView(QWidget *parent) :
   QWidget(parent),
-  ui(new Ui::SpectrumCalibrationView), specCalib_(0)
+  ui(new Ui::SpectrumCalibrationView), specCalib_(0), currentMax_(0.0)
 {
   ui->setupUi(this);
   reset();
@@ -34,8 +34,8 @@ SpectrumCalibrationView::SpectrumCalibrationView(QWidget *parent) :
   QwtPlot * plot = ui->plot;
   plot->setTitle("Spectrum");
   plot->setCanvasBackground(Qt::white);
-  plot->setAxisScale(QwtPlot::yLeft, 0.0, 10.0);
-  plot->setAxisScale(QwtPlot::xBottom, 0.0, 10.0);
+  plot->setAxisScale(QwtPlot::yLeft, 0.0, 1.0);
+  plot->setAxisScale(QwtPlot::xBottom, 0.0, 1.0);
   plot->resize(320,240);
   plot->repaint();
     
@@ -44,15 +44,9 @@ SpectrumCalibrationView::SpectrumCalibrationView(QWidget *parent) :
   
   curve_ = new QwtPlotCurve();
   curve_->setTitle("ocean_optics");
-  curve_->setPen( QPen(Qt::blue, 4) );
+  curve_->setPen( QPen(Qt::blue, 2) );
   curve_->setRenderHint( QwtPlotItem::RenderAntialiased, true );
   curve_->setSymbol( new QwtSymbol() );
-  
-  QPolygonF points;
-  points << QPointF( 0.0, 4.4 ) << QPointF( 1.0, 3.0 )
-      << QPointF( 2.0, 4.5 ) << QPointF( 3.0, 6.8 )
-      << QPointF( 4.0, 7.9 ) << QPointF( 5.0, 7.1 );
-  //curve_->setSamples( points );
       
   curve_->attach( plot );      
 }
@@ -117,14 +111,12 @@ void SpectrumCalibrationView::reset() {
 }
 
 void SpectrumCalibrationView::calibratorUpdateState(void) {
-  const cv::Mat& image = specCalib_->lastImage();
-  if (!image.empty()) {
-    ui->imageWidget->setImage(image);
-  }
+  const cv::Mat& image = specCalib_->lastImage(); //  RGB image
   
   //  get range of spectrum
   galt::Spectrum spec = specCalib_->lastSpectrum();
   
+  //  figure out size of plot axes
   double maxIntensity=0.0;
   for (double I : spec.getIntensities()) {
     maxIntensity = std::max(I, maxIntensity);
@@ -133,9 +125,13 @@ void SpectrumCalibrationView::calibratorUpdateState(void) {
   const double minWavelength = spec.getWavelengths().front();
   const double maxWavelength = spec.getWavelengths().back();
    
-  //  update spectrum plot
+  //  update spectrum plot, just replot every time for now
   QwtPlot * plot = ui->plot;
-  plot->setAxisScale(QwtPlot::yLeft, 0.0, maxIntensity*1.05);
+  
+  if (maxIntensity > currentMax_) {
+    plot->setAxisScale(QwtPlot::yLeft, 0.0, maxIntensity);
+    currentMax_ = maxIntensity;
+  }
   plot->setAxisScale(QwtPlot::xBottom, minWavelength, maxWavelength);
   
   QPolygonF points;
@@ -147,4 +143,6 @@ void SpectrumCalibrationView::calibratorUpdateState(void) {
   
   curve_->setSamples( points );
   plot->replot();
+  
+  ui->imageWidget->setImage(image);
 }

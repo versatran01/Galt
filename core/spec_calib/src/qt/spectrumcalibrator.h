@@ -31,11 +31,15 @@ class SpectrumCalibrator : public QObject
 {
   Q_OBJECT
 public:
-  explicit SpectrumCalibrator(QObject *parent, const galt::SpectrometerPose& specPose);
+  explicit SpectrumCalibrator(QObject *parent, 
+                              const galt::SpectrometerPose& specPose,
+                              const galt::Spectrum& filterProfile);
     
   const cv::Mat& lastImage() const;
   
   const galt::Spectrum& lastSpectrum() const;
+  
+  const galt::Spectrum& getFilterProfile() const;
   
 signals:
   void receivedMessage();
@@ -48,6 +52,7 @@ private:
   
   galt::Spectrum spectrum_;
   galt::SpectrometerPose specPose_;
+  galt::Spectrum filterProfile_;
   
   //  ROS subscribers
   static constexpr uint32_t kROSQueueSize = 100;

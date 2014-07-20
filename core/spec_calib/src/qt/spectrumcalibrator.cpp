@@ -12,8 +12,8 @@
 #include "spectrumcalibrator.h"
 #include <cv_bridge/cv_bridge.h>
 
-SpectrumCalibrator::SpectrumCalibrator(QObject *parent, const galt::SpectrometerPose &specPose) :
-  QObject(parent), specPose_(specPose)
+SpectrumCalibrator::SpectrumCalibrator(QObject *parent, const galt::SpectrometerPose &specPose, const galt::Spectrum &filterProfile) :
+  QObject(parent), specPose_(specPose), filterProfile_(filterProfile)
 {
   ros::NodeHandle nh("~");
   
@@ -43,23 +43,27 @@ const galt::Spectrum& SpectrumCalibrator::lastSpectrum() const {
   return spectrum_;
 }
 
+const galt::Spectrum& SpectrumCalibrator::getFilterProfile() const {
+  return filterProfile_;
+}
+
 void SpectrumCalibrator::syncCallback(const sensor_msgs::ImageConstPtr& img,
                   const sensor_msgs::CameraInfoConstPtr &info, 
                   const geometry_msgs::PoseStampedConstPtr &poseStamped,
                   const ocean_optics::SpectrumConstPtr& spec)
 {  
   //  lazy: regardless of input format, convert to rgb8 then mono
-  cv_bridge::CvImageConstPtr bridgedImagePtr = cv_bridge::toCvCopy(img, "rgb8");
+  cv_bridge::CvImageConstPtr bridgedImagePtr = cv_bridge::toCvCopy(img, "mono8");
   if (!bridgedImagePtr) {
-    ROS_ERROR("Failed to convert image to rgb8 with cv_bridge");
+    ROS_ERROR("Failed to convert image to mono8 with cv_bridge");
     return;
   }  
-  cv::Mat rgbImage = bridgedImagePtr->image;
-  image_ = rgbImage;
+  cv::Mat monoImage = bridgedImagePtr->image;
     
   //  convert to intensity
-  cv::Mat monoImage;
-  cv::cvtColor(image_, monoImage, CV_RGB2GRAY);
+  cv::Mat rgbImage;
+  cv::cvtColor(monoImage, rgbImage, CV_GRAY2RGB);
+  image_ = rgbImage;  
   
   //  spectrometer measurement
   spectrum_ = galt::Spectrum(spec->wavelengths, spec->spectrum);

@@ -11,8 +11,13 @@
 
 #include <stdexcept>
 #include <limits>
-#include <spectral/Spectrum.hpp>
 #include <assert.h>
+
+#include <spectral/Spectrum.hpp>
+#include "yaml_utilities.hpp"
+
+//  TEMP:
+#include <ros/ros.h>
 
 namespace galt {
 
@@ -32,6 +37,15 @@ Spectrum::Spectrum(const std::vector<double> &wavelengths,
         throw std::invalid_argument("Wavelengths must be sorted and unique");
       }
     }
+  }
+}
+
+Spectrum::Spectrum(const std::map<double,double>& data) : wavelengths_(), intensities_() {
+  wavelengths_.reserve(data.size());
+  intensities_.reserve(data.size());
+  for (const std::pair<double,double>& p : data) {
+    wavelengths_.push_back(p.first);
+    intensities_.push_back(p.second);
   }
 }
 
@@ -126,4 +140,55 @@ void Spectrum::multiply(const Spectrum &s) {
     intensities_[i] *= rhs.intensities_[i];
   }
 }
+}
+
+YAML::Node YAML::convert<galt::Spectrum>::encode(const galt::Spectrum &rhs) {
+  YAML::Node node;
+  node["wavelengths"] = rhs.getWavelengths();
+  node["intensities"] = rhs.getIntensities();
+  return node;
+}
+
+//  TODO: Add exceptions here for missing fields
+bool YAML::convert<galt::Spectrum>::decode(const YAML::Node &node, galt::Spectrum &rhs) {
+  
+  const auto requiredFields = { "wavelengths", "intensities" };
+  if (!node.IsMap() || !galt::hasFields(node, requiredFields)) {
+    ROS_WARN("Missing field!");
+    return false;
+  }
+  
+  YAML::Node W = node["wavelengths"];
+  YAML::Node I = node["intensities"];
+  if (!W.IsSequence() || !I.IsSequence()) {
+    ROS_WARN("Not a sequence!");
+    return false;
+  }
+  
+  std::vector<double> wavelengths;
+  std::vector<double> intensities;
+  
+  for (size_t element=0; element < W.size(); element++) {
+    wavelengths.push_back(W[element].as<double>());
+  }
+  for (size_t element=0; element < I.size(); element++) {
+    intensities.push_back(I[element].as<double>());
+  }
+  
+  //  will throw if the data is invalid
+  rhs = galt::Spectrum(wavelengths,intensities);
+  return true;
+}
+
+YAML::Emitter &operator<<(YAML::Emitter &out,
+                          const galt::Spectrum &spectrum) {
+  
+  //  use YAML overloaded vector operator to emit
+  out << YAML::Block;
+  out << YAML::BeginMap;
+  out << YAML::Flow;
+  out << YAML::Key << "wavelengths" << YAML::Value << spectrum.getWavelengths();
+  out << YAML::Key << "intensities" << YAML::Value << spectrum.getIntensities();
+  out << YAML::EndMap; 
+  return out;
 }

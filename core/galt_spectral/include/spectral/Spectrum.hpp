@@ -13,6 +13,8 @@
 #define GALT_SPECTRAL_SPECTRUM_HPP_
 
 #include <vector>
+#include <map>
+#include <yaml-cpp/yaml.h>
 
 namespace galt {
 
@@ -49,6 +51,12 @@ public:
   Spectrum(const std::vector<double> &wavelengths,
            const std::vector<double> &intensities);
 
+  /**
+   * @brief Spectrum Construct a spectrum from a map.
+   * @param data Mapping of wavelength to intensity.
+   */
+  Spectrum(const std::map<double,double>& data);
+  
   /**
    * @brief Get the wavelengths in this spectrum.
    * @return
@@ -94,5 +102,25 @@ private:
   std::vector<double> intensities_;
 };
 }
+
+namespace YAML {
+
+/**
+ * @brief Encodes Spectrum to and from yaml.
+ */
+template <> struct convert<galt::Spectrum> {
+  static Node encode(const galt::Spectrum &rhs);
+  static bool decode(const Node &node, galt::Spectrum &rhs);
+};
+}
+
+/**
+ * @brief Emit YAML for a Spectrum pose.
+ * @param out Emitter to encode to.
+ * @param pose Spectrum to encode.
+ * @return Emitter.
+ */
+YAML::Emitter &operator<<(YAML::Emitter &out,
+                          const galt::Spectrum &pose);
 
 #endif // GALT_SPECTRAL_SPECTRUM_HPP_

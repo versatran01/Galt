@@ -23,6 +23,26 @@
 
 #include <yaml-cpp/yaml.h>
 
+template <typename T>
+T loadYAMLNode(const std::string& filePath) {
+  
+  QFile f(filePath.c_str());
+  if (!f.open(QFile::ReadOnly | QFile::Text)) {
+    throw std::runtime_error("Unable to load camera pose file: " + filePath);
+  }
+  else if (f.size() > 2*1024*1024) {
+    throw std::runtime_error("File exceeds 2MB limit");
+  }
+  
+  QTextStream in(&f);
+  QString yamlContent = in.readAll();
+  
+  std::string yaml = yamlContent.toUtf8().constData();
+  YAML::Node node = YAML::Load(yaml);
+
+  return node.as<T>();
+}
+
 SpectrumCalibrationView::SpectrumCalibrationView(QWidget *parent) :
   QWidget(parent),
   ui(new Ui::SpectrumCalibrationView), specCalib_(0), currentMax_(0.0)
@@ -48,7 +68,15 @@ SpectrumCalibrationView::SpectrumCalibrationView(QWidget *parent) :
   curve_->setRenderHint( QwtPlotItem::RenderAntialiased, true );
   curve_->setSymbol( new QwtSymbol() );
       
-  curve_->attach( plot );      
+  curve_->attach( plot );  
+  
+  filterCurve_ = new QwtPlotCurve();
+  filterCurve_->setTitle("filter_profile");
+  filterCurve_->setPen( QPen(Qt::red, 2) );
+  filterCurve_->setRenderHint( QwtPlotItem::RenderAntialiased, true);
+  filterCurve_->setSymbol( new QwtSymbol() );
+  
+  filterCurve_->attach( plot );
 }
 
 SpectrumCalibrationView::~SpectrumCalibrationView()
@@ -79,44 +107,37 @@ void SpectrumCalibrationView::reset() {
   
   const std::string filePath = path + "/config/pose_" + camSerial + ".yaml";
   
-  //  TODO: refactor this into a utility function...
   //  load the pose information
-  QFile f(tr(filePath.c_str()));
-  if (!f.open(QFile::ReadOnly | QFile::Text)) {
-    ROS_ERROR("Unable to load camera pose file: %s", filePath.c_str());
-    return;
-  }
-  else if (f.size() > 2*1024*1024) {
-    ROS_ERROR("File %s exceeds 2MB limit", filePath.c_str());
-    return;
-  }
-  
-  QTextStream in(&f);
-  QString yamlContent = in.readAll();
-  
-  std::string yaml = yamlContent.toUtf8().constData();
-  YAML::Node node = YAML::Load(yaml);
+  //  TODO: clean this up and improve error handling
   galt::SpectrometerPose pose;
   try {
-    pose = node.as<galt::SpectrometerPose>();
-    auto dir = pose.getDirection();
-    ROS_INFO("Loaded pose: %f, %f, %f", dir[0], dir[1], dir[2]);
-  } catch(YAML::Exception& e) {
-    ROS_ERROR("Failed to decode yaml: %s", e.what());
+    pose = loadYAMLNode<galt::SpectrometerPose>(filePath);
+  } catch(std::exception& e) {
+    ROS_ERROR("Failed to load pose: %s", e.what());
     return;
   }
   
-  specCalib_ = new SpectrumCalibrator(this,pose);
+  //  load the filter profile  
+  std::string filterPath;
+  if (!nh.getParam("filter_path", filterPath)) {
+    ROS_ERROR("Filter path not specified");
+    return;
+  }
+  
+  galt::Spectrum filterSpectrum;
+  try {
+    filterSpectrum = loadYAMLNode<galt::Spectrum>(filterPath);
+  } catch (std::exception& e) {
+    ROS_ERROR("Failed to load filter: %s", e.what());
+    return;
+  }
+  
+  specCalib_ = new SpectrumCalibrator(this,pose,filterSpectrum);
   QObject::connect(specCalib_,SIGNAL(receivedMessage()),this,SLOT(calibratorUpdateState()));
 }
 
 void SpectrumCalibrationView::calibratorUpdateState(void) {
   const cv::Mat& image = specCalib_->lastImage(); //  RGB image
-  
-  std::vector<double> wavelengths;
-  for (double i= 600.0; i < 800.0; i += 0.25) {
-    wavelengths.push_back(i);
-  }
   
   //  get range of spectrum
   galt::Spectrum spec = specCalib_->lastSpectrum();
@@ -140,13 +161,24 @@ void SpectrumCalibrationView::calibratorUpdateState(void) {
   plot->setAxisScale(QwtPlot::xBottom, minWavelength, maxWavelength);
   
   QPolygonF points;
-  for (size_t i=0; i < spec.getWavelengths().size(); i++) {
+  for (size_t i=0; i < spec.size(); i++) {
     double wavelen = spec.getWavelengths()[i];
     double intensity = spec.getIntensities()[i];
     points.push_back(QPointF(wavelen,intensity));    
   }
   
   curve_->setSamples( points );
+  
+  //  update filter plot
+  points.clear();
+  const galt::Spectrum& profile = specCalib_->getFilterProfile();
+  for (size_t i=0; i < profile.size(); i++) {
+    double wavelen = profile.getWavelengths()[i];
+    double intensity = profile.getIntensities()[i] * maxIntensity;
+    points.push_back(QPointF(wavelen,intensity));
+  }
+  filterCurve_->setSamples(points);
+  
   plot->replot();
   
   ui->imageWidget->setImage(image);

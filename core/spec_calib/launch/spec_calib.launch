@@ -2,6 +2,7 @@
 
   <arg name="camera_serial" default="25001110"/>
   <arg name="camera_color" default="false"/>
+  <arg name="filter_path"/>
 
   <!-- monocular camera -->
   <include file="$(find bluefox2)/launch/mono.launch">
@@ -55,5 +56,6 @@
     <remap from="~pose_tags" to="/apriltag/pose_cam"/>
     <remap from="~spectrum" to="/spectrometer/spectrum"/>
     <param name="camera_serial" value="$(arg camera_serial)"/>
+    <param name="filter_path" value="$(arg filter_path)"/>
   </node>
 </launch>

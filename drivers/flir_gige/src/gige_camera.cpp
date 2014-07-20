@@ -220,9 +220,6 @@ void GigeCamera::CreatePipeline() {
 
 void GigeCamera::StartAcquisition() {
   PvGenParameterArray *device_params = device_->GetParameters();
-  // Set digital output and pixel format
-  device_params->SetEnumValue("PixelFormat", PvPixelMono8);
-  device_params->SetEnumValue("DigitalOutput", 2);  // 2  - bit8bit
   // Note: the pipeline must be initialized before we start acquisition
   cout << label_ << "Starting pipeline ... ";
   pipeline_->Start();
@@ -257,14 +254,12 @@ void GigeCamera::AcquireImages() {
 //  auto *spot = dynamic_cast<PvGenFloat *>(device_params->Get("Spot"));
 
   // Create a cv::Mat to pass back to ros
-  int64_t height = 0, width = 0;
-  device_params->GetIntegerValue("Width", width);
-  device_params->GetIntegerValue("Height", height);
-  cout << label_ << "Width: " << width << " Height: " << height;
-  PvString digital_output;
+  PvString digital_output_str;
+  int64_t digital_output;
+  device_params->GetEnumValue("DigitalOutput", digital_output_str);
   device_params->GetEnumValue("DigitalOutput", digital_output);
-  cout << " Bit: " << digital_output.GetAscii() << endl;
-  cv::Mat image_raw(cv::Size(width, height), CV_8UC1);
+  cout << " Output: " << digital_output_str.GetAscii() << " " << digital_output <<  endl;
+//  cv::Mat image_raw(cv::Size(width, height), CV_8UC1);
 
   // Start loop for acquisition
   while (acquire_) {
@@ -282,15 +277,15 @@ void GigeCamera::AcquireImages() {
         if ((buffer->GetPayloadType()) == PvPayloadTypeImage) {
           // Get image specific buffer interface
           PvImage *image = buffer->GetImage();
-          memcpy(image_raw.data, image->GetDataPointer(),
+          memcpy(image_raw_->data, image->GetDataPointer(),
                  image->GetImageSize());
           // Send image to be published by ros
           if (color_) {
             cv::Mat image_color;
-            cv::applyColorMap(image_raw, image_color, cv::COLORMAP_JET);
+            cv::applyColorMap(*image_raw_, image_color, cv::COLORMAP_JET);
             use_image(image_color);
           } else {
-            use_image(image_raw);
+            use_image(*image_raw_);
           }
         } else {
           cout << label_ << "Buffer does not contain image" << endl;
@@ -330,10 +325,22 @@ void GigeCamera::SetAoi(int width, int height) {
 }
 
 void GigeCamera::SetPixelFormat(BitSize bit) {
+  PvGenParameterArray *device_params = device_->GetParameters();
+  int64_t height = 0, width = 0;
+  device_params->GetIntegerValue("Width", width);
+  device_params->GetIntegerValue("Height", height);
+  cout << label_ << "Width: " << width << " Height: " << height;
   if (bit == BIT8BIT) {
     cout << "8 bit" << endl;
+    // Set digital output and pixel format
+    device_params->SetEnumValue("PixelFormat", PvPixelMono8);
+    device_params->SetEnumValue("DigitalOutput", static_cast<int64_t>(bit)); // 2  - bit8bit
+    image_raw_.reset(new cv::Mat(cv::Size(width, height), CV_8UC1));
   } else if (bit == BIT14BIT) {
     cout << "16 bit" << endl;
+    device_params->SetEnumValue("PixelFormat", PvPixelMono14);
+    device_params->SetEnumValue("DigitalOutput", static_cast<int64_t>(bit)); // 3  - bit14bit
+    image_raw_.reset(new cv::Mat(cv::Size(width, height), CV_16UC1));
   }
 }
 

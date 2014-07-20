@@ -78,20 +78,37 @@ void FlirGige::PublishImage(const cv::Mat &image) {
   cv_ptr->header = header;
   cv_ptr->image = image;
   cinfo_->header = header;
-  if (image.channels() == 1) {
-    cv_ptr->encoding = sensor_msgs::image_encodings::MONO8;
-  } else if (image.channels() == 3) {
-    cv_ptr->encoding = sensor_msgs::image_encodings::BGR8;
-  }
+  cv_ptr->encoding = GetImageEncoding(image);
+//  if (image.channels() == 1) {
+//    cv_ptr->encoding = sensor_msgs::image_encodings::MONO8;
+//  } else if (image.channels() == 3) {
+//    cv_ptr->encoding = sensor_msgs::image_encodings::BGR8;
+//  }
   // Convert to ros image msg and publish camera
   image_ = cv_ptr->toImageMsg();
   camera_pub_.publish(image_, cinfo_);
   rate_->sleep();
 }
 
-std::string GetImageEncoding(const cv::Mat &image) {
-  // Does nothing for now
-  return {""};
+std::string FlirGige::GetImageEncoding(const cv::Mat &image) {
+  std::string encoding;
+  switch (image.type()) {
+    case CV_8UC1:
+      encoding = sensor_msgs::image_encodings::MONO8;
+      break;
+    case CV_8UC3:
+      encoding = sensor_msgs::image_encodings::BGR8;
+      break;
+    case CV_16UC1:
+      encoding = sensor_msgs::image_encodings::MONO16;
+      break;
+    case CV_16UC3:
+      encoding = sensor_msgs::image_encodings::BGR16;
+      break;
+    default:
+      encoding = sensor_msgs::image_encodings::MONO8;
+  }
+  return encoding;
 }
 
 void FlirGige::ReconfigureCallback(flir_gige::FlirConfig &config, int level) {

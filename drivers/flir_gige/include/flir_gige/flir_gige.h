@@ -39,7 +39,7 @@ class FlirGige {
   void Run();
   void End();
   void PublishImage(const cv::Mat &image);
-  void GetImageEncoding(const cv::Mat &image);
+  std::string GetImageEncoding(const cv::Mat &image);
   void ReconfigureCallback(flir_gige::FlirConfig &config, int level);
 
 };  // class FlirGige

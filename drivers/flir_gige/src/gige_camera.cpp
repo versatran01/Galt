@@ -1,6 +1,7 @@
 #include "flir_gige/gige_camera.h"
 
-#include <unistd.h>
+#include <cmath>
+
 #include <iostream>
 #include <stdexcept>
 #include <sstream>
@@ -252,14 +253,15 @@ void GigeCamera::AcquireImages() {
   int64_t R{0};
   double F{0.0}, B{0.0}, O{0.0};
   double spot{0};
-  device_params->GetFloatValue("Spot", spot);
   device_params->GetIntegerValue("Width", width);
   device_params->GetIntegerValue("Height", height);
   device_params->GetIntegerValue("R", R);
   device_params->GetFloatValue("F", F);
   device_params->GetFloatValue("B", B);
   device_params->GetFloatValue("O", O);
-  cout << "R: " << R << " F: " << F << " B: " << B << " O: " << O << endl;
+  cout << label_ << "R: " << R << " F: " << F << " B: " << B << " O: " << O
+       << endl;
+  std::vector<double> planck_constant{B, F, O, static_cast<double>(R)};
 
   // Start loop for acquisition
   while (acquire_) {
@@ -269,44 +271,49 @@ void GigeCamera::AcquireImages() {
     // Retrieve next buffer
     PvResult result = pipeline_->RetrieveNextBuffer(&buffer, 1000, &op_result);
 
-    if (result.IsOK()) {
-      if (op_result.IsOK()) {
-        // We now have a valid buffer. This is where you would typically
-        // process the buffer
-        // If the buffer contains an image, display the width and height
-        if ((buffer->GetPayloadType()) == PvPayloadTypeImage) {
-          // Get image specific buffer interface
-          PvImage *image = buffer->GetImage();
-          memcpy(image_raw_->data, image->GetDataPointer(),
-                 image->GetImageSize());
-          // Use the image for temperature calculation only in raw data mode
-          if (raw_) {
-            uint16_t spot_pixel = (*image_raw_).at<uint16_t>(width / 2, height / 2);
-            double temp = GetSpotTemperature(static_cast<double>(spot_pixel),
-                                             R, F, B, O);
-            cout << "Spot: " << spot << " Temp: " << temp << endl;
-            use_image(*image_raw_);
-          } else {
-            // For display purpose in non raw data mode
-            if (color_) {
-              cv::Mat image_color;
-              cv::applyColorMap(*image_raw_, image_color, cv::COLORMAP_JET);
-              use_image(image_color);
-            } else {
-              use_image(*image_raw_);
-            }
-          }
-        } else {
-          cout << label_ << "Buffer does not contain image" << endl;
-        }
-      } else {
-        cout << label_ << "Non Ok operation result" << endl;
-      }
+    // Failed to retrieve buffer
+    if (result.IsFailure()) {
+      cout << label_ << "Retrieve buffer failure" << endl;
+      continue;
+    }
+
+    // Operation not ok, need to return buffer back to pipeline
+    if (op_result.IsFailure()) {
+      cout << label_ << "Non Ok operation result" << endl;
       // Release the buffer back to the pipeline
       pipeline_->ReleaseBuffer(buffer);
-    } else {
-      cout << label_ << "Retrieve buffer failure" << endl;
+      continue;
     }
+
+    // Buffer is not an image
+    if ((buffer->GetPayloadType()) != PvPayloadTypeImage) {
+      cout << label_ << "Buffer does not contain image" << endl;
+      pipeline_->ReleaseBuffer(buffer);
+      continue;
+    }
+
+    // Get image specific buffer interface
+    PvImage *image = buffer->GetImage();
+    memcpy(image_raw_->data, image->GetDataPointer(), image->GetImageSize());
+    // Use the image for temperature calculation only in raw data mode
+    if (raw_) {
+      device_params->GetFloatValue("Spot", spot);
+      double S = GetSpotPixel(*image_raw_);
+      double t = GetSpotTemperature(S, B, F, O, R);
+      cout << "Spot: " << spot << " Temp: " << t << endl;
+      use_image(*image_raw_);
+    } else {
+      // For display purpose in non raw data mode
+      if (color_) {
+        cv::Mat image_color;
+        cv::applyColorMap(*image_raw_, image_color, cv::COLORMAP_JET);
+        use_image(image_color);
+      } else {
+        use_image(*image_raw_);
+      }
+    }
+    // Release the buffer back to the pipeline
+    pipeline_->ReleaseBuffer(buffer);
   }
 }
 
@@ -339,9 +346,9 @@ void GigeCamera::SetPixelFormat(BitSize bit) {
   int64_t height = 0, width = 0;
   device_params->GetIntegerValue("Width", width);
   device_params->GetIntegerValue("Height", height);
+  // Set digital output and pixel format
   if (bit == BIT8BIT) {
     cout << "8 bit" << endl;
-    // Set digital output and pixel format
     device_params->SetEnumValue("PixelFormat", PvPixelMono8);
     device_params->SetEnumValue("DigitalOutput",
                                 static_cast<int64_t>(bit));  // 2  - bit8bit
@@ -362,9 +369,20 @@ void GigeCamera::SetPixelFormat(BitSize bit) {
        << " Bit: " << digital_output.GetAscii() << endl;
 }
 
-double GigeCamera::GetSpotTemperature(double pixel, double R, double F,
-                                      double B, double O) {
-  return pixel;
+double GigeCamera::GetSpotTemperature(double S, double B, double F, double O,
+                                      double R) {
+  double T = B / std::log(R / (S - O) + F);
+  return T - 273.15;
+}
+
+double GigeCamera::GetSpotPixel(const cv::Mat &image) {
+  auto c = image.cols/2;
+  auto r = image.rows/2;
+  auto s1 = image.at<uint16_t>(r-1, c-1);
+  auto s2 = image.at<uint16_t>(r-1, c);
+  auto s3 = image.at<uint16_t>(r, c-1);
+  auto s4 = image.at<uint16_t>(r, c);
+  return static_cast<double>(s1/4 + s2/4 + s3/4 + s4/4);
 }
 
 }  // namespace flir_gige

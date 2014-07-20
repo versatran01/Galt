@@ -80,8 +80,8 @@ class GigeCamera {
   void StartAcquisition();
   void StopAcquisition();
   void AcquireImages();
-  double GetSpotTemperature(double pixel, double R, double F, double B,
-                            double O);
+  double GetSpotPixel(const cv::Mat &image);
+  double GetSpotTemperature(double S, double B, double F, double O, double R);
 
   void SetAoi(int width, int height);
   void SetPixelFormat(BitSize bit);

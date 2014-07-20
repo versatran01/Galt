@@ -27,12 +27,18 @@
 #include <opencv2/core/core.hpp>
 
 namespace flir_gige {
+// Digital output big
+enum BitSize {
+  BIT8BIT = 2,
+  BIT14BIT
+};
+
 // Config struct
 struct GigeConfig {
   bool color{false};
   int width{320};
   int height{256};
-  int bit{0};
+  int bit{2};
 };
 
 // Functor for free PvDevice
@@ -77,6 +83,7 @@ class GigeCamera {
   void AcquireImages();
 
   void SetAoi(int width, int height);
+  void SetPixelFormat(BitSize bit);
 
   typedef std::unique_ptr<PvDevice, FreeDevice> PvDevicePtr;
   typedef std::unique_ptr<PvStream, FreeStream> PvStreamPtr;
@@ -84,9 +91,9 @@ class GigeCamera {
   typedef std::unique_ptr<std::thread> ThreadPtr;
 
   bool acquire_{false};
-  bool color_{false};
+  bool color_{false};  // false - grayscale, true - jet
   std::string label_{"\033[0;35m[ FLIR]:\033[0m "};
-//  std::string ip_address_;
+
   PvSystem system_;
   const PvDeviceInfo *dinfo_;
   PvDevicePtr device_;

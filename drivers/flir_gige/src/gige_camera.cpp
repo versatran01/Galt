@@ -19,7 +19,12 @@
 
 namespace flir_gige {
 
-using namespace std;
+using std::cout;
+using std::endl;
+using std::runtime_error;
+using std::ostringstream;
+using std::vector;
+using std::string;
 
 GigeCamera::GigeCamera(const std::string &ip_address) {
   // Find all devices on the network
@@ -49,6 +54,7 @@ void GigeCamera::Disconnect() {
 void GigeCamera::Configure(const GigeConfig &config) {
   color_ = config.color;
   SetAoi(config.width, config.height);
+  SetPixelFormat(static_cast<BitSize>(config.bit));
   // Set device parameters according to config
   cout << label_ << "Color: " << config.color << " Bit: " << config.bit
        << " Width: " << config.width << " Height: " << config.height
@@ -214,8 +220,9 @@ void GigeCamera::CreatePipeline() {
 
 void GigeCamera::StartAcquisition() {
   PvGenParameterArray *device_params = device_->GetParameters();
-  // Set device in Mono8
+  // Set digital output and pixel format
   device_params->SetEnumValue("PixelFormat", PvPixelMono8);
+  device_params->SetEnumValue("DigitalOutput", 2);  // 2  - bit8bit
   // Note: the pipeline must be initialized before we start acquisition
   cout << label_ << "Starting pipeline ... ";
   pipeline_->Start();
@@ -253,7 +260,10 @@ void GigeCamera::AcquireImages() {
   int64_t height = 0, width = 0;
   device_params->GetIntegerValue("Width", width);
   device_params->GetIntegerValue("Height", height);
-  cout << label_ << "Width: " << width << " Height: " << height << endl;
+  cout << label_ << "Width: " << width << " Height: " << height;
+  PvString digital_output;
+  device_params->GetEnumValue("DigitalOutput", digital_output);
+  cout << " Bit: " << digital_output.GetAscii() << endl;
   cv::Mat image_raw(cv::Size(width, height), CV_8UC1);
 
   // Start loop for acquisition
@@ -272,23 +282,16 @@ void GigeCamera::AcquireImages() {
         if ((buffer->GetPayloadType()) == PvPayloadTypeImage) {
           // Get image specific buffer interface
           PvImage *image = buffer->GetImage();
-          // Attach PvBuffer to an external memory
-//          memset(image_raw.data, 0, image_raw.cols * image_raw.rows * 1);
-//          image->Attach(image_raw.data, image->GetWidth(), image->GetHeight(),
-//                        PvPixelMono8, image->GetPaddingX(),
-//                        image->GetPaddingY());
-          memcpy(image_raw.data, image->GetDataPointer(), image->GetImageSize());
+          memcpy(image_raw.data, image->GetDataPointer(),
+                 image->GetImageSize());
+          // Send image to be published by ros
           if (color_) {
             cv::Mat image_color;
             cv::applyColorMap(image_raw, image_color, cv::COLORMAP_JET);
             use_image(image_color);
           } else {
-            // Send image to be published by ros
             use_image(image_raw);
           }
-          // Display image
-//           cv::imshow("flir", image_raw);
-//           if (cv::waitKey(5) >= 0) break;
         } else {
           cout << label_ << "Buffer does not contain image" << endl;
         }
@@ -323,6 +326,14 @@ void GigeCamera::SetAoi(int width, int height) {
     if (height_param->SetValue(height).IsFailure()) {
       cout << label_ << "failed to set height" << endl;
     }
+  }
+}
+
+void GigeCamera::SetPixelFormat(BitSize bit) {
+  if (bit == BIT8BIT) {
+    cout << "8 bit" << endl;
+  } else if (bit == BIT14BIT) {
+    cout << "16 bit" << endl;
   }
 }
 

@@ -63,6 +63,6 @@ void SpectrumCalibrator::syncCallback(const sensor_msgs::ImageConstPtr& img,
   cv::cvtColor(image_, monoImage, CV_RGB2GRAY);
   
   spectrum_ = galt::Spectrum(spec->wavelengths, spec->spectrum);
-  
+    
   emit receivedMessage();
 }

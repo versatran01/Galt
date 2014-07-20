@@ -50,7 +50,7 @@ private:
   galt::SpectrometerPose specPose_;
   
   //  ROS subscribers
-  static constexpr uint32_t kROSQueueSize = 10;
+  static constexpr uint32_t kROSQueueSize = 100;
   
   image_transport::SubscriberFilter subImage_;
   message_filters::Subscriber <sensor_msgs::CameraInfo> subCamInfo_;
@@ -59,8 +59,7 @@ private:
   
   //  time sync policy
   typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::Image,
-      sensor_msgs::CameraInfo, geometry_msgs::PoseStamped,
-      ocean_optics::Spectrum> TimeSyncPolicy;
+      sensor_msgs::CameraInfo, geometry_msgs::PoseStamped, ocean_optics::Spectrum> TimeSyncPolicy;
   std::shared_ptr<message_filters::Synchronizer<TimeSyncPolicy>> sync_;
   
   //  synchronized callback

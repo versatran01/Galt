@@ -250,15 +250,8 @@ void GigeCamera::StopAcquisition() {
 
 void GigeCamera::AcquireImages() {
   // Get device parameters need to control streaming
-  PvGenParameterArray *device_params = device_->GetParameters();
+//  PvGenParameterArray *device_params = device_->GetParameters();
 //  auto *spot = dynamic_cast<PvGenFloat *>(device_params->Get("Spot"));
-
-  // Create a cv::Mat to pass back to ros
-  PvString digital_output_str;
-  int64_t digital_output;
-  device_params->GetEnumValue("DigitalOutput", digital_output_str);
-  device_params->GetEnumValue("DigitalOutput", digital_output);
-  cout << " Output: " << digital_output_str.GetAscii() << " " << digital_output <<  endl;
 //  cv::Mat image_raw(cv::Size(width, height), CV_8UC1);
 
   // Start loop for acquisition
@@ -329,7 +322,6 @@ void GigeCamera::SetPixelFormat(BitSize bit) {
   int64_t height = 0, width = 0;
   device_params->GetIntegerValue("Width", width);
   device_params->GetIntegerValue("Height", height);
-  cout << label_ << "Width: " << width << " Height: " << height;
   if (bit == BIT8BIT) {
     cout << "8 bit" << endl;
     // Set digital output and pixel format
@@ -342,6 +334,11 @@ void GigeCamera::SetPixelFormat(BitSize bit) {
     device_params->SetEnumValue("DigitalOutput", static_cast<int64_t>(bit)); // 3  - bit14bit
     image_raw_.reset(new cv::Mat(cv::Size(width, height), CV_16UC1));
   }
+  // Create a cv::Mat to pass back to ros
+  PvString digital_output;
+  device_params->GetEnumValue("DigitalOutput", digital_output);
+  cout << label_ << "Width: " << width << " Height: " << height
+       << " Bit: " << digital_output.GetAscii() << endl;
 }
 
 }  // namespace flir_gige

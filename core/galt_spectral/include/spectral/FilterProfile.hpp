@@ -15,7 +15,6 @@
 #include <spectral/Spectrum.hpp>
 #include <yaml-cpp/yaml.h>
 
-//  TODO: Document this
 namespace galt {
 
 /**
@@ -23,25 +22,63 @@ namespace galt {
  */
 class FilterProfile {
 public:
-  
+ 
+  /**
+   * @brief FilterProfile Construct a filter profile with empty parameters.
+   */
   FilterProfile();
-  
-  FilterProfile(const std::string& name, double center, double fwhm, 
-                double minPeakTransmission, 
-                const galt::Spectrum& spectrum = galt::Spectrum());
-  
-  const std::string& getName() const;
-  
-  const double& getCenter() const;
-  
-  const double& getFwhm() const;
-  
-  const double& getMinPeakTransmission() const;
-  
-  const galt::Spectrum& getSpectrum() const;
-  
-  void setSpectrum(const galt::Spectrum& spectrum);
-  
+
+  /**
+   * @brief FilterProfile
+   * @param name Human readable name of the filter.
+   * @param center Center wavelength in nanometers.
+   * @param fwhm Full-width at half-maximum.
+   * @param minPeakTransmission Minimum peak transmission.
+   * @param spectrum Instance of galt::Spectrum.
+   */
+  FilterProfile(const std::string &name, double center, double fwhm,
+                double minPeakTransmission,
+                const galt::Spectrum &spectrum = galt::Spectrum());
+
+  /**
+   * @brief Human-readable name of the filter.
+   * @return Name as string.
+   */
+  const std::string &getName() const;
+
+  /**
+   * @brief Center wavelength (nm) of the filter.
+   * @return Wavelength in nm.
+   */
+  const double &getCenter() const;
+
+  /**
+   * @brief Full-width at half-maximum (nm) of the filter.
+   * @note This is the bandwidth at half-transmission.
+   * @return FWHM in nm.
+   */
+  const double &getFwhm() const;
+
+  /**
+   * @brief Get the minimum peak transmission of the filter.
+   * @return Min. peak transmission, falls in range [0,1).
+   */
+  const double &getMinPeakTransmission() const;
+
+  /**
+   * @brief Get the spectral profile of the filter, where
+   * intensities represent transmission rates for each wavelength.
+   * @return Instance of galt::Spectrum.
+   */
+  const galt::Spectrum &getSpectrum() const;
+
+  /**
+   * @brief Set the spectral profile of the filter.
+   * @param spectrum Instance of galt::Spectrum.
+   * @see getSpectrum
+   */
+  void setSpectrum(const galt::Spectrum &spectrum);
+
 private:
   std::string name_;
   double center_;
@@ -49,7 +86,6 @@ private:
   double minPeakTransmission_;
   galt::Spectrum spectrum_;
 };
-
 }
 
 namespace YAML {
@@ -69,7 +105,6 @@ template <> struct convert<galt::FilterProfile> {
  * @param pose Filter profile to encode.
  * @return Emitter.
  */
-YAML::Emitter &operator<<(YAML::Emitter &out,
-                          const galt::FilterProfile &pose);
+YAML::Emitter &operator<<(YAML::Emitter &out, const galt::FilterProfile &pose);
 
 #endif // GALT_SPECTRAL_FILTERPROFILE_HPP_

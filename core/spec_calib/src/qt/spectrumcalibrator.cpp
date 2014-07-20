@@ -39,20 +39,30 @@ const cv::Mat& SpectrumCalibrator::lastImage() const {
   return image_; 
 }
 
+const galt::Spectrum& SpectrumCalibrator::lastSpectrum() const {
+  return spectrum_;
+}
+
 void SpectrumCalibrator::syncCallback(const sensor_msgs::ImageConstPtr& img,
                   const sensor_msgs::CameraInfoConstPtr &info, 
                   const geometry_msgs::PoseStampedConstPtr &poseStamped,
                   const ocean_optics::SpectrumConstPtr& spec)
 {
+  ROS_INFO("Update!");
+  
   cv_bridge::CvImageConstPtr bridgedImagePtr = cv_bridge::toCvCopy(img,"rgb8");
   if (!bridgedImagePtr) {
     ROS_ERROR("Failed to convert image to rgb8 with cv_bridge");
     return;
   }  
-  cv::Mat image = bridgedImagePtr->image;
-  image_ = image;
+  cv::Mat rgbImage = bridgedImagePtr->image;
+  image_ = rgbImage;
     
+  //  convert to intensity
+  cv::Mat monoImage;
+  cv::cvtColor(image_, monoImage, CV_RGB2GRAY);
   
+  spectrum_ = galt::Spectrum(spec->wavelengths, spec->spectrum);
   
   emit receivedMessage();
 }

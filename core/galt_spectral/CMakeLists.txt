@@ -23,6 +23,7 @@ include_directories(
 
 set(${PROJECT_NAME}_sources
   src/SpectrometerPose.cpp
+  src/Spectrum.cpp
 )
 
 # build library

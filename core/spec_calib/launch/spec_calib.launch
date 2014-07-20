@@ -54,5 +54,6 @@
     <remap from="~pixels" to="/monocular_pose_estimator/detected_led"/>
     <remap from="~pose_tags" to="/apriltag/pose_cam"/>
     <remap from="~spectrum" to="/spectrometer/spectrum"/>
+    <param name="camera_serial" value="$(arg camera_serial)"/>
   </node>
 </launch>

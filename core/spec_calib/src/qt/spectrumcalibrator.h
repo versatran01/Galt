@@ -25,6 +25,7 @@
 #include <ocean_optics/Spectrum.h>
 
 #include <spectral/SpectrometerPose.hpp>
+#include <spectral/Spectrum.hpp>
 
 class SpectrumCalibrator : public QObject
 {
@@ -33,6 +34,8 @@ public:
   explicit SpectrumCalibrator(QObject *parent, const galt::SpectrometerPose& specPose);
     
   const cv::Mat& lastImage() const;
+  
+  const galt::Spectrum& lastSpectrum() const;
   
 signals:
   void receivedMessage();
@@ -43,6 +46,7 @@ private:
   std::shared_ptr<image_transport::ImageTransport> imgTransport_;
   cv::Mat image_;
   
+  galt::Spectrum spectrum_;
   galt::SpectrometerPose specPose_;
   
   //  ROS subscribers

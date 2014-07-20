@@ -18,4 +18,12 @@ Spectrum::Spectrum() : wavelengths_(), intensities_() {}
 Spectrum::Spectrum(const std::vector<double> &wavelengths,
                    const std::vector<double> &intensities)
     : wavelengths_(wavelengths), intensities_(intensities) {}
+
+const std::vector<double>& Spectrum::getWavelengths() const {
+  return wavelengths_;
+}
+
+const std::vector<double>& Spectrum::getIntensities() const {
+  return intensities_;
+}
 }

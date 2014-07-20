@@ -13,6 +13,10 @@
 #define SPECTRUMCALIBRATIONVIEW_H
 
 #include <QWidget>
+#include <qwt/qwt.h>
+#include <qwt/qwt_plot.h> 
+#include <qwt/qwt_plot_curve.h>
+
 #include "spectrumcalibrator.h"
 
 namespace Ui {
@@ -37,6 +41,8 @@ public slots:
 private:
   Ui::SpectrumCalibrationView *ui;
   SpectrumCalibrator * specCalib_;
+  
+  QwtPlotCurve * curve_;
 };
 
 #endif // SPECTRUMCALIBRATIONVIEW_H

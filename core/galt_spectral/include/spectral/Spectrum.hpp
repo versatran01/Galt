@@ -27,6 +27,10 @@ public:
   Spectrum(const std::vector<double>& wavelengths, 
            const std::vector<double>& intensities);
   
+  const std::vector<double>& getWavelengths() const;
+  
+  const std::vector<double>& getIntensities() const;
+  
 private:
   std::vector<double> wavelengths_;
   std::vector<double> intensities_;

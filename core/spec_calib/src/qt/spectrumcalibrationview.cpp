@@ -9,12 +9,19 @@
  *      Author: gareth
  */
 
+#include <QFile>
+
 #include "spectrumcalibrationview.h"
 #include "ui_spectrumcalibrationview.h"
 
 #include <ros/package.h>
 #include <qwt/qwt.h>
 #include <qwt/qwt_plot.h>
+#include <qwt/qwt_plot_grid.h>
+#include <qwt/qwt_legend.h>
+#include <qwt/qwt_symbol.h>
+
+#include <yaml-cpp/yaml.h>
 
 SpectrumCalibrationView::SpectrumCalibrationView(QWidget *parent) :
   QWidget(parent),
@@ -23,13 +30,31 @@ SpectrumCalibrationView::SpectrumCalibrationView(QWidget *parent) :
   ui->setupUi(this);
   reset();
   
+  //  configure the plot
   QwtPlot * plot = ui->plot;
-  
   plot->setTitle("Spectrum");
   plot->setCanvasBackground(Qt::white);
   plot->setAxisScale(QwtPlot::yLeft, 0.0, 10.0);
+  plot->setAxisScale(QwtPlot::xBottom, 0.0, 10.0);
   plot->resize(320,240);
   plot->repaint();
+    
+  QwtPlotGrid *grid = new QwtPlotGrid();
+  grid->attach( plot );
+  
+  curve_ = new QwtPlotCurve();
+  curve_->setTitle("ocean_optics");
+  curve_->setPen( QPen(Qt::blue, 4) );
+  curve_->setRenderHint( QwtPlotItem::RenderAntialiased, true );
+  curve_->setSymbol( new QwtSymbol() );
+  
+  QPolygonF points;
+  points << QPointF( 0.0, 4.4 ) << QPointF( 1.0, 3.0 )
+      << QPointF( 2.0, 4.5 ) << QPointF( 3.0, 6.8 )
+      << QPointF( 4.0, 7.9 ) << QPointF( 5.0, 7.1 );
+  //curve_->setSamples( points );
+      
+  curve_->attach( plot );      
 }
 
 SpectrumCalibrationView::~SpectrumCalibrationView()
@@ -47,25 +72,79 @@ void SpectrumCalibrationView::reset() {
   //  TODO: refactor this kind of functionality into a class...
   const std::string path = ros::package::getPath("spec_calib");
   
+  //  load the camera pose info
   ros::NodeHandle nh("~");
   std::string camSerial;
-  //nh.param("camera_serial",camSerial,"this_is_an_error");
+  int camSerialI;
+  if (nh.getParam("camera_serial", camSerialI)) {
+    //  may be an integer
+    camSerial = std::to_string(camSerialI);
+  } else if (!nh.getParam("camera_serial", camSerial)) {
+    camSerial = "this_is_an_error";
+  }
   
   const std::string filePath = path + "/config/pose_" + camSerial + ".yaml";
   
+  //  TODO: refactor this into a utility function...
   //  load the pose information
-  ///FILE * input = fopen(filePath.c_str(), "r");
-  //fscanf(input,)
+  QFile f(tr(filePath.c_str()));
+  if (!f.open(QFile::ReadOnly | QFile::Text)) {
+    ROS_ERROR("Unable to load camera pose file: %s", filePath.c_str());
+    return;
+  }
+  else if (f.size() > 2*1024*1024) {
+    ROS_ERROR("File %s exceeds 2MB limit", filePath.c_str());
+    return;
+  }
   
+  QTextStream in(&f);
+  QString yamlContent = in.readAll();
+  
+  std::string yaml = yamlContent.toUtf8().constData();
+  YAML::Node node = YAML::Load(yaml);
   galt::SpectrometerPose pose;
+  try {
+    pose = node.as<galt::SpectrometerPose>();
+    auto dir = pose.getDirection();
+    ROS_INFO("Loaded pose: %f, %f, %f", dir[0], dir[1], dir[2]);
+  } catch(YAML::Exception& e) {
+    ROS_ERROR("Failed to decode yaml: %s", e.what());
+    return;
+  }
+  
   specCalib_ = new SpectrumCalibrator(this,pose);
   QObject::connect(specCalib_,SIGNAL(receivedMessage()),this,SLOT(calibratorUpdateState()));
 }
-
 
 void SpectrumCalibrationView::calibratorUpdateState(void) {
   const cv::Mat& image = specCalib_->lastImage();
   if (!image.empty()) {
     ui->imageWidget->setImage(image);
   }
+  
+  //  get range of spectrum
+  galt::Spectrum spec = specCalib_->lastSpectrum();
+  
+  double maxIntensity=0.0;
+  for (double I : spec.getIntensities()) {
+    maxIntensity = std::max(I, maxIntensity);
+  }
+  
+  const double minWavelength = spec.getWavelengths().front();
+  const double maxWavelength = spec.getWavelengths().back();
+   
+  //  update spectrum plot
+  QwtPlot * plot = ui->plot;
+  plot->setAxisScale(QwtPlot::yLeft, 0.0, maxIntensity*1.05);
+  plot->setAxisScale(QwtPlot::xBottom, minWavelength, maxWavelength);
+  
+  QPolygonF points;
+  for (size_t i=0; i < spec.getWavelengths().size(); i++) {
+    double wavelen = spec.getWavelengths()[i];
+    double intensity = spec.getIntensities()[i];
+    points.push_back(QPointF(wavelen,intensity));    
+  }
+  
+  curve_->setSamples( points );
+  plot->replot();
 }

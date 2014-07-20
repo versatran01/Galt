@@ -174,7 +174,7 @@ int main(int argc, char ** argv)
       //  publish
       specPub.publish(specMsg);
     }
-
+    
     rate.sleep();
     ros::spinOnce();
   }

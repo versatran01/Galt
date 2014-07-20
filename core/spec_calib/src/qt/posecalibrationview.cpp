@@ -112,8 +112,14 @@ void PoseCalibrationView::saveButtonPressed(bool) {
     //  serial for the camera we are calibrating
     ros::NodeHandle nh("~");
     std::string camSerial;
-    nh.param("camera_serial", camSerial, std::string("this_is_an_error"));
-    
+    int camSerialI;
+    if (nh.getParam("camera_serial", camSerialI)) {
+      //  may be an integer
+      camSerial = std::to_string(camSerialI);
+    } else if (!nh.getParam("camera_serial", camSerial)) {
+      camSerial = "this_is_an_error";
+    }
+        
     //  path to the package
     const std::string path = ros::package::getPath("spec_calib");
     

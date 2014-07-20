@@ -48,10 +48,11 @@ void GigeCamera::Disconnect() {
 
 void GigeCamera::Configure(const GigeConfig &config) {
   color_ = config.color;
-  // Set device parameters according to config
-  cout << label_ << "Color: " << config.color << " Width: " << config.width
-       << " Height: " << config.height << endl;
   SetAoi(config.width, config.height);
+  // Set device parameters according to config
+  cout << label_ << "Color: " << config.color << " Bit: " << config.bit
+       << " Width: " << config.width << " Height: " << config.height
+       << endl;
 }
 
 

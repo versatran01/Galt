@@ -57,6 +57,7 @@ void FlirGige::Run() {
   nh_.param<bool>("color", config.color, false);
   nh_.param<int>("width", config.width, 320);
   nh_.param<int>("height", config.height, 256);
+  nh_.param<int>("bit", config.bit, 0);
   camera_->Connect();
   camera_->Configure(config);
   camera_->Start();
@@ -103,6 +104,7 @@ void FlirGige::ReconfigureCallback(flir_gige::FlirConfig &config, int level) {
   gige_config.color = config.color;
   gige_config.width = config.width;
   gige_config.height = config.height;
+  gige_config.bit = config.bit;
   // Stop the camera if in acquisition
   if (camera_->IsAcquire()) {
     // Stop the image thread if camera is running

@@ -32,6 +32,7 @@ struct GigeConfig {
   bool color{false};
   int width{320};
   int height{256};
+  int bit{0};
 };
 
 // Functor for free PvDevice

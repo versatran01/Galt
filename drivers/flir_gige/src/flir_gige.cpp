@@ -75,7 +75,6 @@ void FlirGige::PublishImage(const cv::Mat &image,
   std_msgs::Header header;
   header.stamp = ros::Time::now();
   header.frame_id = frame_id_;
-  header.seq = seq_++;
   cv_ptr->header = header;
   cv_ptr->image = image;
   cinfo_->header = header;

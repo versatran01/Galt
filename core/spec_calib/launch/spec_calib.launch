@@ -7,6 +7,8 @@
 
   <!-- monocular camera -->
   <include file="$(find bluefox2)/launch/mono.launch">
+    <arg name="width" value="1280"/>
+    <arg name="height" value="960"/>
     <arg name="serial" value="$(arg camera_serial)"/>
     <arg name="color" value="$(arg camera_color)"/>
     <arg name="expose_us" value="$(arg camera_exposure)"/>
@@ -15,6 +17,7 @@
   <!-- AprilTag detector -->
   <node name="apriltag" pkg="apriltag_ros" type="apriltag_ros_node" output="screen">
     <remap from="~image_raw" to="/cam_$(arg camera_serial)/image_raw"/>
+    <param name="map_file" value="$(find galt_setup)/apriltags/calib_board.yaml"/>
   </node>
 
   <!-- Spectrometer -->

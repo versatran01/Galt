@@ -2,11 +2,15 @@
 
   <arg name="camera_serial" default="25001110"/>
   <arg name="camera_color" default="false"/>
+  <arg name="camera_exposure" default="5000"/>
 
   <!-- monocular camera -->
   <include file="$(find bluefox2)/launch/mono.launch">
     <arg name="serial" value="$(arg camera_serial)"/>
     <arg name="color" value="$(arg camera_color)"/>
+    <arg name="expose_us" value="$(arg camera_exposure)"/>
+    <arg name="width" value="1280"/>
+    <arg name="height" value="960"/>
   </include>
 
   <!-- circle tracker -->
@@ -43,5 +47,8 @@
     <remap from="~circles" to="/circle_tracker/circles"/>
     <remap from="~pose_leds" to="/monocular_pose_estimator/estimated_pose"/>
     <remap from="~pixels" to="/monocular_pose_estimator/detected_led"/>
+    <param name="camera_serial" value="$(arg camera_serial)"/>
+    <param name="camera_color" value="$(arg camera_color)"/>
+    <param name="camera_exposure" value="$(arg camera_exposure)"/>
   </node>
 </launch>

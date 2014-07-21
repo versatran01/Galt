@@ -189,6 +189,7 @@ void SpectrumCalibrator::calcSampleRegion(kr::vec2d& center, double& radius) con
   
   //  distort
   cv::Point2d dist = distortPoint(cameraInfo_.D, cv::Point2d(p_cam[0],p_cam[1]));
+  //cv::Point2d dist = cv::Point2d(p_cam[0], p_cam[1]);
   
   //  camera intrinsics
   double fx = cameraInfo_.K[0];

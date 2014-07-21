@@ -111,7 +111,7 @@ private:
   bool hasCalibration_;
     
   //  ROS subscribers
-  static constexpr uint32_t kROSQueueSize = 100;
+  static constexpr uint32_t kROSQueueSize = 300;
 
   image_transport::SubscriberFilter subImage_;
   message_filters::Subscriber<sensor_msgs::CameraInfo> subCamInfo_;

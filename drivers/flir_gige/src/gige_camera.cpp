@@ -1,6 +1,7 @@
 #include "flir_gige/gige_camera.h"
 
 #include <cmath>
+#include <unistd.h>
 
 #include <iostream>
 #include <stdexcept>
@@ -261,10 +262,19 @@ void GigeCamera::AcquireImages() {
        << endl;
   std::vector<double> planck_constant{B, F, O, static_cast<double>(R)};
 
+  bool skip_next_frame = false;
+
   // Start loop for acquisition
   while (acquire_) {
     PvBuffer *buffer;
     PvResult op_result;
+
+    // Skip next frame when operation is not ok
+    if (skip_next_frame) {
+      skip_next_frame = false;
+      sleep(1);
+      continue;
+    }
 
     // Retrieve next buffer
     PvResult result = pipeline_->RetrieveNextBuffer(&buffer, 1000, &op_result);
@@ -277,6 +287,7 @@ void GigeCamera::AcquireImages() {
 
     // Operation not ok, need to return buffer back to pipeline
     if (op_result.IsFailure()) {
+      skip_next_frame = true;
       cout << label_ << "Non Ok operation result" << endl;
       // Release the buffer back to the pipeline
       pipeline_->ReleaseBuffer(buffer);

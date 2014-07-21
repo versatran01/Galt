@@ -59,6 +59,16 @@ const std::vector<double> &Spectrum::getIntensities() const {
 
 std::size_t Spectrum::size() const { return wavelengths_.size(); }
 
+bool Spectrum::hasWavelengths(const std::vector<double>& wavelengths) const {
+  if (size() == wavelengths.size()) {
+    if (std::equal(wavelengths_.begin(), wavelengths_.end(),
+                   wavelengths.begin())) {
+      return true;
+    }
+  }
+  return false;
+}
+
 void Spectrum::resample(const std::vector<double> &wavelengths) {
   if (wavelengths.empty()) {
     throw std::invalid_argument("Sample wavelengths cannot be empty");
@@ -121,15 +131,11 @@ void Spectrum::resample(const std::vector<double> &wavelengths) {
 
 void Spectrum::multiply(const Spectrum &s) {
 
-  if (size() == s.size()) {
-    if (std::equal(wavelengths_.begin(), wavelengths_.end(),
-                   s.wavelengths_.begin())) {
-      //  no need to resample
-      for (size_t i = 0; i < size(); i++) {
-        intensities_[i] *= s.intensities_[i];
-      }
-      return;
+  if (hasWavelengths(s.getWavelengths())) {
+    for (size_t i = 0; i < size(); i++) {
+      intensities_[i] *= s.intensities_[i];
     }
+    return;
   }
   
   //  wavelengths are not equal, need to resample
@@ -138,6 +144,18 @@ void Spectrum::multiply(const Spectrum &s) {
   
   for (size_t i=0; i < size(); i++) {
     intensities_[i] *= rhs.intensities_[i];
+  }
+}
+
+void Spectrum::invert() {
+  for (size_t i=0; i < size(); i++) {
+    intensities_[i] = 1 / intensities_[i];
+  }
+}
+
+void Spectrum::scale(double s) {
+  for (size_t i=0; i < size(); i++) {
+    intensities_[i] *= s;
   }
 }
 

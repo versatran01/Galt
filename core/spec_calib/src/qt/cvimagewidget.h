@@ -15,6 +15,8 @@
 #include <QWidget>
 #include <opencv2/opencv.hpp>
 
+//  TODO: refactor into galt_widgets
+
 class CVImageWidget : public QWidget
 {
   Q_OBJECT

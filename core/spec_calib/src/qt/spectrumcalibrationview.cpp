@@ -10,9 +10,12 @@
  */
 
 #include <QFile>
+#include <QPushButton>
+#include <QDoubleSpinBox>
 
 #include "spectrumcalibrationview.h"
 #include "ui_spectrumcalibrationview.h"
+#include "spectralplot.h"
 
 #include <ros/package.h>
 #include <qwt/qwt.h>
@@ -51,7 +54,7 @@ SpectrumCalibrationView::SpectrumCalibrationView(QWidget *parent) :
   reset();
   
   //  configure the plot
-  QwtPlot * plot = ui->spectrumPlot;
+  SpectralPlot * plot = ui->spectrumPlot;
   plot->setTitle("Spectrum");
   plot->setCanvasBackground(Qt::white);
   plot->setAxisScale(QwtPlot::yLeft, 0.0, 1.0);
@@ -62,7 +65,7 @@ SpectrumCalibrationView::SpectrumCalibrationView(QWidget *parent) :
   QwtPlotGrid *grid = new QwtPlotGrid();
   grid->attach( plot );
   
-  curve_ = new QwtPlotCurve();
+  /*curve_ = new QwtPlotCurve();
   curve_->setTitle("ocean_optics");
   curve_->setPen( QPen(Qt::blue, 2) );
   curve_->setRenderHint( QwtPlotItem::RenderAntialiased, true );
@@ -84,7 +87,17 @@ SpectrumCalibrationView::SpectrumCalibrationView(QWidget *parent) :
   predictedCurve_->setRenderHint( QwtPlotItem::RenderAntialiased, true);
   predictedCurve_->setSymbol( new QwtSymbol() );
   
-  predictedCurve_->attach( plot );
+  predictedCurve_->attach( plot );*/
+  
+  //  connect UI items
+  QObject::connect(ui->addButton, SIGNAL(clicked(bool)), 
+                   this, SLOT(addObservationButtonPressed(bool)));
+  
+  QObject::connect(ui->reflectSpinBox, SIGNAL(valueChanged(double)),
+                   this, SLOT(spinBoxValueChanged(double)));
+  
+  QObject::connect(ui->sourceButton, SIGNAL(clicked(bool)), this,
+                   SLOT(sampleSourceButtonPressed(bool)));
 }
 
 SpectrumCalibrationView::~SpectrumCalibrationView()
@@ -144,25 +157,39 @@ void SpectrumCalibrationView::reset() {
   
   specCalib_ = new SpectrumCalibrator(this,pose,filterProfile);
   QObject::connect(specCalib_,SIGNAL(receivedMessage()),this,SLOT(calibratorUpdateState()));
+  
+  calibratorUpdateState();  //  trigger UI update
 }
 
 void SpectrumCalibrationView::calibratorUpdateState(void) {
-  const cv::Mat& image = specCalib_->lastImage(); //  RGB image
+  const cv::Mat& image = specCalib_->getUserImage();
+  if (!image.empty()) {
+    ui->imageWidget->setImage(image);
+  }
+  
+  ui->addButton->setEnabled(specCalib_->hasSourceSpectrum() && specCalib_->hasMeasurement());
+  ui->sourceButton->setEnabled(specCalib_->hasMeasurement());
   
   //  get range of spectrum
-  galt::Spectrum spec = specCalib_->lastSpectrum();
+  galt::Spectrum spec = specCalib_->getSpectrum();
+  if (!spec.size()) {
+    return;
+  }
+  galt::Spectrum profile = specCalib_->getFilterProfile().getSpectrum();
+  galt::Spectrum source = specCalib_->getSourceSpectrum();
   
   //  figure out size of plot axes
   double maxIntensity=0.0;
   for (double I : spec.getIntensities()) {
     maxIntensity = std::max(I, maxIntensity);
   }
+  profile.scale(maxIntensity);  //  for visual effect only
   
   const double minWavelength = spec.getWavelengths().front();
   const double maxWavelength = spec.getWavelengths().back();
    
   //  update spectrum plot, just replot every time for now
-  QwtPlot * plot = ui->spectrumPlot;
+  SpectralPlot * plot = ui->spectrumPlot;
   
   if (maxIntensity > currentMax_) {
     plot->setAxisScale(QwtPlot::yLeft, 0.0, maxIntensity);
@@ -170,51 +197,46 @@ void SpectrumCalibrationView::calibratorUpdateState(void) {
   }
   plot->setAxisScale(QwtPlot::xBottom, minWavelength, maxWavelength);
   
-  QPolygonF points;
-  for (size_t i=0; i < spec.size(); i++) {
-    double wavelen = spec.getWavelengths()[i];
-    double intensity = spec.getIntensities()[i];
-    points.push_back(QPointF(wavelen,intensity));    
-  }
-  
-  curve_->setSamples( points );
-  
-  //  update filter plot
-  points.clear();
-  const galt::Spectrum& profile = specCalib_->getFilterProfile().getSpectrum();
-  for (size_t i=0; i < profile.size(); i++) {
-    double wavelen = profile.getWavelengths()[i];
-    double intensity = profile.getIntensities()[i] * maxIntensity;
-    points.push_back(QPointF(wavelen,intensity));
-  }
-  filterCurve_->setSamples(points);
-  
-  points.clear();
-  const galt::Spectrum& pred = specCalib_->getPredictedSpectrum();
-  for (size_t i=0; i < pred.size(); i++) {
-    double wavelen = pred.getWavelengths()[i];
-    double intensity = pred.getIntensities()[i];
-    points.push_back(QPointF(wavelen,intensity));
-  }
-  predictedCurve_->setSamples(points);
-  
+  plot->updatePlot("ocean_optics", QPen(Qt::blue, 2), spec);
+  plot->updatePlot("source", QPen(Qt::green, 2), source);
+  plot->updatePlot("filter_profile", QPen(Qt::red, 2), profile);
+ 
   plot->replot();
   
-  ui->imageWidget->setImage(image);
+  //  update plot of camera + spectrometer samples  
 }
 
-void SpectrumCalibrationView::addObservationButtonPressed(void) {
+void SpectrumCalibrationView::spinBoxValueChanged(double value) {
+  if (specCalib_) {
+    value = std::max(std::min(value, 1.0), 0.0);
+    specCalib_->setCurrentReflectance(value);
+    ROS_INFO("Updated current reflectance: %f", value);
+  }
+}
+
+void SpectrumCalibrationView::sampleSourceButtonPressed(bool) {
+  if (specCalib_ && specCalib_->hasMeasurement()) {
+    specCalib_->setSource();
+    ROS_INFO("Setting the source profile");
+  }
+}
+
+void SpectrumCalibrationView::addObservationButtonPressed(bool) {
+  if (specCalib_ && specCalib_->hasMeasurement()) {
+    //  capture...
+  }
+}
+
+void SpectrumCalibrationView::calibrateButtonPressed(bool) {
+  
+  
   
 }
 
-void SpectrumCalibrationView::calibrateButtonPressed(void) {
+void SpectrumCalibrationView::resetButtonPressed(bool) {
   
 }
 
-void SpectrumCalibrationView::resetButtonPressed(void) {
-  
-}
-
-void SpectrumCalibrationView::saveButtonPressed(void) {
+void SpectrumCalibrationView::saveButtonPressed(bool) {
   
 }

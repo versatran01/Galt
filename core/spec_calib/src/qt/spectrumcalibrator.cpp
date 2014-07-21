@@ -19,6 +19,7 @@ SpectrumCalibrator::SpectrumCalibrator(QObject *parent,
                                        const galt::SpectrometerPose &specPose,
                                        const galt::FilterProfile &filterProfile)
     : QObject(parent), specPose_(specPose), filterProfile_(filterProfile) {
+  
   ros::NodeHandle nh("~");
 
   //  TODO: Add some error checking mechanism to this
@@ -36,12 +37,44 @@ SpectrumCalibrator::SpectrumCalibrator(QObject *parent,
       boost::bind(&SpectrumCalibrator::syncCallback, this, _1, _2, _3, _4));
 
   ROS_INFO("Subscribing to ~image, ~camera_info, ~pose_tags and ~spectrum");
+  
+  hasMeasurement_ = false;
+  currentReflectance_ = 0.0;
+  hasSource_ = false;
 }
 
-const cv::Mat &SpectrumCalibrator::lastImage() const { return image_; }
+bool SpectrumCalibrator::hasMeasurement() const { return hasMeasurement_; }
 
-const galt::Spectrum &SpectrumCalibrator::lastSpectrum() const {
+bool SpectrumCalibrator::hasSourceSpectrum() const { return hasSource_; }
+
+void SpectrumCalibrator::setSource() {
+  specSource_ = spectrum_;
+  hasSource_ = true;
+}
+
+void SpectrumCalibrator::setCurrentReflectance(double currentReflectance) {
+  currentReflectance_ = currentReflectance;
+}
+
+
+void SpectrumCalibrator::collectSample() {
+  
+  //  collect a sample and generate observations
+  if (hasMeasurement_ && hasSource_) {
+    
+     
+    
+  }
+}
+
+const cv::Mat &SpectrumCalibrator::getUserImage() const { return rgbImage_; }
+
+const galt::Spectrum &SpectrumCalibrator::getSpectrum() const {
   return spectrum_;
+}
+
+const galt::Spectrum &SpectrumCalibrator::getSourceSpectrum() const {
+  return specSource_;
 }
 
 const galt::FilterProfile &SpectrumCalibrator::getFilterProfile() const {
@@ -50,6 +83,40 @@ const galt::FilterProfile &SpectrumCalibrator::getFilterProfile() const {
 
 const galt::Spectrum &SpectrumCalibrator::getPredictedSpectrum() const {
   return predictedSpectrum_;
+}
+
+const std::vector<SpectrumCalibrator::Observation>& SpectrumCalibrator::getCameraObservations() const {
+  return obvsCamera_;
+}
+
+const std::vector<SpectrumCalibrator::Observation>& SpectrumCalibrator::getSpectrometerObservations() const {
+  return obvsSpectrometer_;
+}
+
+void SpectrumCalibrator::calcSampleRegion(kr::vec2d& center, double& radius) const {
+ 
+  const kr::vec3d o = camPose_.p;
+  const kr::vec3d n = camPose_.q.matrix() * kr::vec3d(0,0,1);
+  
+  //  TODO: refactor this...
+  const double d = specPose_.distanceToPlane(o,n);
+  kr::vec3d p_cam = specPose_.getPosition() + specPose_.getDirection()*d;
+  
+  p_cam[0] /= p_cam[2];
+  p_cam[1] /= p_cam[2]; //  project
+  
+  //  distort
+  cv::Point2d dist = distortPoint(cameraInfo_.D, cv::Point2d(p_cam[0],p_cam[1]));
+  
+  //  camera intrinsics
+  double fx = cameraInfo_.K[0];
+  double cx = cameraInfo_.K[2];
+  double fy = cameraInfo_.K[4];
+  double cy = cameraInfo_.K[5];
+    
+  center[0] = dist.x*fx + cx;
+  center[1] = dist.y*fy + cy;
+  radius = std::tan(specPose_.getFov()/2) * d * 0.5 * (fx+fy) / p_cam[2];
 }
 
 //  TODO: This code is a mess, clean it up after gallo
@@ -65,60 +132,31 @@ void SpectrumCalibrator::syncCallback(
     ROS_ERROR("Failed to convert image to mono8 with cv_bridge");
     return;
   }
-  cv::Mat monoImage = bridgedImagePtr->image;
+  monoImage_ = bridgedImagePtr->image;
 
   //  convert to intensity
-  cv::Mat rgbImage;
-  cv::cvtColor(monoImage, rgbImage, CV_GRAY2RGB);
-  image_ = rgbImage;
+  cv::cvtColor(monoImage_, rgbImage_, CV_GRAY2RGB);
   cameraInfo_ = *info;
 
   //  spectrometer measurement
   spectrum_ = galt::Spectrum(spec->wavelengths, spec->spectrum);
   
-  //  apply the filter profile to get prediction
-  galt::Spectrum specPred = spectrum_;
-  specPred.multiply(filterProfile_.getSpectrum());
-  predictedSpectrum_ = specPred;
-  
   //  project the spectrometer view into the image
   kr::Pose<double> pose(poseStamped->pose);
   
   //  AprilTags produce pose of camera in tag frame, so reverse it
-  pose = pose.inverse();
+  camPose_ = pose.inverse();  
+  hasMeasurement_ = true;
   
-  kr::vec3d o = pose.p;
-  kr::vec3d n = pose.q.matrix() * kr::vec3d(0,0,1);
-  
-  //  TODO: refactor this...
-  const double d = specPose_.distanceToPlane(o,n);
-  kr::vec3d p_cam = specPose_.getPosition() + specPose_.getDirection()*d;
-  
-  p_cam[0] /= p_cam[2];
-  p_cam[1] /= p_cam[2]; //  project
-  
-  //  distort
-  cv::Point2d dist = distortPoint(info->D, cv::Point2d(p_cam[0],p_cam[1]));
-  
-  //  camera intrinsics
-  double fx = info->K[0];
-  double cx = info->K[2];
-  double fy = info->K[4];
-  double cy = info->K[5];
+  //  calculate circle for user image update
+  calcSampleRegion(specCenter_, specRadius_);
     
-  dist.x = dist.x*fx + cx;
-  dist.y = dist.y*fy + cy;
-  double radius = std::tan(specPose_.getFov()/2) * d * 0.5 * (fx+fy) / p_cam[2];
-    
-  if (radius > 0.0) {
+  if (specRadius_ > 0.0) {
     //  draw circle on image
-    cv::circle(image_, dist, radius, cv::Scalar(0,255,0), 3);
+    cv::circle(rgbImage_, cv::Point2d(specCenter_[0],specCenter_[1]), 
+        specRadius_, cv::Scalar(0,255,0), 3);
   } else {
-    ROS_WARN("Negative radius! Bad calibration?");
-  }
-  
-  if (true) { //  logic here...
-    addObservation(kr::vec2d(dist.x,dist.y), radius, predictedSpectrum_, monoImage);
+    ROS_WARN("Radius is negative!");
   }
   
   emit receivedMessage();
@@ -132,8 +170,8 @@ void SpectrumCalibrator::addObservation(const kr::vec2d &point, double radius,
   
   int min_x = std::max( std::floor(point[0] - radius), 0.0 );
   int min_y = std::max( std::floor(point[1] - radius), 0.0 );
-  int max_x = std::min( static_cast<int>(std::ceil(point[0] + radius)), image_.cols );
-  int max_y = std::min( static_cast<int>(std::ceil(point[1] + radius)), image_.rows );
+  int max_x = std::min( static_cast<int>(std::ceil(point[0] + radius)), monoImage_.cols );
+  int max_y = std::min( static_cast<int>(std::ceil(point[1] + radius)), monoImage_.rows );
  
   std::vector<double> pixels;
   
@@ -155,7 +193,7 @@ void SpectrumCalibrator::addObservation(const kr::vec2d &point, double radius,
     total += I;
     total2 += I*I;
   }
-  const double mean = total / pixels.size();
+  const double mean = total / pixels.size();  //  mean intensity over the patch
   const double mean_sqr = total2 / pixels.size();
   const double var = mean_sqr - mean*mean;
   

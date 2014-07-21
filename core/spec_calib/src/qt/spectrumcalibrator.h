@@ -33,17 +33,38 @@
 class SpectrumCalibrator : public QObject {
   Q_OBJECT
 public:
+  struct Observation {
+    double reflectance;
+    double intensity;
+  };
+  
   explicit SpectrumCalibrator(QObject *parent,
                               const galt::SpectrometerPose &specPose,
                               const galt::FilterProfile &filterProfile);
 
-  const cv::Mat &lastImage() const;
+  bool hasMeasurement() const;
+  
+  bool hasSourceSpectrum() const;
+  
+  void setSource();
+  
+  void setCurrentReflectance(double currentReflectance);
+  
+  void collectSample();
+  
+  const cv::Mat &getUserImage() const;
 
-  const galt::Spectrum &lastSpectrum() const;
+  const galt::Spectrum &getSpectrum() const;
 
+  const galt::Spectrum &getSourceSpectrum() const;
+  
   const galt::FilterProfile &getFilterProfile() const;
 
   const galt::Spectrum &getPredictedSpectrum() const;
+  
+  const std::vector<Observation>& getCameraObservations() const;
+  
+  const std::vector<Observation>& getSpectrometerObservations() const;
   
 signals:
   void receivedMessage();
@@ -51,15 +72,36 @@ signals:
 public slots:
 
 private:
+  
+  void calcSampleRegion(kr::vec2d& center, double& radius) const;
+  
   std::shared_ptr<image_transport::ImageTransport> imgTransport_;
-  cv::Mat image_;
+  
+  //  measurements  
+  cv::Mat monoImage_, rgbImage_;
   sensor_msgs::CameraInfo cameraInfo_;
-
+  kr::Pose<double> camPose_;
   galt::Spectrum spectrum_;
+  kr::vec2d specCenter_;
+  double specRadius_;
+  bool hasMeasurement_;
+  
+  //  spectrometer settings
   galt::SpectrometerPose specPose_;
   galt::FilterProfile filterProfile_;
+  
+  //  source spectrum
+  galt::Spectrum specSource_;
+  double currentReflectance_;
+  bool hasSource_;
+  
   galt::Spectrum predictedSpectrum_;
+  
+  bool shouldCapture_;
 
+  std::vector<Observation> obvsCamera_;
+  std::vector<Observation> obvsSpectrometer_;
+    
   //  ROS subscribers
   static constexpr uint32_t kROSQueueSize = 100;
 

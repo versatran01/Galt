@@ -76,6 +76,15 @@ public:
   std::size_t size() const;
 
   /**
+   * @brief Check if this spectrum has an exact set of wavelengths.
+   * @param wavelengths Wavelengths to compare with.
+   * @return True if all the wavelengths are the same.
+   * 
+   * @note This should be the case if both spectra come from the same sensor.
+   */
+  bool hasWavelengths(const std::vector<double>& wavelengths) const;
+  
+  /**
    * @brief Sample the receiver at specific wavelengths to create a new
    * spectrum.
    * @param wavelengths Wavelengths at which to sample.
@@ -91,11 +100,23 @@ public:
    * @brief Multiply two spectra together, storing the result in place.
    * @param s Spectrum to multiply against the receiver.
    *
-   * @note Is s uses different wavelengths than the receiver, it will be
+   * @note If s uses different wavelengths than the receiver, it will be
    * resampled to match the receiver. In general, there is no guarantee that 
    * A*B == B*A.
    */
   void multiply(const Spectrum &s);
+  
+  /**
+   * @brief Take 1/x where x are the intensity values.
+   * @note Does not check for 0 before division.
+   */
+  void invert();
+  
+  /**
+   * @brief Scale the intensities by a scalar value.
+   * @param s Value by which to scale.
+   */
+  void scale(double s);
   
   /**
    * @brief Integrate numerically to obtain the area under the spectrum.

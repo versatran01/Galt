@@ -39,6 +39,7 @@ set(${PROJECT_NAME}_SOURCES
   src/qt/cvimagewidget.cpp
   src/qt/spectrumcalibrationview.cpp
   src/qt/spectrumcalibrator.cpp
+  src/qt/spectralplot.cpp
 )
 set(${PROJECT_NAME}_HEADERS
   src/qt/mainwindow.h
@@ -47,6 +48,7 @@ set(${PROJECT_NAME}_HEADERS
   src/qt/cvimagewidget.h
   src/qt/spectrumcalibrationview.h
   src/qt/spectrumcalibrator.h
+  src/qt/spectralplot.h
 )
 set(${PROJECT_NAME}_FORMS
   forms/mainwindow.ui

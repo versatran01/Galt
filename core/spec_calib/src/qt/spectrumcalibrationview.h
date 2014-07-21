@@ -38,19 +38,21 @@ signals:
 public slots:
   void calibratorUpdateState(void);
   
-  void addObservationButtonPressed(void);
+  void spinBoxValueChanged(double);
   
-  void calibrateButtonPressed(void);
+  void sampleSourceButtonPressed(bool);
   
-  void resetButtonPressed(void);
+  void addObservationButtonPressed(bool);
   
-  void saveButtonPressed(void);
+  void calibrateButtonPressed(bool);
+  
+  void resetButtonPressed(bool);
+  
+  void saveButtonPressed(bool);
   
 private:
   Ui::SpectrumCalibrationView *ui;
   SpectrumCalibrator * specCalib_;
-  
-  QwtPlotCurve * curve_, * filterCurve_, * predictedCurve_;
   double currentMax_;
 };
 

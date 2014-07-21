@@ -16,8 +16,6 @@
 #include <PvGenParameterArray.h>
 #include <PvGenParameter.h>
 
-#define BUFFER_COUNT (16)
-
 namespace flir_gige {
 
 using std::cout;
@@ -300,7 +298,7 @@ void GigeCamera::AcquireImages() {
       device_params->GetFloatValue("Spot", spot);
       double S = GetSpotPixel(*image_raw_);
       double t = GetSpotTemperature(S, planck_constant);
-//      cout << "Spot: " << spot << " Temp: " << t << endl;
+      use_temperature(std::make_pair(spot, t));
       use_image(*image_raw_, planck_constant);
     } else {
       // For display purpose in non raw data mode
@@ -348,14 +346,12 @@ void GigeCamera::SetPixelFormat(BitSize bit) {
   device_params->GetIntegerValue("Height", height);
   // Set digital output and pixel format
   if (bit == BIT8BIT) {
-    cout << "8 bit" << endl;
     device_params->SetEnumValue("PixelFormat", PvPixelMono8);
     device_params->SetEnumValue("DigitalOutput",
                                 static_cast<int64_t>(bit));  // 2  - bit8bit
     image_raw_.reset(new cv::Mat(cv::Size(width, height), CV_8UC1));
     raw_ = false;
   } else if (bit == BIT14BIT) {
-    cout << "16 bit" << endl;
     device_params->SetEnumValue("PixelFormat", PvPixelMono14);
     device_params->SetEnumValue("DigitalOutput",
                                 static_cast<int64_t>(bit));  // 3  - bit14bit

@@ -9,6 +9,7 @@
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/CameraInfo.h>
 #include <sensor_msgs/image_encodings.h>
+#include <sensor_msgs/Temperature.h>
 #include <camera_info_manager/camera_info_manager.h>
 #include <dynamic_reconfigure/server.h>
 #include <cv_bridge/cv_bridge.h>
@@ -37,6 +38,8 @@ FlirGige::FlirGige(const ros::NodeHandle &nh) : nh_{nh}, it_{nh} {
   camera_.reset(new flir_gige::GigeCamera(ip_address));
   camera_->use_image = std::bind(&FlirGige::PublishImage, this,
                                  std::placeholders::_1, std::placeholders::_2);
+  camera_->use_temperature = std::bind(&FlirGige::PublishTemperature, this,
+                                std::placeholders::_1);
 
   // Setup camera publisher and dynamic reconfigure callback
   std::string calib_url;
@@ -48,6 +51,7 @@ FlirGige::FlirGige(const ros::NodeHandle &nh) : nh_{nh}, it_{nh} {
   cinfo_ = CameraInfoPtr(new CameraInfo(cinfo_manager.getCameraInfo()));
 
   camera_pub_ = it_.advertiseCamera("image_raw", 1);
+  temp_pub_ = nh_.advertise<sensor_msgs::Temperature>("spot", 1);
   server_.setCallback(
       boost::bind(&FlirGige::ReconfigureCallback, this, _1, _2));
 }
@@ -73,9 +77,8 @@ void FlirGige::PublishImage(const cv::Mat &image,
   // Construct a cv image
   cv_bridge::CvImagePtr cv_ptr(new cv_bridge::CvImage());
   std_msgs::Header header;
-  header.stamp = ros::Time::now();
-  header.frame_id = frame_id_;
-  cv_ptr->header = header;
+  cv_ptr->header.stamp = ros::Time::now();
+  cv_ptr->header.frame_id = frame_id_;
   cv_ptr->image = image;
   cinfo_->header = header;
   cinfo_->D = planck;
@@ -84,6 +87,16 @@ void FlirGige::PublishImage(const cv::Mat &image,
   image_ = cv_ptr->toImageMsg();
   camera_pub_.publish(image_, cinfo_);
   rate_->sleep();
+}
+
+void FlirGige::PublishTemperature(const std::pair<double, double> &spot) {
+  // Construct a temperature mesage
+  sensor_msgs::Temperature temperature;
+  temperature.header.stamp = ros::Time::now();
+  temperature.header.frame_id = frame_id_;
+  temperature.temperature = spot.first;
+  temperature.variance = spot.second;
+  temp_pub_.publish(temperature);
 }
 
 std::string FlirGige::GetImageEncoding(const cv::Mat &image) {

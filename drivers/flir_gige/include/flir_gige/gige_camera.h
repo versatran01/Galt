@@ -15,6 +15,7 @@
 #include <memory>
 #include <thread>
 #include <functional>
+#include <utility>
 
 #include <PvSystem.h>
 #include <PvDevice.h>
@@ -71,6 +72,7 @@ class GigeCamera {
 
   std::function<void(const cv::Mat &image, const std::vector<double> &planck)>
       use_image;
+  std::function<void(const std::pair<double,double> &spot)> use_temperature;
 
  private:
   void FindDevice(const std::string &ip);

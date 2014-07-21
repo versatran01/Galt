@@ -15,6 +15,40 @@
 #include <kr_math/pose.hpp>
 #include <kr_math/SO3.hpp>
 
+#include <Eigen/Dense>
+
+//  least squares fit of form y = mx + b
+static bool leastSquaresFit(const std::vector<double>& x,
+                            const std::vector<double>& y,
+                            double& m,
+                            double& b) {
+  
+  assert(x.size() == y.size() && x.size() > 0);
+  
+  Eigen::Matrix<double,Eigen::Dynamic,2> X(x.size(), 2);
+  Eigen::Matrix<double,Eigen::Dynamic,1> Y(y.size(), 1);
+  
+  for (size_t i=0; i < x.size(); i++) {
+    X(i,0) = x[i];
+    X(i,1) = 1;
+    Y(i,0) = y[i];
+  }
+  
+  Eigen::Matrix<double,2,2> H = X.transpose() * X;
+  Eigen::Matrix<double,2,2> Hinv;
+  
+  bool invertible;
+  H.computeInverseWithCheck(Hinv,invertible);
+  if (!invertible) {
+    return false;
+  }
+  
+  Eigen::Matrix<double,2,1> sol = Hinv * X.transpose() * Y;
+  m = sol[0];
+  b = sol[1];
+  return true;
+}
+
 SpectrumCalibrator::SpectrumCalibrator(QObject *parent,
                                        const galt::SpectrometerPose &specPose,
                                        const galt::FilterProfile &filterProfile)
@@ -47,6 +81,8 @@ bool SpectrumCalibrator::hasMeasurement() const { return hasMeasurement_; }
 
 bool SpectrumCalibrator::hasSourceSpectrum() const { return hasSource_; }
 
+bool SpectrumCalibrator::canCalibrate() const { return observations_.size() >= 2; }
+
 void SpectrumCalibrator::setSource() {
   specSource_ = spectrum_;
   hasSource_ = true;
@@ -62,6 +98,28 @@ void SpectrumCalibrator::collectSample() {
   if (hasMeasurement_ && hasSource_) {
     addObservation();
   }
+}
+
+//  TODO: better error handling here too
+void SpectrumCalibrator::calibrate() {
+ if (!canCalibrate()) {
+   throw std::runtime_error("More observations required before calibrating");
+ }
+ 
+ ROS_INFO("Calibrating..."); 
+  
+ // camera first
+ std::vector<double> X,Y;
+ 
+ for (const Observation& O : observations_) {
+   X.push_back(O.intensityCam);
+   Y.push_back(O.reflectance);
+ }
+ 
+ double camM,camB;
+ if (!leastSquaresFit(X,Y,camM,camB)) {
+   ROS_ERROR("Failed to solve linear system (more samples required?)");
+ }
 }
 
 const cv::Mat &SpectrumCalibrator::getUserImage() const { return rgbImage_; }

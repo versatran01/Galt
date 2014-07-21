@@ -47,11 +47,15 @@ public:
   
   bool hasSourceSpectrum() const;
   
+  bool canCalibrate() const;
+  
   void setSource();
   
   void setCurrentReflectance(double currentReflectance);
   
   void collectSample();
+  
+  void calibrate();
   
   const cv::Mat &getUserImage() const;
 

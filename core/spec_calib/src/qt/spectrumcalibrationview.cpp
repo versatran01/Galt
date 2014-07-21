@@ -80,6 +80,7 @@ SpectrumCalibrationView::SpectrumCalibrationView(QWidget *parent) :
   QwtSymbol * sym = new QwtSymbol(QwtSymbol::Ellipse);
   sym->setSize(5);
   camCurve_->setSymbol(sym);
+  camCurve_->setStyle(QwtPlotCurve::Dots);
   //camCurve_->setPen( QPen(Qt::blue, 2) );
   camCurve_->attach(camPlot);
   
@@ -249,9 +250,10 @@ void SpectrumCalibrationView::calibrateButtonPressed(bool) {
 }
 
 void SpectrumCalibrationView::resetButtonPressed(bool) {
-  
+  reset();
+  ROS_INFO("Resetting");
 }
 
 void SpectrumCalibrationView::saveButtonPressed(bool) {
-  
+  ROS_WARN("SAVE NOT IMPLEMENTED YET");
 }

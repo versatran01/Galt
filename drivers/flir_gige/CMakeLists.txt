@@ -1,8 +1,6 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(flir_gige)
 
-set(CMAKE_BUILD_TYPE Debug)
-
 add_definitions("-Wall -std=c++11")
 
 # Set library paths for pleora ebus sdk on 64-bit linux
@@ -16,7 +14,8 @@ else(CMAKE_SIZEOF_VOID_P EQUAL 8)
 endif(CMAKE_SIZEOF_VOID_P EQUAL 8)
 
 find_package(catkin REQUIRED
-    COMPONENTS roscpp sensor_msgs image_transport camera_info_manager
+    COMPONENTS roscpp sensor_msgs std_msgs
+               image_transport camera_info_manager
                dynamic_reconfigure cv_bridge nodelet
     )
 find_package(OpenCV)

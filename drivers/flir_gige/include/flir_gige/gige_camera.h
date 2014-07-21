@@ -9,10 +9,13 @@
 #ifndef FLIR_GIGE_GIGE_CAMERA_H_
 #define FLIR_GIGE_GIGE_CAMERA_H_
 
+#include <stdint.h>
+
 #include <string>
 #include <memory>
 #include <thread>
 #include <functional>
+#include <utility>
 
 #include <PvSystem.h>
 #include <PvDevice.h>
@@ -27,11 +30,15 @@
 #include <opencv2/core/core.hpp>
 
 namespace flir_gige {
+// Digital output big
+enum BitSize { BIT8BIT = 2, BIT14BIT };
+
 // Config struct
 struct GigeConfig {
   bool color{false};
   int width{320};
   int height{256};
+  int bit{2};
 };
 
 // Functor for free PvDevice
@@ -63,10 +70,12 @@ class GigeCamera {
   // Return Acquisition status
   const bool IsAcquire() const { return acquire_; }
 
-  std::function<void(const cv::Mat &image)> use_image;
+  std::function<void(const cv::Mat &image, const std::vector<double> &planck)>
+      use_image;
+  std::function<void(const std::pair<double, double> &spot)> use_temperature;
 
  private:
-  void FindDevice();
+  void FindDevice(const std::string &ip);
   void ConnectDevice();
   void OpenStream();
   void ConfigureStream();
@@ -74,24 +83,31 @@ class GigeCamera {
   void StartAcquisition();
   void StopAcquisition();
   void AcquireImages();
+  double GetSpotPixel(const cv::Mat &image);
+  double GetSpotTemperature(double S, const std::vector<double> &planck);
 
   void SetAoi(int width, int height);
+  void SetPixelFormat(BitSize bit);
 
   typedef std::unique_ptr<PvDevice, FreeDevice> PvDevicePtr;
   typedef std::unique_ptr<PvStream, FreeStream> PvStreamPtr;
   typedef std::unique_ptr<PvPipeline> PvPipelinePtr;
   typedef std::unique_ptr<std::thread> ThreadPtr;
+  typedef std::unique_ptr<cv::Mat> MatPtr;
 
+  bool raw_{false};
   bool acquire_{false};
-  bool color_{false};
+  bool color_{false};  // false - grayscale, true - jet
   std::string label_{"\033[0;35m[ FLIR]:\033[0m "};
-  std::string ip_address_;
+
   PvSystem system_;
   const PvDeviceInfo *dinfo_;
   PvDevicePtr device_;
   PvStreamPtr stream_;
   PvPipelinePtr pipeline_;
   ThreadPtr image_thread_;
+  MatPtr image_raw_;
+
 };  // class GigeCamera
 
 }  // namespace flir_gige

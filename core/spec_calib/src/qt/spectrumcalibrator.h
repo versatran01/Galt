@@ -35,7 +35,8 @@ class SpectrumCalibrator : public QObject {
 public:
   struct Observation {
     double reflectance;
-    double intensity;
+    double intensityCam;
+    galt::Spectrum spectrum;
   };
   
   explicit SpectrumCalibrator(QObject *parent,
@@ -59,12 +60,8 @@ public:
   const galt::Spectrum &getSourceSpectrum() const;
   
   const galt::FilterProfile &getFilterProfile() const;
-
-  const galt::Spectrum &getPredictedSpectrum() const;
   
-  const std::vector<Observation>& getCameraObservations() const;
-  
-  const std::vector<Observation>& getSpectrometerObservations() const;
+  const std::vector<Observation>& getObservations() const;
   
 signals:
   void receivedMessage();
@@ -94,13 +91,9 @@ private:
   galt::Spectrum specSource_;
   double currentReflectance_;
   bool hasSource_;
-  
-  galt::Spectrum predictedSpectrum_;
-  
-  bool shouldCapture_;
 
-  std::vector<Observation> obvsCamera_;
-  std::vector<Observation> obvsSpectrometer_;
+  //  measurements  
+  std::vector<Observation> observations_;
     
   //  ROS subscribers
   static constexpr uint32_t kROSQueueSize = 100;
@@ -122,7 +115,7 @@ private:
                     const geometry_msgs::PoseStampedConstPtr &poseStamped,
                     const ocean_optics::SpectrumConstPtr &spec);
   
-  void addObservation(const kr::vec2d& point, double radius, const galt::Spectrum& spectrum, const cv::Mat &monoImage);
+  void addObservation();
 };
 
 #endif // SPECTRUMCALIBRATOR_H

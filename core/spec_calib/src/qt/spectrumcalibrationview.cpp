@@ -53,41 +53,35 @@ SpectrumCalibrationView::SpectrumCalibrationView(QWidget *parent) :
   ui->setupUi(this);
   reset();
   
-  //  configure the plot
+  //  configure spectral plot
   SpectralPlot * plot = ui->spectrumPlot;
   plot->setTitle("Spectrum");
   plot->setCanvasBackground(Qt::white);
   plot->setAxisScale(QwtPlot::yLeft, 0.0, 1.0);
-  plot->setAxisScale(QwtPlot::xBottom, 0.0, 1.0);
+  plot->setAxisScale(QwtPlot::xBottom, 350.0, 1050.0);
   plot->resize(320,240);
   plot->repaint();
-    
-  QwtPlotGrid *grid = new QwtPlotGrid();
-  grid->attach( plot );
+  (new QwtPlotGrid())->attach(plot);
   
-  /*curve_ = new QwtPlotCurve();
-  curve_->setTitle("ocean_optics");
-  curve_->setPen( QPen(Qt::blue, 2) );
-  curve_->setRenderHint( QwtPlotItem::RenderAntialiased, true );
-  curve_->setSymbol( new QwtSymbol() );
-      
-  curve_->attach( plot );  
+  //  configure calibration plot for camera
+  QwtPlot * camPlot = ui->camCalibPlot;
+  camPlot->setTitle("Camera");
+  camPlot->setCanvasBackground(Qt::white);
+  camPlot->setAxisScale(QwtPlot::yLeft, 0.0, 1.0);
+  camPlot->setAxisScale(QwtPlot::xBottom, 0.0, 1.0);
+  camPlot->setAxisTitle(QwtPlot::xBottom, "Intensity");
+  camPlot->setAxisTitle(QwtPlot::yLeft, "Reflectance");
+  camPlot->repaint();
+  (new QwtPlotGrid())->attach(camPlot);
   
-  filterCurve_ = new QwtPlotCurve();
-  filterCurve_->setTitle("filter_profile");
-  filterCurve_->setPen( QPen(Qt::red, 2) );
-  filterCurve_->setRenderHint( QwtPlotItem::RenderAntialiased, true);
-  filterCurve_->setSymbol( new QwtSymbol() );
+  camCurve_ = new QwtPlotCurve("camera_measurements");
+  camCurve_->setRenderHint(QwtPlotItem::RenderAntialiased, true);
   
-  filterCurve_->attach( plot );
-  
-  predictedCurve_ = new QwtPlotCurve();
-  predictedCurve_->setTitle("predicted_spectrum");
-  predictedCurve_->setPen( QPen(Qt::green, 2) );
-  predictedCurve_->setRenderHint( QwtPlotItem::RenderAntialiased, true);
-  predictedCurve_->setSymbol( new QwtSymbol() );
-  
-  predictedCurve_->attach( plot );*/
+  QwtSymbol * sym = new QwtSymbol(QwtSymbol::Ellipse);
+  sym->setSize(5);
+  camCurve_->setSymbol(sym);
+  //camCurve_->setPen( QPen(Qt::blue, 2) );
+  camCurve_->attach(camPlot);
   
   //  connect UI items
   QObject::connect(ui->addButton, SIGNAL(clicked(bool)), 
@@ -98,6 +92,15 @@ SpectrumCalibrationView::SpectrumCalibrationView(QWidget *parent) :
   
   QObject::connect(ui->sourceButton, SIGNAL(clicked(bool)), this,
                    SLOT(sampleSourceButtonPressed(bool)));
+  
+  QObject::connect(ui->calibrateButton, SIGNAL(clicked(bool)),
+                   this, SLOT(calibrateButtonPressed(bool)));
+  
+  QObject::connect(ui->resetButton, SIGNAL(clicked(bool)),
+                   this, SLOT(resetButtonPressed(bool)));
+  
+  QObject::connect(ui->saveButton, SIGNAL(clicked(bool)),
+                   this, SLOT(saveButtonPressed(bool)));
 }
 
 SpectrumCalibrationView::~SpectrumCalibrationView()
@@ -200,10 +203,21 @@ void SpectrumCalibrationView::calibratorUpdateState(void) {
   plot->updatePlot("ocean_optics", QPen(Qt::blue, 2), spec);
   plot->updatePlot("source", QPen(Qt::green, 2), source);
   plot->updatePlot("filter_profile", QPen(Qt::red, 2), profile);
- 
   plot->replot();
   
-  //  update plot of camera + spectrometer samples  
+  //  update camera plot
+  const auto& observations = specCalib_->getObservations();
+  if (!observations.empty()) {
+    QPolygonF points;
+    for (size_t i=0; i < observations.size(); i++) 
+    {
+      const SpectrumCalibrator::Observation& O = observations[i];
+      points.push_back(QPointF(O.reflectance,O.intensityCam));    
+    }
+    
+    camCurve_->setSamples(points);
+  }
+  ui->camCalibPlot->replot();
 }
 
 void SpectrumCalibrationView::spinBoxValueChanged(double value) {
@@ -223,7 +237,8 @@ void SpectrumCalibrationView::sampleSourceButtonPressed(bool) {
 
 void SpectrumCalibrationView::addObservationButtonPressed(bool) {
   if (specCalib_ && specCalib_->hasMeasurement()) {
-    //  capture...
+    specCalib_->collectSample();
+    ROS_INFO("Collecting observation");
   }
 }
 

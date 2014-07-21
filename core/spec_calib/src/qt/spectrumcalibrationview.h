@@ -13,8 +13,6 @@
 #define SPECTRUMCALIBRATIONVIEW_H
 
 #include <QWidget>
-#include <qwt/qwt.h>
-#include <qwt/qwt_plot.h> 
 #include <qwt/qwt_plot_curve.h>
 
 #include "spectrumcalibrator.h"
@@ -35,7 +33,7 @@ public:
   
 signals:
   
-public slots:
+private slots:
   void calibratorUpdateState(void);
   
   void spinBoxValueChanged(double);
@@ -54,6 +52,8 @@ private:
   Ui::SpectrumCalibrationView *ui;
   SpectrumCalibrator * specCalib_;
   double currentMax_;
+  
+  QwtPlotCurve * camCurve_;
 };
 
 #endif // SPECTRUMCALIBRATIONVIEW_H

@@ -56,14 +56,11 @@ void SpectrumCalibrator::setCurrentReflectance(double currentReflectance) {
   currentReflectance_ = currentReflectance;
 }
 
-
 void SpectrumCalibrator::collectSample() {
   
   //  collect a sample and generate observations
   if (hasMeasurement_ && hasSource_) {
-    
-     
-    
+    addObservation();
   }
 }
 
@@ -81,16 +78,8 @@ const galt::FilterProfile &SpectrumCalibrator::getFilterProfile() const {
   return filterProfile_;
 }
 
-const galt::Spectrum &SpectrumCalibrator::getPredictedSpectrum() const {
-  return predictedSpectrum_;
-}
-
-const std::vector<SpectrumCalibrator::Observation>& SpectrumCalibrator::getCameraObservations() const {
-  return obvsCamera_;
-}
-
-const std::vector<SpectrumCalibrator::Observation>& SpectrumCalibrator::getSpectrometerObservations() const {
-  return obvsSpectrometer_;
+const std::vector<SpectrumCalibrator::Observation>& SpectrumCalibrator::getObservations() const {
+  return observations_;
 }
 
 void SpectrumCalibrator::calcSampleRegion(kr::vec2d& center, double& radius) const {
@@ -155,18 +144,20 @@ void SpectrumCalibrator::syncCallback(
     //  draw circle on image
     cv::circle(rgbImage_, cv::Point2d(specCenter_[0],specCenter_[1]), 
         specRadius_, cv::Scalar(0,255,0), 3);
+    
+    //ROS_INFO("Circle: %f, %f, %f", specCenter_[0], specCenter_[1], specRadius_);
   } else {
-    ROS_WARN("Radius is negative!");
+    ROS_WARN("Radius is negative");
   }
   
   emit receivedMessage();
 }
 
-void SpectrumCalibrator::addObservation(const kr::vec2d &point, double radius, 
-                                        const galt::Spectrum& spectrum, 
-                                        const cv::Mat& monoImage) {
+void SpectrumCalibrator::addObservation() {
   
   //  sample from the image in the circle
+  const kr::vec2d& point = specCenter_;
+  const double& radius = specRadius_;
   
   int min_x = std::max( std::floor(point[0] - radius), 0.0 );
   int min_y = std::max( std::floor(point[1] - radius), 0.0 );
@@ -180,7 +171,7 @@ void SpectrumCalibrator::addObservation(const kr::vec2d &point, double radius,
       double r2 = (y-min_y)*(y-min_y) + (x-min_x)*(x-min_x);
       if (r2 < radius*radius*0.9) {
         // point is in circle, sample
-        const double I = monoImage.at<uchar>(y,x) * (1 / 255.0);
+        const double I = monoImage_.at<uchar>(y,x) * (1 / 255.0);
         pixels.push_back(static_cast<double>(I));
       }
     }
@@ -194,10 +185,14 @@ void SpectrumCalibrator::addObservation(const kr::vec2d &point, double radius,
     total2 += I*I;
   }
   const double mean = total / pixels.size();  //  mean intensity over the patch
-  const double mean_sqr = total2 / pixels.size();
-  const double var = mean_sqr - mean*mean;
   
-  //  integrate over the spectrum
+  //const double mean_sqr = total2 / pixels.size();
+  //const double var = mean_sqr - mean*mean;
   
+  Observation O;
+  O.intensityCam = mean;
+  O.spectrum = spectrum_;
+  O.reflectance = currentReflectance_;
+  observations_.push_back(O);
 }
 

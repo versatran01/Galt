@@ -28,6 +28,8 @@
 #include <spectral/Spectrum.hpp>
 #include <spectral/FilterProfile.hpp>
 
+#include <kr_math/pose.hpp>
+
 class SpectrumCalibrator : public QObject {
   Q_OBJECT
 public:
@@ -51,6 +53,7 @@ public slots:
 private:
   std::shared_ptr<image_transport::ImageTransport> imgTransport_;
   cv::Mat image_;
+  sensor_msgs::CameraInfo cameraInfo_;
 
   galt::Spectrum spectrum_;
   galt::SpectrometerPose specPose_;
@@ -76,6 +79,8 @@ private:
                     const sensor_msgs::CameraInfoConstPtr &info,
                     const geometry_msgs::PoseStampedConstPtr &poseStamped,
                     const ocean_optics::SpectrumConstPtr &spec);
+  
+  void addObservation(const kr::Pose<double>& pose, const galt::Spectrum& spectrum);
 };
 
 #endif // SPECTRUMCALIBRATOR_H

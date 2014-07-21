@@ -2,12 +2,14 @@
 
   <arg name="camera_serial" default="25001110"/>
   <arg name="camera_color" default="false"/>
+  <arg name="camera_exposure" default="8000"/>
   <arg name="filter_path"/>
 
   <!-- monocular camera -->
   <include file="$(find bluefox2)/launch/mono.launch">
     <arg name="serial" value="$(arg camera_serial)"/>
     <arg name="color" value="$(arg camera_color)"/>
+    <arg name="expose_us" value="$(arg camera_exposure)"/>
   </include>
 
   <!-- circle tracker -->

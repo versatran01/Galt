@@ -15,6 +15,7 @@
 #include <kr_math/base_types.hpp>
 #include <kr_math/yaml.hpp>
 
+// TODO: finish documenting
 namespace galt {
 
 /**

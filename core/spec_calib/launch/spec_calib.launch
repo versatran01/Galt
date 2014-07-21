@@ -32,6 +32,8 @@
     <remap from="~pose_tags" to="/apriltag/pose_cam"/>
     <remap from="~spectrum" to="/spectrometer/spectrum"/>
     <param name="camera_serial" value="$(arg camera_serial)"/>
+    <param name="camera_color" value="$(arg camera_color)"/>
+    <param name="camera_exposure" value="$(arg camera_exposure)"/>
     <param name="filter_path" value="$(arg filter_path)"/>
   </node>
 </launch>

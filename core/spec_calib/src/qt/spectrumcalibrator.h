@@ -27,6 +27,7 @@
 #include <spectral/SpectrometerPose.hpp>
 #include <spectral/Spectrum.hpp>
 #include <spectral/FilterProfile.hpp>
+#include <spectral/CameraCalibration.hpp>
 
 #include <kr_math/pose.hpp>
 
@@ -40,12 +41,15 @@ public:
   };
   
   explicit SpectrumCalibrator(QObject *parent,
+                              const std::string &cameraSerial,
                               const galt::SpectrometerPose &specPose,
                               const galt::FilterProfile &filterProfile);
 
   bool hasMeasurement() const;
   
   bool hasSourceSpectrum() const;
+  
+  bool hasCalibration() const;
   
   bool canCalibrate() const;
   
@@ -67,6 +71,8 @@ public:
   
   const std::vector<Observation>& getObservations() const;
   
+  const galt::CameraCalibration& getCameraCalibration() const;
+  
 signals:
   void receivedMessage();
 
@@ -87,7 +93,8 @@ private:
   double specRadius_;
   bool hasMeasurement_;
   
-  //  spectrometer settings
+  //  settings
+  std::string cameraSerial_;
   galt::SpectrometerPose specPose_;
   galt::FilterProfile filterProfile_;
   
@@ -98,6 +105,10 @@ private:
 
   //  measurements  
   std::vector<Observation> observations_;
+  
+  //  resulting calibration
+  galt::CameraCalibration cameraCalibration_;
+  bool hasCalibration_;
     
   //  ROS subscribers
   static constexpr uint32_t kROSQueueSize = 100;

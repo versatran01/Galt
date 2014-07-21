@@ -54,6 +54,7 @@ private:
   double currentMax_;
   
   QwtPlotCurve * camCurve_;
+  QwtPlotCurve * camCalibCurve_;
 };
 
 #endif // SPECTRUMCALIBRATIONVIEW_H

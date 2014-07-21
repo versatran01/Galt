@@ -25,6 +25,7 @@ set(${PROJECT_NAME}_sources
   src/SpectrometerPose.cpp
   src/Spectrum.cpp
   src/FilterProfile.cpp
+  src/CameraCalibration.cpp
 )
 
 # build library

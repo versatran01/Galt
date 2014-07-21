@@ -23,8 +23,25 @@
 #include <qwt/qwt_plot_grid.h>
 #include <qwt/qwt_legend.h>
 #include <qwt/qwt_symbol.h>
+#include <qwt/qwt_series_data.h>
 
 #include <yaml-cpp/yaml.h>
+
+class CalibrationFunction : public QwtSyntheticPointData {
+public:
+  
+  CalibrationFunction(double m, double b) : QwtSyntheticPointData(100,QwtInterval(0,1)) {
+    m_ = m;
+    b_ = b;
+  }
+  
+  virtual double y(double x) const {
+    return m_*x + b_;
+  }
+  
+private:
+  double m_,b_;
+};
 
 template <typename T>
 T loadYAMLNode(const std::string& filePath) {
@@ -78,11 +95,17 @@ SpectrumCalibrationView::SpectrumCalibrationView(QWidget *parent) :
   camCurve_->setRenderHint(QwtPlotItem::RenderAntialiased, true);
   
   QwtSymbol * sym = new QwtSymbol(QwtSymbol::Ellipse);
-  sym->setSize(5);
+  sym->setSize(6);
   camCurve_->setSymbol(sym);
   camCurve_->setStyle(QwtPlotCurve::Dots);
-  //camCurve_->setPen( QPen(Qt::blue, 2) );
+  camCurve_->setPen( QPen(Qt::red, 2) );
   camCurve_->attach(camPlot);
+  
+  camCalibCurve_ = new QwtPlotCurve("camera_calibration");
+  camCalibCurve_->setRenderHint(QwtPlotItem::RenderAntialiased, true);
+  camCalibCurve_->setSymbol( new QwtSymbol() );
+  camCalibCurve_->setPen( QPen(Qt::green, 2) );
+  camCalibCurve_->attach(camPlot);
   
   //  connect UI items
   QObject::connect(ui->addButton, SIGNAL(clicked(bool)), 
@@ -159,7 +182,7 @@ void SpectrumCalibrationView::reset() {
   
   ROS_INFO("Loaded filter: %s", filterProfile.getName().c_str());
   
-  specCalib_ = new SpectrumCalibrator(this,pose,filterProfile);
+  specCalib_ = new SpectrumCalibrator(this,camSerial,pose,filterProfile);
   QObject::connect(specCalib_,SIGNAL(receivedMessage()),this,SLOT(calibratorUpdateState()));
   
   calibratorUpdateState();  //  trigger UI update
@@ -173,6 +196,7 @@ void SpectrumCalibrationView::calibratorUpdateState(void) {
   
   ui->addButton->setEnabled(specCalib_->hasSourceSpectrum() && specCalib_->hasMeasurement());
   ui->sourceButton->setEnabled(specCalib_->hasMeasurement());
+  ui->calibrateButton->setEnabled(specCalib_->canCalibrate());
   
   //  get range of spectrum
   galt::Spectrum spec = specCalib_->getSpectrum();
@@ -218,7 +242,15 @@ void SpectrumCalibrationView::calibratorUpdateState(void) {
     
     camCurve_->setSamples(points);
   }
-  ui->camCalibPlot->replot();
+  
+  if (specCalib_->hasCalibration()) {
+    
+    const galt::CameraCalibration& calib = specCalib_->getCameraCalibration();
+    
+    //  place new plot on the camera chart
+    camCalibCurve_->setData( new CalibrationFunction(calib.slope,calib.intercept) );
+  }
+  ui->camCalibPlot->replot();  
 }
 
 void SpectrumCalibrationView::spinBoxValueChanged(double value) {
@@ -244,9 +276,9 @@ void SpectrumCalibrationView::addObservationButtonPressed(bool) {
 }
 
 void SpectrumCalibrationView::calibrateButtonPressed(bool) {
-  
-  
-  
+  if (specCalib_ && specCalib_->canCalibrate()) {
+    specCalib_->calibrate();
+  }
 }
 
 void SpectrumCalibrationView::resetButtonPressed(bool) {

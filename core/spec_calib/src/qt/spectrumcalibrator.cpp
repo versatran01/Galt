@@ -9,6 +9,8 @@
  *      Author: gareth
  */
 
+#include <QDateTime>
+
 #include "spectrumcalibrator.h"
 #include <cv_bridge/cv_bridge.h>
 #include "utilities.hpp"
@@ -49,10 +51,11 @@ static bool leastSquaresFit(const std::vector<double>& x,
   return true;
 }
 
-SpectrumCalibrator::SpectrumCalibrator(QObject *parent,
+SpectrumCalibrator::SpectrumCalibrator(QObject *parent, const std::string &cameraSerial,
                                        const galt::SpectrometerPose &specPose,
                                        const galt::FilterProfile &filterProfile)
-    : QObject(parent), specPose_(specPose), filterProfile_(filterProfile) {
+    : QObject(parent), cameraSerial_(cameraSerial), specPose_(specPose), 
+      filterProfile_(filterProfile) {
   
   ros::NodeHandle nh("~");
 
@@ -75,11 +78,14 @@ SpectrumCalibrator::SpectrumCalibrator(QObject *parent,
   hasMeasurement_ = false;
   currentReflectance_ = 0.0;
   hasSource_ = false;
+  hasCalibration_ = false;
 }
 
 bool SpectrumCalibrator::hasMeasurement() const { return hasMeasurement_; }
 
 bool SpectrumCalibrator::hasSourceSpectrum() const { return hasSource_; }
+
+bool SpectrumCalibrator::hasCalibration() const { return hasCalibration_; } 
 
 bool SpectrumCalibrator::canCalibrate() const { return observations_.size() >= 2; }
 
@@ -119,7 +125,32 @@ void SpectrumCalibrator::calibrate() {
  double camM,camB;
  if (!leastSquaresFit(X,Y,camM,camB)) {
    ROS_ERROR("Failed to solve linear system (more samples required?)");
+   return;
  }
+ 
+ // save the calibration
+ ros::NodeHandle nh("~");
+ int exposure;
+ if (!nh.hasParam("camera_exposure")) {
+   ROS_ERROR("No camera exposure specified!");
+   return;
+ }
+ nh.param("camera_exposure", exposure, 0);
+ 
+ cameraCalibration_.cameraSerial = cameraSerial_;
+ cameraCalibration_.cameraExposure = exposure;
+ 
+ // get the date from QT
+ QDateTime dt = QDateTime::currentDateTime();
+ QString str = dt.toString(Qt::ISODate);
+ const std::string formattedDate(str.toAscii());
+ 
+ cameraCalibration_.calibrationDate = formattedDate;
+ cameraCalibration_.intercept = camB;
+ cameraCalibration_.slope = camM;
+ cameraCalibration_.filterProfile = filterProfile_;
+ cameraCalibration_.spectrometerPose = specPose_;
+ hasCalibration_ = true;
 }
 
 const cv::Mat &SpectrumCalibrator::getUserImage() const { return rgbImage_; }
@@ -138,6 +169,10 @@ const galt::FilterProfile &SpectrumCalibrator::getFilterProfile() const {
 
 const std::vector<SpectrumCalibrator::Observation>& SpectrumCalibrator::getObservations() const {
   return observations_;
+}
+
+const galt::CameraCalibration& SpectrumCalibrator::getCameraCalibration() const {
+  return cameraCalibration_;
 }
 
 void SpectrumCalibrator::calcSampleRegion(kr::vec2d& center, double& radius) const {

@@ -80,7 +80,7 @@ private:
                     const geometry_msgs::PoseStampedConstPtr &poseStamped,
                     const ocean_optics::SpectrumConstPtr &spec);
   
-  void addObservation(const kr::Pose<double>& pose, const galt::Spectrum& spectrum);
+  void addObservation(const kr::vec2d& point, double radius, const galt::Spectrum& spectrum, const cv::Mat &monoImage);
 };
 
 #endif // SPECTRUMCALIBRATOR_H

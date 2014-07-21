@@ -140,6 +140,25 @@ void Spectrum::multiply(const Spectrum &s) {
     intensities_[i] *= rhs.intensities_[i];
   }
 }
+
+double Spectrum::integrate() const {
+  
+  if (size() <= 1) {
+    return 0.0;
+  }
+  
+  double total=0.0;
+  for (size_t k=0; k < size() - 1; k++) {
+    const double y0 = intensities_[k];
+    const double y1 = intensities_[k+1];
+    const double x0 = wavelengths_[k];
+    const double x1 = wavelengths_[k+1];
+    total += (y1+y0)*0.5*(x1-x0);
+  }
+  
+  return total;
+}
+
 }
 
 YAML::Node YAML::convert<galt::Spectrum>::encode(const galt::Spectrum &rhs) {

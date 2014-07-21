@@ -52,6 +52,7 @@ const galt::Spectrum &SpectrumCalibrator::getPredictedSpectrum() const {
   return predictedSpectrum_;
 }
 
+//  TODO: This code is a mess, clean it up after gallo
 void SpectrumCalibrator::syncCallback(
     const sensor_msgs::ImageConstPtr &img,
     const sensor_msgs::CameraInfoConstPtr &info,
@@ -117,61 +118,48 @@ void SpectrumCalibrator::syncCallback(
   }
   
   if (true) { //  logic here...
-    addObservation(pose, predictedSpectrum_);
+    addObservation(kr::vec2d(dist.x,dist.y), radius, predictedSpectrum_, monoImage);
   }
   
   emit receivedMessage();
 }
 
-void SpectrumCalibrator::addObservation(const kr::Pose<double>& pose, 
-                                        const galt::Spectrum& spectrum) {
+void SpectrumCalibrator::addObservation(const kr::vec2d &point, double radius, 
+                                        const galt::Spectrum& spectrum, 
+                                        const cv::Mat& monoImage) {
   
-  //  TODO: some code duplication here, correct/clean this up after gallo
-  //  pose = orientation of plane in camera frame
-  //  spectrum = spectrum passing through filter
+  //  sample from the image in the circle
   
-  kr::vec3d o = pose.p;
-  kr::vec3d n = pose.q.matrix() * kr::vec3d(0,0,1);
+  int min_x = std::max( std::floor(point[0] - radius), 0.0 );
+  int min_y = std::max( std::floor(point[1] - radius), 0.0 );
+  int max_x = std::min( static_cast<int>(std::ceil(point[0] + radius)), image_.cols );
+  int max_y = std::min( static_cast<int>(std::ceil(point[1] + radius)), image_.rows );
+ 
+  std::vector<double> pixels;
   
-  const kr::vec3d v = specPose_.getDirection();
-  
-  //  find a pair of perpendicular axes
-  kr::vec3d u;
-  u[0] = 1;
-  u[1] = 1;
-  u[2] = (-v[0]*u[0] - v[1]*u[1]) / v[2];
-  u /= u.norm();
-  //kr::vec3d w = v.cross(u);
-  
-  const double fx = cameraInfo_.K[0];
-  const double cx = cameraInfo_.K[2];
-  const double fy = cameraInfo_.K[4];
-  const double cy = cameraInfo_.K[5];
-  
-  //  generate vectors 'a' around the conic section
-  const double cos = std::cos(specPose_.getFov() / 2);
-  const double sin = std::sin(specPose_.getFov() / 2);
-  for (int i=0; i < 10; i++) {  
-    kr::vec3d a = v*cos + u*sin;
-    //  rotate
-    a = kr::rodriguesExp<double>(v * i / 10.0 * 2 * M_PI) * a;
-    
-    //  project to plane
-    galt::SpectrometerPose sp(specPose_.getPosition(), a, 0, 0);
-    const double d = sp.distanceToPlane(o,n);
-    
-    a = sp.getPosition() + a*d;
-    
-    //  project back to image
-    a[0] /= a[2];
-    a[1] /= a[2];
-    
-    cv::Point2d dist = distortPoint(cameraInfo_.D, cv::Point2d(a[0],a[1]));
-    
-    dist.x = fx*dist.x + cx;
-    dist.y = fy*dist.y + cy;
-    
-    cv::circle(image_, dist, 5, cv::Scalar(255,0,0), 2);
+  for (int y=min_y; y < max_y; y++) {
+    for (int x=min_x; x < max_x; x++) {
+      double r2 = (y-min_y)*(y-min_y) + (x-min_x)*(x-min_x);
+      if (r2 < radius*radius*0.9) {
+        // point is in circle, sample
+        const double I = monoImage.at<uchar>(y,x) * (1 / 255.0);
+        pixels.push_back(static_cast<double>(I));
+      }
+    }
   }
+  
+  //  calculate total
+  double total=0.0;
+  double total2=0.0;  //  squared
+  for (const double& I : pixels) {
+    total += I;
+    total2 += I*I;
+  }
+  const double mean = total / pixels.size();
+  const double mean_sqr = total2 / pixels.size();
+  const double var = mean_sqr - mean*mean;
+  
+  //  integrate over the spectrum
+  
 }
 

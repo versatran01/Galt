@@ -96,6 +96,14 @@ public:
    * A*B == B*A.
    */
   void multiply(const Spectrum &s);
+  
+  /**
+   * @brief Integrate numerically to obtain the area under the spectrum.
+   * @note Uses the trapezoid technique. For spectra with only one sample, this
+   * method will return zero.
+   * @return Total area under the curve.
+   */
+  double integrate() const;
 
 private:
   std::vector<double> wavelengths_;

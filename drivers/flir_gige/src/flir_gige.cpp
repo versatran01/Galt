@@ -38,8 +38,8 @@ FlirGige::FlirGige(const ros::NodeHandle &nh) : nh_{nh}, it_{nh} {
   camera_.reset(new flir_gige::GigeCamera(ip_address));
   camera_->use_image = std::bind(&FlirGige::PublishImage, this,
                                  std::placeholders::_1, std::placeholders::_2);
-  camera_->use_temperature = std::bind(&FlirGige::PublishTemperature, this,
-                                std::placeholders::_1);
+  camera_->use_temperature =
+      std::bind(&FlirGige::PublishTemperature, this, std::placeholders::_1);
 
   // Setup camera publisher and dynamic reconfigure callback
   std::string calib_url;

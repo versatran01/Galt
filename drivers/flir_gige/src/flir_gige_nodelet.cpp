@@ -10,9 +10,7 @@ PLUGINLIB_DECLARE_CLASS(flir_gige, FlirNodelet, flir_gige::FlirNodelet,
 namespace flir_gige {
 FlirNodelet::FlirNodelet() : nodelet::Nodelet() {}
 
-FlirNodelet::~FlirNodelet() {
-  flir_gige_->End();
-}
+FlirNodelet::~FlirNodelet() { flir_gige_->End(); }
 
 void FlirNodelet::onInit() {
   flir_gige_.reset(new FlirGige(getPrivateNodeHandle()));

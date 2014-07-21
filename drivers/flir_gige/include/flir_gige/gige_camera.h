@@ -72,7 +72,7 @@ class GigeCamera {
 
   std::function<void(const cv::Mat &image, const std::vector<double> &planck)>
       use_image;
-  std::function<void(const std::pair<double,double> &spot)> use_temperature;
+  std::function<void(const std::pair<double, double> &spot)> use_temperature;
 
  private:
   void FindDevice(const std::string &ip);

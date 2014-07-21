@@ -365,7 +365,8 @@ void GigeCamera::SetPixelFormat(BitSize bit) {
        << " Bit: " << digital_output.GetAscii() << endl;
 }
 
-double GigeCamera::GetSpotTemperature(double S, const std::vector<double> &planck) {
+double GigeCamera::GetSpotTemperature(double S,
+                                      const std::vector<double> &planck) {
   double B = planck[0];
   double F = planck[1];
   double O = planck[2];
@@ -375,13 +376,13 @@ double GigeCamera::GetSpotTemperature(double S, const std::vector<double> &planc
 }
 
 double GigeCamera::GetSpotPixel(const cv::Mat &image) {
-  auto c = image.cols/2;
-  auto r = image.rows/2;
-  auto s1 = image.at<uint16_t>(r-1, c-1);
-  auto s2 = image.at<uint16_t>(r-1, c);
-  auto s3 = image.at<uint16_t>(r, c-1);
+  auto c = image.cols / 2;
+  auto r = image.rows / 2;
+  auto s1 = image.at<uint16_t>(r - 1, c - 1);
+  auto s2 = image.at<uint16_t>(r - 1, c);
+  auto s3 = image.at<uint16_t>(r, c - 1);
   auto s4 = image.at<uint16_t>(r, c);
-  return static_cast<double>(s1/4 + s2/4 + s3/4 + s4/4);
+  return static_cast<double>(s1 / 4 + s2 / 4 + s3 / 4 + s4 / 4);
 }
 
 }  // namespace flir_gige

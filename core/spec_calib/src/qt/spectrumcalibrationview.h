@@ -38,6 +38,14 @@ signals:
 public slots:
   void calibratorUpdateState(void);
   
+  void addObservationButtonPressed(void);
+  
+  void calibrateButtonPressed(void);
+  
+  void resetButtonPressed(void);
+  
+  void saveButtonPressed(void);
+  
 private:
   Ui::SpectrumCalibrationView *ui;
   SpectrumCalibrator * specCalib_;

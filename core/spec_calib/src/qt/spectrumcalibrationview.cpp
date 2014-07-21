@@ -51,7 +51,7 @@ SpectrumCalibrationView::SpectrumCalibrationView(QWidget *parent) :
   reset();
   
   //  configure the plot
-  QwtPlot * plot = ui->plot;
+  QwtPlot * plot = ui->spectrumPlot;
   plot->setTitle("Spectrum");
   plot->setCanvasBackground(Qt::white);
   plot->setAxisScale(QwtPlot::yLeft, 0.0, 1.0);
@@ -162,7 +162,7 @@ void SpectrumCalibrationView::calibratorUpdateState(void) {
   const double maxWavelength = spec.getWavelengths().back();
    
   //  update spectrum plot, just replot every time for now
-  QwtPlot * plot = ui->plot;
+  QwtPlot * plot = ui->spectrumPlot;
   
   if (maxIntensity > currentMax_) {
     plot->setAxisScale(QwtPlot::yLeft, 0.0, maxIntensity);
@@ -201,4 +201,20 @@ void SpectrumCalibrationView::calibratorUpdateState(void) {
   plot->replot();
   
   ui->imageWidget->setImage(image);
+}
+
+void SpectrumCalibrationView::addObservationButtonPressed(void) {
+  
+}
+
+void SpectrumCalibrationView::calibrateButtonPressed(void) {
+  
+}
+
+void SpectrumCalibrationView::resetButtonPressed(void) {
+  
+}
+
+void SpectrumCalibrationView::saveButtonPressed(void) {
+  
 }

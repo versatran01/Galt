@@ -81,7 +81,10 @@ void FlirGige::PublishImage(const cv::Mat &image,
   cv_ptr->header.frame_id = frame_id_;
   cv_ptr->image = image;
   cinfo_->header = header;
-  cinfo_->D = planck;
+//  cinfo_->D = planck;
+  // Since D maybe useful, we instead put planck constants into P
+  // The orders are B F O R
+  std::copy(planck.cbegin(), planck.cend(), cinfo_->P.begin());
   cv_ptr->encoding = GetImageEncoding(image);
   // Convert to ros image msg and publish camera
   image_ = cv_ptr->toImageMsg();

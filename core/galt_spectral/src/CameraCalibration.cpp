@@ -23,7 +23,7 @@ CameraCalibration::CameraCalibration(const std::string &camSerial,
                                      const std::string &isoCalibDate,
                                      double slope, double intercept,
                                      const galt::SpectrometerPose &specPose,
-                                     const galt::FilterProfile &profile)
+                                     const galt::FilterProfile &profile, const Spectrum &source)
     : cameraSerial(camSerial), cameraExposure(camExposure),
       calibrationDate(isoCalibDate), slope(slope), intercept(intercept),
       spectrometerPose(specPose), filterProfile(profile) {}

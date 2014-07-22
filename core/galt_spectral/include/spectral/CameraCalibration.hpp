@@ -16,21 +16,17 @@
 #include <spectral/FilterProfile.hpp>
 #include <yaml-cpp/yaml.h>
 
-//  TODO: convert all spectral classes to match this format
 namespace galt {
 
 /**
- * @brief The CameraCalibration class
+ * @brief Result of a multispectral camera calibration session.
  */
-class CameraCalibration {
-public:
+struct CameraCalibration {
+
+  /**
+   * @brief CameraCalibration constructor. Initializes defaults.
+   */
   CameraCalibration();
-  
-  CameraCalibration(const std::string& camSerial, int camExposure,
-                    const std::string& isoCalibDate, double slope,
-                    double intercept, double squaredError, 
-                    const galt::SpectrometerPose& specPose,
-                    const galt::FilterProfile& profile);
   
   std::string cameraSerial;      /// Camera serial number or name.
   int cameraExposure;            /// Camera exposure in microseconds.
@@ -63,6 +59,6 @@ template <> struct convert<galt::CameraCalibration> {
  * @return Emitter.
  */
 YAML::Emitter &operator<<(YAML::Emitter &out, 
-                          const galt::CameraCalibration &pose);
+                          const galt::CameraCalibration &calib);
 
 #endif // GALT_SPECTRAL_CAMERACALIBRATION_HPP_

@@ -29,18 +29,6 @@ public:
   Spectrum();
 
   /**
-   * @brief Spectrum
-   * @param spec
-   */
-  // Spectrum(const Spectrum& spec);
-
-  /**
-   * @brief Spectrum
-   * @param spec
-   */
-  // explicit Spectrum(Spectrum&& spec);
-
-  /**
    * @brief Spectrum Construct a new spectrum.
    * @param wavelengths Wavelengths in nm, must be in sorted order.
    * @param intensities Relative measure of intensity for each wavelength.

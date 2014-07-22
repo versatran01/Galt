@@ -308,11 +308,9 @@ void SpectrumCalibrationView::saveButtonPressed(bool) {
     const galt::CameraCalibration& calib = specCalib_->getCameraCalibration();
     const std::string& camSerial = calib.cameraSerial;
     
-    const std::string path = ros::package::getPath("galt_setup");
-    if (path.empty()) {
-      ROS_ERROR("Could not find path to galt_setup");
-      return;
-    }
+    ros::NodeHandle nh("~");
+    std::string sessionPath;
+    nh.getParam("session_path", sessionPath); //  path to save all output
     
     const std::string& date = calib.calibrationDate;
   
@@ -324,7 +322,7 @@ void SpectrumCalibrationView::saveButtonPressed(bool) {
     emitter << YAML::Comment("Generated on: " + date) << YAML::Newline;
     emitter << calib;
     
-    const std::string filePath = path + "/multicalib/camera_" + camSerial + ".yaml";
+    const std::string filePath = sessionPath + "/camera_" + camSerial + ".yaml";
     
     QFile file(filePath.c_str());
     if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {

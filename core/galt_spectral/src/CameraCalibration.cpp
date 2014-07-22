@@ -17,18 +17,6 @@ namespace galt {
 CameraCalibration::CameraCalibration()
     : cameraSerial(), cameraExposure(0), calibrationDate(), slope(0),
       intercept(0), squaredError(0), spectrometerPose(), filterProfile() {}
-
-CameraCalibration::CameraCalibration(const std::string &camSerial,
-                                     int camExposure,
-                                     const std::string &isoCalibDate,
-                                     double slope, 
-                                     double intercept, double squaredError,
-                                     const galt::SpectrometerPose &specPose,
-                                     const galt::FilterProfile &profile)
-    : cameraSerial(camSerial), cameraExposure(camExposure),
-      calibrationDate(isoCalibDate), slope(slope), intercept(intercept),
-      squaredError(squaredError), spectrometerPose(specPose), 
-      filterProfile(profile) {}
 }
 
 YAML::Node YAML::convert<galt::CameraCalibration>::encode(
@@ -58,14 +46,14 @@ YAML::convert<galt::CameraCalibration>::decode(const YAML::Node &node,
   }
 
   //  TODO: Update this to support integer camera serials?
-  rhs = galt::CameraCalibration(
-      node["camera_serial"].as<std::string>(),
-      node["camera_exposure"].as<int>(),
-      node["calibration_date"].as<std::string>(), node["slope"].as<double>(),
-      node["intercept"].as<double>(),
-      node["squared_error"].as<double>(),
-      node["spectrometer_pose"].as<galt::SpectrometerPose>(),
-      node["filter_profile"].as<galt::FilterProfile>());
+  rhs.cameraSerial = node["camera_serial"].as<std::string>();
+  rhs.cameraExposure = node["camera_exposure"].as<int>();
+  rhs.calibrationDate = node["calibration_date"].as<std::string>();
+  rhs.slope = node["slope"].as<double>();
+  rhs.intercept = node["intercept"].as<double>();
+  rhs.squaredError = node["squared_error"].as<double>();
+  rhs.spectrometerPose = node["spectrometer_pose"].as<galt::SpectrometerPose>();
+  rhs.filterProfile = node["filter_profile"].as<galt::FilterProfile>();  
   
   return true;
 }

@@ -11,7 +11,9 @@
 
 #include <QApplication>
 #include <QThread>
+#include <QDir>
 #include <ros/ros.h>
+#include <ros/package.h>
 
 #include "mainwindow.h"
 
@@ -24,8 +26,37 @@ int main(int argc, char *argv[])
     
   //  check for camera serial parameter
   if (!nh->hasParam("camera_serial")) {
-    ROS_ERROR("Error: You must supply the camera_serial paremeter");
+    ROS_ERROR("You must supply the camera_serial parameter");
     return -1;
+  }
+  
+  if (!nh->hasParam("session_name")) {
+    ROS_ERROR("You must supply a session_name parameter");
+    return -1;
+  }
+  std::string sessionName;
+  nh->getParam("session_name", sessionName);
+  
+  //  generate the session path
+  std::string galtSetup = ros::package::getPath("galt_setup");
+  if (galtSetup.empty()) {
+    ROS_ERROR("Could not find path to galt_setup. Is your path correct?");
+    return -1;
+  }
+  
+  const std::string sessionPath = galtSetup + "/spectral/" + sessionName;
+  nh->setParam("session_path", sessionPath);
+  
+  if (QDir(sessionPath.c_str()).exists()) {
+    // warn because we might erase past calibrations...
+    ROS_WARN("Working in session folder: %s", sessionPath.c_str());
+  } else {
+    ROS_INFO("Creating session folder: %s", sessionPath.c_str());
+    //  mkpath will make all intermediate folders also, if necessary
+    if (!QDir().mkpath(sessionPath.c_str())) {
+      ROS_ERROR("Failed to create directory - check your permissions");
+      return -1;
+    }
   }
   
   QApplication a(argc, argv);

@@ -18,7 +18,7 @@
 namespace galt {
 
 /**
- * @brief The FilterProfile class
+ * @brief Profile of a filter (transmission properties).
  */
 class FilterProfile {
 public:
@@ -105,6 +105,7 @@ template <> struct convert<galt::FilterProfile> {
  * @param pose Filter profile to encode.
  * @return Emitter.
  */
-YAML::Emitter &operator<<(YAML::Emitter &out, const galt::FilterProfile &pose);
+YAML::Emitter &operator<<(YAML::Emitter &out, 
+                          const galt::FilterProfile &profile);
 
 #endif // GALT_SPECTRAL_FILTERPROFILE_HPP_

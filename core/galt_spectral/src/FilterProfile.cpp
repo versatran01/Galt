@@ -68,15 +68,15 @@ bool YAML::convert<galt::FilterProfile>::decode(const YAML::Node &node, galt::Fi
 }
 
 YAML::Emitter &operator<<(YAML::Emitter &out,
-                          const galt::FilterProfile &pose) {
+                          const galt::FilterProfile &filt) {
   
   out << YAML::Block;
   out << YAML::BeginMap;
-  out << YAML::Key << "name" << YAML::Value << pose.getName();
-  out << YAML::Key << "center" << YAML::Value << pose.getCenter();
-  out << YAML::Key << "fwhm" << YAML::Value << pose.getFwhm();
-  out << YAML::Key << "min_peak_transmission" << YAML::Value << pose.getMinPeakTransmission();
-  out << YAML::Key << "spectrum" << YAML::Value << pose.getSpectrum();
+  out << YAML::Key << "name" << YAML::Value << filt.getName();
+  out << YAML::Key << "center" << YAML::Value << filt.getCenter();
+  out << YAML::Key << "fwhm" << YAML::Value << filt.getFwhm();
+  out << YAML::Key << "min_peak_transmission" << YAML::Value << filt.getMinPeakTransmission();
+  out << YAML::Key << "spectrum" << YAML::Value << filt.getSpectrum();
   out << YAML::EndMap;
   return out; 
 }

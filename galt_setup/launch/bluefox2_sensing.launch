@@ -25,7 +25,7 @@
         <include file="$(find bluefox2)/launch/single_node.launch">
             <arg name="serial" value="$(arg camera2)"/>
             <arg name="calib_url"
-                value="package://galt_setup/calib/calib_$(arg serial).yml"/>
+                value="package://galt_setup/calib/calib_$(arg camera2).yml"/>
             <arg name="fps" value="$(arg fps)"/>
             <arg name="color" value="$(arg color)"/>
             <arg name="expose" value="$(arg expose)"/>

@@ -23,7 +23,7 @@ CameraCalibration::CameraCalibration(const std::string &camSerial,
                                      const std::string &isoCalibDate,
                                      double slope, double intercept,
                                      const galt::SpectrometerPose &specPose,
-                                     const galt::FilterProfile &profile, const Spectrum &source)
+                                     const galt::FilterProfile &profile)
     : cameraSerial(camSerial), cameraExposure(camExposure),
       calibrationDate(isoCalibDate), slope(slope), intercept(intercept),
       spectrometerPose(specPose), filterProfile(profile) {}
@@ -79,4 +79,5 @@ YAML::Emitter &operator<<(YAML::Emitter &out,
   out << YAML::Key << "spectrometer_pose" << YAML::Value << pose.spectrometerPose;
   out << YAML::Key << "filter_profile" << YAML::Value << pose.filterProfile;
   out << YAML::EndMap;
+  return out;
 }

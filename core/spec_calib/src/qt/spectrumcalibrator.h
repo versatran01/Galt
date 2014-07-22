@@ -60,6 +60,8 @@ public:
   void collectSample();
   
   void calibrate();
+
+  const std::string& getCameraSerial() const;
   
   const cv::Mat &getUserImage() const;
 

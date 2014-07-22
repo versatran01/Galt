@@ -197,6 +197,7 @@ void SpectrumCalibrationView::calibratorUpdateState(void) {
   ui->addButton->setEnabled(specCalib_->hasSourceSpectrum() && specCalib_->hasMeasurement());
   ui->sourceButton->setEnabled(specCalib_->hasMeasurement());
   ui->calibrateButton->setEnabled(specCalib_->canCalibrate());
+  ui->saveButton->setEnabled(specCalib_->hasCalibration());
   
   //  get range of spectrum
   galt::Spectrum spec = specCalib_->getSpectrum();
@@ -290,5 +291,38 @@ void SpectrumCalibrationView::resetButtonPressed(bool) {
 }
 
 void SpectrumCalibrationView::saveButtonPressed(bool) {
-  ROS_WARN("SAVE NOT IMPLEMENTED YET");
+  if (specCalib_ && specCalib_->hasCalibration()) {
+    const galt::CameraCalibration& calib = specCalib_->getCameraCalibration();
+    const std::string& camSerial = calib.cameraSerial;
+    
+    const std::string path = ros::package::getPath("galt_setup");
+    if (path.empty()) {
+      ROS_ERROR("Could not find path to galt_setup");
+      return;
+    }
+    
+    const std::string& date = calib.calibrationDate;
+  
+    //  nice formatted YAML output
+    YAML::Emitter emitter;
+    emitter.SetSeqFormat(YAML::Flow);
+    emitter << YAML::Comment("Camera spectral calibration") << YAML::Newline;
+    emitter << YAML::Comment("Camera: " + camSerial) << YAML::Newline;
+    emitter << YAML::Comment("Generated on: " + date) << YAML::Newline;
+    emitter << calib;
+    
+    const std::string filePath = path + "/multicalib/camera_" + camSerial + ".yaml";
+    
+    QFile file(filePath.c_str());
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+      ROS_ERROR("Failed to open file for writing: %s", filePath.c_str());
+      return;
+    }
+    
+    QTextStream out(&file);
+    out << emitter.c_str();
+    
+    file.close(); 
+    ROS_INFO("Wrote calibration to %s", filePath.c_str());
+  }
 }

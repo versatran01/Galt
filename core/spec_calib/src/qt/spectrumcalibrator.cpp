@@ -153,6 +153,8 @@ void SpectrumCalibrator::calibrate() {
  hasCalibration_ = true;
 }
 
+const std::string& SpectrumCalibrator::getCameraSerial() const { return cameraSerial_; }
+
 const cv::Mat &SpectrumCalibrator::getUserImage() const { return rgbImage_; }
 
 const galt::Spectrum &SpectrumCalibrator::getSpectrum() const {

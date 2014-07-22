@@ -219,13 +219,10 @@ bool YAML::convert<galt::Spectrum>::decode(const YAML::Node &node, galt::Spectru
 
 YAML::Emitter &operator<<(YAML::Emitter &out,
                           const galt::Spectrum &spectrum) {
-  
-  //  use YAML overloaded vector operator to emit
-  out << YAML::Block;
   out << YAML::BeginMap;
-  out << YAML::Flow;
-  out << YAML::Key << "wavelengths" << YAML::Value << spectrum.getWavelengths();
-  out << YAML::Key << "intensities" << YAML::Value << spectrum.getIntensities();
+  out << YAML::Flow;    
+  out << YAML::Block << YAML::Key << "wavelengths" << YAML::Flow << YAML::Value << spectrum.getWavelengths();
+  out << YAML::Block << YAML::Key << "intensities" << YAML::Flow << YAML::Value << spectrum.getIntensities();
   out << YAML::EndMap; 
   return out;
 }

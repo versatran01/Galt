@@ -54,6 +54,7 @@ YAML::convert<galt::CameraCalibration>::decode(const YAML::Node &node,
     return false;
   }
 
+  //  TODO: Update this to support integer camera serials?
   rhs = galt::CameraCalibration(
       node["camera_serial"].as<std::string>(),
       node["camera_exposure"].as<int>(),

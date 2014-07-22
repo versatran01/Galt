@@ -35,7 +35,7 @@ FlirGige::FlirGige(const ros::NodeHandle &nh) : nh_{nh}, it_{nh} {
   // Create a camera
   std::string ip_address;
   nh_.param<std::string>("ip_address", ip_address, std::string(""));
-  camera_.reset(new flir_gige::GigeCamera(ip_address));
+  camera_.reset(new GigeCamera(ip_address));
   camera_->use_image = std::bind(&FlirGige::PublishImage, this,
                                  std::placeholders::_1, std::placeholders::_2);
   camera_->use_temperature =
@@ -117,7 +117,7 @@ std::string FlirGige::GetImageEncoding(const cv::Mat &image) {
   return encoding;
 }
 
-void FlirGige::ReconfigureCallback(flir_gige::FlirConfig &config, int level) {
+void FlirGige::ReconfigureCallback(FlirConfig &config, int level) {
   // Do nothing when first starting
   if (level < 0) {
     return;

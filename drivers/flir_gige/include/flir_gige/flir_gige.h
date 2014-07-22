@@ -28,9 +28,9 @@ class FlirGige {
   sensor_msgs::ImagePtr image_;
   sensor_msgs::CameraInfoPtr cinfo_;
   ros::Publisher temp_pub_;
-  dynamic_reconfigure::Server<flir_gige::FlirConfig> server_;
+  dynamic_reconfigure::Server<FlirConfig> server_;
   // Flir Camera
-  std::unique_ptr<flir_gige::GigeCamera> camera_;
+  std::unique_ptr<GigeCamera> camera_;
 
  public:
   FlirGige(const ros::NodeHandle &nh);
@@ -42,7 +42,7 @@ class FlirGige {
   void PublishImage(const cv::Mat &image, const std::vector<double> &planck);
   void PublishTemperature(const std::pair<double, double> &spot);
   std::string GetImageEncoding(const cv::Mat &image);
-  void ReconfigureCallback(flir_gige::FlirConfig &config, int level);
+  void ReconfigureCallback(FlirConfig &config, int level);
 
 };  // class FlirGige
 

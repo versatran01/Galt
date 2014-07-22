@@ -232,16 +232,16 @@ void SpectrumCalibrationView::calibratorUpdateState(void) {
   
   //  update camera plot
   const auto& observations = specCalib_->getObservations();
+  QPolygonF points;
   if (!observations.empty()) {
-    QPolygonF points;
+    
     for (size_t i=0; i < observations.size(); i++) 
     {
       const SpectrumCalibrator::Observation& O = observations[i];
-      points.push_back(QPointF(O.reflectance,O.intensityCam));    
+      points.push_back(QPointF(O.intensityCam,O.reflectance));    
     }
-    
-    camCurve_->setSamples(points);
   }
+  camCurve_->setSamples(points);  
   
   if (specCalib_->hasCalibration()) {
     
@@ -249,6 +249,9 @@ void SpectrumCalibrationView::calibratorUpdateState(void) {
     
     //  place new plot on the camera chart
     camCalibCurve_->setData( new CalibrationFunction(calib.slope,calib.intercept) );
+    camCalibCurve_->setVisible(true);
+  } else {
+    camCalibCurve_->setVisible(false);
   }
   ui->camCalibPlot->replot();  
 }

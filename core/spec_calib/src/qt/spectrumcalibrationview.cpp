@@ -240,7 +240,7 @@ void SpectrumCalibrationView::calibratorUpdateState(void) {
     for (size_t i=0; i < observations.size(); i++) 
     {
       const SpectrumCalibrator::Observation& O = observations[i];
-      points.push_back(QPointF(O.intensityCam,O.reflectance));    
+      points.push_back(QPointF(O.intensityCam,O.sample.reflectance));    
     }
   }
   camCurve_->setSamples(points);  
@@ -303,6 +303,7 @@ void SpectrumCalibrationView::resetButtonPressed(bool) {
   ROS_INFO("Resetting");
 }
 
+//  TODO: this is ugly crap, fix it...
 void SpectrumCalibrationView::saveButtonPressed(bool) {
   if (specCalib_ && specCalib_->hasCalibration()) {
     const galt::CameraCalibration& calib = specCalib_->getCameraCalibration();
@@ -322,7 +323,7 @@ void SpectrumCalibrationView::saveButtonPressed(bool) {
     emitter << YAML::Comment("Generated on: " + date) << YAML::Newline;
     emitter << calib;
     
-    const std::string filePath = sessionPath + "/camera_" + camSerial + ".yaml";
+    std::string filePath = sessionPath + "/camera_" + camSerial + ".yaml";
     
     QFile file(filePath.c_str());
     if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
@@ -334,6 +335,35 @@ void SpectrumCalibrationView::saveButtonPressed(bool) {
     out << emitter.c_str();
     
     file.close(); 
-    ROS_INFO("Wrote calibration to %s", filePath.c_str());
+    ROS_INFO("Wrote camera calibration to %s", filePath.c_str());
+    
+    //  now write spectrometer data
+    YAML::Emitter specEmitter;
+    specEmitter.SetSeqFormat(YAML::Flow);
+    specEmitter << YAML::Comment("Spectrometer calibration data") << YAML::Newline;
+    specEmitter << YAML::Comment("Generated on: " + date) << YAML::Newline;
+    
+    galt::SpectrometerCalibration sc;
+    sc.calibrationDate = date;
+    sc.sourceSpectrum = specCalib_->getSourceSpectrum();
+    
+    for (const SpectrumCalibrator::Observation& o : specCalib_->getObservations()) {
+      sc.sampleSpectra.push_back(o.sample);
+    }
+    
+    specEmitter << sc;
+    
+    filePath = sessionPath + "/spectrometer.yaml";
+    QFile specFile(filePath.c_str());
+    if (!specFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
+      ROS_ERROR("Failed to open file for writing: %s", filePath.c_str());
+      return;
+    }
+    
+    QTextStream specOut(&specFile);
+    specOut << specEmitter.c_str();
+    specFile.close();
+    
+    ROS_INFO("Wrote spectrometer calibration data to %s", filePath.c_str());
   }
 }

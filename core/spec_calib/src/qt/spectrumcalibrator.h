@@ -28,16 +28,18 @@
 #include <spectral/Spectrum.hpp>
 #include <spectral/FilterProfile.hpp>
 #include <spectral/CameraCalibration.hpp>
+#include <spectral/SpectrometerCalibration.hpp>
 
 #include <kr_math/pose.hpp>
 
 class SpectrumCalibrator : public QObject {
   Q_OBJECT
 public:
+  
+  //  both camera and spectrometer measurement
   struct Observation {
-    double reflectance;
-    double intensityCam;
-    galt::Spectrum spectrum;
+    double intensityCam;    
+    galt::SpectrometerCalibration::Sample sample;
   };
   
   explicit SpectrumCalibrator(QObject *parent,

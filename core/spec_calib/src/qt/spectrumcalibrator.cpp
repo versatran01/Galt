@@ -129,7 +129,7 @@ void SpectrumCalibrator::calibrate() {
  
  for (const Observation& O : observations_) {
    X.push_back(O.intensityCam);
-   Y.push_back(O.reflectance);
+   Y.push_back(O.sample.reflectance);
  }
  
  double camM,camB, err;
@@ -299,8 +299,7 @@ void SpectrumCalibrator::addObservation() {
   
   Observation O;
   O.intensityCam = mean;
-  O.spectrum = spectrum_;
-  O.reflectance = currentReflectance_;
+  O.sample.measurement = spectrum_;
+  O.sample.reflectance = currentReflectance_;
   observations_.push_back(O);
 }
-

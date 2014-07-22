@@ -1,0 +1,26 @@
+<!--
+  Name: ublox.launch
+  Triggers:
+    * ublox_gps
+
+  Brief: Launch the ublox gps in 'ublox_gps' namespace. Device resides at
+  /dev/ttyUSB0. Ublox node itself fixes data rate at 5Hz.
+
+  Topics you should record:
+    * /ublox_gps/fix
+    * /ublox_gps/fix_velocity
+    * /ublox_gps/ublox/navposllh
+    * /ublox_gps/ublox/navstatus
+    * /ublox_gps/ublox/navvelned
+-->
+
+<launch>
+  <group ns="ublox_gps">
+    <node name="ublox_gps" pkg="ublox_gps" type="ublox_gps" output="screen">
+      <!-- These are the only options supported by the node -->
+      <param name="device" type="string" value="/dev/ttyUSB0"/>
+      <param name="frame_id" type="string" value="gps_frame"/>
+      <param name="baudrate" type="int" value="115200"/>
+    </node>
+  </group>
+</launch>

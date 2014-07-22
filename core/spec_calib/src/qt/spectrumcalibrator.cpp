@@ -75,13 +75,14 @@ SpectrumCalibrator::SpectrumCalibrator(QObject *parent, const std::string &camer
   subImage_.subscribe(*imgTransport_, "image", kROSQueueSize);
   subCamInfo_.subscribe(nh, "camera_info", kROSQueueSize);
   subPose_.subscribe(nh, "pose_tags", kROSQueueSize);
-  subSpectrum_.subscribe(nh, "spectrum", kROSQueueSize);
+  //subSpectrum_.subscribe(nh, "spectrum", kROSQueueSize);
 
+  subSpectrum_ = nh.subscribe("spectrum", 1, &SpectrumCalibrator::spectrumCallback, this);
+  
   sync_ = std::make_shared<message_filters::Synchronizer<TimeSyncPolicy>>(
-      TimeSyncPolicy(kROSQueueSize), subImage_, subCamInfo_, subPose_,
-      subSpectrum_);
+      TimeSyncPolicy(kROSQueueSize), subImage_, subCamInfo_, subPose_);
   sync_->registerCallback(
-      boost::bind(&SpectrumCalibrator::syncCallback, this, _1, _2, _3, _4));
+      boost::bind(&SpectrumCalibrator::syncCallback, this, _1, _2, _3));
 
   ROS_INFO("Subscribing to ~image, ~camera_info, ~pose_tags and ~spectrum");
   
@@ -89,19 +90,24 @@ SpectrumCalibrator::SpectrumCalibrator(QObject *parent, const std::string &camer
   currentReflectance_ = 0.0;
   hasSource_ = false;
   hasCalibration_ = false;
+  hasSpectrum_ = false;
 }
 
 bool SpectrumCalibrator::hasMeasurement() const { return hasMeasurement_; }
 
 bool SpectrumCalibrator::hasSourceSpectrum() const { return hasSource_; }
 
+bool SpectrumCalibrator::hasSpectrum() const { return hasSpectrum_; }
+
 bool SpectrumCalibrator::hasCalibration() const { return hasCalibration_; } 
 
 bool SpectrumCalibrator::canCalibrate() const { return observations_.size() >= 2; }
 
 void SpectrumCalibrator::setSource() {
-  specSource_ = spectrum_;
-  hasSource_ = true;
+  if (hasSpectrum_) {
+    specSource_ = spectrum_;
+    hasSource_ = true;
+  }
 }
 
 void SpectrumCalibrator::setCurrentReflectance(double currentReflectance) {
@@ -109,7 +115,6 @@ void SpectrumCalibrator::setCurrentReflectance(double currentReflectance) {
 }
 
 void SpectrumCalibrator::collectSample() {
-  
   //  collect a sample and generate observations
   if (hasMeasurement_ && hasSource_) {
     addObservation();
@@ -217,11 +222,12 @@ void SpectrumCalibrator::calcSampleRegion(kr::vec2d& center, double& radius) con
 }
 
 //  TODO: This code is a mess, clean it up after gallo
-void SpectrumCalibrator::syncCallback(
-    const sensor_msgs::ImageConstPtr &img,
+void SpectrumCalibrator::syncCallback(const sensor_msgs::ImageConstPtr &img,
     const sensor_msgs::CameraInfoConstPtr &info,
-    const geometry_msgs::PoseStampedConstPtr &poseStamped,
-    const ocean_optics::SpectrumConstPtr &spec) {
+    const geometry_msgs::PoseStampedConstPtr &poseStamped) {
+  if (!hasSpectrum_) {
+    return;
+  }
   //  lazy: regardless of input format, convert to rgb8 then mono
   cv_bridge::CvImageConstPtr bridgedImagePtr =
       cv_bridge::toCvCopy(img, "mono8");
@@ -234,9 +240,6 @@ void SpectrumCalibrator::syncCallback(
   //  convert to intensity
   cv::cvtColor(monoImage_, rgbImage_, CV_GRAY2RGB);
   cameraInfo_ = *info;
-
-  //  spectrometer measurement
-  spectrum_ = galt::Spectrum(spec->wavelengths, spec->spectrum);
   
   //  project the spectrometer view into the image
   kr::Pose<double> pose(poseStamped->pose);
@@ -259,6 +262,13 @@ void SpectrumCalibrator::syncCallback(
   }
   
   emit receivedMessage();
+}
+
+void SpectrumCalibrator::spectrumCallback(const ocean_optics::SpectrumConstPtr &spec) {
+  //  spectrometer measurement
+  spectrum_ = galt::Spectrum(spec->wavelengths, spec->spectrum);
+  hasSpectrum_ = true;  
+  emit receivedSpectrum();
 }
 
 void SpectrumCalibrator::addObservation() {

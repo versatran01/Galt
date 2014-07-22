@@ -185,8 +185,10 @@ void SpectrumCalibrationView::reset() {
   
   specCalib_ = new SpectrumCalibrator(this,camSerial,pose,filterProfile);
   QObject::connect(specCalib_,SIGNAL(receivedMessage()),this,SLOT(calibratorUpdateState()));
+  QObject::connect(specCalib_,SIGNAL(receivedSpectrum()),this,SLOT(calibratorReceivedSpectrum()));
   
   calibratorUpdateState();  //  trigger UI update
+  calibratorReceivedSpectrum();
 }
 
 void SpectrumCalibrationView::calibratorUpdateState(void) {
@@ -196,41 +198,13 @@ void SpectrumCalibrationView::calibratorUpdateState(void) {
   }
   
   ui->addButton->setEnabled(specCalib_->hasSourceSpectrum() && specCalib_->hasMeasurement());
-  ui->sourceButton->setEnabled(specCalib_->hasMeasurement());
+  ui->sourceButton->setEnabled(specCalib_->hasSpectrum());
   ui->calibrateButton->setEnabled(specCalib_->canCalibrate());
   ui->saveButton->setEnabled(specCalib_->hasCalibration());
   
-  //  get range of spectrum
-  galt::Spectrum spec = specCalib_->getSpectrum();
-  if (!spec.size()) {
+  if (!specCalib_->hasMeasurement()) {
     return;
   }
-  galt::Spectrum profile = specCalib_->getFilterProfile().getSpectrum();
-  galt::Spectrum source = specCalib_->getSourceSpectrum();
-  
-  //  figure out size of plot axes
-  double maxIntensity=0.0;
-  for (double I : spec.getIntensities()) {
-    maxIntensity = std::max(I, maxIntensity);
-  }
-  profile.scale(maxIntensity);  //  for visual effect only
-  
-  const double minWavelength = spec.getWavelengths().front();
-  const double maxWavelength = spec.getWavelengths().back();
-   
-  //  update spectrum plot, just replot every time for now
-  SpectralPlot * plot = ui->spectrumPlot;
-  
-  if (maxIntensity > currentMax_) {
-    plot->setAxisScale(QwtPlot::yLeft, 0.0, maxIntensity);
-    currentMax_ = maxIntensity;
-  }
-  plot->setAxisScale(QwtPlot::xBottom, minWavelength, maxWavelength);
-  
-  plot->updatePlot("ocean_optics", QPen(Qt::blue, 2), spec);
-  plot->updatePlot("source", QPen(Qt::green, 2), source);
-  plot->updatePlot("filter_profile", QPen(Qt::red, 2), profile);
-  plot->replot();
   
   //  update camera plot
   const auto& observations = specCalib_->getObservations();
@@ -270,6 +244,46 @@ void SpectrumCalibrationView::calibratorUpdateState(void) {
   ui->angle->setText(std::to_string(ang * 180 / M_PI).c_str());
 }
 
+void SpectrumCalibrationView::calibratorReceivedSpectrum(void) {
+  //  get range of spectrum
+  galt::Spectrum spec = specCalib_->getSpectrum();
+  if (!spec.size()) {
+    return;
+  }
+  ui->sourceButton->setEnabled(specCalib_->hasSpectrum());  
+  
+  galt::Spectrum profile = specCalib_->getFilterProfile().getSpectrum();
+  galt::Spectrum source = specCalib_->getSourceSpectrum();
+  
+  //  figure out size of plot axes
+  double maxIntensity=0.0;
+  for (double I : spec.getIntensities()) {
+    maxIntensity = std::max(I, maxIntensity);
+  }
+  profile.scale(maxIntensity);  //  for visual effect only
+  
+  const double minWavelength = spec.getWavelengths().front();
+  const double maxWavelength = spec.getWavelengths().back();
+   
+  //  update spectrum plot, just replot every time for now
+  SpectralPlot * plot = ui->spectrumPlot;
+  
+  if (maxIntensity > currentMax_) {
+    plot->setAxisScale(QwtPlot::yLeft, 0.0, maxIntensity);
+    currentMax_ = maxIntensity;
+  }
+  plot->setAxisScale(QwtPlot::xBottom, minWavelength, maxWavelength);
+  
+  plot->updatePlot("ocean_optics", QPen(Qt::blue, 2), spec);
+  if (source.size()) {
+    plot->updatePlot("source", QPen(Qt::green, 2), source);
+  }
+  if (profile.size()) {
+    plot->updatePlot("filter_profile", QPen(Qt::red, 2), profile);
+  }
+  plot->replot();
+}
+
 void SpectrumCalibrationView::spinBoxValueChanged(double value) {
   if (specCalib_) {
     value = std::max(std::min(value, 1.0), 0.0);
@@ -279,7 +293,7 @@ void SpectrumCalibrationView::spinBoxValueChanged(double value) {
 }
 
 void SpectrumCalibrationView::sampleSourceButtonPressed(bool) {
-  if (specCalib_ && specCalib_->hasMeasurement()) {
+  if (specCalib_ && specCalib_->hasSpectrum()) {
     specCalib_->setSource();
     ROS_INFO("Setting the source profile");
   }

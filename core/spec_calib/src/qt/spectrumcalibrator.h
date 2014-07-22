@@ -51,6 +51,8 @@ public:
   
   bool hasSourceSpectrum() const;
   
+  bool hasSpectrum() const;
+  
   bool hasCalibration() const;
   
   bool canCalibrate() const;
@@ -81,6 +83,7 @@ public:
   
 signals:
   void receivedMessage();
+  void receivedSpectrum();
 
 public slots:
 
@@ -95,6 +98,7 @@ private:
   sensor_msgs::CameraInfo cameraInfo_;
   kr::Pose<double> camPose_;
   galt::Spectrum spectrum_;
+  bool hasSpectrum_;
   kr::vec2d specCenter_;
   double specRadius_;
   bool hasMeasurement_;
@@ -117,24 +121,26 @@ private:
   bool hasCalibration_;
     
   //  ROS subscribers
-  static constexpr uint32_t kROSQueueSize = 300;
+  static constexpr uint32_t kROSQueueSize = 10;
 
   image_transport::SubscriberFilter subImage_;
   message_filters::Subscriber<sensor_msgs::CameraInfo> subCamInfo_;
   message_filters::Subscriber<geometry_msgs::PoseStamped> subPose_;
-  message_filters::Subscriber<ocean_optics::Spectrum> subSpectrum_;
+  //message_filters::Subscriber<ocean_optics::Spectrum> subSpectrum_;
 
+  ros::Subscriber subSpectrum_;
+  
   //  time sync policy
-  typedef message_filters::sync_policies::ApproximateTime<
-      sensor_msgs::Image, sensor_msgs::CameraInfo, geometry_msgs::PoseStamped,
-      ocean_optics::Spectrum> TimeSyncPolicy;
+  typedef message_filters::sync_policies::ExactTime<
+      sensor_msgs::Image, sensor_msgs::CameraInfo, geometry_msgs::PoseStamped> TimeSyncPolicy;
   std::shared_ptr<message_filters::Synchronizer<TimeSyncPolicy>> sync_;
 
   //  synchronized callback
   void syncCallback(const sensor_msgs::ImageConstPtr &img,
                     const sensor_msgs::CameraInfoConstPtr &info,
-                    const geometry_msgs::PoseStampedConstPtr &poseStamped,
-                    const ocean_optics::SpectrumConstPtr &spec);
+                    const geometry_msgs::PoseStampedConstPtr &poseStamped);
+  
+  void spectrumCallback(const ocean_optics::SpectrumConstPtr &spec);
   
   void addObservation();
 };

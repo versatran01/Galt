@@ -36,6 +36,8 @@ signals:
 private slots:
   void calibratorUpdateState(void);
   
+  void calibratorReceivedSpectrum(void);
+  
   void spinBoxValueChanged(double);
   
   void sampleSourceButtonPressed(bool);

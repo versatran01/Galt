@@ -16,17 +16,19 @@ namespace galt {
 
 CameraCalibration::CameraCalibration()
     : cameraSerial(), cameraExposure(0), calibrationDate(), slope(0),
-      intercept(0), spectrometerPose(), filterProfile() {}
+      intercept(0), squaredError(0), spectrometerPose(), filterProfile() {}
 
 CameraCalibration::CameraCalibration(const std::string &camSerial,
                                      int camExposure,
                                      const std::string &isoCalibDate,
-                                     double slope, double intercept,
+                                     double slope, 
+                                     double intercept, double squaredError,
                                      const galt::SpectrometerPose &specPose,
                                      const galt::FilterProfile &profile)
     : cameraSerial(camSerial), cameraExposure(camExposure),
       calibrationDate(isoCalibDate), slope(slope), intercept(intercept),
-      spectrometerPose(specPose), filterProfile(profile) {}
+      squaredError(squaredError), spectrometerPose(specPose), 
+      filterProfile(profile) {}
 }
 
 YAML::Node YAML::convert<galt::CameraCalibration>::encode(
@@ -37,6 +39,7 @@ YAML::Node YAML::convert<galt::CameraCalibration>::encode(
   node["calibration_date"] = rhs.calibrationDate;
   node["slope"] = rhs.slope;
   node["intercept"] = rhs.intercept;
+  node["squared_error"] = rhs.squaredError;
   node["spectrometer_pose"] = rhs.spectrometerPose;
   node["filter_profile"] = rhs.filterProfile;
   return node;
@@ -48,7 +51,7 @@ YAML::convert<galt::CameraCalibration>::decode(const YAML::Node &node,
 
   const auto requiredFields = { "camera_serial",    "camera_exposure",
                                 "calibration_date", "slope",
-                                "intercept",        "spectrometer_pose",
+                                "intercept", "squared_error", "spectrometer_pose",
                                 "filter_profile" };
   if (!node.IsMap() || !galt::hasFields(node, requiredFields)) {
     return false;
@@ -60,6 +63,7 @@ YAML::convert<galt::CameraCalibration>::decode(const YAML::Node &node,
       node["camera_exposure"].as<int>(),
       node["calibration_date"].as<std::string>(), node["slope"].as<double>(),
       node["intercept"].as<double>(),
+      node["squared_error"].as<double>(),
       node["spectrometer_pose"].as<galt::SpectrometerPose>(),
       node["filter_profile"].as<galt::FilterProfile>());
   
@@ -68,16 +72,17 @@ YAML::convert<galt::CameraCalibration>::decode(const YAML::Node &node,
 
 
 YAML::Emitter &operator<<(YAML::Emitter &out, 
-                          const galt::CameraCalibration &pose) {
+                          const galt::CameraCalibration &calib) {
   out << YAML::Block;
   out << YAML::BeginMap;
-  out << YAML::Key << "camera_serial" << YAML::Value << pose.cameraSerial;
-  out << YAML::Key << "camera_exposure" << YAML::Value << pose.cameraExposure;
-  out << YAML::Key << "calibration_date" << YAML::Value << pose.calibrationDate;
-  out << YAML::Key << "slope" << YAML::Value << pose.slope;
-  out << YAML::Key << "intercept" << YAML::Value << pose.intercept;
-  out << YAML::Key << "spectrometer_pose" << YAML::Value << pose.spectrometerPose;
-  out << YAML::Key << "filter_profile" << YAML::Value << pose.filterProfile;
+  out << YAML::Key << "camera_serial" << YAML::Value << calib.cameraSerial;
+  out << YAML::Key << "camera_exposure" << YAML::Value << calib.cameraExposure;
+  out << YAML::Key << "calibration_date" << YAML::Value << calib.calibrationDate;
+  out << YAML::Key << "slope" << YAML::Value << calib.slope;
+  out << YAML::Key << "intercept" << YAML::Value << calib.intercept;
+  out << YAML::Key << "squared_error" << YAML::Value << calib.squaredError;
+  out << YAML::Key << "spectrometer_pose" << YAML::Value << calib.spectrometerPose;
+  out << YAML::Key << "filter_profile" << YAML::Value << calib.filterProfile;
   out << YAML::EndMap;
   return out;
 }

@@ -12,6 +12,7 @@
 #include <QFile>
 #include <QPushButton>
 #include <QDoubleSpinBox>
+#include <QLabel>
 
 #include "spectrumcalibrationview.h"
 #include "ui_spectrumcalibrationview.h"
@@ -243,6 +244,7 @@ void SpectrumCalibrationView::calibratorUpdateState(void) {
     }
   }
   camCurve_->setSamples(points);  
+  ui->obvsCount->setText(std::to_string(observations.size()).c_str());
   
   if (specCalib_->hasCalibration()) {
     
@@ -251,10 +253,21 @@ void SpectrumCalibrationView::calibratorUpdateState(void) {
     //  place new plot on the camera chart
     camCalibCurve_->setData( new CalibrationFunction(calib.slope,calib.intercept) );
     camCalibCurve_->setVisible(true);
+    ui->error->setText(std::to_string(std::sqrt(calib.squaredError)).c_str());
   } else {
     camCalibCurve_->setVisible(false);
+    ui->error->setText("0");
   }
-  ui->camCalibPlot->replot();  
+  ui->camCalibPlot->replot();
+  
+  //  update incident angle reading
+  kr::Pose<double> pose = specCalib_->getPose();  //  tags in camera frame
+  
+  kr::vec3d tagZ = pose.q.matrix() * kr::vec3d(0,0,1);
+  
+  const double dot = -tagZ[2];
+  const double ang = std::acos(dot);
+  ui->angle->setText(std::to_string(ang * 180 / M_PI).c_str());
 }
 
 void SpectrumCalibrationView::spinBoxValueChanged(double value) {

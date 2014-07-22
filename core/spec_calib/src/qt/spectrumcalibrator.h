@@ -63,6 +63,8 @@ public:
 
   const std::string& getCameraSerial() const;
   
+  const kr::Pose<double>& getPose() const;
+  
   const cv::Mat &getUserImage() const;
 
   const galt::Spectrum &getSpectrum() const;

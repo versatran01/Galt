@@ -23,7 +23,8 @@
 static bool leastSquaresFit(const std::vector<double>& x,
                             const std::vector<double>& y,
                             double& m,
-                            double& b) {
+                            double& b,
+                            double& errSqr) {
   
   assert(x.size() == y.size() && x.size() > 0);
   
@@ -48,6 +49,15 @@ static bool leastSquaresFit(const std::vector<double>& x,
   Eigen::Matrix<double,2,1> sol = Hinv * X.transpose() * Y;
   m = sol[0];
   b = sol[1];
+  
+  //  calculate squared error
+  errSqr = 0.0;
+  for (size_t i=0; i < x.size(); i++) {
+    double y_hat = m*x[i] + b;
+    errSqr += (y_hat - y[i])*(y_hat - y[i]);
+  }
+  errSqr /= x.size();
+  
   return true;
 }
 
@@ -122,8 +132,8 @@ void SpectrumCalibrator::calibrate() {
    Y.push_back(O.reflectance);
  }
  
- double camM,camB;
- if (!leastSquaresFit(X,Y,camM,camB)) {
+ double camM,camB, err;
+ if (!leastSquaresFit(X,Y,camM,camB,err)) {
    ROS_ERROR("Failed to solve linear system (more samples required?)");
    return;
  }
@@ -147,6 +157,7 @@ void SpectrumCalibrator::calibrate() {
  
  cameraCalibration_.calibrationDate = formattedDate;
  cameraCalibration_.intercept = camB;
+ cameraCalibration_.squaredError = err;
  cameraCalibration_.slope = camM;
  cameraCalibration_.filterProfile = filterProfile_;
  cameraCalibration_.spectrometerPose = specPose_;
@@ -154,6 +165,8 @@ void SpectrumCalibrator::calibrate() {
 }
 
 const std::string& SpectrumCalibrator::getCameraSerial() const { return cameraSerial_; }
+
+const kr::Pose<double>& SpectrumCalibrator::getPose() const { return camPose_; }
 
 const cv::Mat &SpectrumCalibrator::getUserImage() const { return rgbImage_; }
 
@@ -191,7 +204,6 @@ void SpectrumCalibrator::calcSampleRegion(kr::vec2d& center, double& radius) con
   
   //  distort
   cv::Point2d dist = distortPoint(cameraInfo_.D, cv::Point2d(p_cam[0],p_cam[1]));
-  //cv::Point2d dist = cv::Point2d(p_cam[0], p_cam[1]);
   
   //  camera intrinsics
   double fx = cameraInfo_.K[0];

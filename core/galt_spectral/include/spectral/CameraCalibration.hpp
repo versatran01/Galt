@@ -28,7 +28,8 @@ public:
   
   CameraCalibration(const std::string& camSerial, int camExposure,
                     const std::string& isoCalibDate, double slope,
-                    double intercept, const galt::SpectrometerPose& specPose,
+                    double intercept, double squaredError, 
+                    const galt::SpectrometerPose& specPose,
                     const galt::FilterProfile& profile);
   
   std::string cameraSerial;      /// Camera serial number or name.
@@ -36,7 +37,8 @@ public:
   std::string calibrationDate;   /// Date of calibration in ISO8601 format.
   
   double slope;                  /// Slope of the calibration.
-  double intercept;              /// Intercept of the calibration.
+  double intercept;              /// Intercept of the calibration
+  double squaredError;           /// Mean square error in the calibration
   
   galt::SpectrometerPose spectrometerPose;  /// Pose at time of calibration.
   galt::FilterProfile filterProfile;        /// Profile of the filter on the camera.

@@ -1,0 +1,29 @@
+<!--
+  Name: bluefox2_stereo.launch
+  Triggers:
+    * bluefox2
+
+  Brief: Launch the Matrix-Vision bluefox2 MLC usb camera in a
+    synchronized stereo setup. The two cameras are expected to be
+    master: 25001110 - right - grayscale - 752 x 480
+    slave:  25000855 - left  - grayscale - 752 x 480
+
+  Topics you should record:
+    * /mv_stereo/left/image_raw
+    * /mv_stereo/left/camera_ino
+    * /mv_stereo/right/image_raw
+    * /mv_stereo/right/camera_info
+-->
+
+<launch>
+    <arg name="left" default="25000855"/>
+    <arg name="right" default="25001110"/>
+    <include file="$(find bluefox2)/launch/stereo_node.launch">
+        <arg name="left" value="$(arg left)"/>
+        <arg name="right" value="$(arg right)"/>
+        <arg name="left_calib_url" value="package://galt_setup/calib/calib_$(arg left).yml"/>
+        <arg name="right_calib_url" value="package://galt_setup/calib/calib_$(arg right).yml"/>
+        <arg name="expose" value="5000"/>
+        <arg name="trigger" value="1"/>
+    </include>
+</launch>

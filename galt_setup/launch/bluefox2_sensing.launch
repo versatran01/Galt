@@ -1,0 +1,79 @@
+<launch>
+    <arg name="plugin" default="false"/>
+    <arg name="disp" default="screen"/>
+
+    <!--Camera settings-->
+    <arg name="camera1" default="29900189"/>
+    <arg name="camera2" default="29900130"/>
+    <arg name="camera3" default="30000313"/>
+    <arg name="fps" default="5"/>
+    <arg name="color" default="false"/>
+    <arg name="expose" default="5000"/>
+    <arg name="trigger" default="0"/>
+
+    <!--Run as node-->
+    <group unless="$(arg plugin)">
+        <include file="$(find bluefox2)/launch/single_node.launch">
+            <arg name="serial" value="$(arg camera1)"/>
+            <arg name="calib_url"
+                value="package://galt_setup/calib/calib_$(arg camera1).yml"/>
+            <arg name="fps" value="$(arg fps)"/>
+            <arg name="color" value="$(arg color)"/>
+            <arg name="expose" value="$(arg expose)"/>
+        </include>
+
+        <include file="$(find bluefox2)/launch/single_node.launch">
+            <arg name="serial" value="$(arg camera2)"/>
+            <arg name="calib_url"
+                value="package://galt_setup/calib/calib_$(arg serial).yml"/>
+            <arg name="fps" value="$(arg fps)"/>
+            <arg name="color" value="$(arg color)"/>
+            <arg name="expose" value="$(arg expose)"/>
+        </include>
+
+        <include file="$(find bluefox2)/launch/single_node.launch">
+            <arg name="serial" value="$(arg camera3)"/>
+            <arg name="calib_url"
+                value="package://galt_setup/calib/calib_$(arg camera3).yml"/>
+            <arg name="fps" value="$(arg fps)"/>
+            <arg name="color" value="$(arg color)"/>
+            <arg name="expose" value="$(arg expose)"/>
+        </include>
+    </group>
+
+    <!--Run as nodelet-->
+    <group if="$(arg plugin)">
+        <arg name="manager" default="sensing_nodelet"/>
+        <node pkg="nodelet" type="nodelet" name="$(arg manager)"
+            args="manager" output="$(arg disp)">
+        </node>
+
+        <include file="$(find bluefox2)/launch/single_nodelet.launch">
+            <arg name="serial" value="$(arg camera1)"/>
+            <arg name="calib_url"
+                value="package://galt_setup/calib/calib_$(arg camera1).yml"/>
+            <arg name="fps" value="$(arg fps)"/>
+            <arg name="color" value="$(arg color)"/>
+            <arg name="expose" value="$(arg expose)"/>
+        </include>
+
+        <include file="$(find bluefox2)/launch/single_nodelet.launch">
+            <arg name="serial" value="$(arg camera2)"/>
+            <arg name="calib_url"
+                value="package://galt_setup/calib/calib_$(arg camera2).yml"/>
+            <arg name="fps" value="$(arg fps)"/>
+            <arg name="color" value="$(arg color)"/>
+            <arg name="expose" value="$(arg expose)"/>
+        </include>
+
+        <include file="$(find bluefox2)/launch/single_nodelet.launch">
+            <arg name="serial" value="$(arg camera3)"/>
+            <arg name="calib_url"
+                value="package://galt_setup/calib/calib_$(arg camera3).yml"/>
+            <arg name="fps" value="$(arg fps)"/>
+            <arg name="color" value="$(arg color)"/>
+            <arg name="expose" value="$(arg expose)"/>
+        </include>
+    </group>
+
+</launch>

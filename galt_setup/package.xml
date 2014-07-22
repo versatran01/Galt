@@ -6,9 +6,7 @@
 
   <maintainer email="galt@todo.todo">galt</maintainer>
 
-
   <license>Proprietary</license>
-
 
   <buildtool_depend>catkin</buildtool_depend>
 

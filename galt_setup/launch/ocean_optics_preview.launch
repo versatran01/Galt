@@ -1,0 +1,21 @@
+<!--
+  Name: ocean_optics_preview.launch
+  Triggers:
+    * plotSpectra.py
+    * Optionally: ocean_optics
+
+  Brief: Preview data generated from the ocean optics spectrometer.
+-->
+<launch>
+  <!-- hard_launch: If true, trigger the ocean_optics launch file -->
+  <arg name="hard_launch" default="false"/>
+
+  <!-- Start the ocean_optics launch file -->
+  <group if="$(arg hard_launch)">
+    <include file="$(find galt_setup)/launch/ocean_optics.launch"/>
+  </group>
+
+  <!-- Demonstration plot -->
+  <node name="ocean_optics_preview" pkg="ocean_optics" type="plotSpectra.py" output="screen"/>
+
+</launch>

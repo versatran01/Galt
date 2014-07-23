@@ -1,0 +1,24 @@
+<!--
+  Name: flir_gige.launch
+  Triggers:
+    * fir_gige
+
+  Brief: Launch the flir_gige node. Uses calibration file in:
+  galt_setup/calib/flir_a35.yml
+
+  Topics you should record:
+    * /flir_gige/image_raw
+    * /flir_gige/camera_info
+-->
+<launch>
+  <node name="flir_gige" pkg="flir_gige" type="flir_gige" output="screen">
+    <param name="ip_address" type="string" value="192.168.0.11"/>
+    <param name="frame_id" type="string" value="flir_a35"/>
+    <param name="fps" type="double" value="20"/>
+    <param name="bit" type="int" value="3"/>
+    <param name="height" type="int" value="256"/>
+    <param name="width" type="int" value="320"/>
+    <param name="color" type="bool" value="false"/>
+    <param name="calib_url" type="string" value="package://galt_setup/calib/flir_a35.yml"/>
+  </node>
+</launch>

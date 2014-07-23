@@ -1,8 +1,0 @@
-<launch>
-    <include file="$(find galt_setup)/launch/bluefox2_stereo.launch"/>
-    <include file="$(find galt_setup)/launch/bluefox2_sensing.launch"/>
-    <include file="$(find galt_setup)/launch/imu_3dm_gx4.launch"/>
-    <include file="$(find galt_setup)/launch/hokuyo_eth.launch"/>
-    <include file="$(find galt_setup)/launch/ublox.launch"/>
-    <include file="$(find galt_setup)/launch/flir_gige.launch"/>
-</launch>

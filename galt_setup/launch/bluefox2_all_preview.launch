@@ -1,0 +1,12 @@
+<!--
+  Name: bluefox2_all_preview.launch
+  Author: Gareth
+  Triggers:
+    * rqt (5x image view)
+
+  Brief: Launch five image previews for the sensing cameras.
+-->
+<launch>
+  <include file="$(find galt_setup)/launch/bluefox2_sensing_preview.launch"/>
+  <include file="$(find galt_setup)/launch/bluefox2_stereo_preview.launch"/>
+</launch>

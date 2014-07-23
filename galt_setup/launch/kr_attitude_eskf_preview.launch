@@ -9,12 +9,12 @@
 -->
 <launch>
   <!-- Open RQT -->
-  <node name="rqt" pkg="rqt_gui" type="rqt_gui"
+  <node name="rqt_eskf_preview" pkg="rqt_gui" type="rqt_gui"
     output="screen"
     args="--perspective-file $(find galt_setup)/visualization/attitude_calib.perspective"/>
 
   <!-- Open Rviz -->
-  <node name="rviz" pkg="rviz" type="rviz"
+  <node name="rviz_eksf_preview" pkg="rviz" type="rviz"
     output="screen"
     args="--display-config $(find galt_setup)/visualization/attitude_calib.rviz"/>
 </launch>

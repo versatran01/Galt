@@ -1,0 +1,14 @@
+<!--
+  Name: bluefox2_stereo_preview.launch
+  Author: Gareth
+  Triggers:
+    * rqt (2x image view)
+
+  Brief: Launch two image previews for the stereo cameras.
+-->
+<launch>
+  <!-- Open RQT -->
+  <node name="rqt_stereo_cam" pkg="rqt_gui" type="rqt_gui"
+    output="screen"
+    args="--perspective-file $(find galt_setup)/visualization/cameras_stereo.perspective"/>
+</launch>

@@ -1,14 +1,31 @@
 <launch>
     <node pkg="rosbag" type="record" name="recorder" output="screen"
         args="
-        /stereo/mv_25000855/image_raw /stereo/mv_25000855/camera_info
-        /stereo/mv_25001110/image_raw /stereo/mv_25001110/camera_info
-        /trifocal/mv_29900130/image_raw /trifocal/mv_29900130/camera_info
-        /trifocal/mv_29900189/image_raw /trifocal/mv_29900189/camera_info
-        /trifocal/mv_30000313/image_raw /trifocal/mv_30000313/camera_info
-        /ublox/navposllh /ublox/navstatus
-        /imu_3dm_gx4/imu /imu_3dm_gx4/magnetic_field /imu_3dm_gx4/pressure
+        /mv_29900130/camera_info
+        /mv_29900130/image_raw
+        /mv_29900189/camera_info
+        /mv_29900189/image_raw
+        /mv_30000313/camera_info
+        /mv_30000313/image_raw
+        /mv_stereo/left/image_raw
+        /mv_stereo/left/camera_ino
+        /mv_stereo/right/image_raw
+        /mv_stereo/right/camera_info
         /flir_gige/image_raw
-        /scan"
-        />
+        /flir_gige/camera_info
+        /flir_gige/spot
+        /hokuyo/scan
+        /imu/imu
+        /imu/magnetic_field
+        /imu/pressure
+        /attitude_eskf/adjusted_field
+        /attitude_eskf/bias
+        /attitude_eskf/filtered_imu
+        /attitude_eskf/status
+        /spectrometer/spectrum
+        /ublox_gps/fix
+        /ublox_gps/fix_velocity
+        /ublox_gps/ublox/navposllh
+        /ublox_gps/ublox/navstatus
+        /ublox_gps/ublox/navvelned"/>
 </launch>

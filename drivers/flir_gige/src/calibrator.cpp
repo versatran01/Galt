@@ -109,7 +109,6 @@ void Calibrator::ImageCallback(const sensor_msgs::ImageConstPtr &image) {
     double f = d_avg * depth_ / dist_;
     ROS_INFO("pixel distance: %f, depth: %f, distance: %f, focal length: %f",
              d_avg, depth_, dist_, f);
-    sensor_ms
     ros::shutdown();
   }
   cv::imshow("bound", image_bound);

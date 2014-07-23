@@ -1,0 +1,28 @@
+<!--
+  Name: imu_3dm_gx4.launch
+  Triggers:
+    * imu_3dm_gx4
+
+  Brief: Launch the 3DM-GX4 IMU with the name 'imu'. The device is expected
+  to reside at /dev/ttyACM0. Data rate is set to 200Hz.
+
+  Topics you should record:
+    * /imu/imu
+    * /imu/magnetic_field
+    * /imu/pressure
+-->
+
+<launch>
+  <node pkg="imu_3dm_gx4" name="imu" type="imu_3dm_gx4" respawn="true"
+      output="screen">
+    <param name="device" type="string" value="/dev/ttyACM0"/>
+    <param name="baudrate" type="int" value="921600"/>
+
+    <!-- 1000/5 = 200Hz -->
+    <param name="imu_decimation" type="int" value="5"/>
+
+    <!-- Disable onboard filter -->
+    <param name="enable_filter" type="bool" value="false"/>
+    <param name="broadcast_frame" type="bool" value="false"/>
+  </node>
+</launch>

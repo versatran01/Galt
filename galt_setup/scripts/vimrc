@@ -1,0 +1,186 @@
+set nocompatible
+filetype off
+
+" Key mapping
+let mapleader = ','
+
+
+" Load ~/.bundles
+if filereadable(expand("~/.bundles"))
+  source ~/.bundles
+endif
+
+syntax on
+filetype plugin on
+filetype indent on
+syntax enable
+colorscheme ron
+
+" Setting =============================================================
+" => General
+set autoread                " reload files when changed on disk
+set encoding=utf8           " Set utf-8 as standard encoding
+set backspace=indent,eol,start
+set clipboard=unnamedplus
+set fileformats=unix,dos,mac
+set history=1000
+set undolevels=1000
+set title
+set hidden
+set ttyfast
+
+" => Beautiful
+set icon
+"set background=dark
+set cursorcolumn            " Highlight current column
+set colorcolumn=80          " Line wrapping indicator at 80
+hi Normal ctermbg=none
+hi LineNr ctermbg=none
+hi ColorColumn ctermbg=darkyellow
+hi Comment ctermfg=magenta
+hi Visual ctermbg=darkgray
+set cursorline              " Highlight current and column
+set number                  " Display line numbers
+set ruler                   " Show current position
+set cmdheight=2             " Height of the command bar
+set laststatus=2            " Always show the status line
+set showcmd                 " Show command
+set showmode
+set showmatch               " Show matching brackets
+set scrolloff=3
+set sidescrolloff=5
+set display+=lastline
+"set visualbell
+
+" => Indent
+set autoindent
+set cindent                 " C-style indentation
+set smartindent             " Smart indent
+set shiftwidth=4
+set softtabstop=4
+set expandtab               " Use spaces instead of tabs
+set smarttab                " Be smart when using tabs
+set tabstop=4
+set textwidth=500           " Text wrapping
+set wrap
+set showbreak=↪\ \          " string to put before wrapped screen lines
+"set list
+set listchars=tab:▸\ ,trail:▫
+set linebreak
+set nolist                  " List disables linebreak
+set whichwrap+=<,>,[,]      " Make arrow keys wrap lines
+
+" => Search
+set hlsearch                " Highlight search results
+set smartcase               " Case insensitive search
+set ignorecase              " Ignore case when searching
+set incsearch               " Search as you type
+
+" => No Swap
+set nobackup
+set noswapfile
+set nowritebackup           " Prevents automatic write backup before overwriting file
+
+" => Fold
+set foldmethod=indent       " fold based on indent
+set foldnestmax=3           " deepest fold is 3 levels
+set foldlevel=99
+set nofoldenable            " dont fold by default
+
+" => Other
+set magic                   " For regular expressions turn magic on
+set mat=2                   " How many tenths of a second to blink when matching brackets
+set nostartofline           " keep cursor in same column for long-range motion cmds
+set wildmode=longest,list,full
+set wildmenu                " Show a navigable menu for tab completion
+set wildignore=*.o,*~,*.pyc " Ignore compiled files
+set wildignore+=*vim/backups*
+set wildignore+=*sass-cache*
+set wildignore+=*DS_Store*
+set wildignore+=vendor/rails/**
+set wildignore+=vendor/cache/**
+set wildignore+=*.gem
+set wildignore+=log/**
+set wildignore+=tmp/**
+set wildignore+=*.png,*.jpg,*.gif
+set wildignore+=*/tmp/*,*.so,*.swp,*.zip
+set wildignore+=*.mexa64,*.mexgln
+
+" => Some autocmd to suite different files
+autocmd BufRead *bash_* setlocal filetype=sh
+autocmd BufRead *.launch setlocal filetype=xml
+autocmd BufNewFile,BufRead .bundles setf vim
+
+set mouse=a
+if exists('$TMUX')  " Support resizing in tmux
+  set ttymouse=xterm2
+endif
+
+" Mappings =============================================================
+" Move through wrapped lines
+nnoremap  <silent> j gj
+nnoremap  <silent> k gk
+map  <silent> <home> g<home>
+map  <silent> <End>  g<End>
+
+" Move through split windows
+map <C-h> <C-w>h
+map <C-j> <C-w>j
+map <C-k> <C-w>k
+map <C-l> <C-w>l
+
+" Quickly edit/reload the vimrc file
+nmap <leader>ev :e ~/.vimrc<CR>
+nmap <leader>V :source ~/.vimrc<CR>:filetype detect<CR>:exe ":echo 'vimrc reloaded'"<CR>
+
+" Toggle paste mode
+nmap <silent> <F4> :set invpaste<CR>:set paste?<CR>
+imap <silent> <F4> <ESC>:set invpaste<CR>:set paste?<CR>
+
+" Clear search highlight
+nmap ,/ :nohlsearch<CR>
+
+" Fix pasete problem
+xnoremap p pgvy
+
+" White spaces
+nmap <leader>dtw :%s/\s\+$//<CR>
+
+" format the entire file
+nnoremap <leader>fef :normal! gg=G``<CR>
+
+" upper/lower word
+nmap <leader>u mQviwU`Q
+nmap <leader>l mQviwu`Q
+
+" upper/lower first char of word
+nmap <leader>U mQgewvU`Q
+nmap <leader>L mQgewvu`Q
+
+" find merge conflict markers
+nmap <leader>fc <ESC>/\v^[<=>]{7}( .*\|$)<CR>
+
+" Toggle hlsearch with <leader>hs
+nmap <leader>hs :set hlsearch! hlsearch?<CR>
+
+" Underline the current line with '=' and '-'
+nmap <silent> <leader>h1 :t.<CR>Vr=
+nmap <silent> <leader>h2 :t.<CR>Vr-
+
+" Enable 256
+if $TERM == "xterm-256color"
+  set t_Co=256
+endif
+
+" Show/hide trailing white spaces
+nnoremap <Leader>wn :match ExtraWhitespace /^\s* \s*\<Bar>\s\+$/<CR>
+nnoremap <Leader>wf :match<CR>
+
+" Only highlight line and column in current window
+augroup BgHighlight
+  autocmd!
+  autocmd WinEnter * set cul
+  autocmd WinEnter * set cuc
+  autocmd WinLeave * set nocul
+  autocmd WinLeave * set nocuc
+augroup END

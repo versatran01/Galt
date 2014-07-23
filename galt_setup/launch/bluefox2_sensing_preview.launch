@@ -1,0 +1,24 @@
+<!--
+  Name: bluefox2_sensing_preview.launch
+  Author: Gareth
+  Triggers:
+    * rqt (3x image view)
+    * Optionally: Everything in bluefox2_sensing.
+
+  Brief: Launch three image previews for the sensing cameras.
+-->
+<launch>
+
+  <!-- hard_launch: If true, trigger the bluefox2_sensing launch file -->
+  <arg name="hard_launch" default="false"/>
+
+  <!-- Start cameras -->
+  <group if="$(arg hard_launch)">
+    <include file="$(find galt_setup)/launch/bluefox2_sensing.launch"/>
+  </group>
+
+  <!-- Open RQT -->
+  <node name="rqt_sensing_cam" pkg="rqt_gui" type="rqt_gui"
+    output="screen"
+    args="--perspective-file $(find galt_setup)/visualization/cameras_sensing.perspective"/>
+</launch>

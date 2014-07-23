@@ -1,0 +1,50 @@
+<!--
+  Name: deploy.launch
+  Author: Gareth
+  Triggers:
+    * Everything in deploy_base.
+    * Optionally: urg_node (ethernet config)
+    * Optionally: flir_gige
+    * Optionally: ocean_optics
+    * Optionally: rosbag
+
+  Brief: Launches the base configuration, and other optional components.
+  See below for possible arguments.
+-->
+<launch>
+
+  <!-- laser: If true, we start the LiDAR. -->
+  <arg name="laser" default="false"/>
+
+  <!-- thermal: If true, we start the FLIR thermal camera. -->
+  <arg name="thermal" default="false"/>
+
+  <!-- spectral: If true, we start ocean optics. -->
+  <arg name="spectral" default="false"/>
+
+  <!-- record: If true, we record all the necessary topics. -->
+  <arg name="record" default="false"/>
+
+  <!-- Base package -->
+  <include file="$(find galt_setup)/launch/deploy_base.launch"/>
+
+  <!-- urg_node -->
+  <group if="$(arg laser)">
+    <include file="$(find galt_setup)/launch/hokuyo_eth.launch"/>
+  </group>
+
+  <!-- flir_gige -->
+  <group if="$(arg thermal)">
+    <include file="$(find galt_setup)/launch/flir_gige.launch"/>
+  </group>
+
+  <!-- ocean_optics -->
+  <group if="$(arg spectral)">
+    <include file="$(find galt_setup)/launch/ocean_optics.launch"/>
+  </group>
+
+  <!-- Rosbag -->
+  <group if="$(arg record)">
+    <include file="$(find galt_setup)/launch/record_all.launch"/>
+  </group>
+</launch>

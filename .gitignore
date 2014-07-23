@@ -34,6 +34,9 @@ _*.pyc
 # ROS BAG FILES
 *.bag
 
+# ROS LOG FILES
+*.log
+
 # XCODE BUILD PRODUCTS
 *.build/
 *.build/*
@@ -43,6 +46,13 @@ _*.pyc
 *.xcuserdatad/*
 *.pbxuser
 *.pbxuser/*
+
+# QTCREATOR PROJECT
+*.includes
+*.creator
+*.creator.user
+*.config
+*.files
 
 # GEANY PROJECTS
 *.geany
@@ -82,4 +92,3 @@ gen/*
 *.exe
 *.out
 *.app
-

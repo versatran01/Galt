@@ -1,0 +1,45 @@
+<launch>
+
+  <arg name="session_name"/>
+  <arg name="camera_serial" default="25001110"/>
+  <arg name="camera_color" default="false"/>
+  <arg name="camera_exposure" default="8000"/>
+  <arg name="filter_wavelength"/>
+
+  <!-- monocular camera -->
+  <node pkg="bluefox2" type="single_node" name="mv_$(arg camera_serial)"
+        output="screen">
+    <param name="serial" type="string" value="$(arg camera_serial)"/>
+    <param name="fps" type="int" value="12"/>
+    <param name="color" type="bool" value="$(arg camera_color)"/>
+    <param name="expose" type="int" value="$(arg camera_exposure)"/>
+    <param name="binning" type="bool" value="false"/>
+    <param name="gain" type="double" value="0.0"/>
+    <param name="trigger" type="int" value="0"/>
+    <param name="calib_url" type="string" value="package://galt_setup/calib/calib_$(arg camera_serial).yml"/>
+  </node>
+
+  <!-- AprilTag detector -->
+  <node name="apriltag" pkg="apriltag_ros" type="apriltag_ros_node" output="screen">
+    <remap from="~image_raw" to="/mv_$(arg camera_serial)/image_raw"/>
+    <param name="map_file" value="$(find galt_setup)/apriltags/calib_board.yaml"/>
+  </node>
+
+  <!-- Spectrometer -->
+  <include file="$(find ocean_optics)/launch/driver.launch">
+    <arg name="spec_node" value="spectrometer"/>
+  </include>
+
+  <!-- spec calib node -->
+  <node pkg="spec_calib" type="spec_calib" name="spec_calib" output="screen">
+    <remap from="~image" to="/mv_$(arg camera_serial)/image_raw"/>
+    <remap from="~camera_info" to="/mv_$(arg camera_serial)/camera_info"/>
+    <remap from="~pose_tags" to="/apriltag/pose_cam"/>
+    <remap from="~spectrum" to="/spectrometer/spectrum"/>
+    <param name="session_name" value="$(arg session_name)"/>
+    <param name="camera_serial" value="$(arg camera_serial)"/>
+    <param name="camera_color" value="$(arg camera_color)"/>
+    <param name="camera_exposure" value="$(arg camera_exposure)"/>
+    <param name="filter_path" value="$(find galt_setup)/filters/filter_$(arg filter_wavelength).yaml"/>
+  </node>
+</launch>

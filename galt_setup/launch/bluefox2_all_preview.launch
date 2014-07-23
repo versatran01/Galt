@@ -1,0 +1,21 @@
+<!--
+  Name: bluefox2_all_preview.launch
+  Author: Gareth
+  Triggers:
+    * rqt (5x image view)
+    * Optionally: Launch the underlying cameras using their respective files.
+
+  Brief: Launch five image previews for the sensing cameras.
+-->
+<launch>
+
+  <!-- hard_launch: If true, start the cameras as well. -->
+  <arg name="hard_launch" default="false"/>
+
+  <include file="$(find galt_setup)/launch/bluefox2_sensing_preview.launch">
+    <arg name="hard_launch" value="$(arg hard_launch)"/>
+  </include>
+  <include file="$(find galt_setup)/launch/bluefox2_stereo_preview.launch">
+    <arg name="hard_launch" value="$(arg hard_launch)"/>
+  </include>
+</launch>

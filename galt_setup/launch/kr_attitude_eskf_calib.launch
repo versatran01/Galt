@@ -31,14 +31,6 @@
     <rosparam file="$(find galt_setup)/config/params_3dm_gx4_25.yaml"/>
   </node>
 
-  <!-- Open RQT -->
-  <node name="rqt" pkg="rqt_gui" type="rqt_gui"
-    output="screen"
-    args="--perspective-file $(find galt_setup)/visualization/attitude_calib.perspective"/>
-
-  <!-- Open Rviz -->
-  <node name="rviz" pkg="rviz" type="rviz"
-    output="screen"
-    args="--display-config $(find galt_setup)/visualization/attitude_calib.rviz"/>
-
+  <!-- Start visualization tools -->
+  <include file="$(find galt_setup)/launch/kr_attitude_eskf_preview.launch"/>
 </launch>

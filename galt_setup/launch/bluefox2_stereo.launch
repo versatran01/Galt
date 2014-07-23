@@ -1,7 +1,7 @@
 <!--
   Name: bluefox2_stereo.launch
   Triggers:
-    * bluefox2
+    * bluefox2 (2x)
 
   Brief: Launch the Matrix-Vision bluefox2 MLC usb camera in a
     synchronized stereo setup. The two cameras are expected to be

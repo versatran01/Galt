@@ -12,7 +12,8 @@
     * /flir_gige/spot
 -->
 <launch>
-  <node name="flir_gige" pkg="flir_gige" type="flir_gige" output="screen">
+  <node name="flir_gige" pkg="flir_gige" type="flir_gige" respawn="true"
+      output="screen">
     <param name="ip_address" type="string" value="192.168.0.11"/>
     <param name="frame_id" type="string" value="flir_a35"/>
     <param name="fps" type="double" value="20"/>

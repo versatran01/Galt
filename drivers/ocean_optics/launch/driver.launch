@@ -14,6 +14,7 @@
   <!-- Namespace of the node -->
   <arg name="spec_node" default="spectrometer"/>
 
-  <node pkg="ocean_optics" name="$(arg spec_node)" type="ocean_optics" output="screen">
+  <node pkg="ocean_optics" name="$(arg spec_node)" type="ocean_optics"
+      respawn="true" output="screen">
   </node>
 </launch>

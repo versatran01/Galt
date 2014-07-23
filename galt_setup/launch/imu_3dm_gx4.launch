@@ -13,7 +13,8 @@
 -->
 
 <launch>
-  <node pkg="imu_3dm_gx4" name="imu" type="imu_3dm_gx4" output="screen">
+  <node pkg="imu_3dm_gx4" name="imu" type="imu_3dm_gx4" respawn="true"
+      output="screen">
     <param name="device" type="string" value="/dev/ttyACM0"/>
     <param name="baudrate" type="int" value="921600"/>
 

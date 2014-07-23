@@ -76,7 +76,7 @@
                 }, 
                 "topic": {
                   "type": "repr", 
-                  "repr": "u'/mv_stereo/right/compressed'"
+                  "repr": "u'/mv_stereo/right/image_raw/compressed'"
                 }, 
                 "zoom1": {
                   "type": "repr", 
@@ -135,7 +135,7 @@
                 }, 
                 "topic": {
                   "type": "repr", 
-                  "repr": "u'/mv_stereo/left/compressed'"
+                  "repr": "u'/mv_stereo/left/image_raw/compressed'"
                 }, 
                 "zoom1": {
                   "type": "repr", 

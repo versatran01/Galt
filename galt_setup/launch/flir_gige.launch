@@ -9,6 +9,7 @@
   Topics you should record:
     * /flir_gige/image_raw
     * /flir_gige/camera_info
+    * /flir_gige/spot
 -->
 <launch>
   <node name="flir_gige" pkg="flir_gige" type="flir_gige" output="screen">

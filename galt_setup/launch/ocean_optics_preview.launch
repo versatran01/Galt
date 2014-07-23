@@ -17,5 +17,4 @@
 
   <!-- Demonstration plot -->
   <node name="ocean_optics_preview" pkg="ocean_optics" type="plotSpectra.py" output="screen"/>
-
 </launch>

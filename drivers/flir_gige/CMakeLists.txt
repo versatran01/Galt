@@ -21,7 +21,10 @@ find_package(catkin REQUIRED
 find_package(OpenCV)
 
 # Dynamic reconfigure option, as to be placed right before catkin_package
-generate_dynamic_reconfigure_options(cfg/Flir.cfg)
+generate_dynamic_reconfigure_options(
+    cfg/Flir.cfg
+    cfg/Calib.cfg
+    )
 
 catkin_package(
     #  INCLUDE_DIRS include
@@ -70,6 +73,16 @@ add_library(${PROJECT_NAME}_nodelet
     )
 target_link_libraries(${PROJECT_NAME}_nodelet
     ${PROJECT_NAME}
+    )
+
+# calibrator
+add_executable(flir_calibrator_node
+    src/calibrator.cpp
+    src/flir_calibrator_node.cpp
+    )
+target_link_libraries(flir_calibrator_node
+    ${catkin_LIBRARIES}
+    ${OpenCV_LIBRARIES}
     )
 
 ## Add cmake target dependencies of the executable/library

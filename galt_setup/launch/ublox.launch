@@ -16,7 +16,8 @@
 
 <launch>
   <group ns="ublox_gps">
-    <node name="ublox_gps" pkg="ublox_gps" type="ublox_gps" output="screen">
+      <node name="ublox_gps" pkg="ublox_gps" type="ublox_gps" output="log"
+          respawn="true">
       <!-- These are the only options supported by the node -->
       <param name="device" type="string" value="/dev/ttyUSB0"/>
       <param name="frame_id" type="string" value="gps_frame"/>

@@ -37,7 +37,8 @@
                 }, 
                 "topic": {
                   "type": "repr", 
-                  "repr": "u'/mv_29900189/image_raw'"
+                  "repr": "u'/mv_29900189/compressed
+                      '"
                 }, 
                 "zoom1": {
                   "type": "repr", 
@@ -76,7 +77,7 @@
                 }, 
                 "topic": {
                   "type": "repr", 
-                  "repr": "u'/mv_30000313/image_raw'"
+                  "repr": "u'/mv_30000313/compressed'"
                 }, 
                 "zoom1": {
                   "type": "repr", 
@@ -135,7 +136,7 @@
                 }, 
                 "topic": {
                   "type": "repr", 
-                  "repr": "u'/mv_29900130/image_raw'"
+                  "repr": "u'/mv_29900130/compressed'"
                 }, 
                 "zoom1": {
                   "type": "repr", 

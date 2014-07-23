@@ -13,7 +13,6 @@
     * /mv_30000313/camera_info
     * /mv_30000313/image_raw
 -->
-
 <launch>
     <arg name="plugin" default="false"/>
     <arg name="disp" default="screen"/>

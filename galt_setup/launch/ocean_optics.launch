@@ -1,0 +1,14 @@
+<!--
+  Name: ocean_optics.launch
+  Triggers:
+    * ocean_optics
+
+  Brief: Launch the USB2000+ spectrometer.
+
+  Topics you should record:
+    * /spectrometer/spectrum
+-->
+<launch>
+  <!-- This launch file will ensure the correct environment variables are set -->
+  <include file="$(find ocean_optics)/launch/driver.launch"/>
+</launch>

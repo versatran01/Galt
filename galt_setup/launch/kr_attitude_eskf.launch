@@ -10,14 +10,10 @@
     * /attitude_eskf/adjusted_field
     * /attitude_eskf/bias
     * /attitude_eskf/filtered_imu
-    * /attitude_eskf/status 
+    * /attitude_eskf/status
 -->
 
 <launch>
-
-  <!-- imu_name: The prefix/name on the IMU topic -->
-  <arg name="imu_name"/>
-
   <node pkg="kr_attitude_eskf" name="attitude_eskf" type="kr_attitude_eskf" output="screen">
 
     <!-- Magnetometer calibration needs to be in rosparam already -->
@@ -27,8 +23,8 @@
     <!-- Enable frame for rviz debugging -->
     <param name="broadcast_frame" type="bool" value="true"/>
 
-    <remap from="~imu" to="$(arg imu_name)/imu"/>
-    <remap from="~field" to="$(arg imu_name)/magnetic_field"/>
+    <remap from="~imu" to="$/imu/imu"/>
+    <remap from="~field" to="$/imu/magnetic_field"/>
 
     <!-- Load filter parameters from galt_setup -->
     <rosparam file="$(find galt_setup)/config/params_3dm_gx4_25.yaml"/>

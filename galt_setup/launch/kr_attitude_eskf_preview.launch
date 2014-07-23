@@ -4,10 +4,20 @@
   Triggers:
     * rqt (acceleration plot)
     * rviz (attitude display)
+    * Optionally: Everything in kr_attitude_eskf.
 
   Brief: Launch two windows to help visualize kr_attitude_eskf.
 -->
 <launch>
+
+  <!-- hard_launch: If true, trigger the kr_attitude_eskf launch file -->
+  <arg name="hard_launch" default="false"/>
+
+  <!-- Start the attitude eskf -->
+  <group if="$(arg hard_launch)">
+    <include file="$(arg galt_setup)/launch/kr_attitude_eskf.launch"/>
+  </group>
+
   <!-- Open RQT -->
   <node name="rqt_eskf_preview" pkg="rqt_gui" type="rqt_gui"
     output="screen"

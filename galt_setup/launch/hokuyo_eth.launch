@@ -1,23 +1,17 @@
 <!--
+  Name: hokyyo_eth.launch
+  Triggers:
+    * urg_node
 
-This launch file will start the urg_node with a ethernet hokuyo
+  Brief: Launch the hokuyo LiDAR in ethernet configuration..
 
-You may have to change the ip address if your laser has a differenct ip address
-
-You may also need to set the ip address of your computer
-
-Refer to the wiki for more details
-
-If you want to have a visualization, use hokuyo_rviz.launch
-
+  Topics you should record:
+    * /hokuyo/scan
 -->
-
 <launch>
-
+  <group ns="hokuyo">
     <node name="urg_node" pkg="urg_node" type="urg_node" respawn="false" output="screen">
         <param name="ip_address" type="string" value="192.168.0.10"/>
-        <!--<param name="angle_min" type="double" value="-1.5"/>-->
-        <!--<param name="angle_max" type="double" value="1.5"/>-->
     </node>
-
+  </group>
 </launch>

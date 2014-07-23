@@ -1,0 +1,22 @@
+<!--
+  Name: flir_gige_preview.launch
+  Triggers:
+    * rqt (1x image view)
+    * Optionally: fir_gige
+
+  Brief: Preview the output of the FLIR gige thermal camera.
+-->
+<launch>
+  <!-- hard_launch: If true, trigger the bluefox2_stereo launch file. -->
+  <arg name="hard_launch" default="false"/>
+
+  <!-- optionally start flir_gige -->
+  <group if="$(arg hard_launch)">
+    <include file="$(find galt_setup)/launch/flir_gige.launch"/>
+  </group>
+
+  <!-- Open RQT -->
+  <node name="rqt_thermal_cam" pkg="rqt_gui" type="rqt_gui"
+    output="screen"
+    args="--perspective-file $(find galt_setup)/visualization/cameras_thermal.perspective"/>
+</launch>

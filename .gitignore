@@ -34,6 +34,9 @@ _*.pyc
 # ROS BAG FILES
 *.bag
 
+# ROS LOG FILES
+*.log
+
 # XCODE BUILD PRODUCTS
 *.build/
 *.build/*
@@ -89,4 +92,3 @@ gen/*
 *.exe
 *.out
 *.app
-

@@ -23,7 +23,7 @@
     <arg name="camera3" default="30000313"/>
     <arg name="fps" default="10"/>
     <!--<arg name="color" default="false"/>-->
-    <arg name="expose" default="8000"/>
+    <arg name="expose" default="5000"/>
     <arg name="trigger" default="0"/>
 
     <!--Run as node-->

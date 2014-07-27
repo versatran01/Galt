@@ -21,9 +21,11 @@
     <arg name="camera1" default="29900189"/>
     <arg name="camera2" default="29900130"/>
     <arg name="camera3" default="30000313"/>
+    <arg name="expose1" default="4500"/>
+    <arg name="expose2" default="4500"/>
+    <arg name="expose3" default="4000"/>
     <arg name="fps" default="10"/>
     <!--<arg name="color" default="false"/>-->
-    <arg name="expose" default="5000"/>
     <arg name="trigger" default="0"/>
 
     <!--Run as node-->
@@ -34,7 +36,7 @@
                 value="package://galt_setup/calib/calib_$(arg camera1).yml"/>
             <arg name="fps" value="$(arg fps)"/>
             <arg name="color" value="true"/>
-            <arg name="expose" value="$(arg expose)"/>
+            <arg name="expose" value="$(arg expose1)"/>
         </include>
 
         <include file="$(find bluefox2)/launch/single_node.launch">
@@ -43,7 +45,7 @@
                 value="package://galt_setup/calib/calib_$(arg camera2).yml"/>
             <arg name="fps" value="$(arg fps)"/>
             <arg name="color" value="true"/>
-            <arg name="expose" value="$(arg expose)"/>
+            <arg name="expose" value="$(arg expose2)"/>
         </include>
 
         <include file="$(find bluefox2)/launch/single_node.launch">
@@ -52,7 +54,7 @@
                 value="package://galt_setup/calib/calib_$(arg camera3).yml"/>
             <arg name="fps" value="$(arg fps)"/>
             <arg name="color" value="false"/>
-            <arg name="expose" value="$(arg expose)"/>
+            <arg name="expose" value="$(arg expose3)"/>
         </include>
     </group>
 

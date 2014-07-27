@@ -23,7 +23,7 @@
         <arg name="right" value="$(arg right)"/>
         <arg name="left_calib_url" value="package://galt_setup/calib/calib_$(arg left).yml"/>
         <arg name="right_calib_url" value="package://galt_setup/calib/calib_$(arg right).yml"/>
-        <arg name="expose" value="50"/>
+        <arg name="expose" value="200"/>
         <arg name="trigger" value="1"/>
     </include>
 </launch>

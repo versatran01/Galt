@@ -72,6 +72,21 @@ target_link_libraries(${PROJECT_NAME}_nodelet
     ${PROJECT_NAME}
     )
 
+# thermal proc
+add_library(thermal_proc
+    src/thermal_proc/thermal_proc.cpp
+    )
+target_link_libraries(thermal_proc
+    ${OpenCV_LIBRARIES}
+    ${catkin_LIBRARIES}
+    )
+add_executable(thermal_proc_node
+    src/thermal_proc/thermal_proc_node.cpp
+    )
+target_link_libraries(thermal_proc_node
+    thermal_proc
+    )
+
 ## Add cmake target dependencies of the executable/library
 add_dependencies(${PROJECT_NAME}_node
     ${catkin_EXPORTED_TARGETS}

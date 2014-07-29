@@ -3,7 +3,7 @@
   <arg name="session_name"/>
   <arg name="camera_serial" default="25001110"/>
   <arg name="camera_color" default="false"/>
-  <arg name="camera_exposure" default="8000"/>
+  <arg name="camera_exposure"/>
   <arg name="filter_wavelength"/>
 
   <!-- monocular camera -->

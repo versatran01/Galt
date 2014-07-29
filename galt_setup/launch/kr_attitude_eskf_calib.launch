@@ -19,10 +19,10 @@
   <!-- Launch attitude ESKF in calibration mode -->
   <node pkg="kr_attitude_eskf" name="attitude_eskf" type="kr_attitude_eskf" output="screen">
 
-    <!-- Magnetometer calibration needs to be in rosparam already -->
     <param name="enable_magnetometer" type="bool" value="true"/>
     <param name="calibrate_magnetometer" type="string" value="full"/>
-    <param name="broadcast_frame" type="bool" value="true"/>
+    <param name="broadcast_frame" type="bool" value="false"/>
+    <param name="publish_pose" type="bool" value="true"/>
 
     <remap from="~imu" to="/imu/imu"/>
     <remap from="~field" to="/imu/magnetic_field"/>
@@ -30,7 +30,4 @@
     <!-- Load filter parameters from galt_setup -->
     <rosparam file="$(find galt_setup)/config/params_3dm_gx4_25.yaml"/>
   </node>
-
-  <!-- Start visualization tools -->
-  <!--<include file="$(find galt_setup)/launch/kr_attitude_eskf_preview.launch"/>-->
 </launch>

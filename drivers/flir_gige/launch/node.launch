@@ -9,7 +9,7 @@
     <arg name="fps" default="20.0"/>
     <arg name="bit" default="2"/>
     <arg name="color" default="false"/>
-    <arg name="calib_file" default="$(arg frame_id).yaml"/>
+    <arg name="calib_file" default="$(arg frame_id).yml"/>
     <arg name="calib_url" default="package://flir_gige/calib/$(arg calib_file)"/>
     <!--Notice that camera will be uncalibrated if you change dimension-->
     <arg name="width" default="320"/>

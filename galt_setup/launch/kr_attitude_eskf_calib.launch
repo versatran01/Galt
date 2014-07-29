@@ -32,5 +32,5 @@
   </node>
 
   <!-- Start visualization tools -->
-  <include file="$(find galt_setup)/launch/kr_attitude_eskf_preview.launch"/>
+  <!--<include file="$(find galt_setup)/launch/kr_attitude_eskf_preview.launch"/>-->
 </launch>

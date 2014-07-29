@@ -8,6 +8,8 @@
 #include <std_msgs/MultiArrayLayout.h>
 #include <std_msgs/MultiArrayDimension.h>
 
+#include <opencv2/contrib/contrib.hpp>
+
 namespace flir_gige {
 
 ThermalProc::ThermalProc(const ros::NodeHandle &nh) : nh_{nh}, it_{nh} {
@@ -18,13 +20,14 @@ ThermalProc::ThermalProc(const ros::NodeHandle &nh) : nh_{nh}, it_{nh} {
       it_.subscribeCamera("image_raw", 1, &ThermalProc::CameraCallback, this);
 
 #endif
-  heat_pub_ = nh_.advertise<std_msgs::Float32MultiArray>("temperature", 1);
-  heat_map_ = std_msgs::Float32MultiArrayPtr(new std_msgs::Float32MultiArray);
-  heat_map_->layout.dim.push_back(std_msgs::MultiArrayDimension());
-  heat_map_->layout.dim.push_back(std_msgs::MultiArrayDimension());
+  heat_pub_ = nh_.advertise<sensor_msgs::Image>("temperature", 1);
+  heat_map_ = sensor_msgs::ImagePtr(new sensor_msgs::Image);
 
   color_pub_ = nh_.advertise<sensor_msgs::Image>("color_map", 1);
   color_map_ = sensor_msgs::ImagePtr(new sensor_msgs::Image);
+
+  server_.setCallback(
+      boost::bind(&ThermalProc::ReconfigureCallback, this, _1, _2));
 }
 
 #ifdef NO_TIMESTAMP
@@ -54,40 +57,64 @@ void ThermalProc::CameraCallback(const sensor_msgs::ImageConstPtr &image,
   }
 
   // Convert each pixle form 16-bit raw value to temperature
-  const auto num_data = raw_ptr->image.total();
   const auto height = raw_ptr->image.rows;
   const auto width = raw_ptr->image.cols;
-  if (heat_map_->data.size() != num_data) {
-    heat_map_->data.resize(num_data);
-  }
+  // Caluculate temperature for each pixels
   cv::Mat heat(raw_ptr->image.size(), CV_32FC1);
   for (int i = 0; i < height; ++i) {
     auto *pheat = heat.ptr<float>(i);
     auto *praw = raw_ptr->image.ptr<uint16_t>(i);
     for (int j = 0; j < width; ++j) {
-      pheat[j] = B / std::log(R / (praw[j] - O) + F) - 273.15;
+      //      pheat[j] = B / std::log(R / (praw[j] - O) + F) - kT0;
+      pheat[j] = Raw2Celsius(praw[j], B, F, O, R, kT0);
     }
   }
-  float *data = reinterpret_cast<float *>(heat.data);
-  std::copy(data, data + num_data, heat_map_->data.begin());
 
-  // Set dimension and publish
-  heat_map_->layout.dim[0].size = height;
-  heat_map_->layout.dim[0].label = "height";
-  heat_map_->layout.dim[0].stride = height * width;
-  heat_map_->layout.dim[1].size = width;
-  heat_map_->layout.dim[1].label = "width";
-  heat_map_->layout.dim[1].stride = width;
-  heat_pub_.publish(heat_map_);
+  // Use cv_bridge to publish
+  cv_bridge::CvImage heat_cvimg(image->header,
+                                sensor_msgs::image_encodings::TYPE_32FC1, heat);
+  heat_pub_.publish(heat_cvimg.toImageMsg());
 
-  // Convert to heat map if there's any subscriber
+  // Convert to jet color map if there's any subscriber
   if (color_pub_.getNumSubscribers() > 0) {
     cv::Mat image_jet;
+    // Calculate corresponding raw value from temperature
+    uint16_t raw_min = Celsius2Raw(celsius_min_, B, F, O, R, kT0);
+    uint16_t raw_max = Celsius2Raw(celsius_max_, B, F, O, R, kT0);
+    auto alpha = 255.0 / (raw_max - raw_min);
+    auto beta = -alpha * raw_min;
+    raw_ptr->image.convertTo(image_jet, CV_8UC1, alpha, beta);
+    cv::applyColorMap(image_jet, image_jet, cv::COLORMAP_JET);
+    // Use cv_bridge to publish
+    cv_bridge::CvImage color_cvimg(
+        image->header, sensor_msgs::image_encodings::BGR8, image_jet);
+    color_pub_.publish(color_cvimg.toImageMsg());
   }
 
   // Display image for now
-  cv::imshow("raw", raw_ptr->image);
-  cv::waitKey(3);
+//  cv::imshow("raw", raw_ptr->image);
+//  cv::waitKey(3);
+}
+
+uint16_t ThermalProc::Celsius2Raw(double t, double B, double F, double O,
+                                  double R, double T0) {
+  return static_cast<uint16_t>(R / (std::exp(B / (t + T0)) - F) + O);
+}
+
+double ThermalProc::Raw2Celsius(uint16_t S, double B, double F, double O,
+                                double R, double T0) {
+  return (B / std::log(R / (S - O) + F) - kT0);
+}
+
+void ThermalProc::ReconfigureCallback(const ProcDynConfig &config, int level) {
+  // Do nothing when first starting
+  if (level < 0) {
+    ROS_INFO(
+        "flir_gige: thermal_proc: Initializiting dynamic reconfigure server");
+    return;
+  }
+  celsius_min_ = config.celcius_min;
+  celsius_max_ = config.celcius_max;
 }
 
 }  // namespace flir_gige

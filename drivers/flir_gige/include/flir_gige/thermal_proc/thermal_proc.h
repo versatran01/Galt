@@ -11,10 +11,13 @@
 #include <sensor_msgs/CameraInfo.h>
 #include <image_transport/image_transport.h>
 #include <cv_bridge/cv_bridge.h>
+#include <dynamic_reconfigure/server.h>
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
+
+#include "flir_gige/ProcDynConfig.h"
 
 namespace flir_gige {
 
@@ -26,9 +29,17 @@ class ThermalProc {
   ros::NodeHandle nh_;
   image_transport::ImageTransport it_;
   ros::Publisher heat_pub_;
-  std_msgs::Float32MultiArrayPtr heat_map_;
+  sensor_msgs::ImagePtr heat_map_;
   ros::Publisher color_pub_;
   sensor_msgs::ImagePtr color_map_;
+  dynamic_reconfigure::Server<ProcDynConfig> server_;
+  double celsius_min_{20.0};
+  double celsius_max_{40.0};
+  const double kT0{273.15};
+
+  uint16_t Celsius2Raw(double t, double B, double F, double O, double R, double T0);
+  double Raw2Celsius(uint16_t S, double B, double F, double O, double R, double T0);
+  void ReconfigureCallback(const ProcDynConfig &config, int level);
 
 #ifdef NO_TIMESTAMP
   image_transport::Subscriber image_sub_;

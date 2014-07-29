@@ -93,7 +93,6 @@ class GigeCamera {
   typedef std::unique_ptr<PvStream, FreeStream> PvStreamPtr;
   typedef std::unique_ptr<PvPipeline> PvPipelinePtr;
   typedef std::unique_ptr<std::thread> ThreadPtr;
-  typedef std::unique_ptr<cv::Mat> MatPtr;
 
   bool raw_{false};
   bool acquire_{false};
@@ -106,7 +105,7 @@ class GigeCamera {
   PvStreamPtr stream_;
   PvPipelinePtr pipeline_;
   ThreadPtr image_thread_;
-  MatPtr image_raw_;
+  cv::Mat image_raw_;
 
 };  // class GigeCamera
 

@@ -76,11 +76,10 @@ void FlirGige::PublishImage(const cv::Mat &image,
                             const std::vector<double> &planck) {
   // Construct a cv image
   cv_bridge::CvImagePtr cv_ptr(new cv_bridge::CvImage());
-  std_msgs::Header header;
   cv_ptr->header.stamp = ros::Time::now();
   cv_ptr->header.frame_id = frame_id_;
   cv_ptr->image = image;
-  cinfo_->header = header;
+  cinfo_->header = cv_ptr->header;
 //  cinfo_->D = planck;
   // Since D maybe useful, we instead put planck constants into P
   // The orders are B F O R

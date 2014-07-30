@@ -44,25 +44,73 @@ void image_callback(const sensor_msgs::ImageConstPtr &irImage,
   }
   
   cv::Mat outputIr(bridgedIrPtr->image.size(), CV_8UC1);
+  cv::Mat adjustedIr(bridgedIrPtr->image.size(), CV_8UC1, cv::Scalar(0,0,0));
+  cv::Mat adjustedRed(bridgedIrPtr->image.size(), CV_8UC1, cv::Scalar(0,0,0));
+  cv::Mat NDVI(bridgedIrPtr->image.size(), CV_8UC1, cv::Scalar(0,0,0));
   
-  //  try to correct the IR image
+  //  NOTE: This is all a harcoded mess for now, just for demo purposes...
+  const int dispx = 8;
+  const int dispy = 18;
+  
+  //  correct the IR image for circular error, then convert to reflectance
+  //  and calculate an NDVI
   for (int y=0; y < bridgedIrPtr->image.rows; y++) {
     for (int x=0; x < bridgedIrPtr->image.cols; x++) {
-      double delx = x - 464;
-      double dely = y - 667;
+      const double delx = x - 674;
+      const double dely = y - 459;
       
-      double rad = std::sqrt(delx*delx + dely*dely);
-      double mul = 1.0 + 1.25 * (rad / 500.0);
+      const double rad = std::sqrt(delx*delx + dely*dely);
+      const double scl = -2e-6*(rad*rad) + 0.0001716*rad + 0.9508;
       
-      uchar s = bridgedIrPtr->image.at<uchar>(y,x);
-      s = static_cast<uchar>( std::min(255.0, s * mul) );
+      const uchar irIn = bridgedIrPtr->image.at<uchar>(y,x);
       
-      outputIr.at<uchar>(y,x) = s;
+      int red_x = x + dispx;
+      int red_y = y + dispy;
+      
+      red_x = std::min(std::max(red_x,0),bridgedRedPtr->image.cols);
+      red_y = std::min(std::max(red_y,0),bridgedRedPtr->image.rows);
+      
+      const uchar redIn = bridgedRedPtr->image.at<uchar>(red_y,red_x);
+      
+      uchar irOut;
+      
+      if (rad < 475) {
+        irOut = static_cast<uchar>( std::min(255.0, irIn / scl) );
+        
+        //  convert to reflectance
+        double ir = irIn / scl;
+        ir = ir / 255.0;
+        ir = std::min(std::max(0.6759*ir - 0.00971, 0.0), 1.0);
+        
+        double red = redIn / 255.0;
+        red = std::min(std::max(1.296*red - 0.07744, 0.0), 1.0);
+        
+        double ndvi = (ir - red) / (ir + red);
+        ndvi = (ndvi + 1) / 2;
+        //ndvi = std::min(std::max(ndvi,0.0),1.0);
+        
+        if (ndvi > 1.0 || ndvi < 0.0) {
+          ROS_ERROR("bad calc!");
+        }
+        
+        adjustedIr.at<uchar>(y,x) = static_cast<uchar>(ir * 255);
+        adjustedRed.at<uchar>(y,x) = static_cast<uchar>(red * 255);
+        NDVI.at<uchar>(y,x) = static_cast<uchar>(ndvi * 255);
+        
+      } else {
+        irOut = 0;
+      }
+      
+      outputIr.at<uchar>(y,x) = irOut;
     }
   }
   
   cv::imshow("IR", outputIr);
   cv::imshow("Red", bridgedRedPtr->image);
+  cv::imshow("Calibrated IR", adjustedIr);
+  cv::imshow("Calibrated Red", adjustedRed);
+  cv::imshow("NDVI", NDVI);
+  
   if (cv::waitKey(30) == static_cast<int>('s')) {
     //  save images
     cv::imwrite("output_ir_" + std::to_string(save_number) + ".png", bridgedIrPtr->image);
@@ -100,6 +148,9 @@ int main(int argc, char ** argv) {
   
   cv::namedWindow("IR", cv::WINDOW_NORMAL);
   cv::namedWindow("Red", cv::WINDOW_NORMAL);
+  cv::namedWindow("Calibrated IR", cv::WINDOW_NORMAL);
+  cv::namedWindow("Calibrated Red", cv::WINDOW_NORMAL);
+  cv::namedWindow("NDVI", cv::WINDOW_NORMAL);
   
   ros::spin();
   return 0;

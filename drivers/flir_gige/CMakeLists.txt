@@ -58,6 +58,7 @@ target_link_libraries(${PROJECT_NAME}
     ${OpenCV_LIBRARIES}
     gige_camera
     )
+add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS})
 
 # node
 add_executable(${PROJECT_NAME}_node
@@ -93,11 +94,16 @@ target_link_libraries(thermal_proc_node
 ## Add cmake target dependencies of the executable/library
 add_dependencies(${PROJECT_NAME}_node
     ${catkin_EXPORTED_TARGETS}
-    ${PROJECT_NAME}_gencfg
+    ${${PROJECT_NAME}_EXPORTED_TARGETS}
     )
+add_dependencies(${PROJECT_NAME}_nodelet
+  ${${PROJECT_NAME}_EXPORTED_TARGETS}
+)
 add_dependencies(thermal_proc_node
-    ${PROJECT_NAME}_gencfg
+    ${${PROJECT_NAME}_EXPORTED_TARGETS}
     )
+
+message(STATUS "Test: ${${PROJECT_NAME}_EXPORTED_TARGETS}")
 
 ## Add gtest based cpp test }target and link libraries
 # catkin_add_gtest(${PROJECT_NAME}-test test/test_flir.cpp)

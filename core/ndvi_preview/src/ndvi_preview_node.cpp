@@ -74,7 +74,7 @@ void image_callback(const sensor_msgs::ImageConstPtr &irImage,
       
       uchar irOut;
       
-      if (rad < 475) {
+      if (rad < 450) {
         irOut = static_cast<uchar>( std::min(255.0, irIn / scl) );
         
         //  convert to reflectance

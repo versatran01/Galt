@@ -5,15 +5,20 @@
 #include <pluginlib/class_list_macros.h>
 
 namespace flir_gige {
+
 class FlirNodelet : public nodelet::Nodelet {
  public:
   FlirNodelet() : nodelet::Nodelet() {}
   ~FlirNodelet() { flir_gige_->End(); }
 
   virtual void onInit() {
-
-    flir_gige_.reset(new FlirGige(getPrivateNodeHandle()));
-    flir_gige_->Run();
+    try {
+      flir_gige_.reset(new FlirGige(getPrivateNodeHandle()));
+      flir_gige_->Run();
+    }
+    catch (const std::exception &e) {
+      ROS_ERROR_STREAM("flir_gige: " << e.what());
+    }
   }
 
  private:

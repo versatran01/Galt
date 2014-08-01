@@ -21,7 +21,10 @@ find_package(catkin REQUIRED
 find_package(OpenCV)
 
 # Dynamic reconfigure option, as to be placed right before catkin_package
-generate_dynamic_reconfigure_options(cfg/Flir.cfg)
+generate_dynamic_reconfigure_options(
+    cfg/Flir.cfg
+    cfg/ProcDyn.cfg
+    )
 
 catkin_package(
     #  INCLUDE_DIRS include
@@ -55,6 +58,7 @@ target_link_libraries(${PROJECT_NAME}
     ${OpenCV_LIBRARIES}
     gige_camera
     )
+add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS})
 
 # node
 add_executable(${PROJECT_NAME}_node
@@ -72,11 +76,34 @@ target_link_libraries(${PROJECT_NAME}_nodelet
     ${PROJECT_NAME}
     )
 
+# thermal proc
+add_library(thermal_proc
+    src/thermal_proc/thermal_proc.cpp
+    )
+target_link_libraries(thermal_proc
+    ${OpenCV_LIBRARIES}
+    ${catkin_LIBRARIES}
+    )
+add_executable(thermal_proc_node
+    src/thermal_proc/thermal_proc_node.cpp
+    )
+target_link_libraries(thermal_proc_node
+    thermal_proc
+    )
+
 ## Add cmake target dependencies of the executable/library
 add_dependencies(${PROJECT_NAME}_node
     ${catkin_EXPORTED_TARGETS}
-    ${PROJECT_NAME}_gencfg
+    ${${PROJECT_NAME}_EXPORTED_TARGETS}
     )
+add_dependencies(${PROJECT_NAME}_nodelet
+  ${${PROJECT_NAME}_EXPORTED_TARGETS}
+)
+add_dependencies(thermal_proc_node
+    ${${PROJECT_NAME}_EXPORTED_TARGETS}
+    )
+
+message(STATUS "Test: ${${PROJECT_NAME}_EXPORTED_TARGETS}")
 
 ## Add gtest based cpp test }target and link libraries
 # catkin_add_gtest(${PROJECT_NAME}-test test/test_flir.cpp)

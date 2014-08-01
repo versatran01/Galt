@@ -3,6 +3,8 @@
 from __future__ import print_function
 import sys
 import os.path
+import time
+import timeit
 import fixbag
 
 
@@ -47,11 +49,10 @@ def query_yes_or_no():
 def process_in_and_out(input_path, output_path):
     input_path = os.path.normpath(os.path.expanduser(input_path))
     output_path = os.path.normpath(os.path.expanduser(output_path))
-    return (input_path, output_path)
+    return input_path, output_path
 
 
 def main():
-
     input_path = '~/Desktop/test_in'
     output_path = '~/Desktop/test_out'
     (input_path, output_path) = process_in_and_out(input_path, output_path)
@@ -65,10 +66,23 @@ def main():
 
     query_yes_or_no()
 
+    total_time = 0
     # Fixing bagfiles
-    for bagfile in all_bagfiles:
-        print("Start fixing {0:s}".format(bagfile))
-        fixbag.fix_bag(bagfile)
+    for index, bagfile in enumerate(all_bagfiles):
+        # Print progress
+        progress = '{0:d}/{1:d}'.format(index + 1, len(all_bagfiles))
+        print('{0:s}: Start fixing {1:s}'.format(progress, bagfile))
+
+        start_time = timeit.default_timer()
+
+        # Fix bagfile
+        fixbag.fix_bag(bagfile, input_path, output_path)
+
+        elapsed_time = timeit.default_timer() - start_time
+        total_time += elapsed_time
+        print('Time:', elapsed_time)
+
+    print("Total time:", time.strftime('%H:%M:%S', time.gmtime(elapsed_time)))
 
 
 if __name__ == '__main__':

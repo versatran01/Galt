@@ -134,6 +134,7 @@ class UbloxFixer():
 
         return converted_list"""
 
+"""
 def usage():
     print("Usage: fixbag --input=<input path> --output=<output path>")
 
@@ -178,3 +179,4 @@ def main(argv):
             # TODO: write out to bag file here...
            
 main(sys.argv[1:])
+"""

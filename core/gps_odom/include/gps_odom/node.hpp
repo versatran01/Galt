@@ -17,13 +17,14 @@
 
 #include <sensor_msgs/Imu.h>
 #include <sensor_msgs/FluidPressure.h>
+#include <sensor_msgs/NavSatFix.h>
+#include <sensor_msgs/NavSatStatus.h>
+#include <geometry_msgs/Vector3Stamped.h>
 #include <message_filters/subscriber.h>
 #include <message_filters/sync_policies/exact_time.h>
 #include <message_filters/sync_policies/approximate_time.h>
 
-#include <ublox_msgs/NavPOSLLH.h>
-#include <ublox_msgs/NavSTATUS.h>
-#include <ublox_msgs/NavVELNED.h>
+#include <GeographicLib/Geoid.hpp>
 
 #include <memory>
 
@@ -56,20 +57,21 @@ private:
   void imuCallback(const sensor_msgs::ImuConstPtr&,
                    const sensor_msgs::FluidPressureConstPtr&);
   
-  message_filters::Subscriber<ublox_msgs::NavPOSLLH> subNavPos_;
-  message_filters::Subscriber<ublox_msgs::NavSTATUS> subNavStatus_;
-  message_filters::Subscriber<ublox_msgs::NavVELNED> subNavVel_;
+  message_filters::Subscriber<sensor_msgs::NavSatFix> subFix_;
+  message_filters::Subscriber<geometry_msgs::Vector3Stamped> subFixVelocity_;
   
   //  time sync policy for GPS data
   using TimeSyncGPS = message_filters::sync_policies::ApproximateTime<
-    ublox_msgs::NavPOSLLH, ublox_msgs::NavSTATUS, ublox_msgs::NavVELNED>;
+    sensor_msgs::NavSatFix, geometry_msgs::Vector3Stamped>;
   using SynchronizerGPS = message_filters::Synchronizer<TimeSyncGPS>;
   
   std::shared_ptr<SynchronizerGPS> syncGps_;
   
-  void gpsCallback(const ublox_msgs::NavPOSLLHConstPtr&,
-                   const ublox_msgs::NavSTATUSConstPtr&,
-                   const ublox_msgs::NavVELNEDConstPtr&);
+  void gpsCallback(const sensor_msgs::NavSatFixConstPtr&,
+                   const geometry_msgs::Vector3StampedConstPtr&);
+  
+  //  geographic lib objects
+  std::shared_ptr<GeographicLib::Geoid> geoid_;
 };
 
 } //  namespace_gps_odom

@@ -14,8 +14,8 @@
 
 int main(int argc, char ** argv) {
   ros::init(argc, argv, "gps_odom");
-  
-  
+  gps_odom::Node node;
+  node.initialize();
   ros::spin();
   return 0;
 }

@@ -71,10 +71,35 @@ class UbloxFixer():
             self.navposList.append(UbloxMessage(topic, msg, t))
             self.navposCount += 1
 
-        pub_list = list()
+        # replace the smart system with a shitty hack because fuck it
+        converted_list = list()
+        if self.fixList and self.navposList:
+            
+            pairs = (self.fixList[0], self.navposList[0])
+            
+            hAcc = pairs[1].msg.hAcc / 1000.0
+            vAcc = pairs[1].msg.vAcc / 1000.0
+            hMSL = pairs[1].msg.hMSL / 1000.0
+
+            # make a 'covariance' from the accuracies
+            hAcc = (hAcc / 3) * (hAcc / 3)
+            vAcc = (vAcc / 3) * (vAcc / 3)
+
+            pairs[0].msg.altitude = hMSL
+            pairs[0].msg.position_covariance = (
+                hAcc, 0.0, 0.0, 0.0, hAcc, 0.0, 0.0, 0.0, vAcc)
+            converted_list.append((pairs[0].topic, pairs[0].msg))
+            self.outputCount += 1
+            
+            self.fixList = list()
+            self.navposList = list()
+
+        #print converted_list
+        return converted_list
 
         # check for matches in queue
-        for fixMsg in self.fixList:
+        #pub_list = list()
+        """for fixMsg in self.fixList:
             for navposMsg in self.navposList:
                 print("fix: {0:d}, nav: {1:d}".format(fixMsg.timeOfWeek, navposMsg.timeOfWeek))
                 if fixMsg.timeOfWeek == navposMsg.timeOfWeek:
@@ -107,4 +132,49 @@ class UbloxFixer():
             converted_list.append((pairs[0].topic, pairs[0].msg))
             self.outputCount += 1
 
-        return converted_list
+        return converted_list"""
+
+def usage():
+    print("Usage: fixbag --input=<input path> --output=<output path>")
+
+def main(argv):
+    inputPath = None
+    outputPath = None
+
+    fixer = UbloxFixer()
+
+    # parse input arguments
+    try:
+        opts, args = getopt.getopt(argv, "h", ['input=', 'output=', 'help'])
+    except getopt.GetoptError:
+        usage()
+        sys.exit(2)
+    for opt, arg in opts:
+        if opt in ("-h", "--help"):
+            usage()
+            sys.exit()
+        elif opt == "--input":
+            inputPath = arg
+        elif opt == "--output":
+            outputPath = arg
+
+    if inputPath == None or outputPath == None:
+        usage()
+        sys.exit(3)
+
+    inputPath = os.path.normpath(os.path.expanduser(inputPath))
+    outputPath = os.path.normpath(os.path.expanduser(outputPath))
+
+    # check file paths
+    if not os.path.isfile(inputPath):
+        print "Input path %s is invalid" % (inputPath)
+        sys.exit(4)
+
+    # from the ros wiki:
+    with rosbag.Bag(outputPath, 'w') as outbag:
+        for topic, msg, t in rosbag.Bag(inputPath).read_messages():
+            fixer.consider_message(topic, msg, t)
+           
+            # TODO: write out to bag file here...
+           
+main(sys.argv[1:])

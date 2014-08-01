@@ -19,7 +19,7 @@ class UbloxMessage():
             self.timeOfWeek = msg.iTOW
             # account for atomic offset
             self.timeOfWeek -= 16000
-            
+
             # clip to time of day
             dayMillis = 24*3600*1000
             self.timeOfWeek -= int(self.timeOfWeek / dayMillis)*dayMillis
@@ -74,14 +74,14 @@ class UbloxFixer():
         elif topic == '/ublox_gps/ublox/navposllh':
             self.navposList.append(UbloxMessage(topic, msg, t))
             self.navposCount += 1
-        
+
         # hacky solution, just match greedily at random
         pub_list = list()
         for fixMsg in self.fixList:
             if self.navposList:
                 pub_list.append((fixMsg,self.navposList[0]))
                 self.navposList.remove(self.navposList[0])
-        
+
         """for fixMsg in self.fixList:
             for navposMsg in self.navposList:
                 print("fix: {0:d}, nav: {1:d}".format(fixMsg.timeOfWeek, navposMsg.timeOfWeek))
@@ -157,8 +157,8 @@ def main(argv):
     with rosbag.Bag(outputPath, 'w') as outbag:
         for topic, msg, t in rosbag.Bag(inputPath).read_messages():
             fixer.consider_message(topic, msg, t)
-           
+
             # TODO: write out to bag file here...
-           
+
 main(sys.argv[1:])
 """

@@ -60,14 +60,7 @@ def fix_bag(input_bag, input_path, output_path):
                     outbag.write(topic, msg, msg.header.stamp)
                     outbag.write(flir_cinfo_name, flir_cinfo, flir_cinfo.header.stamp)
             else:
-                gps_msg_list = fixer.consider_message(topic, msg, t)
-                print(gps_msg_list)
-                if topic != '/ublox_gps/fix':
-                    # Write the rest of the topic
-                    outbag.write(topic, msg, msg.header.stamp if msg._has_header else t)
-                else:
-                    for (gps_topic, gps_msg) in gps_msg_list:
-                        outbag.write(gps_topic, gps_msg, gps_msg.header.stamp)
+                outbag.write(topic, msg, msg.header.stamp if msg._has_header else t)
 
 
 

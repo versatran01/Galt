@@ -24,7 +24,8 @@ public:
   
   void predict(scalar_t accZ, scalar_t accVariance, scalar_t dt);
   
-  void updateHeight(scalar_t heightMeters, scalar_t variance);
+  void updateHeight(scalar_t z, scalar_t zVariance, 
+                    scalar_t velZ, scalar_t velVariance);
   
   void updatePressure(scalar_t pressureKpa, scalar_t variance);
   

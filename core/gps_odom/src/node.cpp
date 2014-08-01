@@ -15,9 +15,7 @@
 
 namespace gps_odom {
 
-Node::Node() : nh_("~")
-{
-}
+Node::Node() : nh_("~") {}
 
 void Node::initialize() {
  
@@ -40,9 +38,27 @@ void Node::initialize() {
   pubOdometry_ = nh_.advertise<nav_msgs::Odometry>("odometry", 1);
 }
 
+double prevH;
+
 void Node::imuCallback(const sensor_msgs::ImuConstPtr& imu,
                        const sensor_msgs::FluidPressureConstPtr& fluidPressure) {
   
+  const double kP0 = 101325;
+  const double kL = 0.0065;
+  const double kT0 = 288.15;
+  const double kG = 9.80665;
+  const double kM = 0.0289644;
+  const double kR = 8.31447;
+  
+  const double c = kG*kM/(kR*kL);
+  
+  double pressurePA = fluidPressure->fluid_pressure * 100;
+  
+  double lhs = std::log(pressurePA / kP0) * (1 / c);
+  
+  double h = (1 - std::exp(lhs)) * kT0 / kL;
+  prevH = h;
+ // ROS_INFO("hMSL (pressure): %f", h);
 }
 
 void Node::gpsCallback(const sensor_msgs::NavSatFixConstPtr& navSatFix,
@@ -72,7 +88,7 @@ void Node::gpsCallback(const sensor_msgs::NavSatFixConstPtr& navSatFix,
   //  convert to height above sea level
   const double hMSL = geoid_->ConvertHeight(lat,lon,hWGS84,GeographicLib::Geoid::ELLIPSOIDTOGEOID);
   
-  ROS_INFO("hMSL: %f", hMSL);
+  ROS_INFO("hMSL: %f, %f", hMSL, prevH);
   
 }
 } //  namespace gps_odom

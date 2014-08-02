@@ -1,0 +1,32 @@
+<launch>
+
+    <arg name="manager" default="stereo_vo"/>
+    <arg name="stereo" default="/mv_stereo"/>
+
+    <node pkg="rosbag" type="play" name="player"
+        args="-l /home/chao/Workspace/bagfiles/day2/fly/2014-07-25-18-14-12.bag">
+    </node>
+
+    <node pkg="stereo_image_proc" type="stereo_image_proc"
+        name="stereo_image_proc" ns="$(arg stereo)">
+    </node>
+
+    <node pkg="image_view" type="stereo_view" name="stereo_view"
+        args="stereo:=$(arg stereo) image:=image_rect">
+    </node>
+
+    <!--<node pkg="nodelet" type="nodelet" name="$(arg manager)" args="manager">-->
+    <!--</node>-->
+
+    <!--<include file="$(find stereo_vo)/launch/image_proc.launch">-->
+        <!--<arg name="manager" value="$(arg manager)"/>-->
+        <!--<arg name="ns" value="$(arg left)"/>-->
+    <!--</include>-->
+
+    <!--<include file="$(find stereo_vo)/launch/stereo_image_proc.launch">-->
+        <!--<arg name="manager" value="$(arg manager)"/>-->
+        <!--<arg name="left" value="$(arg stereo)/left"/>-->
+        <!--<arg name="right" value="$(arg stereo)/right"/>-->
+        <!--</include>-->
+
+</launch>

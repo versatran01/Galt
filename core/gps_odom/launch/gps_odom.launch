@@ -1,6 +1,8 @@
 <launch>
+  <include file="$(find galt_setup)/launch/kr_attitude_eskf_post.launch"/>
+
   <node name="gps_odom" pkg="gps_odom" type="gps_odom" output="screen">
-    <remap from="~imu" to="/imu/imu"/>
+    <remap from="~imu" to="/attitude_eskf_post/filtered_imu"/>
     <remap from="~pressure" to="/imu/pressure"/>
     <remap from="~fix" to="/ublox_gps/fix"/>
     <remap from="~fix_velocity" to="/ublox_gps/fix_velocity"/>

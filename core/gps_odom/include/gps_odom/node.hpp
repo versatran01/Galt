@@ -25,6 +25,10 @@
 #include <message_filters/sync_policies/approximate_time.h>
 
 #include <GeographicLib/Geoid.hpp>
+#include <GeographicLib/MagneticModel.hpp>
+#include <GeographicLib/LocalCartesian.hpp>
+
+#include <gps_odom/altitude_kf.hpp>
 
 #include <memory>
 
@@ -42,6 +46,7 @@ private:
   static constexpr int kROSQueueSize = 30;
   
   ros::NodeHandle nh_;
+  std::string pkgPath_;
   ros::Publisher pubOdometry_;
   
   message_filters::Subscriber<sensor_msgs::Imu> subImu_;
@@ -72,6 +77,19 @@ private:
   
   //  geographic lib objects
   std::shared_ptr<GeographicLib::Geoid> geoid_;
+  std::shared_ptr<GeographicLib::MagneticModel> magneticModel_;
+  
+  bool refSet_;
+  GeographicLib::LocalCartesian refPoint_;
+  
+  //  previous attitude estimate
+  kr::quatd lastAttitude_;
+  
+  //  altitude estimator
+  AltitudeKF altFilterGps_;
+  AltitudeKF altFilterPressure_;
+  
+  double prevImuTime_;
 };
 
 } //  namespace_gps_odom

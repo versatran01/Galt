@@ -43,7 +43,7 @@ public:
   
 private:
    
-  static constexpr int kROSQueueSize = 30;
+  static constexpr int kROSQueueSize = 200;
   
   ros::NodeHandle nh_;
   std::string pkgPath_;
@@ -67,13 +67,16 @@ private:
   
   //  time sync policy for GPS data
   using TimeSyncGPS = message_filters::sync_policies::ApproximateTime<
-    sensor_msgs::NavSatFix, geometry_msgs::Vector3Stamped>;
+    sensor_msgs::NavSatFix, 
+    geometry_msgs::Vector3Stamped,
+    sensor_msgs::Imu>;
   using SynchronizerGPS = message_filters::Synchronizer<TimeSyncGPS>;
   
   std::shared_ptr<SynchronizerGPS> syncGps_;
   
   void gpsCallback(const sensor_msgs::NavSatFixConstPtr&,
-                   const geometry_msgs::Vector3StampedConstPtr&);
+                   const geometry_msgs::Vector3StampedConstPtr&,
+                   const sensor_msgs::ImuConstPtr&);
   
   //  geographic lib objects
   std::shared_ptr<GeographicLib::Geoid> geoid_;
@@ -81,15 +84,10 @@ private:
   
   bool refSet_;
   GeographicLib::LocalCartesian refPoint_;
-  
-  //  previous attitude estimate
-  kr::quatd lastAttitude_;
-  
-  //  altitude estimator
-  AltitudeKF altFilterGps_;
-  AltitudeKF altFilterPressure_;
-  
-  double prevImuTime_;
+
+  double hAcc_;  //  default horizontal accuracy
+  double vAcc_;  //  default vertical accuracy
+  double sAcc_;  //  default speed accuracy
 };
 
 } //  namespace_gps_odom

@@ -16,15 +16,29 @@
 
 #include <kr_math/SO3.hpp>
 
+#include <algorithm>
+#include <cmath>
+
 namespace gps_odom {
+
+template <typename T, std::size_t N>
+bool allZero(const boost::array<T,N>& array) {
+  for (std::size_t i=0; i < array.size(); i++) {
+    if (array[i] != 0) {
+      return false;
+    }
+  }
+  return true;
+}
 
 Node::Node() : nh_("~"), pkgPath_(ros::package::getPath("gps_odom")) {
   if (pkgPath_.empty()) {
     ROS_WARN("Failed to find path for package");
   }
   
-  lastAttitude_ = kr::quatd(1,0,0,0);
-  prevImuTime_ = 0.0;  
+  nh_.param("horz_accuracy", hAcc_, 10.0);
+  nh_.param("vert_accuracy", vAcc_, 12.0);
+  nh_.param("speed_accuracy", sAcc_, 1.0);
 }
 
 void Node::initialize() {
@@ -41,8 +55,8 @@ void Node::initialize() {
   subFixVelocity_.subscribe(nh_, "fix_velocity", kROSQueueSize);
   
   syncGps_ = std::make_shared<SynchronizerGPS>(TimeSyncGPS(kROSQueueSize),
-                                               subFix_, subFixVelocity_);
-  syncGps_->registerCallback( boost::bind(&Node::gpsCallback, this, _1, _2) );
+                                               subFix_, subFixVelocity_, subImu_);
+  syncGps_->registerCallback( boost::bind(&Node::gpsCallback, this, _1, _2, _3) );
   
   //  advertise odometry as output
   pubOdometry_ = nh_.advertise<nav_msgs::Odometry>("odometry", 1);
@@ -52,9 +66,8 @@ void Node::imuCallback(const sensor_msgs::ImuConstPtr& imu,
                        const sensor_msgs::FluidPressureConstPtr& fluidPressure) {
   
   //  current orientation
-  const kr::quatd wQb = kr::quatd(imu->orientation.w, imu->orientation.x,
+  /*const kr::quatd wQb = kr::quatd(imu->orientation.w, imu->orientation.x,
                             imu->orientation.y, imu->orientation.z);
-  lastAttitude_ = wQb;
   
   //  convert fluid pressure to height in meters
   //  refer to wikipedia for this formula
@@ -73,46 +86,20 @@ void Node::imuCallback(const sensor_msgs::ImuConstPtr& imu,
   
   //  calculate height from barometer
   const double lhs = std::log(pressurePA / kP0) * (1 / c);
-  const double h = (1 - std::exp(lhs)) * kT0 / kL;  
+  const double h = (1 - std::exp(lhs)) * kT0 / kL;  */
   
   //  convert to units of m/s^2
-  const kr::vec3d aB = kr::vec3d(imu->linear_acceleration.x,
-                           imu->linear_acceleration.y,
-                           imu->linear_acceleration.z) * kG;
+//  const kr::vec3d aB = kr::vec3d(imu->linear_acceleration.x,
+//                           imu->linear_acceleration.y,
+//                           imu->linear_acceleration.z) * kG;
   
-  const kr::vec3d aW = (wQb.matrix() * aB);
-  const double accZ = aW[2] - kG;
-  
-  const double tNow = ros::Time::now().toSec();
-  double delta = 1/200.0;
-  if (prevImuTime_) {
-    delta = tNow - prevImuTime_;
-  }
-  prevImuTime_ = tNow;
-  
-  //  filter acceleration and pressure height
-  altFilterPressure_.predict(accZ, 1.0, delta);
-  altFilterPressure_.updateHeight(h, 0.5);
-  
-  //  filter acceleration and GPS
-  altFilterGps_.predict(accZ, 1.0, delta);
-
-  
-  /*static ros::Publisher hPub = nh_.advertise<std_msgs::Float64>("height", 1);
-  std_msgs::Float64 f;
-  f.data = altFilterPressure_.getHeight();
-  hPub.publish(f);
-  
-  static ros::Publisher hPub2 = nh_.advertise<std_msgs::Float64>("height_gps", 1);
-  f.data = altFilterGps_.getHeight();
-  hPub2.publish(f);*/
-  
-  
-  //ROS_INFO("Filtered height: %f (%f)", altFilterPressure_.getHeight(), accZ);
+//  const kr::vec3d aW = (wQb.matrix() * aB);
+//  const double accZ = aW[2] - kG;
 }
 
 void Node::gpsCallback(const sensor_msgs::NavSatFixConstPtr& navSatFix,
-                       const geometry_msgs::Vector3StampedConstPtr& velVec) {
+                       const geometry_msgs::Vector3StampedConstPtr& velVec, 
+                       const sensor_msgs::ImuConstPtr& imu) {
   
   const double lat = navSatFix->latitude;
   const double lon = navSatFix->longitude;
@@ -158,32 +145,64 @@ void Node::gpsCallback(const sensor_msgs::NavSatFixConstPtr& navSatFix,
   //  calculate corrected yaw angle
   //  matrix composition is of the form wRb = Rz * Ry * Rx
   //  left multiply declination adjustment
-  kr::quatd wQb = lastAttitude_;
-  wQb = kr::rotationQuat(-declination,0,0,1) * wQb;
+  kr::quatd wQb = kr::quatd(imu->orientation.w,imu->orientation.x,
+                            imu->orientation.y,imu->orientation.z);
+  wQb = kr::rotationQuat(-declination,0.0,0.0,1.0) * wQb;
   
-  //  generate odometry message
   nav_msgs::Odometry odometry;
   odometry.header.stamp = navSatFix->header.stamp;
+  odometry.header.frame_id = "0";
   odometry.pose.pose.orientation.w = wQb.w();
   odometry.pose.pose.orientation.x = wQb.x();
   odometry.pose.pose.orientation.y = wQb.y();
   odometry.pose.pose.orientation.z = wQb.z();
-  
   odometry.pose.pose.position.x = locX;
   odometry.pose.pose.position.y = locY;
   odometry.pose.pose.position.z = locZ;
   
-  odometry.twist.twist.linear.x = velVec->vector.x; //  linear velocity
-  odometry.twist.twist.linear.y = velVec->vector.y;
-  odometry.twist.twist.linear.z = velVec->vector.z;
+  //  generate covariance (6x6 with order: x,y,z,rot_x,rot_y,rot_z)
+  kr::mat<double,6,6> poseCovariance;
+  poseCovariance.setZero();
   
-  //odometry.twist.twist.angular.x = 
+  //  incoming covariance is valid
+  if (!allZero(navSatFix->position_covariance)) {
+    for (int i=0; i < 3; i++) {
+      for (int j=0; j < 3; j++) {
+        poseCovariance(i,j) = navSatFix->position_covariance[i*3 + j];   
+      }
+    }
+  } else {
+    //  pick a moderatly safe default
+    poseCovariance(0,0) = (hAcc_/3)*(hAcc_/3);
+    poseCovariance(1,1) = (hAcc_/3)*(hAcc_/3);
+    poseCovariance(2,2) = (vAcc_/3)*(vAcc_/3);
+  }
   
-  //  calculate difference between pressure and GPS
-  //altFilterGps_.updateHeightAndVelocity(hMSL, 5.0, velVec->vector.z, 1.0);
+  //  copy from IMU
+  for (int i=0; i < 3; i++) {
+    for (int j=0; j < 3; j++) {
+      poseCovariance(3+i,3+j) = imu->orientation_covariance[i*3 + j];
+    }
+  }
   
-  double delta = altFilterGps_.getHeight() - altFilterPressure_.getHeight();
+  //  linear velocity from GPS, angular velocity from IMU
+  odometry.twist.twist.linear = velVec->vector;
+  odometry.twist.twist.angular = imu->angular_velocity;
   
-  ROS_INFO("delta: %f", delta);
+  //  velocity covariance [x,y,z,rot_x,rot_y,rot_z]
+  //  rotation component is unused so leave as zero
+  kr::mat<double,6,6> velCovariance;
+  velCovariance.setZero();
+  velCovariance(0,0) = (sAcc_/3)*(sAcc_/3);
+  velCovariance(1,1) = (sAcc_/3)*(sAcc_/3);
+  velCovariance(2,2) = (sAcc_/3)*(sAcc_/3);
+  
+  for (int i=0; i < 6; i++) {
+    for (int j=0; j < 6; j++) {
+      odometry.pose.covariance[i*6 + j] = poseCovariance(i,j);
+      odometry.twist.covariance[i*6 + j] = velCovariance(i,j);
+    }
+  }
+  pubOdometry_.publish(odometry); 
 }
 } //  namespace gps_odom

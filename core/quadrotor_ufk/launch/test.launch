@@ -1,0 +1,11 @@
+<launch>
+  <!-- UKF -->
+  <node pkg="quadrotor_ukf"
+    type="quadrotor_ukf"
+    name="quadrotor_ukf"
+    output="screen">
+    <rosparam file="$(find quadrotor_ukf)/config/params.yaml"/>
+    <remap from="~imu" to="/quadcloud7/kmel_kquad_interface/imu"/>
+    <remap from="~odom_gps" to="/quadcloud7/kmel_gps_process/odom_out"/>
+  </node>
+</launch>

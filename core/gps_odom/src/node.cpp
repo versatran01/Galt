@@ -36,9 +36,14 @@ Node::Node() : nh_("~"), pkgPath_(ros::package::getPath("gps_odom")) {
     ROS_WARN("Failed to find path for package");
   }
   
-  nh_.param("horz_accuracy", hAcc_, 10.0);
-  nh_.param("vert_accuracy", vAcc_, 12.0);
-  nh_.param("speed_accuracy", sAcc_, 1.0);
+  nh_.param("body_frame_id", bodyFrameId_, std::string("/body"));
+  nh_.param("world_frame_id", worldFrameId_, std::string("/world"));
+  
+  nh_.param("horz_accuracy", hAcc_, 5.0);
+  nh_.param("vert_accuracy", vAcc_, 8.0);
+  nh_.param("speed_accuracy", sAcc_, 3.0);
+  
+  refSet_ = false;
 }
 
 void Node::initialize() {
@@ -136,7 +141,7 @@ void Node::gpsCallback(const sensor_msgs::NavSatFixConstPtr& navSatFix,
   
   double locX,locY,locZ;
   refPoint_.Forward(lat,lon,hMSL,locX,locY,locZ);
-  
+    
   //  determine magnetic declination
   double bEast, bNorth, bUp;
   magneticModel_->operator()(tYears,lat,lon,hWGS84,bEast,bNorth,bUp);
@@ -151,7 +156,8 @@ void Node::gpsCallback(const sensor_msgs::NavSatFixConstPtr& navSatFix,
   
   nav_msgs::Odometry odometry;
   odometry.header.stamp = navSatFix->header.stamp;
-  odometry.header.frame_id = "0";
+  odometry.header.frame_id = worldFrameId_;
+  odometry.child_frame_id = bodyFrameId_;
   odometry.pose.pose.orientation.w = wQb.w();
   odometry.pose.pose.orientation.x = wQb.x();
   odometry.pose.pose.orientation.y = wQb.y();
@@ -172,7 +178,7 @@ void Node::gpsCallback(const sensor_msgs::NavSatFixConstPtr& navSatFix,
       }
     }
   } else {
-    //  pick a moderatly safe default
+    //  pick a moderately safe default
     poseCovariance(0,0) = (hAcc_/3)*(hAcc_/3);
     poseCovariance(1,1) = (hAcc_/3)*(hAcc_/3);
     poseCovariance(2,2) = (vAcc_/3)*(vAcc_/3);

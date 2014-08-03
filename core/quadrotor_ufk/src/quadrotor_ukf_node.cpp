@@ -1,8 +1,11 @@
 #include <ros/ros.h>
 #include <sensor_msgs/Imu.h>
+#include <geometry_msgs/PoseStamped.h>
 #include <nav_msgs/Odometry.h>
 #include <Eigen/Geometry>
 #include "quadrotor_ukf.h"
+
+#include <kr_math/SO3.hpp>
 
 ros::Publisher pub_ukf_odom;
 std::string frame_id;
@@ -11,20 +14,26 @@ std::string child_frame_id;
 QuadrotorUKF quadrotor_ukf;
 
 void imu_callback(const sensor_msgs::Imu::ConstPtr& msg) {
+  
   static int calLimit = 100;
   static int calCnt = 0;
   static Eigen::Vector3d ag = Eigen::Vector3d::Zero();
 
+  //  TODO: correct the underlying node so everything is in units of m/s^2
+  const double accX = msg->linear_acceleration.x * QuadrotorUKF::kOneG;
+  const double accY = msg->linear_acceleration.y * QuadrotorUKF::kOneG;
+  const double accZ = msg->linear_acceleration.z * QuadrotorUKF::kOneG;
+  
   // Assemble control input
   QuadrotorUKF::InputVec u;
-  u(0) = msg->linear_acceleration.x;
-  u(1) = msg->linear_acceleration.y;
-  u(2) = msg->linear_acceleration.z;
+  u(0) = accX;
+  u(1) = accY;
+  u(2) = accZ;
   u(3) = msg->angular_velocity.x;
   u(4) = msg->angular_velocity.y;
   u(5) = msg->angular_velocity.z;
 
-  if (calCnt < calLimit)  // Calibration
+  /*if (calCnt < calLimit)  // Calibration
   {
     calCnt++;
     ag += u.segment<3>(0);
@@ -34,11 +43,14 @@ void imu_callback(const sensor_msgs::Imu::ConstPtr& msg) {
     ag /= calLimit;
     double g = ag.norm();
     quadrotor_ukf.SetGravity(g);
-  } else if (quadrotor_ukf.ProcessUpdate(u,
-                                         msg->header.stamp))  // Process Update
+  } else */
+  
+  //static ros::Publisher pubVelOdom = ros::NodeHandle("~").advertise<geometry_msgs::Vector3>("velvec",1);
+  
+  if (quadrotor_ukf.ProcessUpdate(u, msg->header.stamp))  // Process Update
   {
     nav_msgs::Odometry odom_ukf;
-    odom_ukf.header.stamp = quadrotor_ukf.GetStateTime();
+    odom_ukf.header.stamp = quadrotor_ukf.GetStateTime(); //  copies from header
     odom_ukf.header.frame_id = frame_id;
     odom_ukf.child_frame_id = child_frame_id;
     QuadrotorUKF::StateVec x = quadrotor_ukf.GetState();
@@ -46,9 +58,9 @@ void imu_callback(const sensor_msgs::Imu::ConstPtr& msg) {
     odom_ukf.pose.pose.position.y = x(1);
     odom_ukf.pose.pose.position.z = x(2);
     Eigen::Quaterniond q;
-    q = Eigen::AngleAxisd(x(6), Eigen::Vector3d::UnitZ()) *
-        Eigen::AngleAxisd(x(7), Eigen::Vector3d::UnitY()) *
-        Eigen::AngleAxisd(x(8), Eigen::Vector3d::UnitX());
+    q = Eigen::AngleAxisd(x(6), Eigen::Vector3d::UnitZ()) * //  roll
+        Eigen::AngleAxisd(x(7), Eigen::Vector3d::UnitY()) * //  pitch
+        Eigen::AngleAxisd(x(8), Eigen::Vector3d::UnitX());  //  yaw
     odom_ukf.pose.pose.orientation.x = q.x();
     odom_ukf.pose.pose.orientation.y = q.y();
     odom_ukf.pose.pose.orientation.z = q.z();
@@ -70,11 +82,14 @@ void imu_callback(const sensor_msgs::Imu::ConstPtr& msg) {
 }
 
 void gps_callback(const nav_msgs::Odometry::ConstPtr& msg) {
-  // Get yaw
-  double q[4] = {msg->pose.pose.orientation.w, msg->pose.pose.orientation.x,
-                 msg->pose.pose.orientation.y, msg->pose.pose.orientation.z};
-  double yaw = atan2(2 * (q[0] * q[3] + q[1] * q[2]),
-                     1 - 2 * (q[2] * q[2] + q[3] * q[3]));
+  // Get yaw 
+  kr::quatd wQb = kr::quatd(msg->pose.pose.orientation.w,
+                            msg->pose.pose.orientation.x,
+                            msg->pose.pose.orientation.y,
+                            msg->pose.pose.orientation.z);
+  
+  const kr::vec3d rpy = kr::getRPY(wQb.matrix());
+
   // Assemble measurement
   QuadrotorUKF::MeasGPSVec z;
   z(0) = msg->pose.pose.position.x;
@@ -83,16 +98,41 @@ void gps_callback(const nav_msgs::Odometry::ConstPtr& msg) {
   z(3) = msg->twist.twist.linear.x;
   z(4) = msg->twist.twist.linear.y;
   z(5) = msg->twist.twist.linear.z;
-  z(6) = yaw;
+  z(6) = rpy[2];
+  
+  QuadrotorUKF::StateVec x = quadrotor_ukf.GetState();
+  //ROS_INFO("X: %f, %f, %f", x(3),x(4),x(5));
+  //ROS_INFO("Z: %f, %f, %f", z(3),z(4),z(5));
+  
+  static ros::Publisher pPub = ros::NodeHandle("~").advertise<geometry_msgs::PoseStamped>("debug_pose",1);
+  geometry_msgs::PoseStamped pPose;
+  pPose.header.stamp = msg->header.stamp;
+  pPose.header.frame_id = frame_id;
+  pPose.pose = msg->pose.pose;
+  pPub.publish(pPose);
+  
+  static ros::Publisher vxPub = ros::NodeHandle("~").advertise<geometry_msgs::Vector3>("vel_x",1);
+  geometry_msgs::Vector3 vx;
+  vx.x = x(3);
+  vx.y = x(4);
+  vx.z = x(5);
+  vxPub.publish(vx);
+  
+  static ros::Publisher vzPub = ros::NodeHandle("~").advertise<geometry_msgs::Vector3>("vel_z",1);
+  vzPub.publish(msg->twist.twist.linear);
+  
   // Assemble measurement covariance
-  QuadrotorUKF::MeasGPSCov RnGPS(QuadrotorUKF::MeasGPSCov::Zero());
-  RnGPS(0, 0) = msg->pose.covariance[0 + 0 * 6];
-  RnGPS(1, 1) = msg->pose.covariance[1 + 1 * 6];
-  RnGPS(2, 2) = msg->pose.covariance[2 + 2 * 6];
-  RnGPS(3, 3) = msg->twist.covariance[0 + 0 * 6];
-  RnGPS(4, 4) = msg->twist.covariance[1 + 1 * 6];
-  RnGPS(5, 5) = msg->twist.covariance[2 + 2 * 6];
-  RnGPS(6, 6) = msg->pose.covariance[5 + 5 * 6];
+  QuadrotorUKF::MeasGPSCov RnGPS;
+  RnGPS.setZero();
+  
+  RnGPS(0,0) = msg->pose.covariance[0 + 0 * 6];
+  RnGPS(1,1) = msg->pose.covariance[1 + 1 * 6];
+  RnGPS(2,2) = msg->pose.covariance[2 + 2 * 6];
+  RnGPS(3,3) = msg->twist.covariance[0 + 0 * 6];
+  RnGPS(4,4) = msg->twist.covariance[1 + 1 * 6];
+  RnGPS(5,5) = msg->twist.covariance[2 + 2 * 6];
+  RnGPS(6,6) = msg->pose.covariance[5 + 5 * 6];  //  element(5,5), rot_z
+    
   // Measurement update
   quadrotor_ukf.MeasurementUpdateGPS(z, RnGPS, msg->header.stamp);
 }
@@ -111,8 +151,8 @@ int main(int argc, char** argv) {
   double stdW[3] = {0, 0, 0};
   double stdAccBias[3] = {0, 0, 0};
 
-  n.param("frame_id", frame_id, std::string("/world"));
-  n.param("child_frame_id", child_frame_id, std::string("robot"));
+  n.param("world_frame_id", frame_id, std::string("/world"));
+  n.param("body_frame_id", child_frame_id, std::string("/body"));
 
   n.param("alpha", alpha, 0.1);
   n.param("beta", beta, 2.0);
@@ -145,11 +185,10 @@ int main(int argc, char** argv) {
   quadrotor_ukf.SetParameters(alpha, beta, kappa);
   quadrotor_ukf.SetImuCovariance(Rv);
 
-  ros::Subscriber subImu =
-      n.subscribe("imu", 10, imu_callback, ros::TransportHints().tcpNoDelay());
-  ros::Subscriber subGPS = n.subscribe("odom_gps", 10, gps_callback,
-                                       ros::TransportHints().tcpNoDelay());
-  pub_ukf_odom = n.advertise<nav_msgs::Odometry>("odom_out", 10);
+  ros::Subscriber subImu = n.subscribe("imu", 1, imu_callback);
+  ros::Subscriber subGPS = n.subscribe("gps_odom", 1, gps_callback);
+  
+  pub_ukf_odom = n.advertise<nav_msgs::Odometry>("odometry", 1);
 
   ros::spin();
 

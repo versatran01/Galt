@@ -6,6 +6,9 @@
 
 class QuadrotorUKF {
  public:
+  // Physical constants
+  static constexpr double kOneG = 9.80665;
+  
   // Dimensions
   static const int state_count_ = 12;
   static const int process_noise_count_ = 9;
@@ -22,7 +25,6 @@ class QuadrotorUKF {
   typedef Eigen::Matrix<double, input_count_, 1> InputVec;
 
   QuadrotorUKF();
-  ~QuadrotorUKF();
 
   const StateVec& GetState();
   const StateCov& GetStateCovariance();

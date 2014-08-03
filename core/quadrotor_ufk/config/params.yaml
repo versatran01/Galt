@@ -5,14 +5,14 @@ kappa: 0.0
 noise_std:
   process:
     acc:
-      x: 0.05
-      y: 0.05
-      z: 0.05
+      x: 10.0
+      y: 10.0
+      z: 10.0
     w:
-      x: 0.05
-      y: 0.05
-      z: 0.05
-    acc_bias:
       x: 0.01
       y: 0.01
       z: 0.01
+    acc_bias:
+      x: 0.0
+      y: 0.0
+      z: 0.0

@@ -18,5 +18,8 @@
     <remap from="~pressure" to="/imu/pressure"/>
     <remap from="~fix" to="/ublox_gps/fix"/>
     <remap from="~fix_velocity" to="/ublox_gps/fix_velocity"/>
+
+    <param name="world_frame_id" type="string" value="/world"/>
+    <param name="body_frame_id" type="string" value="/body"/>
   </node>
 </launch>

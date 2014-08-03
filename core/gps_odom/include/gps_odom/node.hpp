@@ -47,6 +47,8 @@ private:
   
   ros::NodeHandle nh_;
   std::string pkgPath_;
+  std::string bodyFrameId_;
+  std::string worldFrameId_;
   ros::Publisher pubOdometry_;
   
   message_filters::Subscriber<sensor_msgs::Imu> subImu_;

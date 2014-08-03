@@ -19,6 +19,8 @@ add_executable(${PROJECT_NAME}
   src/quadrotor_ukf_node.cpp
 )
 
+add_definitions("-O3")
+
 add_dependencies(${PROJECT_NAME}
   ${catkin_EXPORTED_TARGETS}
 )

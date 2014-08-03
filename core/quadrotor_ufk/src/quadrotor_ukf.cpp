@@ -29,13 +29,9 @@ QuadrotorUKF::QuadrotorUKF()
   kappa_ = 0;
   GenerateWeights();
   // Other Inits
-  g_ = 9.81;
+  g_ = QuadrotorUKF::kOneG;
   init_process_ = false;
   init_meas_ = false;
-}
-
-QuadrotorUKF::~QuadrotorUKF()
-{
 }
 
 const QuadrotorUKF::StateVec &QuadrotorUKF::GetState()
@@ -143,7 +139,7 @@ bool QuadrotorUKF::MeasurementUpdateGPS(const MeasGPSVec &z, const MeasGPSCov &R
   // Innovation
   MeasGPSVec inno = z - za;
   // Handle angle jumps
-  inno(6) = asin(sin(inno(6)));
+  inno(6) = std::asin(std::sin(inno(6)));
   // Posterior Mean
   xa_ += K * inno;
   // Posterior Covariance

@@ -1,0 +1,10 @@
+<launch>
+  <node pkg="ndvi_preview" type="ndvi_preview" name="ndvi_preview" output="screen">
+    <!-- remap to correct cameras -->
+    <remap from="~infrared/image_raw" to="/mv_29900130/image_raw"/>
+    <remap from="~infrared/camera_info" to="/mv_29900130/camera_info"/>
+
+    <remap from="~red/image_raw" to="/mv_29900189/image_raw"/>
+    <remap from="~red/camera_info" to="/mv_29900189/camera_info"/>
+  </node>
+</launch>

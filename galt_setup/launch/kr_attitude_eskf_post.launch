@@ -1,20 +1,22 @@
 <!--
-  Name: kr_attitude_eskf.launch
+  Name: kr_attitude_eskf_post.launch
   Triggers:
     * kr_attitude_eskf
 
-  Brief: Launches the attitude ESKF.
+  Brief: Launches the attitude ESKF (post processed version).
   Note: Magnetometer calibration must already be saved to rosparam.
 
-  Topics you should record:
-    * /attitude_eskf/adjusted_field
-    * /attitude_eskf/bias
-    * /attitude_eskf/filtered_imu
-    * /attitude_eskf/status
--->
+  Topics you should use:
+    * /attitude_eskf_post/adjusted_field
+    * /attitude_eskf_post/bias
+    * /attitude_eskf_post/filtered_imu
+    * /attitude_eskf_post/status
 
+  For visualization, direct RViz to use pose:
+    * /attitude_eskf_post/pose
+-->
 <launch>
-  <node pkg="kr_attitude_eskf" name="attitude_eskf" type="kr_attitude_eskf" output="screen">
+  <node pkg="kr_attitude_eskf" name="attitude_eskf_post" type="kr_attitude_eskf" output="screen">
 
     <!-- Magnetometer calibration needs to be in rosparam already -->
     <param name="enable_magnetometer" type="bool" value="true"/>
@@ -28,6 +30,6 @@
     <remap from="~field" to="/imu/magnetic_field"/>
 
     <!-- Load filter parameters from galt_setup -->
-    <rosparam file="$(find galt_setup)/config/params_3dm_gx4_25.yaml"/>
+    <rosparam file="$(find galt_setup)/config/params_3dm_gx4_25_post.yaml"/>
   </node>
 </launch>

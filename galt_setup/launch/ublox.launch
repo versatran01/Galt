@@ -15,11 +15,12 @@
 -->
 
 <launch>
+  <arg name="disp" default="log"/>
   <group ns="ublox_gps">
-      <node name="ublox_gps" pkg="ublox_gps" type="ublox_gps" output="log"
-          respawn="true">
+      <node name="ublox_gps" pkg="ublox_gps" type="ublox_gps"
+          output="$(arg disp)" respawn="true">
       <!-- These are the only options supported by the node -->
-      <param name="device" type="string" value="/dev/ttyUSB0"/>
+      <param name="device" type="string" value="/dev/serial/by-id/usb-u-blox_AG_-_www.u-blox.com_u-blox_7_-_GPS_GNSS_Receiver-if00"/>
       <param name="frame_id" type="string" value="gps_frame"/>
       <param name="baudrate" type="int" value="115200"/>
     </node>

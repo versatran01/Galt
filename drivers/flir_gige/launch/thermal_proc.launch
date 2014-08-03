@@ -1,0 +1,13 @@
+<launch>
+    <arg name="test" default="true"/>
+    <arg name="bag" default="test.bag"/>
+
+    <node if="$(arg test)" pkg="rosbag" type="play" name="thermal_player"
+        output="screen" args="-l $(arg bag)">
+    </node>
+
+    <node pkg="flir_gige" type="thermal_proc_node" name="thermal_proc"
+        output="screen">
+        <remap from="~image_raw" to="/flir_gige/image_raw"/>
+    </node>
+</launch>

@@ -147,6 +147,8 @@ void Node::gpsCallback(const sensor_msgs::NavSatFixConstPtr& navSatFix,
   magneticModel_->operator()(tYears,lat,lon,hWGS84,bEast,bNorth,bUp);
   const double declination = std::atan2(bEast,bNorth);
   
+  //ROS_INFO("declination: %f", declination*180/M_PI);
+  
   //  calculate corrected yaw angle
   //  matrix composition is of the form wRb = Rz * Ry * Rx
   //  left multiply declination adjustment

@@ -80,7 +80,7 @@ bool QuadrotorUKF::ProcessUpdate(const InputVec &u, ros::Time time)
 
   dt = (time-xa_time_).toSec();
   xa_time_ = time;
-
+  
   // Generate sigma points
   GenerateSigmaPoints();
   // Mean

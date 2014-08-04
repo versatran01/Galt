@@ -115,6 +115,14 @@ void Node::imuCallback(const sensor_msgs::ImuConstPtr& imu,
   const double h = (1 - std::exp(lhs)) * kT0 / kL;  */
 }
 
+template <typename Scalar>
+kr::quat<Scalar> rotationQuat(Scalar theta, Scalar x, Scalar y, Scalar z) {
+  const Scalar haversine = std::sin(theta / 2);
+  const Scalar havercosine = std::cos(theta / 2);
+  return kr::quat<Scalar>(havercosine, haversine * x, haversine * y, haversine * z);
+}
+
+
 void Node::gpsCallback(const sensor_msgs::NavSatFixConstPtr& navSatFix,
                        const geometry_msgs::Vector3StampedConstPtr& velVec, 
                        const sensor_msgs::ImuConstPtr& imu) {
@@ -165,7 +173,7 @@ void Node::gpsCallback(const sensor_msgs::NavSatFixConstPtr& navSatFix,
   //  left multiply declination adjustment
   kr::quatd wQb = kr::quatd(imu->orientation.w,imu->orientation.x,
                             imu->orientation.y,imu->orientation.z);
-  wQb = kr::rotationQuat(-currentDeclination_,0.0,0.0,1.0) * wQb;
+  wQb = rotationQuat(-currentDeclination_,0.0,0.0,1.0) * wQb;
   
   nav_msgs::Odometry odometry;
   odometry.header.stamp = navSatFix->header.stamp;

@@ -11,18 +11,18 @@
   </node>
 
   <!-- UKF for comparison -->
+  <!--
   <node pkg="quadrotor_ukf" type="quadrotor_ukf" name="quadrotor_ukf"
     output="screen">
 
     <rosparam file="$(find quadrotor_ukf)/config/params.yaml"/>
 
-    <!-- IMU data with gyro bias subtracted -->
     <remap from="~imu" to="/post/attitude_eskf/filtered_imu"/>
 
-    <!-- GPS inputs converted to odometry -->
     <remap from="~gps_odom" to="/gps_odom/odometry"/>
 
     <param name="world_frame_id" type="string" value="/world"/>
     <param name="body_frame_id" type="string" value="/body"/>
   </node>
+  -->
 </launch>

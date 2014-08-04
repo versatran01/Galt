@@ -105,8 +105,8 @@ void gps_callback(const nav_msgs::Odometry::ConstPtr& msg) {
   QuadrotorUKF::StateVec x = quadrotor_ukf.GetState();
   //ROS_INFO("X: %f, %f, %f", x(3),x(4),x(5));
   //ROS_INFO("Z: %f, %f, %f", z(3),z(4),z(5));
-  auto seg = x.segment<3>(6);
-  ROS_INFO("%f, %f, %f, %f, %f, %f", seg(0), seg(1), seg(2), rpy[2], rpy[1], rpy[0]);
+  //auto seg = x.segment<3>(6);
+  //ROS_INFO("%f, %f, %f, %f, %f, %f", seg(0), seg(1), seg(2), rpy[2], rpy[1], rpy[0]);
   
   static ros::Publisher pPub = ros::NodeHandle("~").advertise<geometry_msgs::PoseStamped>("debug_pose",1);
   geometry_msgs::PoseStamped pPose;

@@ -209,7 +209,7 @@ void Node::gpsCallback(const sensor_msgs::NavSatFixConstPtr& navSatFix,
   //  Correct for ublox_gps's stupidity.
   //  TODO: Fix ublox_gps in future version.
   odometry.twist.twist.linear.x = -velVec->vector.y;
-  odometry.twist.twist.linear.y = -velVec->vector.x;
+  odometry.twist.twist.linear.y = velVec->vector.x;
   odometry.twist.twist.linear.z = velVec->vector.z;
   
   odometry.twist.twist.angular = imu->angular_velocity;

@@ -22,9 +22,9 @@ Node::Node() : nh_("~") {
   nh_.param("noise_std/accel/y",stdAccel[1], 10.0);
   nh_.param("noise_std/accel/z",stdAccel[2], 10.0);
   
-  nh_.param("noise_std/gyro/x",stdGyro[0], 0.001);
-  nh_.param("noise_std/gyro/y",stdGyro[1], 0.001);
-  nh_.param("noise_std/gyro/z",stdGyro[2], 0.001);
+  nh_.param("noise_std/gyro/x",stdGyro[0], 0.01);
+  nh_.param("noise_std/gyro/y",stdGyro[1], 0.01);
+  nh_.param("noise_std/gyro/z",stdGyro[2], 0.01);
   
   varAccel_.setZero();
   varGyro_.setZero();
@@ -75,7 +75,7 @@ void Node::imuCallback(const sensor_msgs::ImuConstPtr& imu) {
   //  predict
   positionKF_.predict(gyro,varGyro_,accel,varAccel_,delta);
       
-  auto P = positionKF_.P_;
+  auto P = positionKF_.getCovariance();
   
   //  publish odometry
   nav_msgs::Odometry odo;
@@ -83,13 +83,13 @@ void Node::imuCallback(const sensor_msgs::ImuConstPtr& imu) {
   odo.header.frame_id = worldFrameId_;
   odo.child_frame_id = bodyFrameId_;
   
-  odo.pose.pose.position.x = positionKF_.p_[0];
-  odo.pose.pose.position.y = positionKF_.p_[1];
-  odo.pose.pose.position.z = positionKF_.p_[2];
-  odo.pose.pose.orientation.w = positionKF_.q_.w();
-  odo.pose.pose.orientation.x = positionKF_.q_.x();
-  odo.pose.pose.orientation.y = positionKF_.q_.y();
-  odo.pose.pose.orientation.z = positionKF_.q_.z();
+  odo.pose.pose.position.x = positionKF_.getPosition()[0];
+  odo.pose.pose.position.y = positionKF_.getPosition()[1];
+  odo.pose.pose.position.z = positionKF_.getPosition()[2];
+  odo.pose.pose.orientation.w = positionKF_.getOrientation().w();
+  odo.pose.pose.orientation.x = positionKF_.getOrientation().x();
+  odo.pose.pose.orientation.y = positionKF_.getOrientation().y();
+  odo.pose.pose.orientation.z = positionKF_.getOrientation().z();
   
   //  top left 3x3 (filter) and bottom right 3x3 (from imu)
   for (int i=0; i < 3; i++) {
@@ -99,9 +99,9 @@ void Node::imuCallback(const sensor_msgs::ImuConstPtr& imu) {
     }
   }
   
-  odo.twist.twist.linear.x = positionKF_.v_[0];
-  odo.twist.twist.linear.y = positionKF_.v_[1];
-  odo.twist.twist.linear.z = positionKF_.v_[2];
+  odo.twist.twist.linear.x = positionKF_.getVelocity()[0];
+  odo.twist.twist.linear.y = positionKF_.getVelocity()[1];
+  odo.twist.twist.linear.z = positionKF_.getVelocity()[2];
   odo.twist.twist.angular = imu->angular_velocity;
   
   //  same as above copy
@@ -138,13 +138,12 @@ void Node::odoCallback(const nav_msgs::OdometryConstPtr& odometry) {
     }
   }
   
+  //  scale up velocity variance as velocity decreases
   const double magv = v.norm();
   const double f = std::min(std::max(1-magv,0.0),1.0);
   const double scale = 1.0 + 15*(3*f*f - 2*f*f*f);
   varV *= scale;
-  
-  ROS_INFO("scale: %f, %f", scale, magv);
-  
+    
   if (!positionKF_.update(q,varQ,p,varP,v,varV)) {
     ROS_WARN("Warning: Kalman gain was singular in update");
   }

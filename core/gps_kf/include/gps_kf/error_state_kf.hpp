@@ -61,7 +61,64 @@ public:
               const kr::vec3<Scalar> &pm, const kr::mat3<Scalar> &varP,
               const kr::vec3<Scalar> &vm, const kr::mat3<Scalar> &varV);
 
-public:
+  /**
+   * @brief Orientation, transformation from body to world.
+   * @return Quaternion.
+   */
+  const kr::quat<Scalar>& getOrientation() const { return q_; }
+  
+  /**
+   * @brief Gyro bias estimate, rad/s.
+   * @return R3 Vector.
+   */
+  const kr::vec3<Scalar>& getGyroBias() const { return bg_; }
+  
+  /**
+   * @brief Velocity estimate, m/s.
+   * @return R3 Vector.
+   */
+  const kr::vec3<Scalar>& getVelocity() const { return v_; }
+  
+  /**
+   * @brief Accelerometer bias estimate, m/s^2.
+   * @return R3 Vector.
+   */
+  const kr::vec3<Scalar>& getAccelBias() const { return ba_; }
+  
+  /**
+   * @brief Position estimate, m.
+   * @return R3 Vector.
+   */
+  const kr::vec3<Scalar>& getPosition() const { return p_; }
+  
+  /**
+   * @brief Get system covariance.
+   * @return 15x15 matrix.
+   * @note Order of elements: [theta, gyro bias, vel, accel bias, pos]
+   */
+  const kr::mat<Scalar,15,15>& getCovariance() const { return P_; }
+  
+  /**
+   * @brief Set std dev. of bias drift rates.
+   * @param bg Gyro bias drift rate uncertainty, rad/s^2.
+   * @param ba Accelerometer bias drift rate uncertainty, m/s^3.
+   */  
+  void setBiasUncertainties(Scalar bg, Scalar ba) {
+    Qbg_.setIdentity();
+    Qbg_ *= bg;
+    Qba_.setIdentity();
+    Qba_ *= ba;
+  }
+  
+  /**
+   * @brief Set the magnitude of the gravity vector.
+   * @param g Gravity magnitude, m/s^2.
+   */
+  void setGravity(Scalar g) {
+    g_ = g;
+  }
+  
+private:
   kr::quat<Scalar> q_;  /// Orientation
   kr::vec3<Scalar> bg_; /// Gyro bias
   kr::vec3<Scalar> v_;  /// Velocity
@@ -128,11 +185,11 @@ void ErrorStateKF<Scalar>::predict(const kr::vec3<Scalar> &wbody,
   F.setZero();
 
   F.template block<3, 3>(0, 0) =
-      -kr::skewSymmetric(wh); //  dth = [wh] x dth - bg
+      -kr::skewSymmetric(wh);                  //  dth = [wh] x dth - bg
   F.template block<3, 3>(0, 3) = -kr::mat3<Scalar>::Identity();
 
   F.template block<3, 3>(6, 0) =
-      -wRb * kr::skewSymmetric(ah); //  dv = -R[ah] x dth - R[ba]
+      -wRb * kr::skewSymmetric(ah);            //  dv = -R[ah] x dth - R[ba]
   F.template block<3, 3>(6, 9) = -wRb;
 
   F.template block<3, 3>(12, 6).setIdentity(); //  dp = dv

@@ -133,13 +133,17 @@ bool QuadrotorUKF::MeasurementUpdateGPS(const MeasGPSVec &z, const MeasGPSCov &R
   H(4,4) = 1;
   H(5,5) = 1;
   H(6,6) = 1;
+  H(7,7) = 1;
+  H(8,8) = 1;
   MeasGPSCov S = H * Pa_ * H.transpose() + RnGPS;
   // Kalman Gain;
   Eigen::Matrix<double, state_count_, meas_gps_count_> K = Pa_ * H.transpose() * S.inverse();
   // Innovation
   MeasGPSVec inno = z - za;
   // Handle angle jumps
-  inno(6) = std::asin(std::sin(inno(6)));
+  for (int i=6; i < 9; i++) {
+    inno(i) = std::asin(std::sin(inno(i)));
+  }
   // Posterior Mean
   xa_ += K * inno;
   // Posterior Covariance

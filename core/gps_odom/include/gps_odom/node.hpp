@@ -50,6 +50,7 @@ private:
   std::string bodyFrameId_;
   std::string worldFrameId_;
   ros::Publisher pubOdometry_;
+  ros::Publisher pubImu_;
   
   message_filters::Subscriber<sensor_msgs::Imu> subImu_;
   message_filters::Subscriber<sensor_msgs::FluidPressure> subPressure_;
@@ -86,7 +87,8 @@ private:
   
   bool refSet_;
   GeographicLib::LocalCartesian refPoint_;
-
+  double currentDeclination_;
+  
   double hAcc_;  //  default horizontal accuracy
   double vAcc_;  //  default vertical accuracy
   double sAcc_;  //  default speed accuracy

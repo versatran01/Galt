@@ -19,6 +19,8 @@
 #include <algorithm>
 #include <cmath>
 
+#include <Eigen/Geometry>
+
 namespace gps_odom {
 
 template <typename T, std::size_t N>
@@ -39,11 +41,12 @@ Node::Node() : nh_("~"), pkgPath_(ros::package::getPath("gps_odom")) {
   nh_.param("body_frame_id", bodyFrameId_, std::string("/body"));
   nh_.param("world_frame_id", worldFrameId_, std::string("/world"));
   
-  nh_.param("horz_accuracy", hAcc_, 5.0);
-  nh_.param("vert_accuracy", vAcc_, 8.0);
-  nh_.param("speed_accuracy", sAcc_, 3.0);
+  nh_.param("horz_accuracy", hAcc_, 2.0);
+  nh_.param("vert_accuracy", vAcc_, 4.0);
+  nh_.param("speed_accuracy", sAcc_, 2.0);
   
   refSet_ = false;
+  currentDeclination_ = 0.0;
 }
 
 void Node::initialize() {
@@ -65,19 +68,37 @@ void Node::initialize() {
   
   //  advertise odometry as output
   pubOdometry_ = nh_.advertise<nav_msgs::Odometry>("odometry", 1);
+  pubImu_ = nh_.advertise<sensor_msgs::Imu>("corrected_imu", 1);
 }
 
 void Node::imuCallback(const sensor_msgs::ImuConstPtr& imu,
                        const sensor_msgs::FluidPressureConstPtr& fluidPressure) {
   
   //  current orientation
-  /*const kr::quatd wQb = kr::quatd(imu->orientation.w, imu->orientation.x,
+  kr::quatd wQb = kr::quatd(imu->orientation.w, imu->orientation.x,
                             imu->orientation.y, imu->orientation.z);
+  
+  //  adjust for declination
+  Eigen::AngleAxisd aa;
+  aa.angle() = -currentDeclination_;
+  aa.axis() = Eigen::Vector3d(0.0,0.0,1.0);
+  
+  wQb = aa * wQb;
+  
+  //  re-publish IMU message
+  sensor_msgs::Imu outImu;
+  outImu = *imu;
+  outImu.header.seq = 0;
+  outImu.orientation.w = wQb.w();
+  outImu.orientation.x = wQb.x();
+  outImu.orientation.y = wQb.y();
+  outImu.orientation.z = wQb.z();
+  pubImu_.publish(outImu);
   
   //  convert fluid pressure to height in meters
   //  refer to wikipedia for this formula
   
-  const double kP0 = 101325;    //  Pressure at sea level (Pa)
+  /*const double kP0 = 101325;    //  Pressure at sea level (Pa)
   const double kL = 0.0065;     //  Temperature lapse rate (K/m)
   const double kT0 = 288.15;    //  Sea level standard temperature (K)
   const double kG = 9.80665;    //  Gravitational acceleration (m/s^2)
@@ -92,14 +113,6 @@ void Node::imuCallback(const sensor_msgs::ImuConstPtr& imu,
   //  calculate height from barometer
   const double lhs = std::log(pressurePA / kP0) * (1 / c);
   const double h = (1 - std::exp(lhs)) * kT0 / kL;  */
-  
-  //  convert to units of m/s^2
-//  const kr::vec3d aB = kr::vec3d(imu->linear_acceleration.x,
-//                           imu->linear_acceleration.y,
-//                           imu->linear_acceleration.z) * kG;
-  
-//  const kr::vec3d aW = (wQb.matrix() * aB);
-//  const double accZ = aW[2] - kG;
 }
 
 void Node::gpsCallback(const sensor_msgs::NavSatFixConstPtr& navSatFix,
@@ -145,16 +158,14 @@ void Node::gpsCallback(const sensor_msgs::NavSatFixConstPtr& navSatFix,
   //  determine magnetic declination
   double bEast, bNorth, bUp;
   magneticModel_->operator()(tYears,lat,lon,hWGS84,bEast,bNorth,bUp);
-  const double declination = std::atan2(bEast,bNorth);
-  
-  //ROS_INFO("declination: %f", declination*180/M_PI);
-  
+  currentDeclination_ = std::atan2(bEast,bNorth);
+    
   //  calculate corrected yaw angle
   //  matrix composition is of the form wRb = Rz * Ry * Rx
   //  left multiply declination adjustment
   kr::quatd wQb = kr::quatd(imu->orientation.w,imu->orientation.x,
                             imu->orientation.y,imu->orientation.z);
-  wQb = kr::rotationQuat(-declination,0.0,0.0,1.0) * wQb;
+  wQb = kr::rotationQuat(-currentDeclination_,0.0,0.0,1.0) * wQb;
   
   nav_msgs::Odometry odometry;
   odometry.header.stamp = navSatFix->header.stamp;
@@ -194,16 +205,22 @@ void Node::gpsCallback(const sensor_msgs::NavSatFixConstPtr& navSatFix,
   }
   
   //  linear velocity from GPS, angular velocity from IMU
-  odometry.twist.twist.linear = velVec->vector;
+  
+  //  Correct for ublox_gps's stupidity.
+  //  TODO: Fix ublox_gps in future version.
+  odometry.twist.twist.linear.x = -velVec->vector.y;
+  odometry.twist.twist.linear.y = -velVec->vector.x;
+  odometry.twist.twist.linear.z = velVec->vector.z;
+  
   odometry.twist.twist.angular = imu->angular_velocity;
   
   //  velocity covariance [x,y,z,rot_x,rot_y,rot_z]
   //  rotation component is unused so leave as zero
   kr::mat<double,6,6> velCovariance;
   velCovariance.setZero();
-  velCovariance(0,0) = (sAcc_/3)*(sAcc_/3);
-  velCovariance(1,1) = (sAcc_/3)*(sAcc_/3);
-  velCovariance(2,2) = (sAcc_/3)*(sAcc_/3);
+  velCovariance(0,0) = (sAcc_/3.0)*(sAcc_/3.0);
+  velCovariance(1,1) = (sAcc_/3.0)*(sAcc_/3.0);
+  velCovariance(2,2) = (sAcc_/3.0)*(sAcc_/3.0);
   
   for (int i=0; i < 6; i++) {
     for (int j=0; j < 6; j++) {

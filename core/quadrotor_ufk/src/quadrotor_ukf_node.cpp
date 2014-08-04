@@ -99,6 +99,8 @@ void gps_callback(const nav_msgs::Odometry::ConstPtr& msg) {
   z(4) = msg->twist.twist.linear.y;
   z(5) = msg->twist.twist.linear.z;
   z(6) = rpy[2];
+  z(7) = rpy[1];
+  z(8) = rpy[0];
   
   QuadrotorUKF::StateVec x = quadrotor_ukf.GetState();
   //ROS_INFO("X: %f, %f, %f", x(3),x(4),x(5));
@@ -133,7 +135,9 @@ void gps_callback(const nav_msgs::Odometry::ConstPtr& msg) {
   RnGPS(3,3) = msg->twist.covariance[0 + 0 * 6];
   RnGPS(4,4) = msg->twist.covariance[1 + 1 * 6];
   RnGPS(5,5) = msg->twist.covariance[2 + 2 * 6];
-  RnGPS(6,6) = msg->pose.covariance[5 + 5 * 6];  //  element(5,5), rot_z
+  RnGPS(6,6) = msg->pose.covariance[5 + 5 * 6];   //  element(5,5), rot_z
+  RnGPS(7,7) = msg->pose.covariance[4 + 4 * 6];   //  (4,4)
+  RnGPS(8,8) = msg->pose.covariance[3 + 3 * 6];   //  (3,3)
     
   // Measurement update
   quadrotor_ukf.MeasurementUpdateGPS(z, RnGPS, msg->header.stamp);

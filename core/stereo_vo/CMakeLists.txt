@@ -1,12 +1,11 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(stereo_vo)
 
-## Find catkin macros and libraries
-## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
-## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   roscpp
 )
+
+find_package(OpenCV)
 
 catkin_package(
 #  INCLUDE_DIRS include
@@ -15,6 +14,8 @@ catkin_package(
 #  DEPENDS system_lib
 )
 
+include_directories(include)
 include_directories(
   ${catkin_INCLUDE_DIRS}
+  ${OpenCV_INCLUDE_DIRS}
 )

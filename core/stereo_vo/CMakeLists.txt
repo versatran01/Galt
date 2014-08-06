@@ -9,9 +9,11 @@ find_package(catkin REQUIRED COMPONENTS
     sensor_msgs
     cv_bridge image_geometry
     dynamic_reconfigure
+    kr_math
 )
 
 find_package(OpenCV)
+find_package(Eigen)
 
 generate_dynamic_reconfigure_options(
   cfg/StereoVoDyn.cfg

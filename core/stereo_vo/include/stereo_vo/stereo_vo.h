@@ -19,12 +19,7 @@ using namespace image_geometry;
 using ::stereo_vo::StereoVoDynConfig;
 
 class StereoVo;
-
-struct Featrue {
- cv::Point2f left, right;
- cv::Point3f point;  // Point in left camera key frame
- std::share_ptr<KeyFrame> key_frame;
-};
+class KeyFrame;
 
 class KeyFrame {
   friend class StereoVo;
@@ -32,11 +27,14 @@ class KeyFrame {
  public:
   void Update(const cv::Mat &l_image, const cv::Mat &r_image,
               const StereoVoDynConfig &config);
+  const int NumMatches() const { return l_features_.size(); }
 
  private:
+  void Triangulate();
   cv::Mat l_image_, r_image_;
   std::vector<cv::Point2f> l_features_, r_features_;
-  std::vector<uchar> status_;
+  std::vector<cv::Point2f> l_coords_, r_coords_;
+  std::vector<cv::Point3f> points_;
 };
 
 class StereoVo {
@@ -47,15 +45,19 @@ class StereoVo {
                   const StereoCameraModel &model);
   void Iterate(const cv::Mat &l_image, const cv::Mat &r_image);
   void UpdateConfig(const StereoVoDynConfig &config) { config_ = config; }
+
  private:
   bool init_{false};
   StereoCameraModel model_;
   KeyFrame key_frame_;
   StereoVoDynConfig config_;
 
-  void Display(const cv::Mat &l_image, const cv::Mat &r_image);
+  void Display(const cv::Mat &l_image, const cv::Mat &r_image,
+               const std::vector<cv::Point2f> &new_features);
 };
 
+std::vector<cv::Point2f> ExtractByStatus(
+    const std::vector<cv::Point2f> &features, const std::vector<uchar> &status);
 }  // namespace stereo_vo
 
 }  // namespace galt

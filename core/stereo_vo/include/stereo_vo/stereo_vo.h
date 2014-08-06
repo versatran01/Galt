@@ -25,12 +25,14 @@ class KeyFrame {
   friend class StereoVo;
 
  public:
+  typedef double scalar_t;
+  
   void Update(const cv::Mat &l_image, const cv::Mat &r_image,
-              const StereoVoDynConfig &config);
+              const StereoVoDynConfig &config, const StereoCameraModel& model);
   const int NumMatches() const { return l_features_.size(); }
 
  private:
-  void Triangulate();
+  void Triangulate(const StereoCameraModel &model);
   cv::Mat l_image_, r_image_;
   std::vector<cv::Point2f> l_features_, r_features_;
   std::vector<cv::Point2f> l_coords_, r_coords_;

@@ -6,6 +6,10 @@
 #include "opencv2/video/video.hpp"
 #include "opencv2/calib3d/calib3d.hpp"
 
+#include <kr_math/base_types.hpp>
+#include <kr_math/feature.hpp>
+#include <kr_math/pose.hpp>
+
 namespace galt {
 
 namespace stereo_vo {
@@ -15,7 +19,7 @@ StereoVo::StereoVo() {}
 void StereoVo::Initialize(const cv::Mat &l_image, const cv::Mat &r_image,
                           const StereoCameraModel &model) {
   model_ = model;
-  key_frame_.Update(l_image, r_image, config_);
+  key_frame_.Update(l_image, r_image, config_, model);
 
   std::cout << "StereoVo initialized, baseline: " << model_.baseline()
             << std::endl;
@@ -44,7 +48,7 @@ void StereoVo::Iterate(const cv::Mat &l_image, const cv::Mat &r_image) {
   Display(l_image, r_image, new_features);
   // Save the new images
   if (new_features.size() < 90) {
-    key_frame_.Update(l_image, r_image, config_);
+    key_frame_.Update(l_image, r_image, config_, model_);
   }
 }
 
@@ -117,7 +121,7 @@ void StereoVo::Display(const cv::Mat &l_image, const cv::Mat &r_image,
 }
 
 void KeyFrame::Update(const cv::Mat &l_image, const cv::Mat &r_image,
-                      const StereoVoDynConfig &config) {
+                      const StereoVoDynConfig &config, const StereoCameraModel &model) {
   // Collect relevant options
   int max_iter = 25;
   double epsilon = 0.01;
@@ -145,14 +149,67 @@ void KeyFrame::Update(const cv::Mat &l_image, const cv::Mat &r_image,
   l_features_ = ExtractByStatus(l_features, status);
   r_features_ = ExtractByStatus(r_features, status);
 
-  Triangulate();
+  Triangulate(model);
   l_image_ = l_image;
   r_image_ = r_image;
 }
 
-void KeyFrame::Triangulate() {
-  //  points_.push_back(kr::triangulate(left_pose, right_pose, l_coord,
-  // r_coord));
+void KeyFrame::Triangulate(const StereoCameraModel& model) {
+  
+  const size_t nPts = l_features_.size();
+  
+  //  get camera intrinsics, assuming image already undistorted
+  const scalar_t lfx = model.left().fx(), lfy = model.left().fy();
+  const scalar_t lcx = model.left().cx(), lcy = model.left().cy();
+  
+  const scalar_t rfx = model.right().fx(), rfy = model.right().fy();
+  const scalar_t rcx = model.right().cx(), rcy = model.right().cy();
+      
+  kr::vec2<scalar_t> lPt, rPt;
+  kr::Pose<scalar_t> poseLeft;  //  identity
+  kr::Pose<scalar_t> poseRight;
+  poseRight.p[0] = model.baseline();
+  
+  points_.clear();
+  points_.reserve(nPts);
+  
+  std::vector<size_t> rejects;
+  rejects.reserve(nPts);
+  
+  for (size_t i=0; i < nPts; i++) {
+    
+    lPt[0] = l_coords_[i].x;
+    lPt[1] = l_coords_[i].y;
+    rPt[0] = r_coords_[i].x;
+    rPt[1] = r_coords_[i].y;
+    
+    kr::vec3<scalar_t> p3D;
+    scalar_t ratio;
+    
+    kr::triangulate(poseLeft,lPt,poseRight,rPt,p3D,ratio);
+    
+    bool failed = false;
+    if (ratio > 1e4) {
+      //  bad, reject this feature
+      failed = true;
+    } else {
+      //  valid, refine the point
+      std::vector<kr::Pose<scalar_t>> poses({poseLeft,poseRight});
+      std::vector<kr::vec2<scalar_t>> obvs({lPt,rPt});
+      
+      if (kr::refinePoint(poses,obvs,p3D)) {
+        //  done
+        points_.push_back(cv::Point3f(p3D[0],p3D[1],p3D[2]));
+      } else {
+        //  failed to converge
+        failed = true;
+      }
+    }
+    
+    if (failed) {
+      //  erase feature
+    }
+  }
 }
 
 std::vector<cv::Point2f> ExtractByStatus(

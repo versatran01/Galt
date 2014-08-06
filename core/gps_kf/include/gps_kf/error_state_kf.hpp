@@ -184,15 +184,16 @@ void ErrorStateKF<Scalar>::predict(const kr::vec3<Scalar> &wbody,
   kr::mat<Scalar, 15, 15> F;
   F.setZero();
 
-  F.template block<3, 3>(0, 0) =
-      -kr::skewSymmetric(wh);                  //  dth = [wh] x dth - bg
+  ///  dth = [wh] x dth - bg
+  F.template block<3, 3>(0, 0) = -kr::skewSymmetric(wh);                  
   F.template block<3, 3>(0, 3) = -kr::mat3<Scalar>::Identity();
 
-  F.template block<3, 3>(6, 0) =
-      -wRb * kr::skewSymmetric(ah);            //  dv = -R[ah] x dth - R[ba]
+  //  dv = -R[ah] x dth - R[ba]
+  F.template block<3, 3>(6, 0) = -wRb * kr::skewSymmetric(ah);            
   F.template block<3, 3>(6, 9) = -wRb;
 
-  F.template block<3, 3>(12, 6).setIdentity(); //  dp = dv
+  //  dp = dv
+  F.template block<3, 3>(12, 6).setIdentity(); 
 
   //  form process covariance matrix
   kr::mat<Scalar, 12, 12> Q;
@@ -201,6 +202,9 @@ void ErrorStateKF<Scalar>::predict(const kr::vec3<Scalar> &wbody,
   Q.template block<3, 3>(3, 3) = Qbg_;
   Q.template block<3, 3>(6, 6) = varA;
   Q.template block<3, 3>(9, 9) = Qba_;
+  
+  //std::cout << "\nF:" << std::endl;
+  //std::cout << F << std::endl;
 
   kr::mat<Scalar, 15, 12> G;
   G.setZero();
@@ -211,8 +215,14 @@ void ErrorStateKF<Scalar>::predict(const kr::vec3<Scalar> &wbody,
   G.template block<3, 3>(6, 6) = -wRb; //  acceleration on linear velocity
   G.template block<3, 3>(9, 9).setIdentity();
 
+  //std::cout << "\nG:" << std::endl;
+  //std::cout << G << std::endl;
+  
   //  integrate covariance forward
   P_ += (F * P_ * F.transpose() + G * Q * G.transpose()) * dt;
+  
+  std::cout << "\nGQGT:" << std::endl;
+  std::cout << G * Q * G.transpose() << std::endl;
 }
 
 template <typename Scalar>

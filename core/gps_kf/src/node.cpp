@@ -10,6 +10,7 @@
  */
 
 #include <gps_kf/node.hpp>
+#include <geometry_msgs/PoseStamped.h>
 
 namespace gps_kf {
 
@@ -45,6 +46,8 @@ void Node::initialize() {
   subOdometry_ = nh_.subscribe("gps_odom", 1, &Node::odoCallback, this);
   
   predictTime_ = ros::Time(0,0);
+  
+  oldAccel = kr::vec3d(0.0,0.0,0.0);
 }
 
 void Node::imuCallback(const sensor_msgs::ImuConstPtr& imu) {
@@ -73,8 +76,16 @@ void Node::imuCallback(const sensor_msgs::ImuConstPtr& imu) {
   predictTime_ = imu->header.stamp;
   
   //  predict
+  positionKF_.setBiasUncertainties(0,1.0);
   positionKF_.predict(gyro,varGyro_,accel,varAccel_,delta);
-      
+  
+  ///ROS_INFO("state:");
+  //std::cout << positionKF_.getOrientation() << std::endl;
+  //std::cout << positionKF_.getGyroBias() << std::endl;
+  //std::cout << positionKF_.getVelocity() << std::endl;
+  //std::cout << positionKF_.getAccelBias() << std::endl;
+  //std::cout << positionKF_.getPosition() << std::endl;
+  
   auto P = positionKF_.getCovariance();
   
   //  publish odometry
@@ -90,6 +101,13 @@ void Node::imuCallback(const sensor_msgs::ImuConstPtr& imu) {
   odo.pose.pose.orientation.x = positionKF_.getOrientation().x();
   odo.pose.pose.orientation.y = positionKF_.getOrientation().y();
   odo.pose.pose.orientation.z = positionKF_.getOrientation().z();
+  
+  static ros::Publisher pubPoseStamped = nh_.advertise<geometry_msgs::PoseStamped>("debug_pose", 1);
+  geometry_msgs::PoseStamped ps;
+  ps.pose = odo.pose.pose;
+  ps.header.stamp = imu->header.stamp;
+  ps.header.frame_id = worldFrameId_;
+  pubPoseStamped.publish(ps);
   
   //  top left 3x3 (filter) and bottom right 3x3 (from imu)
   for (int i=0; i < 3; i++) {

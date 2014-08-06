@@ -43,7 +43,7 @@ Node::Node() : nh_("~"), pkgPath_(ros::package::getPath("gps_odom")) {
   
   nh_.param("horz_accuracy", hAcc_, 2.0);
   nh_.param("vert_accuracy", vAcc_, 4.0);
-  nh_.param("speed_accuracy", sAcc_, 2.0);
+  nh_.param("speed_accuracy", sAcc_, 1.0);
   
   refSet_ = false;
   currentDeclination_ = 0.0;

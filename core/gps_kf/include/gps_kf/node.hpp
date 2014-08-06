@@ -55,6 +55,8 @@ private:
   
   kr::mat3d varAccel_;
   kr::mat3d varGyro_;
+  
+  kr::vec3d oldAccel;
 };
 
 } //  namespace gps_kf

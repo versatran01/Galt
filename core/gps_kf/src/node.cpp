@@ -19,9 +19,9 @@ Node::Node() : nh_("~") {
   //  load noise parameters
   double stdGyro[3],stdAccel[3];
   
-  nh_.param("noise_std/accel/x",stdAccel[0], 10.0);
-  nh_.param("noise_std/accel/y",stdAccel[1], 10.0);
-  nh_.param("noise_std/accel/z",stdAccel[2], 10.0);
+  nh_.param("noise_std/accel/x",stdAccel[0], 7.0);
+  nh_.param("noise_std/accel/y",stdAccel[1], 7.0);
+  nh_.param("noise_std/accel/z",stdAccel[2], 7.0);
   
   nh_.param("noise_std/gyro/x",stdGyro[0], 0.01);
   nh_.param("noise_std/gyro/y",stdGyro[1], 0.01);
@@ -76,15 +76,8 @@ void Node::imuCallback(const sensor_msgs::ImuConstPtr& imu) {
   predictTime_ = imu->header.stamp;
   
   //  predict
-  positionKF_.setBiasUncertainties(0,1.0);
+  positionKF_.setBiasUncertainties(0, 0.0);
   positionKF_.predict(gyro,varGyro_,accel,varAccel_,delta);
-  
-  ///ROS_INFO("state:");
-  //std::cout << positionKF_.getOrientation() << std::endl;
-  //std::cout << positionKF_.getGyroBias() << std::endl;
-  //std::cout << positionKF_.getVelocity() << std::endl;
-  //std::cout << positionKF_.getAccelBias() << std::endl;
-  //std::cout << positionKF_.getPosition() << std::endl;
   
   auto P = positionKF_.getCovariance();
   

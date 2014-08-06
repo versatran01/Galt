@@ -203,9 +203,6 @@ void ErrorStateKF<Scalar>::predict(const kr::vec3<Scalar> &wbody,
   Q.template block<3, 3>(6, 6) = varA;
   Q.template block<3, 3>(9, 9) = Qba_;
   
-  //std::cout << "\nF:" << std::endl;
-  //std::cout << F << std::endl;
-
   kr::mat<Scalar, 15, 12> G;
   G.setZero();
 
@@ -215,14 +212,8 @@ void ErrorStateKF<Scalar>::predict(const kr::vec3<Scalar> &wbody,
   G.template block<3, 3>(6, 6) = -wRb; //  acceleration on linear velocity
   G.template block<3, 3>(9, 9).setIdentity();
 
-  //std::cout << "\nG:" << std::endl;
-  //std::cout << G << std::endl;
-  
   //  integrate covariance forward
-  P_ += (F * P_ * F.transpose() + G * Q * G.transpose()) * dt;
-  
-  std::cout << "\nGQGT:" << std::endl;
-  std::cout << G * Q * G.transpose() << std::endl;
+  P_ += (F*P_ + P_*F.transpose() + G*Q*G.transpose()) * dt;
 }
 
 template <typename Scalar>

@@ -7,10 +7,15 @@ find_package(catkin REQUIRED COMPONENTS
     roscpp nodelet
     image_transport message_filters
     sensor_msgs
-    cv_bridge
+    cv_bridge image_geometry
+    dynamic_reconfigure
 )
 
 find_package(OpenCV)
+
+generate_dynamic_reconfigure_options(
+  cfg/StereoVoDyn.cfg
+)
 
 catkin_package(
 #  INCLUDE_DIRS include
@@ -25,11 +30,25 @@ include_directories(
     ${OpenCV_INCLUDE_DIRS}
 )
 
-add_executable(${PROJECT_NAME}_node
-    src/stereo_vo_node.cc
-    src/main.cc
+add_library(${PROJECT_NAME}
+    src/stereo_vo.cc
 )
-target_link_libraries(${PROJECT_NAME}_node
+target_link_libraries(${PROJECT_NAME}
     ${catkin_LIBRARIES}
     ${OpenCV_LIBRARIES}
 )
+
+add_executable(${PROJECT_NAME}_node
+    src/main.cc
+    src/stereo_vo_node.cc
+)
+target_link_libraries(${PROJECT_NAME}_node
+    ${PROJECT_NAME}
+)
+
+add_dependencies(${PROJECT_NAME}
+    ${catkin_EXPORTED_TARGETS}
+    ${PROJECT_NAME}_gencfg
+    ${PROJECT_NAME}_gencpp
+    ${${PROJECT_NAME}_EXPORTED_TARGETS}
+ )

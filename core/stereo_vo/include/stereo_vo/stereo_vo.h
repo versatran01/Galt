@@ -2,6 +2,7 @@
 #define GALT_STEREO_VO_H_
 
 #include <vector>
+#include <memory>
 
 #include <cv_bridge/cv_bridge.h>
 #include <image_geometry/stereo_camera_model.h>
@@ -15,11 +16,14 @@ namespace galt {
 namespace stereo_vo {
 
 using namespace image_geometry;
+using ::stereo_vo::StereoVoDynConfig;
+
 class StereoVo;
 
-struct StereoVoConfig {
-  int num_features;
-  int min_features;
+struct Featrue {
+ cv::Point2f left, right;
+ cv::Point3f point;  // Point in left camera key frame
+ std::share_ptr<KeyFrame> key_frame;
 };
 
 class KeyFrame {
@@ -27,12 +31,12 @@ class KeyFrame {
 
  public:
   void Update(const cv::Mat &l_image, const cv::Mat &r_image,
-              const int num_feautres);
+              const StereoVoDynConfig &config);
 
  private:
-  cv::Mat l_image_;
-  cv::Mat r_image_;
-  std::vector<cv::Point2f> features_;
+  cv::Mat l_image_, r_image_;
+  std::vector<cv::Point2f> l_features_, r_features_;
+  std::vector<uchar> status_;
 };
 
 class StereoVo {
@@ -42,13 +46,12 @@ class StereoVo {
   void Initialize(const cv::Mat &l_image, const cv::Mat &r_image,
                   const StereoCameraModel &model);
   void Iterate(const cv::Mat &l_image, const cv::Mat &r_image);
-  void UpdateConfig(const StereoVoConfig &config) { config_ = config; }
-
+  void UpdateConfig(const StereoVoDynConfig &config) { config_ = config; }
  private:
   bool init_{false};
   StereoCameraModel model_;
   KeyFrame key_frame_;
-  StereoVoConfig config_;
+  StereoVoDynConfig config_;
 
   void Display(const cv::Mat &l_image, const cv::Mat &r_image);
 };

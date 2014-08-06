@@ -3,11 +3,13 @@
     <arg name="manager" default="stereo_vo"/>
     <arg name="stereo_ns" default="/mv_stereo"/>
     <arg name="disparity" default="false"/>
-    <!--<arg name="bagfile" default="day2/fly/2014-07-25-18-14-12.bag"/>-->
-    <arg name="bagfile" default="day1/noon/2014-07-24-14-07-18.bag"/>
+    <arg name="bagfile" default="day2/fly/2014-07-25-18-14-12.bag"/>
+    <!--<arg name="bagfile" default="day1/noon/2014-07-24-14-07-18.bag"/>-->
 
     <arg name="num_features" default="100"/>
     <arg name="min_features" default="50"/>
+    <arg name="max_level" default="3"/>
+    <arg name="win_size" default="11"/>
 
     <node pkg="rosbag" type="play" name="player"
         args="-l /home/chao/Workspace/bagfiles/$(arg bagfile)">
@@ -21,6 +23,8 @@
         output="screen" ns="$(arg stereo_ns)">
         <param name="num_features" value="$(arg num_features)"/>
         <param name="min_features" value="$(arg min_features)"/>
+        <param name="max_level" value="$(arg max_level)"/>
+        <param name="win_size" value="$(arg win_size)"/>
     </node>
 
     <node if="$(arg disparity)"

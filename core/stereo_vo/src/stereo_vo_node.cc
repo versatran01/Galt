@@ -52,11 +52,9 @@ void StereoVoNode::SubscribeStereoTopics(
   r_cinfo_sub_.subscribe(nh_, resolve(append(right, cinfo_topic)), 1);
 }
 
-void StereoVoNode::ReconfigureCallback(const StereoVoDynConfig &config, int level) {
-  StereoVoConfig new_config;
-  new_config.num_features = config.num_features;
-  new_config.min_features = config.min_features;
-  stereo_vo_.UpdateConfig(new_config);
+void StereoVoNode::ReconfigureCallback(const StereoVoDynConfig& config,
+                                       int level) {
+  stereo_vo_.UpdateConfig(config);
 }
 
 void StereoVoNode::StereoCallback(const ImageConstPtr& l_image_msg,
@@ -90,10 +88,12 @@ void StereoVoNode::StereoCallback(const ImageConstPtr& l_image_msg,
   stereo_vo_.Iterate(l_image_rect, r_image_rect);
 }
 
-const StereoVoConfig ReadConfig(const ros::NodeHandle &nh)  {
-  StereoVoConfig config;
+const StereoVoDynConfig ReadConfig(const ros::NodeHandle& nh) {
+  StereoVoDynConfig config;
   nh.param<int>("num_features", config.num_features, 100);
   nh.param<int>("min_features", config.min_features, 50);
+  nh.param<int>("max_level", config.max_level, 50);
+  nh.param<int>("win_size", config.win_size, 50);
   return config;
 }
 

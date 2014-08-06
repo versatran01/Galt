@@ -60,7 +60,7 @@ class StereoVoNode {
   void ReconfigureCallback(const StereoVoDynConfig &config, int level);
 };  // class StereoVoNode
 
-const StereoVoConfig ReadConfig(const ros::NodeHandle &nh);
+const StereoVoDynConfig ReadConfig(const ros::NodeHandle &nh);
 
 }  // namespace stereo_vo
 

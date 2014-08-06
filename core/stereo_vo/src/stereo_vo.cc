@@ -3,6 +3,7 @@
 #include <sstream>
 
 #include "opencv2/highgui/highgui.hpp"
+#include "opencv2/video/video.hpp"
 
 namespace galt {
 
@@ -13,7 +14,7 @@ StereoVo::StereoVo() {}
 void StereoVo::Initialize(const cv::Mat &l_image, const cv::Mat &r_image,
                           const StereoCameraModel &model) {
   model_ = model;
-  key_frame_.Update(l_image, r_image, config_.num_features);
+  key_frame_.Update(l_image, r_image, config_);
 
   std::cout << "StereoVo initialized, baseline: " << model_.baseline()
             << std::endl;
@@ -29,7 +30,7 @@ void StereoVo::Initialize(const cv::Mat &l_image, const cv::Mat &r_image,
 void StereoVo::Iterate(const cv::Mat &l_image, const cv::Mat &r_image) {
   Display(l_image, r_image);
   // Save the new images
-//  key_frame_.Update(l_image, r_image);
+  key_frame_.Update(l_image, r_image, config_);
 }
 
 void StereoVo::Display(const cv::Mat &l_image, const cv::Mat &r_image) {
@@ -47,10 +48,22 @@ void StereoVo::Display(const cv::Mat &l_image, const cv::Mat &r_image) {
   cv::Mat two_frame_color;
   cv::cvtColor(two_frame, two_frame_color, CV_GRAY2BGR);
 
-  // Draw features on key frame
-  double radius = 5.0;
-  for (const auto &p : key_frame_.features_) {
-    cv::circle(two_frame_color, p, radius, cv::Scalar(0, 255, 0), 2);
+  // Draw good features on key frame
+  for (const auto &p : key_frame_.l_features_) {
+    cv::circle(two_frame_color, p, 6, cv::Scalar(0, 0, 255), 2);
+  }
+  auto feature_color = cv::Scalar(0, 255, 0);
+  auto line_color = cv::Scalar(255, 0, 0);
+  // Draw matching features on key frame
+  for (unsigned i = 0; i != key_frame_.status_.size(); ++i) {
+    if (key_frame_.status_[i]) {
+      auto l_p = key_frame_.l_features_[i];
+      auto r_p = key_frame_.r_features_[i];
+      r_p = r_p + cv::Point2f(n_cols, 0);
+      cv::circle(two_frame_color, l_p, 3, feature_color, 2);
+      cv::circle(two_frame_color, r_p, 3, feature_color, 2);
+      cv::line(two_frame_color, l_p, r_p, line_color, 1);
+    }
   }
 
   // Add text annotation
@@ -68,8 +81,8 @@ void StereoVo::Display(const cv::Mat &l_image, const cv::Mat &r_image) {
   std::ostringstream ss;
   ss << config_.min_features;
   cv::putText(two_frame_color, ss.str(),
-              cv::Point2f(offset_x, n_rows - offset_y / 2), font, scale, text_color,
-              thickness);
+              cv::Point2f(offset_x, n_rows - offset_y / 2), font, scale,
+              text_color, thickness);
   ss.str(std::string());
   ss << config_.num_features;
   cv::putText(two_frame_color, ss.str(),
@@ -82,11 +95,23 @@ void StereoVo::Display(const cv::Mat &l_image, const cv::Mat &r_image) {
 }
 
 void KeyFrame::Update(const cv::Mat &l_image, const cv::Mat &r_image,
-                      const int num_feautres) {
+                      const StereoVoDynConfig &config) {
+  // Collect relevant options
+  int max_iter = 25;
+  double epsilon = 0.01;
+  int win_size = config.win_size;
+  int max_level = config.max_level;
+  int num_features = config.num_features;
+
   l_image_ = l_image;
   r_image_ = r_image;
-  cv::goodFeaturesToTrack(l_image, features_, num_feautres, 0.01, 10);
-  std::cout << features_.size() << std::endl;
+  cv::goodFeaturesToTrack(l_image, l_features_, num_features, 0.01, 10);
+  // Some temporary settings
+  cv::TermCriteria term_criteria(
+      cv::TermCriteria::COUNT + cv::TermCriteria::EPS, max_iter, epsilon);
+  cv::calcOpticalFlowPyrLK(l_image_, r_image_, l_features_, r_features_,
+                           status_, cv::noArray(), cv::Size(win_size, win_size),
+                           max_level, term_criteria);
 }
 
 }  // namespace stereo_vo

@@ -1,6 +1,8 @@
 #ifndef GALT_STEREO_VO_H_
 #define GALT_STEREO_VO_H_
 
+#include <vector>
+
 #include <cv_bridge/cv_bridge.h>
 #include <image_geometry/stereo_camera_model.h>
 
@@ -24,14 +26,13 @@ class KeyFrame {
   friend class StereoVo;
 
  public:
-  void Update(const cv::Mat &l_image, const cv::Mat &r_image) {
-    l_image_ = l_image;
-    r_image_ = r_image;
-  }
+  void Update(const cv::Mat &l_image, const cv::Mat &r_image,
+              const int num_feautres);
 
  private:
   cv::Mat l_image_;
   cv::Mat r_image_;
+  std::vector<cv::Point2f> features_;
 };
 
 class StereoVo {

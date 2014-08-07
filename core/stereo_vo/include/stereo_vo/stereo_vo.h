@@ -24,9 +24,12 @@ class KeyFrame;
 typedef float scalar_t;
 
 struct Feature {
+  Feature() : triangulated(false) {}
+  
   cv::Point_<scalar_t> left, right;              /// Feature in pixel space
   cv::Point_<scalar_t> left_coord, right_coord;  /// Feature in normalized image space
   cv::Point3_<scalar_t> point;                   /// Feature in world space
+  bool triangulated;                             /// Feature has been triangulated
 };
 
 class KeyFrame {
@@ -52,6 +55,10 @@ class StereoVo {
   void Iterate(const cv::Mat &l_image, const cv::Mat &r_image);
   void UpdateConfig(const StereoVoDynConfig &config) { config_ = config; }
 
+  const std::vector<Feature>& GetCurrentFeatures() const {
+    return key_frame_.features_;
+  }
+  
  private:
   bool init_{false};
   StereoCameraModel model_;

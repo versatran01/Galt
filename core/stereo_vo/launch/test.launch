@@ -3,8 +3,9 @@
     <arg name="manager" default="stereo_vo"/>
     <arg name="stereo_ns" default="/mv_stereo"/>
     <arg name="disparity" default="false"/>
+
+    <arg name="bagfile_home" value="$(env GALT_BAGFILES)"/>
     <arg name="bagfile" default="day2/fly/2014-07-25-18-14-12.bag"/>
-    <!--<arg name="bagfile" default="day1/noon/2014-07-24-14-07-18.bag"/>-->
 
     <arg name="num_features" default="100"/>
     <arg name="min_features" default="50"/>
@@ -12,7 +13,7 @@
     <arg name="win_size" default="11"/>
 
     <node pkg="rosbag" type="play" name="player"
-        args="-l /home/chao/Workspace/bagfiles/$(arg bagfile)">
+        args="-l $(arg bagfile_home)/$(arg bagfile)">
     </node>
 
     <node pkg="stereo_image_proc" type="stereo_image_proc"

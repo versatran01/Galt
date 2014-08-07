@@ -220,6 +220,7 @@ void KeyFrame::Triangulate(const StereoCameraModel& model) {
       //  erase feature
       itr = features_.erase(itr);
     } else {
+      itr->triangulated = true;      
       itr++;
     }
   }

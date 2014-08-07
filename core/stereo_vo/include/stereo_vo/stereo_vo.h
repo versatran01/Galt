@@ -21,20 +21,26 @@ using ::stereo_vo::StereoVoDynConfig;
 class StereoVo;
 class KeyFrame;
 
+struct Feature {
+  cv::Point2f left, right;            /// Feature in pixel space
+  cv::Point2f leftCoord, rightCoord;  /// Feature in normalized image space
+  cv::Point3f point;                  /// Feature in world space
+};
+
 class KeyFrame {
   friend class StereoVo;
 
  public:
+  typedef double scalar_t;
+  
   void Update(const cv::Mat &l_image, const cv::Mat &r_image,
-              const StereoVoDynConfig &config);
-  const int NumMatches() const { return l_features_.size(); }
+              const StereoVoDynConfig &config, const StereoCameraModel& model);
+  const int NumMatches() const { return features_.size(); }
 
  private:
-  void Triangulate();
+  void Triangulate(const StereoCameraModel &model);
   cv::Mat l_image_, r_image_;
-  std::vector<cv::Point2f> l_features_, r_features_;
-  std::vector<cv::Point2f> l_coords_, r_coords_;
-  std::vector<cv::Point3f> points_;
+  std::vector<Feature> features_;
 };
 
 class StereoVo {

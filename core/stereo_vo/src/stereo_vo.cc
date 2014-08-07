@@ -167,6 +167,7 @@ void KeyFrame::Update(const cv::Mat &l_image, const cv::Mat &r_image,
   // Find features
   cv::goodFeaturesToTrack(l_image, l_features, num_features, 0.01, 10);
   if (l_features.empty()) {
+    ROS_WARN("No new features found");
     return;  //  no new features
   }
 
@@ -221,7 +222,7 @@ void KeyFrame::Triangulate(const StereoCameraModel &model) {
     kr::triangulate(poseLeft, lPt, poseRight, rPt, p3D, ratio);
 
     bool failed = false;
-    if (ratio > 1e4) {
+    if (ratio > 1e5) {
       //  bad, reject this feature
       failed = true;
     } else {

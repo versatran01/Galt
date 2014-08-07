@@ -24,9 +24,9 @@ class KeyFrame;
 typedef float scalar_t;
 
 struct Feature {
-  cv::Point_<scalar_t> left, right;            /// Feature in pixel space
-  cv::Point_<scalar_t> leftCoord, rightCoord;  /// Feature in normalized image space
-  cv::Point3_<scalar_t> point;                 /// Feature in world space
+  cv::Point_<scalar_t> left, right;              /// Feature in pixel space
+  cv::Point_<scalar_t> left_coord, right_coord;  /// Feature in normalized image space
+  cv::Point3_<scalar_t> point;                   /// Feature in world space
 };
 
 class KeyFrame {

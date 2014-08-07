@@ -167,10 +167,10 @@ void KeyFrame::Update(const cv::Mat &l_image, const cv::Mat &r_image,
     feat.left = l_features[i];
     feat.right = r_features[i];
     
-    feat.leftCoord.x = (feat.left.x - lcx) / lfx; //  undo K matrix
-    feat.leftCoord.y = (feat.left.y - lcy) / lfy;
-    feat.rightCoord.x = (feat.right.x - rcx) / rfx;
-    feat.rightCoord.y = (feat.right.y - rcy) / rfy;
+    feat.left_coord.x = (feat.left.x - lcx) / lfx; //  undo K matrix
+    feat.left_coord.y = (feat.left.y - lcy) / lfy;
+    feat.right_coord.x = (feat.right.x - rcx) / rfx;
+    feat.right_coord.y = (feat.right.y - rcy) / rfy;
     
     features_.push_back(feat);
   }

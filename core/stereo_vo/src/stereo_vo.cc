@@ -77,10 +77,10 @@ void StereoVo::Iterate(const cv::Mat &l_image, const cv::Mat &r_image) {
 
     cv::Mat rvec = cv::Mat(3, 1, CV_64FC1);
     cv::Mat tvec = cv::Mat(3, 1, CV_64FC1);
-    const size_t minInliers = std::ceil(worldPoints.size() * 0.7);
+    const size_t minInliers = std::ceil(worldPoints.size() * 0.6);
     cv::solvePnPRansac(worldPoints, imagePoints,
                        model_.left().fullIntrinsicMatrix(),
-                       std::vector<double>(), rvec, tvec, false, 100, 8.0,
+                       std::vector<double>(), rvec, tvec, false, 100, 4.0,
                        minInliers, inliers, cv::ITERATIVE);
 
     //  convert rotation to quaternion
@@ -88,9 +88,6 @@ void StereoVo::Iterate(const cv::Mat &l_image, const cv::Mat &r_image) {
                          rvec.at<double>(2, 0));
     kr::vec3<scalar_t> t(tvec.at<double>(0, 0), tvec.at<double>(1, 0),
                          tvec.at<double>(2, 0));
-
-    // std::cout << "r: " << r << std::endl;
-    // std::cout << "t: " << t << std::endl;
 
     auto pose = kr::Pose<scalar_t>::fromOpenCV(r, t);
 
@@ -100,7 +97,7 @@ void StereoVo::Iterate(const cv::Mat &l_image, const cv::Mat &r_image) {
 
   // Display images
   Display(l_image, r_image, new_features);
-  // Save the new images
+  
   if (new_features.size() < static_cast<size_t>(config_.min_features)) {
     key_frame_.Update(l_image, r_image, config_, model_, current_pose_);
   }

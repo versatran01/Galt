@@ -29,7 +29,7 @@ void StereoVo::Initialize(const cv::Mat &l_image, const cv::Mat &r_image,
 
 void StereoVo::Iterate(const cv::Mat &l_image, const cv::Mat &r_image) {
   // Track features across frames
-  std::vector<cv::Point2f> new_features, l_features;
+  std::vector<cv::Point2f> new_features;
   std::vector<uchar> status;
 
   cv::TermCriteria term_criteria(
@@ -37,9 +37,9 @@ void StereoVo::Iterate(const cv::Mat &l_image, const cv::Mat &r_image) {
   cv::calcOpticalFlowPyrLK(key_frame_.l_image_, l_image, key_frame_.l_features_,
                            new_features, status, cv::noArray(),
                            cv::Size(11, 11), 3, term_criteria);
-  l_features = ExtractByStatus(new_features, status);
-  key_frame_.l_features_ = ExtractByStatus(key_frame_.l_features_, status);
-  key_frame_.r_features_ = ExtractByStatus(key_frame_.r_features_, status);
+  ExtractByStatus(new_features, status);
+  ExtractByStatus(key_frame_.l_features_, status);
+  ExtractByStatus(key_frame_.r_features_, status);
   // Display images
   Display(l_image, r_image, new_features);
   // Save the new images
@@ -136,16 +136,18 @@ void KeyFrame::Update(const cv::Mat &l_image, const cv::Mat &r_image,
                            cv::noArray(), cv::Size(win_size, win_size),
                            max_level, term_criteria);
   // Create new left features from klt results
-  l_features = ExtractByStatus(l_features, status);
-  r_features = ExtractByStatus(r_features, status);
+  ExtractByStatus(l_features, status);
+  ExtractByStatus(r_features, status);
   // Fundamental matrix
   status.clear();
   cv::findFundamentalMat(l_features, r_features, cv::FM_RANSAC, 1, 0.99,
                          status);
-  l_features_ = ExtractByStatus(l_features, status);
-  r_features_ = ExtractByStatus(r_features, status);
+  ExtractByStatus(l_features, status);
+  ExtractByStatus(r_features, status);
 
   Triangulate();
+  l_features_ = l_features;
+  r_features_ = r_features;
   l_image_ = l_image;
   r_image_ = r_image;
 }
@@ -153,18 +155,6 @@ void KeyFrame::Update(const cv::Mat &l_image, const cv::Mat &r_image,
 void KeyFrame::Triangulate() {
   //  points_.push_back(kr::triangulate(left_pose, right_pose, l_coord,
   // r_coord));
-}
-
-std::vector<cv::Point2f> ExtractByStatus(
-    const std::vector<cv::Point2f> &features,
-    const std::vector<uchar> &status) {
-  std::vector<cv::Point2f> new_features;
-  for (unsigned i = 0; i != status.size(); ++i) {
-    if (status[i]) {
-      new_features.push_back(features[i]);
-    }
-  }
-  return new_features;
 }
 
 }  // namespace stereo_vo

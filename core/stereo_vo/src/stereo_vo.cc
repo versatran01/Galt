@@ -36,14 +36,26 @@ void StereoVo::Iterate(const cv::Mat &l_image, const cv::Mat &r_image) {
   std::vector<cv::Point2f> new_features, l_features;
   std::vector<uchar> status;
 
+  for (const Feature& feat : key_frame_.features_) {
+    l_features.push_back(feat.left);
+  }
+  
   cv::TermCriteria term_criteria(
       cv::TermCriteria::COUNT + cv::TermCriteria::EPS, 25, 0.001);
-  cv::calcOpticalFlowPyrLK(key_frame_.l_image_, l_image, key_frame_.l_features_,
+  cv::calcOpticalFlowPyrLK(key_frame_.l_image_, l_image, l_features,
                            new_features, status, cv::noArray(),
                            cv::Size(11, 11), 3, term_criteria);
-  l_features = ExtractByStatus(new_features, status);
-  key_frame_.l_features_ = ExtractByStatus(key_frame_.l_features_, status);
-  key_frame_.r_features_ = ExtractByStatus(key_frame_.r_features_, status);
+  
+  //  erase based on status
+  auto ite_f = key_frame_.features_.begin();
+  for (auto ite_s = status.begin(); ite_s != status.end(); ite_s++) {
+    if (*ite_s) {
+      ite_f++;
+    } else {
+      ite_f = key_frame_.features_.erase(ite_f);
+    }
+  }
+  
   // Display images
   Display(l_image, r_image, new_features);
   // Save the new images
@@ -73,24 +85,24 @@ void StereoVo::Display(const cv::Mat &l_image, const cv::Mat &r_image,
   auto yellow_color = cv::Scalar(0, 255, 255);
   auto blue_color = cv::Scalar(255, 0, 0);
   // Draw matching features on key frame
-  for (unsigned i = 0; i != key_frame_.l_features_.size(); ++i) {
+  /*for (unsigned i = 0; i != key_frame_.l_features_.size(); ++i) {
     auto l_p = key_frame_.l_features_[i];
     auto r_p = key_frame_.r_features_[i];
     r_p = r_p + cv::Point2f(n_cols, 0);
     cv::circle(two_frame_color, l_p, 3, green_color, 2);
     cv::circle(two_frame_color, r_p, 3, green_color, 2);
     cv::line(two_frame_color, l_p, r_p, blue_color, 1);
-  }
+  }*/
   // Draw new features on new frame
   for (unsigned i = 0; i != new_features.size(); ++i) {
     // Draw new features with green color
     auto new_p = new_features[i];
     new_p = new_p + cv::Point2f(0, n_rows);
     // Draw matched new features with red color
-    auto l_p = key_frame_.l_features_[i];
+    /*auto l_p = key_frame_.l_features_[i];
     cv::circle(two_frame_color, new_p, 3, red_color, 2);
     // Connect matched features with yellow lines
-    cv::line(two_frame_color, l_p, new_p, yellow_color, 1);
+    cv::line(two_frame_color, l_p, new_p, yellow_color, 1);*/
   }
   // Add text annotation
   double offset_x = 10.0, offset_y = 30.0;
@@ -105,7 +117,7 @@ void StereoVo::Display(const cv::Mat &l_image, const cv::Mat &r_image,
               thickness);
   // How many matching features?
   std::ostringstream ss;
-  ss << key_frame_.l_features_.size();
+  //ss << key_frame_.l_features_.size();
   cv::putText(two_frame_color, ss.str(),
               cv::Point2f(offset_x, n_rows - offset_y / 2), font, scale,
               text_color, thickness);
@@ -139,6 +151,9 @@ void KeyFrame::Update(const cv::Mat &l_image, const cv::Mat &r_image,
   cv::calcOpticalFlowPyrLK(l_image, r_image, l_features, r_features, status,
                            cv::noArray(), cv::Size(win_size, win_size),
                            max_level, term_criteria);
+  
+  //  initialize new features here
+  
   // Create new left features from klt results
   l_features = ExtractByStatus(l_features, status);
   r_features = ExtractByStatus(r_features, status);
@@ -155,9 +170,7 @@ void KeyFrame::Update(const cv::Mat &l_image, const cv::Mat &r_image,
 }
 
 void KeyFrame::Triangulate(const StereoCameraModel& model) {
-  
-  const size_t nPts = l_features_.size();
-  
+    
   //  get camera intrinsics, assuming image already undistorted
   const scalar_t lfx = model.left().fx(), lfy = model.left().fy();
   const scalar_t lcx = model.left().cx(), lcy = model.left().cy();
@@ -170,18 +183,12 @@ void KeyFrame::Triangulate(const StereoCameraModel& model) {
   kr::Pose<scalar_t> poseRight;
   poseRight.p[0] = model.baseline();
   
-  points_.clear();
-  points_.reserve(nPts);
-  
-  std::vector<size_t> rejects;
-  rejects.reserve(nPts);
-  
-  for (size_t i=0; i < nPts; i++) {
+  for (auto itr = features_.begin(); itr != features_.end();) {
     
-    lPt[0] = l_coords_[i].x;
-    lPt[1] = l_coords_[i].y;
-    rPt[0] = r_coords_[i].x;
-    rPt[1] = r_coords_[i].y;
+    lPt[0] = itr->left.x;
+    lPt[1] = itr->left.y;
+    rPt[0] = itr->right.x;
+    rPt[1] = itr->right.y;
     
     kr::vec3<scalar_t> p3D;
     scalar_t ratio;
@@ -198,8 +205,7 @@ void KeyFrame::Triangulate(const StereoCameraModel& model) {
       std::vector<kr::vec2<scalar_t>> obvs({lPt,rPt});
       
       if (kr::refinePoint(poses,obvs,p3D)) {
-        //  done
-        points_.push_back(cv::Point3f(p3D[0],p3D[1],p3D[2]));
+        itr->point = cv::Point3f(p3D[0],p3D[1],p3D[2]);
       } else {
         //  failed to converge
         failed = true;
@@ -208,6 +214,9 @@ void KeyFrame::Triangulate(const StereoCameraModel& model) {
     
     if (failed) {
       //  erase feature
+      itr = features_.erase(itr);
+    } else {
+      itr++;
     }
   }
 }

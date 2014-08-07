@@ -72,10 +72,10 @@ void StereoVo::Display(const cv::Mat &l_image, const cv::Mat &r_image,
   cv::Mat two_frame_color;
   cv::cvtColor(two_frame, two_frame_color, CV_GRAY2BGR);
 
-  auto green_color = cv::Scalar(0, 255, 0);
-  auto red_color = cv::Scalar(0, 0, 255);
-  auto yellow_color = cv::Scalar(0, 255, 255);
-  auto blue_color = cv::Scalar(255, 0, 0);
+//  auto green_color = cv::Scalar(0, 255, 0);
+//  auto red_color = cv::Scalar(0, 0, 255);
+//  auto yellow_color = cv::Scalar(0, 255, 255);
+//  auto blue_color = cv::Scalar(255, 0, 0);
   // Draw matching features on key frame
   /*for (unsigned i = 0; i != key_frame_.l_features_.size(); ++i) {
     auto l_p = key_frame_.l_features_[i];
@@ -86,38 +86,38 @@ void StereoVo::Display(const cv::Mat &l_image, const cv::Mat &r_image,
     cv::line(two_frame_color, l_p, r_p, blue_color, 1);
   }*/
   // Draw new features on new frame
-  for (unsigned i = 0; i != new_features.size(); ++i) {
+//  for (unsigned i = 0; i != new_features.size(); ++i) {
     // Draw new features with green color
-    auto new_p = new_features[i];
-    new_p = new_p + cv::Point2f(0, n_rows);
+//    auto new_p = new_features[i];
+//    new_p = new_p + cv::Point2f(0, n_rows);
     // Draw matched new features with red color
     /*auto l_p = key_frame_.l_features_[i];
     cv::circle(two_frame_color, new_p, 3, red_color, 2);
     // Connect matched features with yellow lines
     cv::line(two_frame_color, l_p, new_p, yellow_color, 1);*/
-  }
+//  }
   // Add text annotation
-  double offset_x = 10.0, offset_y = 30.0;
-  auto font = cv::FONT_HERSHEY_SIMPLEX;
-  double scale = 1.0, thickness = 2.0;
-  auto text_color = cv::Scalar(255, 0, 0);
+//  double offset_x = 10.0, offset_y = 30.0;
+//  auto font = cv::FONT_HERSHEY_SIMPLEX;
+//  double scale = 1.0, thickness = 2.0;
+//  auto text_color = cv::Scalar(255, 0, 0);
   // Which frame?
-  cv::putText(two_frame_color, "key frame", cv::Point2f(offset_x, offset_y),
-              font, scale, text_color, thickness);
-  cv::putText(two_frame_color, "current frame",
-              cv::Point2f(offset_x, n_rows + offset_y), font, scale, text_color,
-              thickness);
+//  cv::putText(two_frame_color, "key frame", cv::Point2f(offset_x, offset_y),
+//              font, scale, text_color, thickness);
+//  cv::putText(two_frame_color, "current frame",
+//              cv::Point2f(offset_x, n_rows + offset_y), font, scale, text_color,
+//              thickness);
   // How many matching features?
-  std::ostringstream ss;
+//  std::ostringstream ss;
   //ss << key_frame_.l_features_.size();
-  cv::putText(two_frame_color, ss.str(),
-              cv::Point2f(offset_x, n_rows - offset_y / 2), font, scale,
-              text_color, thickness);
-  ss.str(std::string());
-  ss << new_features.size();
-  cv::putText(two_frame_color, ss.str(),
-              cv::Point2f(n_cols + offset_x, 2 * n_rows - offset_y / 2), font,
-              scale, text_color, thickness);
+//  cv::putText(two_frame_color, ss.str(),
+//              cv::Point2f(offset_x, n_rows - offset_y / 2), font, scale,
+//              text_color, thickness);
+//  ss.str(std::string());
+//  ss << new_features.size();
+//  cv::putText(two_frame_color, ss.str(),
+//              cv::Point2f(n_cols + offset_x, 2 * n_rows - offset_y / 2), font,
+//              scale, text_color, thickness);
 
   // Display image
   cv::imshow("two_frame", two_frame_color);

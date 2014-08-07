@@ -22,14 +22,16 @@ class StereoVo;
 class KeyFrame;
 
 typedef float scalar_t;
+typedef cv::Point_<scalar_t> CvPoint2;
+typedef cv::Point3_<scalar_t> CvPoint3;
 
 struct Feature {
   Feature() : triangulated(false) {}
   
-  cv::Point_<scalar_t> left, right;              /// Feature in pixel space
-  cv::Point_<scalar_t> left_coord, right_coord;  /// Feature in normalized image space
-  cv::Point3_<scalar_t> point;                   /// Feature in world space
-  bool triangulated;                             /// Feature has been triangulated
+  CvPoint2 left, right;              /// Feature in pixel space
+  CvPoint2 left_coord, right_coord;  /// Feature in normalized image space
+  CvPoint3 point;                    /// Feature in world space
+  bool triangulated;                 /// Feature has been triangulated
 };
 
 class KeyFrame {
@@ -66,11 +68,8 @@ class StereoVo {
   StereoVoDynConfig config_;
 
   void Display(const cv::Mat &l_image, const cv::Mat &r_image,
-               const std::vector<cv::Point2f> &new_features);
+               const std::vector<CvPoint2> &new_features);
 };
-
-std::vector<cv::Point2f> ExtractByStatus(
-    const std::vector<cv::Point2f> &features, const std::vector<uchar> &status);
 
 template <typename T>
 void PruneByStatus(const std::vector<uchar>& status, 

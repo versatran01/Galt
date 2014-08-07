@@ -16,7 +16,7 @@ find_package(OpenCV)
 find_package(Eigen)
 
 generate_dynamic_reconfigure_options(
-  cfg/StereoVoDyn.cfg
+    cfg/StereoVoDyn.cfg
 )
 
 catkin_package(

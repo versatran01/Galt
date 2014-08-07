@@ -27,14 +27,17 @@ StereoVo::StereoVo() {}
 
 void StereoVo::Initialize(const cv::Mat &l_image, const cv::Mat &r_image,
                           const StereoCameraModel &model) {
+  
+  //  just random starting guess: look down at 10m
+  current_pose_ = kr::Pose<scalar_t>(kr::quat<scalar_t>(0,1,0,0), kr::vec3<scalar_t>(0,0,10));  
+  
   model_ = model;
-  key_frame_.Update(l_image, r_image, config_, model);
+  key_frame_.Update(l_image, r_image, config_, model, current_pose_);
   key_frame_.prev_image_ = l_image;
 
   std::cout << "StereoVo initialized, baseline: " << model_.baseline()
             << std::endl;
 
-  current_pose_ = kr::Pose<scalar_t>(kr::quat<scalar_t>(0,1,0,0), kr::vec3<scalar_t>(0,0,10));
   
   // Create a window for display
   cv::namedWindow("two_frame",
@@ -96,15 +99,14 @@ void StereoVo::Iterate(const cv::Mat &l_image, const cv::Mat &r_image) {
     auto pose = kr::Pose<scalar_t>::fromOpenCV(r, t);
 
     //  left-multiply by the keyframe pose to get world pose
-    //current_pose_ = key_frame_.pose_.compose(pose);
-    current_pose_ = pose;
+    current_pose_ = key_frame_.pose_.compose(pose);
   }
 
   // Display images
   Display(l_image, r_image, new_features);
   // Save the new images
   if (new_features.size() < static_cast<size_t>(config_.min_features)) {
-    key_frame_.Update(l_image, r_image, config_, model_);
+    key_frame_.Update(l_image, r_image, config_, model_, current_pose_);
   }
   key_frame_.prev_image_ = l_image;
 }
@@ -166,7 +168,8 @@ void StereoVo::Display(const cv::Mat &l_image, const cv::Mat &r_image,
 
 void KeyFrame::Update(const cv::Mat &l_image, const cv::Mat &r_image,
                       const StereoVoConfig &config,
-                      const StereoCameraModel &model) {
+                      const StereoCameraModel &model,
+                      const kr::Pose<scalar_t>& pose) {
   // Collect relevant options
   int num_features = config.num_features;
 
@@ -209,6 +212,7 @@ void KeyFrame::Update(const cv::Mat &l_image, const cv::Mat &r_image,
   Triangulate(model);
   l_image_ = l_image;
   r_image_ = r_image;
+  pose_ = pose;
 }
 
 void KeyFrame::Triangulate(const StereoCameraModel &model) {

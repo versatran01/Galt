@@ -42,7 +42,9 @@ class KeyFrame {
 
  public:
   void Update(const cv::Mat &l_image, const cv::Mat &r_image,
-              const StereoVoConfig &config, const StereoCameraModel &model);
+              const StereoVoConfig &config, 
+              const StereoCameraModel &model,
+              const kr::Pose<scalar_t>& pose);
   const int NumMatches() const { return features_.size(); }
 
  private:

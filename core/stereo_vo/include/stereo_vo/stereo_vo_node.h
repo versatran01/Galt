@@ -29,7 +29,7 @@ namespace stereo_vo {
 
 using namespace sensor_msgs;
 using namespace message_filters::sync_policies;
-using ::stereo_vo::StereoVoDynConfig;
+using StereoVoDynConfig = ::stereo_vo::StereoVoDynConfig;
 
 class StereoVoNode {
  public:
@@ -50,7 +50,7 @@ class StereoVoNode {
 
   ros::Publisher points_pub_;
   ros::Publisher pose_pub_;
-  
+
   dynamic_reconfigure::Server<StereoVoDynConfig> cfg_server_;
   StereoVo stereo_vo_;
 
@@ -61,10 +61,15 @@ class StereoVoNode {
                       const CameraInfoConstPtr& l_cinfo_msg,
                       const ImageConstPtr& r_image_msg,
                       const CameraInfoConstPtr& r_cinfo_msg);
-  void ReconfigureCallback(const StereoVoDynConfig &config, int level);
+  void ReconfigureCallback(const StereoVoDynConfig& config, int level);
+  void PublishPoseStamped(const kr::Pose<scalar_t>& pose, const ros::Time& time,
+                          const std::string& frame_id) const;
+  void PublishPointCloud(const kr::Pose<scalar_t>& pose,
+                         const std::vector<Feature>& features,
+                         const ros::Time& time, const std::string& frame_id);
 };  // class StereoVoNode
 
-const StereoVoDynConfig ReadConfig(const ros::NodeHandle &nh);
+const StereoVoDynConfig ReadConfig(const ros::NodeHandle& nh);
 
 }  // namespace stereo_vo
 

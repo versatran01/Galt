@@ -27,10 +27,11 @@ StereoVo::StereoVo() {}
 
 void StereoVo::Initialize(const cv::Mat &l_image, const cv::Mat &r_image,
                           const StereoCameraModel &model) {
-  
+
   //  just random starting guess: look down at 10m
-  current_pose_ = kr::Pose<scalar_t>(kr::quat<scalar_t>(0,1,0,0), kr::vec3<scalar_t>(0,0,10));  
-  
+  current_pose_ = kr::Pose<scalar_t>(kr::quat<scalar_t>(0, 1, 0, 0),
+                                     kr::vec3<scalar_t>(0, 0, 10));
+
   model_ = model;
   key_frame_.Update(l_image, r_image, config_, model, current_pose_);
   key_frame_.prev_image_ = l_image;
@@ -38,7 +39,6 @@ void StereoVo::Initialize(const cv::Mat &l_image, const cv::Mat &r_image,
   std::cout << "StereoVo initialized, baseline: " << model_.baseline()
             << std::endl;
 
-  
   // Create a window for display
   cv::namedWindow("two_frame",
                   CV_WINDOW_NORMAL | CV_WINDOW_KEEPRATIO | CV_GUI_EXPANDED);
@@ -93,9 +93,9 @@ void StereoVo::Iterate(const cv::Mat &l_image, const cv::Mat &r_image) {
     kr::vec3<scalar_t> t(tvec.at<double>(0, 0), tvec.at<double>(1, 0),
                          tvec.at<double>(2, 0));
 
-    //std::cout << "r: " << r << std::endl;
-    //std::cout << "t: " << t << std::endl;
-    
+    // std::cout << "r: " << r << std::endl;
+    // std::cout << "t: " << t << std::endl;
+
     auto pose = kr::Pose<scalar_t>::fromOpenCV(r, t);
 
     //  left-multiply by the keyframe pose to get world pose
@@ -169,7 +169,7 @@ void StereoVo::Display(const cv::Mat &l_image, const cv::Mat &r_image,
 void KeyFrame::Update(const cv::Mat &l_image, const cv::Mat &r_image,
                       const StereoVoConfig &config,
                       const StereoCameraModel &model,
-                      const kr::Pose<scalar_t>& pose) {
+                      const kr::Pose<scalar_t> &pose) {
   // Collect relevant options
   int num_features = config.num_features;
 
@@ -278,7 +278,8 @@ void TrackFeatures(const cv::Mat &image1, const cv::Mat &image2,
                            cv::noArray(), cv::Size(win_size, win_size),
                            max_level, term_criteria);
   // Find fundamental matrix
-  cv::findFundamentalMat(features1, features2, cv::FM_RANSAC, 1.5, 0.99, status2);
+  cv::findFundamentalMat(features1, features2, cv::FM_RANSAC, 1.5, 0.99,
+                         status2);
   // Combine two status
   for (size_t i = 0; i < status1.size(); ++i) {
     if (status1[i] && status2[i]) {

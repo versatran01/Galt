@@ -22,9 +22,9 @@ using StereoVoConfig = ::stereo_vo::StereoVoDynConfig;
 class StereoVo;
 class KeyFrame;
 
-typedef float scalar_t;
-typedef cv::Point_<scalar_t> CvPoint2;
-typedef cv::Point3_<scalar_t> CvPoint3;
+using scalar_t = float;
+using CvPoint2 = cv::Point_<scalar_t>;
+using CvPoint3 = cv::Point3_<scalar_t>;
 
 struct Feature {
   Feature() : triangulated(false) {}
@@ -42,10 +42,10 @@ class KeyFrame {
 
  public:
   void Update(const cv::Mat &l_image, const cv::Mat &r_image,
-              const StereoVoConfig &config, 
-              const StereoCameraModel &model,
-              const kr::Pose<scalar_t>& pose);
+              const StereoVoConfig &config, const StereoCameraModel &model,
+              const kr::Pose<scalar_t> &pose);
   const int NumMatches() const { return features_.size(); }
+  const kr::Pose<scalar_t> &pose() const { return pose_; }
 
  private:
   void Triangulate(const StereoCameraModel &model);
@@ -64,15 +64,16 @@ class StereoVo {
                   const StereoCameraModel &model);
   void Iterate(const cv::Mat &l_image, const cv::Mat &r_image);
   void UpdateConfig(const StereoVoConfig &config) { config_ = config; }
+  const kr::Pose<scalar_t> &GetKeyFramePose() const {
+    return key_frame_.pose();
+  }
 
   const std::vector<Feature> &GetCurrentFeatures() const {
     return key_frame_.features_;
   }
-  
-  const kr::Pose<scalar_t>& GetCurrentPose() const {
-    return current_pose_;
-  }
-  
+
+  const kr::Pose<scalar_t> &GetCurrentPose() const { return current_pose_; }
+
  private:
   bool init_{false};
   StereoCameraModel model_;
@@ -98,8 +99,7 @@ void PruneByStatus(const std::vector<uchar> &status, std::vector<T> &objects) {
 
 void TrackFeatures(const cv::Mat &image1, const cv::Mat &image2,
                    std::vector<CvPoint2> &features1,
-                   std::vector<CvPoint2> &features2,
-                   std::vector<uchar> &status,
+                   std::vector<CvPoint2> &features2, std::vector<uchar> &status,
                    const StereoVoConfig &config);
 
 }  // namespace stereo_vo

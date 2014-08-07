@@ -38,9 +38,10 @@ StereoVoNode::StereoVoNode(const ros::NodeHandle& nh) : nh_{nh}, it_{nh} {
         boost::bind(&StereoVoNode::StereoCallback, this, _1, _2, _3, _4));
   }
 
-  points_pub_ = nh_.advertise<sensor_msgs::PointCloud>("triangulated_points",1);
-  pose_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("pose",1);
-  
+  points_pub_ =
+      nh_.advertise<sensor_msgs::PointCloud>("triangulated_points", 1);
+  pose_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("pose", 1);
+
   // Read and update StereoVoConfig
   stereo_vo_.UpdateConfig(ReadConfig(nh_));
   cfg_server_.setCallback(
@@ -76,8 +77,8 @@ void StereoVoNode::StereoCallback(const ImageConstPtr& l_image_msg,
   }
   CameraInfo linfo = *l_cinfo_msg;
   CameraInfo rinfo = *r_cinfo_msg;
-  linfo.header.frame_id = "0";
-  rinfo.header.frame_id = "0";
+  linfo.header.frame_id = "/camera";
+  rinfo.header.frame_id = "/camera";
   model.fromCameraInfo(linfo, rinfo);
 
   // Get stereo images
@@ -88,66 +89,72 @@ void StereoVoNode::StereoCallback(const ImageConstPtr& l_image_msg,
 
   // Initialize stereo visual odometry if not
   if (!stereo_vo_.init()) {
-    // 1)   Do only once:
-    // 1.1) Caputre one frame of stereo images
-    // 1.2) Extract and match features between them
-    // 1.3) Triangulate features from two stereo images
     stereo_vo_.Initialize(l_image_rect, r_image_rect, model);
     return;
   }
 
   stereo_vo_.Iterate(l_image_rect, r_image_rect);
-  
-  //  current pose: world to camera
-  auto pose = stereo_vo_.GetCurrentPose();
-  
-  //  publish point cloud for visualization
-  const std::vector<Feature>& features = stereo_vo_.GetCurrentFeatures();
-  
+
+  // Publish PointCloud from keyframe pose and features
+  PublishPointCloud(stereo_vo_.GetKeyFramePose(),
+                    stereo_vo_.GetCurrentFeatures(), l_image_msg->header.stamp,
+                    "0");
+  // Publish PoseStamped from kr::Pose
+  PublishPoseStamped(stereo_vo_.GetCurrentPose(), l_image_msg->header.stamp,
+                     "0");
+}
+
+void StereoVoNode::PublishPointCloud(const kr::Pose<scalar_t>& pose,
+                                     const std::vector<Feature>& features,
+                                     const ros::Time& time,
+                                     const std::string& frame_id) {
   sensor_msgs::PointCloud cloud;
   sensor_msgs::ChannelFloat32 channel;
   channel.name = "rgb";
-  
+
   union {
     uint8_t rgb[4];
     float val;
   } color;
-  
   for (const Feature& feat : features) {
     if (feat.triangulated) {
       geometry_msgs::Point32 p32;
-      kr::vec3<scalar_t> p(feat.point.x,feat.point.y,feat.point.z);
-      
+      kr::vec3<scalar_t> p(feat.point.x, feat.point.y, feat.point.z);
+
       //  convert to world coordinates
-      //p = pose.q.conjugate().matrix() * p + pose.p;
-      
+      p = pose.q.conjugate().matrix() * p + pose.p;
+
       p32.x = p[0];
       p32.y = p[1];
       p32.z = p[2];
-      
-      cloud.points.push_back( p32 );
-      
+
+      cloud.points.push_back(p32);
+
       color.rgb[0] = 255;
       color.rgb[1] = 255;
       color.rgb[2] = 0;
       color.rgb[3] = 0;
-      
+
       channel.values.push_back(color.val);
     }
   }
-  
+
   cloud.channels.push_back(channel);
-  cloud.header.stamp = l_image_msg->header.stamp;
-  cloud.header.frame_id = "0";
+  cloud.header.stamp = time;
+  cloud.header.frame_id = frame_id;
   points_pub_.publish(cloud);
-  
-  //  publish current pose
-  geometry_msgs::PoseStamped geoPose;
-  geoPose.header.stamp = cloud.header.stamp;
-  geoPose.header.frame_id = "0";
-  tf::quaternionEigenToMsg(pose.q.cast<double>(),geoPose.pose.orientation);
-  tf::pointEigenToMsg(pose.p.cast<double>(),geoPose.pose.position);
-  pose_pub_.publish(geoPose);
+}
+
+void StereoVoNode::PublishPoseStamped(const kr::Pose<scalar_t>& pose,
+                                      const ros::Time& time,
+                                      const std::string& frame_id) const {
+  geometry_msgs::PoseStamped pose_stamped;
+  pose_stamped.header.stamp = time;
+  pose_stamped.header.frame_id = frame_id;
+  tf::quaternionEigenToMsg(pose.q.cast<double>(),
+                           pose_stamped.pose.orientation);
+  tf::pointEigenToMsg(pose.p.cast<double>(), pose_stamped.pose.position);
+  pose_pub_.publish(pose_stamped);
 }
 
 const StereoVoDynConfig ReadConfig(const ros::NodeHandle& nh) {

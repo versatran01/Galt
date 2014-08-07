@@ -20,6 +20,7 @@ struct CvColor {
   cv::Scalar blue = cv::Scalar(255, 0, 0);
   cv::Scalar green = cv::Scalar(0, 255, 0);
   cv::Scalar red = cv::Scalar(0, 0, 255);
+  cv::Scalar yellow = cv::Scalar(0, 255, 255);
 } cv_color;
 
 StereoVo::StereoVo() {}

@@ -162,6 +162,7 @@ void KeyFrame::Update(const cv::Mat &l_image, const cv::Mat &r_image,
   // Find features
   cv::goodFeaturesToTrack(l_image, l_features, num_features, 0.01, 10);
   if (l_features.empty()) {
+    ROS_WARN("No new features found");
     return;  //  no new features
   }
 

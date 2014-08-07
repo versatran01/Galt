@@ -18,6 +18,7 @@ struct CvColor {
   cv::Scalar blue = cv::Scalar(255, 0, 0);
   cv::Scalar green = cv::Scalar(0, 255, 0);
   cv::Scalar red = cv::Scalar(0, 0, 255);
+  cv::Scalar yellow = cv::Scalar(0, 255, 255);
 } cv_color;
 
 StereoVo::StereoVo() {}
@@ -42,28 +43,22 @@ void StereoVo::Iterate(const cv::Mat &l_image, const cv::Mat &r_image) {
   std::vector<cv::Point2f> new_features, l_features;
   std::vector<uchar> status;
 
-  for (const Feature& feat : key_frame_.features_) {
+  for (const Feature &feat : key_frame_.features_) {
     l_features.push_back(feat.left);
   }
-  
+
   if (!l_features.empty()) {
-    cv::TermCriteria term_criteria(
-        cv::TermCriteria::COUNT + cv::TermCriteria::EPS, 25, 0.001);
-    cv::calcOpticalFlowPyrLK(key_frame_.l_image_, l_image, l_features,
-                             new_features, status, cv::noArray(),
-                             cv::Size(11, 11), 3, term_criteria);
+    TrackFeatures(key_frame_.l_image_, l_image, l_features, new_features,
+                  status, config_);
   }
-  
-  /*for (auto p : new_features) {
-    
-  }*/
-  
+
   PruneByStatus(status, key_frame_.features_);
-  
+  PruneByStatus(status, new_features);
+
   // Display images
   Display(l_image, r_image, new_features);
   // Save the new images
-  if (new_features.size() < 90) {
+  if (new_features.size() < static_cast<size_t>(config_.min_features)) {
     key_frame_.Update(l_image, r_image, config_, model_);
   }
 }
@@ -95,7 +90,7 @@ void StereoVo::Display(const cv::Mat &l_image, const cv::Mat &r_image,
   // Draw tracked features on new frame
   auto it_new = new_features.cbegin(), e_new = new_features.cend();
   auto it_feat = key_frame_.features_.cbegin();
-  for(; it_new != e_new; ++it_new, ++it_feat) {
+  for (; it_new != e_new; ++it_new, ++it_feat) {
     auto n_p = *it_new + CvPoint2(0, n_rows);
     cv::circle(two_frame_color, n_p, 3, cv_color.red, 2);
     cv::line(two_frame_color, it_feat->left, n_p, cv_color.red, 1);
@@ -106,17 +101,17 @@ void StereoVo::Display(const cv::Mat &l_image, const cv::Mat &r_image,
   auto font = cv::FONT_HERSHEY_SIMPLEX;
   double scale = 1.0, thickness = 2.0;
   // Which frame?
-  cv::putText(two_frame_color, "key frame", CvPoint2(offset_x, offset_y),
-              font, scale, cv_color.blue, thickness);
+  cv::putText(two_frame_color, "key frame", CvPoint2(offset_x, offset_y), font,
+              scale, cv_color.yellow, thickness);
   cv::putText(two_frame_color, "current frame",
               CvPoint2(n_cols + offset_x, n_rows + offset_y), font, scale,
-              cv_color.blue, thickness);
+              cv_color.yellow, thickness);
   // How many matching features?
   std::ostringstream ss;
   ss << key_frame_.features_.size();
   cv::putText(two_frame_color, ss.str(),
               CvPoint2(offset_x, n_rows - offset_y / 2), font, scale,
-              cv_color.blue, thickness);
+              cv_color.yellow, thickness);
 
   // Display image
   cv::imshow("two_frame", two_frame_color);
@@ -124,56 +119,42 @@ void StereoVo::Display(const cv::Mat &l_image, const cv::Mat &r_image,
 }
 
 void KeyFrame::Update(const cv::Mat &l_image, const cv::Mat &r_image,
-                      const StereoVoDynConfig &config, const StereoCameraModel &model) {
+                      const StereoVoConfig &config,
+                      const StereoCameraModel &model) {
   // Collect relevant options
-  int max_iter = 25;
-  double epsilon = 0.01;
-  int win_size = config.win_size;
-  int max_level = config.max_level;
   int num_features = config.num_features;
 
-  std::vector<cv::Point2f> l_features, r_features;
+  std::vector<CvPoint2> l_features, r_features;
   std::vector<uchar> status;
+
   // Find features
   cv::goodFeaturesToTrack(l_image, l_features, num_features, 0.01, 10);
   if (l_features.empty()) {
-    return; //  no new features
+    return;  //  no new features
   }
-  // Optical flow
-  cv::TermCriteria term_criteria(
-      cv::TermCriteria::COUNT + cv::TermCriteria::EPS, max_iter, epsilon);
-  cv::calcOpticalFlowPyrLK(l_image, r_image, l_features, r_features, status,
-                           cv::noArray(), cv::Size(win_size, win_size),
-                           max_level, term_criteria);
-  
-  PruneByStatus(status,l_features);
-  PruneByStatus(status,r_features);
-  
-  // Fundamental matrix (reject outliers via RANSAC)
-  status.clear();
-  cv::findFundamentalMat(l_features, r_features, cv::FM_RANSAC, 1, 0.99,
-                         status);
+
+  TrackFeatures(l_image, r_image, l_features, r_features, status, config);
   PruneByStatus(status, l_features);
   PruneByStatus(status, r_features);
-  
+
   //  initialize new features
   const scalar_t lfx = model.left().fx(), lfy = model.left().fy();
   const scalar_t lcx = model.left().cx(), lcy = model.left().cy();
   const scalar_t rfx = model.right().fx(), rfy = model.right().fy();
   const scalar_t rcx = model.right().cx(), rcy = model.right().cy();
-  
+
   features_.clear();
   features_.reserve(l_features.size());
-  for (size_t i=0; i < l_features.size(); i++) {
+  for (size_t i = 0; i < l_features.size(); i++) {
     Feature feat;
     feat.left = l_features[i];
     feat.right = r_features[i];
-    
-    feat.left_coord.x = (feat.left.x - lcx) / lfx; //  undo K matrix
+    // undo K matrix
+    feat.left_coord.x = (feat.left.x - lcx) / lfx;
     feat.left_coord.y = (feat.left.y - lcy) / lfy;
     feat.right_coord.x = (feat.right.x - rcx) / rfx;
     feat.right_coord.y = (feat.right.y - rcy) / rfy;
-    
+
     features_.push_back(feat);
   }
 
@@ -182,64 +163,82 @@ void KeyFrame::Update(const cv::Mat &l_image, const cv::Mat &r_image,
   r_image_ = r_image;
 }
 
-void KeyFrame::Triangulate(const StereoCameraModel& model) {
-      
+void KeyFrame::Triangulate(const StereoCameraModel &model) {
+
   kr::vec2<scalar_t> lPt, rPt;
   kr::Pose<scalar_t> poseLeft;  //  identity
   kr::Pose<scalar_t> poseRight;
   poseRight.p[0] = model.baseline();
-  
+
   for (auto itr = features_.begin(); itr != features_.end();) {
-    
+
     lPt[0] = itr->left.x;
     lPt[1] = itr->left.y;
     rPt[0] = itr->right.x;
     rPt[1] = itr->right.y;
-    
+
     kr::vec3<scalar_t> p3D;
     scalar_t ratio;
-    
-    kr::triangulate(poseLeft,lPt,poseRight,rPt,p3D,ratio);
-    
+
+    kr::triangulate(poseLeft, lPt, poseRight, rPt, p3D, ratio);
+
     bool failed = false;
     if (ratio > 1e4) {
       //  bad, reject this feature
       failed = true;
     } else {
       //  valid, refine the point
-      std::vector<kr::Pose<scalar_t>> poses({poseLeft,poseRight});
-      std::vector<kr::vec2<scalar_t>> obvs({lPt,rPt});
-      
-      if (kr::refinePoint(poses,obvs,p3D)) {
-        itr->point = cv::Point3f(p3D[0],p3D[1],p3D[2]);
+      std::vector<kr::Pose<scalar_t>> poses({poseLeft, poseRight});
+      std::vector<kr::vec2<scalar_t>> obvs({lPt, rPt});
+
+      if (kr::refinePoint(poses, obvs, p3D)) {
+        itr->point = cv::Point3f(p3D[0], p3D[1], p3D[2]);
       } else {
         //  failed to converge
         failed = true;
       }
     }
-    
+
     if (failed) {
       //  erase feature
       itr = features_.erase(itr);
     } else {
-      itr->triangulated = true;      
+      itr->triangulated = true;
       itr++;
     }
   }
 }
 
-std::vector<cv::Point2f> ExtractByStatus(
-    const std::vector<cv::Point2f> &features,
-    const std::vector<uchar> &status) {
-  std::vector<cv::Point2f> new_features;
-  for (unsigned i = 0; i != status.size(); ++i) {
-    if (status[i]) {
-      new_features.push_back(features[i]);
+void TrackFeatures(const cv::Mat &image1, const cv::Mat &image2,
+                   std::vector<CvPoint2> &features1,
+                   std::vector<CvPoint2> &features2,
+                   std::vector<uchar> &status,
+                   const StereoVoConfig &config) {
+  // Read in config
+  int win_size = config.win_size;
+  int max_level = config.max_level;
+
+  std::vector<uchar> status1;
+  std::vector<uchar> status2;
+  // LK tracker
+  static cv::TermCriteria term_criteria(
+      cv::TermCriteria::COUNT + cv::TermCriteria::EPS, 25, 0.01);
+  cv::calcOpticalFlowPyrLK(image1, image2, features1, features2, status1,
+                           cv::noArray(), cv::Size(win_size, win_size),
+                           max_level, term_criteria);
+  // Find fundamental matrix
+  cv::findFundamentalMat(features1, features2, cv::FM_RANSAC, 1, 0.99, status2);
+  // Combine two status
+  for (size_t i = 0; i < status1.size(); ++i) {
+    if (status1[i] && status2[i]) {
+      status.push_back(1);
+    } else {
+      status.push_back(0);
     }
   }
-  return new_features;
+  ROS_ASSERT_MSG(features1.size() == features2.size(),
+                 "Feature sizes do not match");
 }
-
 }  // namespace stereo_vo
 
 }  // namespace galt

@@ -47,9 +47,9 @@ class StereoVoNode {
   using ApproximateSync = message_filters::Synchronizer<ApproximatePolicy>;
   std::unique_ptr<ExactSync> exact_sync_;
   std::unique_ptr<ApproximateSync> approximate_sync_;
-  
+
   ros::Publisher points_pub_;
-  
+
   dynamic_reconfigure::Server<StereoVoDynConfig> cfg_server_;
   StereoVo stereo_vo_;
 
@@ -60,10 +60,10 @@ class StereoVoNode {
                       const CameraInfoConstPtr& l_cinfo_msg,
                       const ImageConstPtr& r_image_msg,
                       const CameraInfoConstPtr& r_cinfo_msg);
-  void ReconfigureCallback(const StereoVoDynConfig &config, int level);
+  void ReconfigureCallback(const StereoVoDynConfig& config, int level);
 };  // class StereoVoNode
 
-const StereoVoDynConfig ReadConfig(const ros::NodeHandle &nh);
+const StereoVoDynConfig ReadConfig(const ros::NodeHandle& nh);
 
 }  // namespace stereo_vo
 

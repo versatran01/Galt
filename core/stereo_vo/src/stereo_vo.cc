@@ -215,7 +215,7 @@ void KeyFrame::Triangulate(const StereoCameraModel& model) {
     kr::triangulate(poseLeft,lPt,poseRight,rPt,p3D,ratio);
     
     bool failed = false;
-    if (ratio > 1e4) {
+    if (ratio > 1e5) {
       //  bad, reject this feature
       failed = true;
     } else {

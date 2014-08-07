@@ -7,10 +7,10 @@
 #include <image_geometry/stereo_camera_model.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <cv_bridge/cv_bridge.h>
-#include <eigen_conversions/eigen_msg.h>
-
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
+#include <eigen_conversions/eigen_msg.h>
+
 
 namespace galt {
 
@@ -111,6 +111,8 @@ void StereoVoNode::StereoCallback(const ImageConstPtr& l_image_msg,
 
   stereo_vo_.Iterate(l_image_rect, r_image_rect);
   auto current_pose = KrPoseToRosPose(stereo_vo_.GetCurrentPose());
+
+  // Publish PointCloud from keyframe pose and features
   PublishPointCloud(stereo_vo_.GetKeyFramePose(),
                     stereo_vo_.GetCurrentFeatures(), l_image_msg->header.stamp,
                     "0");

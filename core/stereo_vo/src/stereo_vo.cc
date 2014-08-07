@@ -27,13 +27,9 @@ StereoVo::StereoVo() {}
 
 void StereoVo::Initialize(const cv::Mat &l_image, const cv::Mat &r_image,
                           const StereoCameraModel &model) {
-
-  //  just random starting guess: look down at 10m
-  current_pose_ = kr::Pose<scalar_t>(kr::quat<scalar_t>(0, 1, 0, 0),
-                                     kr::vec3<scalar_t>(0, 0, 10));
-
   model_ = model;
-  key_frame_.Update(l_image, r_image, config_, model, current_pose_);
+  key_frame_.Update(l_image,r_image,config_,model,kr::Pose<scalar_t>(),true);
+  current_pose_ = key_frame_.pose_;
   key_frame_.prev_image_ = l_image;
 
   std::cout << "StereoVo initialized, baseline: " << model_.baseline()
@@ -81,10 +77,10 @@ void StereoVo::Iterate(const cv::Mat &l_image, const cv::Mat &r_image) {
 
     cv::Mat rvec = cv::Mat(3, 1, CV_64FC1);
     cv::Mat tvec = cv::Mat(3, 1, CV_64FC1);
-    const size_t minInliers = std::ceil(worldPoints.size() * 0.7);
+    const size_t minInliers = std::ceil(worldPoints.size() * 0.6);
     cv::solvePnPRansac(worldPoints, imagePoints,
                        model_.left().fullIntrinsicMatrix(),
-                       std::vector<double>(), rvec, tvec, false, 100, 8.0,
+                       std::vector<double>(), rvec, tvec, false, 100, 4.0,
                        minInliers, inliers, cv::ITERATIVE);
 
     //  convert rotation to quaternion
@@ -92,9 +88,6 @@ void StereoVo::Iterate(const cv::Mat &l_image, const cv::Mat &r_image) {
                          rvec.at<double>(2, 0));
     kr::vec3<scalar_t> t(tvec.at<double>(0, 0), tvec.at<double>(1, 0),
                          tvec.at<double>(2, 0));
-
-    // std::cout << "r: " << r << std::endl;
-    // std::cout << "t: " << t << std::endl;
 
     auto pose = kr::Pose<scalar_t>::fromOpenCV(r, t);
 
@@ -104,7 +97,7 @@ void StereoVo::Iterate(const cv::Mat &l_image, const cv::Mat &r_image) {
 
   // Display images
   Display(l_image, r_image, new_features);
-  // Save the new images
+  
   if (new_features.size() < static_cast<size_t>(config_.min_features)) {
     key_frame_.Update(l_image, r_image, config_, model_, current_pose_);
   }
@@ -169,7 +162,7 @@ void StereoVo::Display(const cv::Mat &l_image, const cv::Mat &r_image,
 void KeyFrame::Update(const cv::Mat &l_image, const cv::Mat &r_image,
                       const StereoVoConfig &config,
                       const StereoCameraModel &model,
-                      const kr::Pose<scalar_t> &pose) {
+                      const kr::Pose<scalar_t> &pose, bool init) {
   // Collect relevant options
   int num_features = config.num_features;
 
@@ -209,19 +202,26 @@ void KeyFrame::Update(const cv::Mat &l_image, const cv::Mat &r_image,
     features_.push_back(feat);
   }
 
-  Triangulate(model);
+  const scalar_t meanDepth = Triangulate(model);
   l_image_ = l_image;
   r_image_ = r_image;
-  pose_ = pose;
+  if (!init) {
+   pose_ = pose;
+  } else {
+   pose_ = kr::Pose<scalar_t>(kr::quat<scalar_t>(0, 1, 0, 0),
+                              kr::vec3<scalar_t>(0, 0, meanDepth));
+  }
 }
 
-void KeyFrame::Triangulate(const StereoCameraModel &model) {
+scalar_t KeyFrame::Triangulate(const StereoCameraModel &model) {
 
   kr::vec2<scalar_t> lPt, rPt;
   kr::Pose<scalar_t> poseLeft;  //  identity
   kr::Pose<scalar_t> poseRight;
   poseRight.p[0] = model.baseline();
 
+  scalar_t depth=0;
+  
   for (auto itr = features_.begin(); itr != features_.end();) {
 
     lPt[0] = itr->left_coord.x;
@@ -232,8 +232,8 @@ void KeyFrame::Triangulate(const StereoCameraModel &model) {
     kr::vec3<scalar_t> p3D;
     scalar_t ratio;
 
-    kr::triangulate(poseLeft, lPt, poseRight, rPt, p3D, ratio);
-
+    depth += kr::triangulate(poseLeft, lPt, poseRight, rPt, p3D, ratio);
+    
     bool failed = false;
     if (ratio > 1e5) {
       //  bad, reject this feature
@@ -259,6 +259,9 @@ void KeyFrame::Triangulate(const StereoCameraModel &model) {
       itr++;
     }
   }
+  depth /= features_.size();
+  ROS_INFO("Mean depth to scene: %f", depth);
+  return depth;
 }
 
 void TrackFeatures(const cv::Mat &image1, const cv::Mat &image2,

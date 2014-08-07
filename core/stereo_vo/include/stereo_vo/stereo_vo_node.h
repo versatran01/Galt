@@ -49,6 +49,7 @@ class StereoVoNode {
   std::unique_ptr<ApproximateSync> approximate_sync_;
   
   ros::Publisher points_pub_;
+  ros::Publisher pose_pub_;
   
   dynamic_reconfigure::Server<StereoVoDynConfig> cfg_server_;
   StereoVo stereo_vo_;

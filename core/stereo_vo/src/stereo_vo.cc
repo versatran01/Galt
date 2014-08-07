@@ -48,6 +48,10 @@ void StereoVo::Iterate(const cv::Mat &l_image, const cv::Mat &r_image) {
                              cv::Size(11, 11), 3, term_criteria);
   }
   
+  /*for (auto p : new_features) {
+    
+  }*/
+  
   PruneByStatus(status, key_frame_.features_);
   
   // Display images

@@ -12,6 +12,8 @@
     <arg name="max_level" default="3"/>
     <arg name="win_size" default="11"/>
 
+    <arg name="rviz" default="false"/>
+
     <node pkg="rosbag" type="play" name="player"
         args="-l $(arg bagfile_home)/$(arg bagfile)">
     </node>
@@ -31,6 +33,11 @@
     <node if="$(arg disparity)"
         pkg="image_view" type="stereo_view" name="stereo_view"
         args="stereo:=$(arg stereo_ns) image:=image_rect">
+    </node>
+
+    <node if="$(arg rviz)"
+      name="rviz_stereo" pkg="rviz" type="rviz"
+      args="--display-config $(find stereo_vo)/rviz/config.rviz">
     </node>
 
 </launch>

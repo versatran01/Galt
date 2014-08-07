@@ -57,6 +57,11 @@ void StereoVo::Iterate(const cv::Mat &l_image, const cv::Mat &r_image) {
   PruneByStatus(status, key_frame_.features_);
   PruneByStatus(status, new_features);
 
+  // Save new features to key frame
+  for (unsigned i = 0; i != new_features.size(); ++i) {
+    key_frame_.features_[i].left = new_features[i];
+  }
+
   //  solve for incremental pose update
   if (!key_frame_.features_.empty()) {
     std::vector<CvPoint2> imagePoints;
@@ -168,25 +173,26 @@ void KeyFrame::Update(const cv::Mat &l_image, const cv::Mat &r_image,
   TrackFeatures(l_image, r_image, l_features, r_features, status, config);
   PruneByStatus(status, l_features);
   PruneByStatus(status, r_features);
-  
+
   //  initialize new features
   const scalar_t lfx = model.left().fx(), lfy = model.left().fy();
   const scalar_t lcx = model.left().cx(), lcy = model.left().cy();
   const scalar_t rfx = model.right().fx(), rfy = model.right().fy();
   const scalar_t rcx = model.right().cx(), rcy = model.right().cy();
-  
+
   features_.clear();
   features_.reserve(l_features.size());
-  for (size_t i=0; i < l_features.size(); i++) {
+  for (size_t i = 0; i < l_features.size(); i++) {
     Feature feat;
     feat.left = l_features[i];
     feat.right = r_features[i];
-    
-    feat.left_coord.x = (feat.left.x - lcx) / lfx; //  undo K matrix
+
+    //  undo K matrix
+    feat.left_coord.x = (feat.left.x - lcx) / lfx;
     feat.left_coord.y = (feat.left.y - lcy) / lfy;
     feat.right_coord.x = (feat.right.x - rcx) / rfx;
     feat.right_coord.y = (feat.right.y - rcy) / rfy;
-    
+
     features_.push_back(feat);
   }
 
@@ -195,47 +201,47 @@ void KeyFrame::Update(const cv::Mat &l_image, const cv::Mat &r_image,
   r_image_ = r_image;
 }
 
-void KeyFrame::Triangulate(const StereoCameraModel& model) {
-      
+void KeyFrame::Triangulate(const StereoCameraModel &model) {
+
   kr::vec2<scalar_t> lPt, rPt;
   kr::Pose<scalar_t> poseLeft;  //  identity
   kr::Pose<scalar_t> poseRight;
   poseRight.p[0] = model.baseline();
-  
+
   for (auto itr = features_.begin(); itr != features_.end();) {
-    
+
     lPt[0] = itr->left_coord.x;
     lPt[1] = itr->left_coord.y;
     rPt[0] = itr->right_coord.x;
     rPt[1] = itr->right_coord.y;
-    
+
     kr::vec3<scalar_t> p3D;
     scalar_t ratio;
-    
-    kr::triangulate(poseLeft,lPt,poseRight,rPt,p3D,ratio);
-    
+
+    kr::triangulate(poseLeft, lPt, poseRight, rPt, p3D, ratio);
+
     bool failed = false;
     if (ratio > 1e4) {
       //  bad, reject this feature
       failed = true;
     } else {
       //  valid, refine the point
-      std::vector<kr::Pose<scalar_t>> poses({poseLeft,poseRight});
-      std::vector<kr::vec2<scalar_t>> obvs({lPt,rPt});
-      
-      if (kr::refinePoint(poses,obvs,p3D)) {
-        itr->point = cv::Point3f(p3D[0],p3D[1],p3D[2]);
+      std::vector<kr::Pose<scalar_t>> poses({poseLeft, poseRight});
+      std::vector<kr::vec2<scalar_t>> obvs({lPt, rPt});
+
+      if (kr::refinePoint(poses, obvs, p3D)) {
+        itr->point = cv::Point3f(p3D[0], p3D[1], p3D[2]);
       } else {
         //  failed to converge
         failed = true;
       }
     }
-    
+
     if (failed) {
       //  erase feature
       itr = features_.erase(itr);
     } else {
-      itr->triangulated = true;      
+      itr->triangulated = true;
       itr++;
     }
   }
@@ -258,7 +264,7 @@ void TrackFeatures(const cv::Mat &image1, const cv::Mat &image2,
                            cv::noArray(), cv::Size(win_size, win_size),
                            max_level, term_criteria);
   // Find fundamental matrix
-  cv::findFundamentalMat(features1, features2, cv::FM_RANSAC, 1, 0.99, status2);
+  cv::findFundamentalMat(features1, features2, cv::FM_RANSAC, 3, 0.99, status2);
   // Combine two status
   for (size_t i = 0; i < status1.size(); ++i) {
     if (status1[i] && status2[i]) {

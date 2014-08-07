@@ -63,7 +63,7 @@ void StereoVo::Iterate(const cv::Mat &l_image, const cv::Mat &r_image) {
   PruneByStatus(status, key_frame_.features_);
   
   //  solve for incremental pose update
-  if (!key_frame_.features_.empty() && false) {
+  if (!key_frame_.features_.empty()) {
     std::vector <CvPoint2> imagePoints;
     std::vector <CvPoint3> worldPoints;
     std::vector <uchar> inliers;

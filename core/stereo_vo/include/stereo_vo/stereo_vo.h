@@ -21,18 +21,18 @@ using ::stereo_vo::StereoVoDynConfig;
 class StereoVo;
 class KeyFrame;
 
+typedef float scalar_t;
+
 struct Feature {
-  cv::Point2f left, right;            /// Feature in pixel space
-  cv::Point2f leftCoord, rightCoord;  /// Feature in normalized image space
-  cv::Point3f point;                  /// Feature in world space
+  cv::Point_<scalar_t> left, right;            /// Feature in pixel space
+  cv::Point_<scalar_t> leftCoord, rightCoord;  /// Feature in normalized image space
+  cv::Point3_<scalar_t> point;                 /// Feature in world space
 };
 
 class KeyFrame {
   friend class StereoVo;
 
  public:
-  typedef double scalar_t;
-  
   void Update(const cv::Mat &l_image, const cv::Mat &r_image,
               const StereoVoDynConfig &config, const StereoCameraModel& model);
   const int NumMatches() const { return features_.size(); }
@@ -62,23 +62,20 @@ class StereoVo {
                const std::vector<cv::Point2f> &new_features);
 };
 
-template <typename T, typename U>
-void ExtractByStatus(std::vector<T> &features, const std::vector<U> &status) {
-  auto it_status = status.cbegin();
-  auto e_status = status.cend();
-  auto it_features = features.begin();
-  for(;it_status != e_status; ++it_status, ++it_features) {
-    if (*it_status) {
-      features.erase(it_features);
+std::vector<cv::Point2f> ExtractByStatus(
+    const std::vector<cv::Point2f> &features, const std::vector<uchar> &status);
+
+template <typename T>
+void PruneByStatus(const std::vector<uchar>& status, 
+                   std::vector<T>& objects) {
+  auto ite_p = objects.begin();
+  for (auto ite_s = status.begin(); ite_s != status.end(); ite_s++) {
+    if (*ite_s) {
+      ite_p++;
+    } else {
+      ite_p = objects.erase(ite_p);
     }
   }
-}
-
-template <typename T, typename U>
-void TrackFeatures(const cv::Mat &image1, const cv::Mat &image2,
-                   const std::vector<T> &points1, std::vector &points2,
-                   std::vector<U> status, const StereoVoDynConfig &config) {
-
 }
 
 }  // namespace stereo_vo

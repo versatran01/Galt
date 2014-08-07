@@ -46,15 +46,7 @@ void StereoVo::Iterate(const cv::Mat &l_image, const cv::Mat &r_image) {
                            new_features, status, cv::noArray(),
                            cv::Size(11, 11), 3, term_criteria);
   
-  //  erase based on status
-  auto ite_f = key_frame_.features_.begin();
-  for (auto ite_s = status.begin(); ite_s != status.end(); ite_s++) {
-    if (*ite_s) {
-      ite_f++;
-    } else {
-      ite_f = key_frame_.features_.erase(ite_f);
-    }
-  }
+  PruneByStatus(status, key_frame_.features_);
   
   // Display images
   Display(l_image, r_image, new_features);
@@ -152,10 +144,15 @@ void KeyFrame::Update(const cv::Mat &l_image, const cv::Mat &r_image,
                            cv::noArray(), cv::Size(win_size, win_size),
                            max_level, term_criteria);
   
-  //  erase features which were not tracked
-  for (auto ite_s = status.begin(); ite_l != status.end();) {
+  PruneByStatus(status,l_features);
+  PruneByStatus(status,r_features);
   
-  }
+  // Fundamental matrix (reject outliers via RANSAC)
+  status.clear();
+  cv::findFundamentalMat(l_features, r_features, cv::FM_RANSAC, 1, 0.99,
+                         status);
+  PruneByStatus(status, l_features);
+  PruneByStatus(status, r_features);
   
   //  initialize new features
   const scalar_t lfx = model.left().fx(), lfy = model.left().fy();
@@ -177,16 +174,6 @@ void KeyFrame::Update(const cv::Mat &l_image, const cv::Mat &r_image,
     
     features_.push_back(feat);
   }
-  
-  // Create new left features from klt results
-  l_features = ExtractByStatus(l_features, status);
-  r_features = ExtractByStatus(r_features, status);
-  // Fundamental matrix
-  status.clear();
-  cv::findFundamentalMat(l_features, r_features, cv::FM_RANSAC, 1, 0.99,
-                         status);
-  l_features_ = ExtractByStatus(l_features, status);
-  r_features_ = ExtractByStatus(r_features, status);
 
   Triangulate(model);
   l_image_ = l_image;

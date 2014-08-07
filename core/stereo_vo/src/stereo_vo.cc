@@ -27,13 +27,9 @@ StereoVo::StereoVo() {}
 
 void StereoVo::Initialize(const cv::Mat &l_image, const cv::Mat &r_image,
                           const StereoCameraModel &model) {
-
-  //  just random starting guess: look down at 10m
-  current_pose_ = kr::Pose<scalar_t>(kr::quat<scalar_t>(0, 1, 0, 0),
-                                     kr::vec3<scalar_t>(0, 0, 10));
-
   model_ = model;
-  key_frame_.Update(l_image, r_image, config_, model, current_pose_);
+  key_frame_.Update(l_image,r_image,config_,model,kr::Pose<scalar_t>(),true);
+  current_pose_ = key_frame_.pose_;
   key_frame_.prev_image_ = l_image;
 
   std::cout << "StereoVo initialized, baseline: " << model_.baseline()
@@ -169,7 +165,7 @@ void StereoVo::Display(const cv::Mat &l_image, const cv::Mat &r_image,
 void KeyFrame::Update(const cv::Mat &l_image, const cv::Mat &r_image,
                       const StereoVoConfig &config,
                       const StereoCameraModel &model,
-                      const kr::Pose<scalar_t> &pose) {
+                      const kr::Pose<scalar_t> &pose, bool init) {
   // Collect relevant options
   int num_features = config.num_features;
 
@@ -209,19 +205,26 @@ void KeyFrame::Update(const cv::Mat &l_image, const cv::Mat &r_image,
     features_.push_back(feat);
   }
 
-  Triangulate(model);
+  const scalar_t meanDepth = Triangulate(model);
   l_image_ = l_image;
   r_image_ = r_image;
-  pose_ = pose;
+  if (!init) {
+   pose_ = pose;
+  } else {
+   pose_ = kr::Pose<scalar_t>(kr::quat<scalar_t>(0, 1, 0, 0),
+                              kr::vec3<scalar_t>(0, 0, meanDepth));
+  }
 }
 
-void KeyFrame::Triangulate(const StereoCameraModel &model) {
+scalar_t KeyFrame::Triangulate(const StereoCameraModel &model) {
 
   kr::vec2<scalar_t> lPt, rPt;
   kr::Pose<scalar_t> poseLeft;  //  identity
   kr::Pose<scalar_t> poseRight;
   poseRight.p[0] = model.baseline();
 
+  scalar_t depth=0;
+  
   for (auto itr = features_.begin(); itr != features_.end();) {
 
     lPt[0] = itr->left_coord.x;
@@ -232,8 +235,8 @@ void KeyFrame::Triangulate(const StereoCameraModel &model) {
     kr::vec3<scalar_t> p3D;
     scalar_t ratio;
 
-    kr::triangulate(poseLeft, lPt, poseRight, rPt, p3D, ratio);
-
+    depth += kr::triangulate(poseLeft, lPt, poseRight, rPt, p3D, ratio);
+    
     bool failed = false;
     if (ratio > 1e5) {
       //  bad, reject this feature
@@ -259,6 +262,9 @@ void KeyFrame::Triangulate(const StereoCameraModel &model) {
       itr++;
     }
   }
+  depth /= features_.size();
+  ROS_INFO("Mean depth to scene: %f", depth);
+  return depth;
 }
 
 void TrackFeatures(const cv::Mat &image1, const cv::Mat &image2,

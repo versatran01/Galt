@@ -151,8 +151,10 @@ void StereoVoNode::PublishPoseStamped(const kr::Pose<scalar_t>& pose,
   geometry_msgs::PoseStamped pose_stamped;
   pose_stamped.header.stamp = time;
   pose_stamped.header.frame_id = frame_id;
-  tf::quaternionEigenToMsg(pose.q.cast<double>(),
-                           pose_stamped.pose.orientation);
+  pose_stamped.pose.orientation.w = pose.q.w();
+  pose_stamped.pose.orientation.x = -pose.q.x();
+  pose_stamped.pose.orientation.y = -pose.q.y();
+  pose_stamped.pose.orientation.z = -pose.q.z();
   tf::pointEigenToMsg(pose.p.cast<double>(), pose_stamped.pose.position);
   pose_pub_.publish(pose_stamped);
 }

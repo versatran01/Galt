@@ -43,12 +43,12 @@ class KeyFrame {
  public:
   void Update(const cv::Mat &l_image, const cv::Mat &r_image,
               const StereoVoConfig &config, const StereoCameraModel &model,
-              const kr::Pose<scalar_t> &pose);
+              const kr::Pose<scalar_t> &pose, bool init = false);
   const int NumMatches() const { return features_.size(); }
   const kr::Pose<scalar_t> &pose() const { return pose_; }
 
  private:
-  void Triangulate(const StereoCameraModel &model);
+  scalar_t Triangulate(const StereoCameraModel &model);
   cv::Mat l_image_, r_image_;
   cv::Mat prev_image_;
   std::vector<Feature> features_;

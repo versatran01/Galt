@@ -1,13 +1,16 @@
 #include "stereo_vo/stereo_vo_node.h"
 
+#include <cstdint>
+
 #include <sensor_msgs/PointCloud.h>
+#include <visualization_msgs/Marker.h>
 #include <image_geometry/stereo_camera_model.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <cv_bridge/cv_bridge.h>
+#include <eigen_conversions/eigen_msg.h>
+
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
-#include <eigen_conversions/eigen_msg.h>
-#include <cstdint>
 
 namespace galt {
 
@@ -41,6 +44,19 @@ StereoVoNode::StereoVoNode(const ros::NodeHandle& nh) : nh_{nh}, it_{nh} {
   points_pub_ =
       nh_.advertise<sensor_msgs::PointCloud>("triangulated_points", 1);
   pose_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("pose", 1);
+  traj_pub_ = nh_.advertise<visualization_msgs::Marker>("traj", 1);
+  // Initialize common fields of marker
+  traj_.ns = "stereo_vo";
+  traj_.id = 0;
+  traj_.type = visualization_msgs::Marker::LINE_STRIP;
+  traj_.action = visualization_msgs::Marker::ADD;
+  traj_.color.r = 1.0;
+  traj_.color.g = 0.1;
+  traj_.color.b = 1.0;
+  traj_.color.a = 1.0;
+  traj_.scale.x = 0.1;
+  traj_.lifetime = ros::Duration();
+  traj_.pose.orientation.w = 1.0;
 
   // Read and update StereoVoConfig
   stereo_vo_.UpdateConfig(ReadConfig(nh_));
@@ -94,20 +110,18 @@ void StereoVoNode::StereoCallback(const ImageConstPtr& l_image_msg,
   }
 
   stereo_vo_.Iterate(l_image_rect, r_image_rect);
-
-  // Publish PointCloud from keyframe pose and features
+  auto current_pose = KrPoseToRosPose(stereo_vo_.GetCurrentPose());
   PublishPointCloud(stereo_vo_.GetKeyFramePose(),
                     stereo_vo_.GetCurrentFeatures(), l_image_msg->header.stamp,
                     "0");
-  // Publish PoseStamped from kr::Pose
-  PublishPoseStamped(stereo_vo_.GetCurrentPose(), l_image_msg->header.stamp,
-                     "0");
+  PublishPoseStamped(current_pose, l_image_msg->header.stamp, "0");
+  PublishTrajectory(current_pose, l_image_msg->header.stamp, "0");
 }
 
 void StereoVoNode::PublishPointCloud(const kr::Pose<scalar_t>& pose,
                                      const std::vector<Feature>& features,
                                      const ros::Time& time,
-                                     const std::string& frame_id) {
+                                     const std::string& frame_id) const {
   sensor_msgs::PointCloud cloud;
   sensor_msgs::ChannelFloat32 channel;
   channel.name = "rgb";
@@ -145,16 +159,27 @@ void StereoVoNode::PublishPointCloud(const kr::Pose<scalar_t>& pose,
   points_pub_.publish(cloud);
 }
 
-void StereoVoNode::PublishPoseStamped(const kr::Pose<scalar_t>& pose,
+void StereoVoNode::PublishPoseStamped(const geometry_msgs::Pose& pose,
                                       const ros::Time& time,
                                       const std::string& frame_id) const {
   geometry_msgs::PoseStamped pose_stamped;
   pose_stamped.header.stamp = time;
   pose_stamped.header.frame_id = frame_id;
-  tf::quaternionEigenToMsg(pose.q.cast<double>(),
-                           pose_stamped.pose.orientation);
-  tf::pointEigenToMsg(pose.p.cast<double>(), pose_stamped.pose.position);
+  pose_stamped.pose = pose;
   pose_pub_.publish(pose_stamped);
+}
+
+void StereoVoNode::PublishTrajectory(const geometry_msgs::Pose& pose,
+                                     const ros::Time& time,
+                                     const std::string& frame_id) {
+  traj_.header.stamp = time;
+  traj_.header.frame_id = frame_id;
+  geometry_msgs::Point p;
+  p.x = pose.position.x;
+  p.y = pose.position.y;
+  p.z = pose.position.z;
+  traj_.points.push_back(p);
+  traj_pub_.publish(traj_);
 }
 
 const StereoVoDynConfig ReadConfig(const ros::NodeHandle& nh) {
@@ -164,6 +189,13 @@ const StereoVoDynConfig ReadConfig(const ros::NodeHandle& nh) {
   nh.param<int>("max_level", config.max_level, 50);
   nh.param<int>("win_size", config.win_size, 50);
   return config;
+}
+
+geometry_msgs::Pose KrPoseToRosPose(const kr::Pose<scalar_t>& kr_pose) {
+  geometry_msgs::Pose ros_pose;
+  tf::quaternionEigenToMsg(kr_pose.q.cast<double>(), ros_pose.orientation);
+  tf::pointEigenToMsg(kr_pose.p.cast<double>(), ros_pose.position);
+  return ros_pose;
 }
 
 }  // namespace stereo_vo

@@ -21,6 +21,8 @@
 #include <dynamic_reconfigure/server.h>
 #include <stereo_vo/StereoVoDynConfig.h>
 
+#include <visualization_msgs/Marker.h>
+
 #include "stereo_vo/stereo_vo.h"
 
 namespace galt {
@@ -50,6 +52,8 @@ class StereoVoNode {
 
   ros::Publisher points_pub_;
   ros::Publisher pose_pub_;
+  ros::Publisher traj_pub_;
+  visualization_msgs::Marker traj_;
 
   dynamic_reconfigure::Server<StereoVoDynConfig> cfg_server_;
   StereoVo stereo_vo_;
@@ -62,14 +66,19 @@ class StereoVoNode {
                       const ImageConstPtr& r_image_msg,
                       const CameraInfoConstPtr& r_cinfo_msg);
   void ReconfigureCallback(const StereoVoDynConfig& config, int level);
-  void PublishPoseStamped(const kr::Pose<scalar_t>& pose, const ros::Time& time,
+  void PublishPoseStamped(const geometry_msgs::Pose& pose,
+                          const ros::Time& time,
                           const std::string& frame_id) const;
   void PublishPointCloud(const kr::Pose<scalar_t>& pose,
                          const std::vector<Feature>& features,
-                         const ros::Time& time, const std::string& frame_id);
+                         const ros::Time& time,
+                         const std::string& frame_id) const;
+  void PublishTrajectory(const geometry_msgs::Pose& pose, const ros::Time& time,
+                         const std::string& frame_id);
 };  // class StereoVoNode
 
 const StereoVoDynConfig ReadConfig(const ros::NodeHandle& nh);
+geometry_msgs::Pose KrPoseToRosPose(const kr::Pose<scalar_t>& kr_pose);
 
 }  // namespace stereo_vo
 

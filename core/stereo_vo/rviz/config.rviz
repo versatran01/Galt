@@ -8,6 +8,7 @@ Panels:
         - /Status1
         - /PointCloud1
         - /Pose2
+        - /Marker1
       Splitter Ratio: 0.5
     Tree Height: 788
   - Class: rviz/Selection
@@ -144,6 +145,14 @@ Visualization Manager:
       Shape: Axes
       Topic: /mv_stereo/stereo_vo/pose
       Value: true
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /mv_stereo/stereo_vo/traj
+      Name: Marker
+      Namespaces:
+        stereo_vo: true
+      Queue Size: 100
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -167,7 +176,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 13.9356
+      Distance: 65.2575
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1

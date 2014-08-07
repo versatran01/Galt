@@ -6,7 +6,7 @@ set(CMAKE_CXX_FLAGS "-Wall -std=c++11 -fPIC")
 find_package(catkin REQUIRED COMPONENTS
     roscpp nodelet
     image_transport message_filters
-    sensor_msgs
+    sensor_msgs visualization_msgs
     cv_bridge image_geometry
     dynamic_reconfigure
     kr_math

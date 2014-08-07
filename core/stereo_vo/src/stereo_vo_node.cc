@@ -195,7 +195,10 @@ const StereoVoDynConfig ReadConfig(const ros::NodeHandle& nh) {
 
 geometry_msgs::Pose KrPoseToRosPose(const kr::Pose<scalar_t>& kr_pose) {
   geometry_msgs::Pose ros_pose;
-  tf::quaternionEigenToMsg(kr_pose.q.cast<double>(), ros_pose.orientation);
+  ros_pose.orientation.w = kr_pose.q.w();
+  ros_pose.orientation.x = -kr_pose.q.x();
+  ros_pose.orientation.y = -kr_pose.q.y();
+  ros_pose.orientation.z = -kr_pose.q.z();
   tf::pointEigenToMsg(kr_pose.p.cast<double>(), ros_pose.position);
   return ros_pose;
 }

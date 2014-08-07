@@ -75,10 +75,11 @@ void StereoVo::Iterate(const cv::Mat &l_image, const cv::Mat &r_image) {
     
     cv::Mat rvec = cv::Mat(3,1,cv::DataType<scalar_t>::type);
     cv::Mat tvec = cv::Mat(3,1,cv::DataType<scalar_t>::type);
+    const size_t minInliers = std::ceil(worldPoints.size() * 0.7);
     cv::solvePnPRansac(worldPoints,imagePoints,
                        model_.left().fullIntrinsicMatrix(), std::vector<double>(),
                        rvec,tvec,false,
-                       100,8.0,100,inliers,cv::ITERATIVE);
+                       100,8.0,minInliers,inliers,cv::ITERATIVE);
     
     //  convert rotation to quaternion
     kr::vec3<scalar_t> r(rvec.at<scalar_t>(0,0),

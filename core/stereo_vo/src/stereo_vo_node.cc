@@ -71,7 +71,11 @@ void StereoVoNode::StereoCallback(const ImageConstPtr& l_image_msg,
     ROS_WARN_THROTTLE(1, "Uncalibrated camera.");
     return;
   }
-  model.fromCameraInfo(l_cinfo_msg, r_cinfo_msg);
+  CameraInfo linfo = *l_cinfo_msg;
+  CameraInfo rinfo = *r_cinfo_msg;
+  linfo.header.frame_id = "0";
+  rinfo.header.frame_id = "0";
+  model.fromCameraInfo(linfo, rinfo);
 
   // Get stereo images
   cv::Mat l_image_rect =

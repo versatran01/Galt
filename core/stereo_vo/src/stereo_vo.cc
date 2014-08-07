@@ -40,11 +40,13 @@ void StereoVo::Iterate(const cv::Mat &l_image, const cv::Mat &r_image) {
     l_features.push_back(feat.left);
   }
   
-  cv::TermCriteria term_criteria(
-      cv::TermCriteria::COUNT + cv::TermCriteria::EPS, 25, 0.001);
-  cv::calcOpticalFlowPyrLK(key_frame_.l_image_, l_image, l_features,
-                           new_features, status, cv::noArray(),
-                           cv::Size(11, 11), 3, term_criteria);
+  if (!l_features.empty()) {
+    cv::TermCriteria term_criteria(
+        cv::TermCriteria::COUNT + cv::TermCriteria::EPS, 25, 0.001);
+    cv::calcOpticalFlowPyrLK(key_frame_.l_image_, l_image, l_features,
+                             new_features, status, cv::noArray(),
+                             cv::Size(11, 11), 3, term_criteria);
+  }
   
   PruneByStatus(status, key_frame_.features_);
   
@@ -137,6 +139,9 @@ void KeyFrame::Update(const cv::Mat &l_image, const cv::Mat &r_image,
   std::vector<uchar> status;
   // Find features
   cv::goodFeaturesToTrack(l_image, l_features, num_features, 0.01, 10);
+  if (l_features.empty()) {
+    return; //  no new features
+  }
   // Optical flow
   cv::TermCriteria term_criteria(
       cv::TermCriteria::COUNT + cv::TermCriteria::EPS, max_iter, epsilon);

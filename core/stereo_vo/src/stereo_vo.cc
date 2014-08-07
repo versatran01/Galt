@@ -76,8 +76,8 @@ void StereoVo::Iterate(const cv::Mat &l_image, const cv::Mat &r_image) {
       worldPoints.push_back(feat.point);
     }
 
-    cv::Mat rvec = cv::Mat(3, 1, cv::DataType<scalar_t>::type);
-    cv::Mat tvec = cv::Mat(3, 1, cv::DataType<scalar_t>::type);
+    cv::Mat rvec = cv::Mat(3, 1, CV_64FC1);
+    cv::Mat tvec = cv::Mat(3, 1, CV_64FC1);
     const size_t minInliers = std::ceil(worldPoints.size() * 0.7);
     cv::solvePnPRansac(worldPoints, imagePoints,
                        model_.left().fullIntrinsicMatrix(),
@@ -85,11 +85,14 @@ void StereoVo::Iterate(const cv::Mat &l_image, const cv::Mat &r_image) {
                        minInliers, inliers, cv::ITERATIVE);
 
     //  convert rotation to quaternion
-    kr::vec3<scalar_t> r(rvec.at<scalar_t>(0, 0), rvec.at<scalar_t>(1, 0),
-                         rvec.at<scalar_t>(2, 0));
-    kr::vec3<scalar_t> t(tvec.at<scalar_t>(0, 0), tvec.at<scalar_t>(1, 0),
-                         tvec.at<scalar_t>(2, 0));
+    kr::vec3<scalar_t> r(rvec.at<double>(0, 0), rvec.at<double>(1, 0),
+                         rvec.at<double>(2, 0));
+    kr::vec3<scalar_t> t(tvec.at<double>(0, 0), tvec.at<double>(1, 0),
+                         tvec.at<double>(2, 0));
 
+    //std::cout << "r: " << r << std::endl;
+    //std::cout << "t: " << t << std::endl;
+    
     auto pose = kr::Pose<scalar_t>::fromOpenCV(r, t);
 
     //  left-multiply by the keyframe pose to get world pose

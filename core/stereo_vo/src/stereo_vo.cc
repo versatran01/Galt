@@ -10,6 +10,8 @@
 #include <kr_math/feature.hpp>
 #include <kr_math/pose.hpp>
 
+#include <Eigen/Geometry>
+
 namespace galt {
 
 namespace stereo_vo {
@@ -54,6 +56,37 @@ void StereoVo::Iterate(const cv::Mat &l_image, const cv::Mat &r_image) {
 
   PruneByStatus(status, key_frame_.features_);
   PruneByStatus(status, new_features);
+
+  //  solve for incremental pose update
+  if (!key_frame_.features_.empty()) {
+    std::vector<CvPoint2> imagePoints;
+    std::vector<CvPoint3> worldPoints;
+    std::vector<uchar> inliers;
+
+    for (const Feature &feat : key_frame_.features_) {
+      imagePoints.push_back(feat.left);
+      worldPoints.push_back(feat.point);
+    }
+
+    cv::Mat rvec = cv::Mat(3, 1, cv::DataType<scalar_t>::type);
+    cv::Mat tvec = cv::Mat(3, 1, cv::DataType<scalar_t>::type);
+    const size_t minInliers = std::ceil(worldPoints.size() * 0.7);
+    cv::solvePnPRansac(worldPoints, imagePoints,
+                       model_.left().fullIntrinsicMatrix(),
+                       std::vector<double>(), rvec, tvec, false, 100, 8.0,
+                       minInliers, inliers, cv::ITERATIVE);
+
+    //  convert rotation to quaternion
+    kr::vec3<scalar_t> r(rvec.at<scalar_t>(0, 0), rvec.at<scalar_t>(1, 0),
+                         rvec.at<scalar_t>(2, 0));
+    kr::vec3<scalar_t> t(tvec.at<scalar_t>(0, 0), tvec.at<scalar_t>(1, 0),
+                         tvec.at<scalar_t>(2, 0));
+
+    auto pose = kr::Pose<scalar_t>::fromOpenCV(r, t);
+
+    //  left-multiply by the keyframe pose to get world pose
+    current_pose_ = key_frame_.pose_.compose(pose);
+  }
 
   // Display images
   Display(l_image, r_image, new_features);
@@ -126,7 +159,6 @@ void KeyFrame::Update(const cv::Mat &l_image, const cv::Mat &r_image,
 
   std::vector<CvPoint2> l_features, r_features;
   std::vector<uchar> status;
-
   // Find features
   cv::goodFeaturesToTrack(l_image, l_features, num_features, 0.01, 10);
   if (l_features.empty()) {
@@ -211,8 +243,7 @@ void KeyFrame::Triangulate(const StereoCameraModel &model) {
 
 void TrackFeatures(const cv::Mat &image1, const cv::Mat &image2,
                    std::vector<CvPoint2> &features1,
-                   std::vector<CvPoint2> &features2,
-                   std::vector<uchar> &status,
+                   std::vector<CvPoint2> &features2, std::vector<uchar> &status,
                    const StereoVoConfig &config) {
   // Read in config
   int win_size = config.win_size;
@@ -239,6 +270,7 @@ void TrackFeatures(const cv::Mat &image1, const cv::Mat &image2,
   ROS_ASSERT_MSG(features1.size() == features2.size(),
                  "Feature sizes do not match");
 }
+
 }  // namespace stereo_vo
 
 }  // namespace galt

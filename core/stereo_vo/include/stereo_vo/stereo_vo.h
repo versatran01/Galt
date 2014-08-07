@@ -6,6 +6,7 @@
 
 #include <cv_bridge/cv_bridge.h>
 #include <image_geometry/stereo_camera_model.h>
+#include <kr_math/pose.hpp>
 
 #include "opencv2/core/core.hpp"
 
@@ -49,6 +50,7 @@ class KeyFrame {
   cv::Mat l_image_, r_image_;
   std::vector<Feature> features_;
   int length;  /// Number of frames after this keyframe
+  kr::Pose<scalar_t> pose_;
 };
 
 class StereoVo {
@@ -63,11 +65,16 @@ class StereoVo {
   const std::vector<Feature> &GetCurrentFeatures() const {
     return key_frame_.features_;
   }
-
+  
+  const kr::Pose<scalar_t>& GetCurrentPose() const {
+    return current_pose_;
+  }
+  
  private:
   bool init_{false};
   StereoCameraModel model_;
   KeyFrame key_frame_;
+  kr::Pose<scalar_t> current_pose_;
   StereoVoConfig config_;
 
   void Display(const cv::Mat &l_image, const cv::Mat &r_image,

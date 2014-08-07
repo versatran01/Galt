@@ -2,9 +2,11 @@
 
 #include <sensor_msgs/PointCloud.h>
 #include <image_geometry/stereo_camera_model.h>
+#include <geometry_msgs/PoseStamped.h>
 #include <cv_bridge/cv_bridge.h>
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
+#include <eigen_conversions/eigen_msg.h>
 #include <cstdint>
 
 namespace galt {
@@ -36,9 +38,9 @@ StereoVoNode::StereoVoNode(const ros::NodeHandle& nh) : nh_{nh}, it_{nh} {
         boost::bind(&StereoVoNode::StereoCallback, this, _1, _2, _3, _4));
   }
 
-  points_pub_ =
-      nh_.advertise<sensor_msgs::PointCloud>("triangulated_points", 1);
-
+  points_pub_ = nh_.advertise<sensor_msgs::PointCloud>("triangulated_points",1);
+  pose_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("pose",1);
+  
   // Read and update StereoVoConfig
   stereo_vo_.UpdateConfig(ReadConfig(nh_));
   cfg_server_.setCallback(
@@ -95,40 +97,57 @@ void StereoVoNode::StereoCallback(const ImageConstPtr& l_image_msg,
   }
 
   stereo_vo_.Iterate(l_image_rect, r_image_rect);
-
+  
+  //  current pose: world to camera
+  auto pose = stereo_vo_.GetCurrentPose();
+  
   //  publish point cloud for visualization
   const std::vector<Feature>& features = stereo_vo_.GetCurrentFeatures();
-
+  
   sensor_msgs::PointCloud cloud;
   sensor_msgs::ChannelFloat32 channel;
   channel.name = "rgb";
-
+  
   union {
     uint8_t rgb[4];
     float val;
   } color;
-
+  
   for (const Feature& feat : features) {
     if (feat.triangulated) {
       geometry_msgs::Point32 p32;
-      p32.x = feat.point.x;
-      p32.y = feat.point.y;
-      p32.z = feat.point.z;
-
-      cloud.points.push_back(p32);
-
+      kr::vec3<scalar_t> p(feat.point.x,feat.point.y,feat.point.z);
+      
+      //  convert to world coordinates
+      p = pose.q.conjugate().matrix() * p + pose.p;
+      
+      p32.x = p[0];
+      p32.y = p[1];
+      p32.z = p[2];
+      
+      cloud.points.push_back( p32 );
+      
       color.rgb[0] = 255;
       color.rgb[1] = 255;
       color.rgb[2] = 0;
       color.rgb[3] = 0;
-
+      
       channel.values.push_back(color.val);
     }
   }
-
+  
   cloud.channels.push_back(channel);
+  cloud.header.stamp = l_image_msg->header.stamp;
   cloud.header.frame_id = "0";
   points_pub_.publish(cloud);
+  
+  //  publish current pose
+  geometry_msgs::PoseStamped geoPose;
+  geoPose.header.stamp = cloud.header.stamp;
+  geoPose.header.frame_id = "0";
+  tf::quaternionEigenToMsg(pose.q.cast<double>(),geoPose.pose.orientation);
+  tf::pointEigenToMsg(pose.p.cast<double>(),geoPose.pose.position);
+  pose_pub_.publish(geoPose);
 }
 
 const StereoVoDynConfig ReadConfig(const ros::NodeHandle& nh) {

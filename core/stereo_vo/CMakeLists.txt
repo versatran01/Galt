@@ -10,10 +10,10 @@ find_package(catkin REQUIRED COMPONENTS
     cv_bridge image_geometry
     dynamic_reconfigure
     kr_math
+    eigen_conversions
 )
 
 find_package(OpenCV)
-find_package(Eigen)
 
 generate_dynamic_reconfigure_options(
     cfg/StereoVoDyn.cfg

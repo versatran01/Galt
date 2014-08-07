@@ -63,7 +63,7 @@ void StereoVo::Iterate(const cv::Mat &l_image, const cv::Mat &r_image) {
   PruneByStatus(status, key_frame_.features_);
   
   //  solve for incremental pose update
-  if (!key_frame_.features_.empty()) {
+  if (!key_frame_.features_.empty() && false) {
     std::vector <CvPoint2> imagePoints;
     std::vector <CvPoint3> worldPoints;
     std::vector <uchar> inliers;
@@ -226,10 +226,10 @@ void KeyFrame::Triangulate(const StereoCameraModel& model) {
   
   for (auto itr = features_.begin(); itr != features_.end();) {
     
-    lPt[0] = itr->left.x;
-    lPt[1] = itr->left.y;
-    rPt[0] = itr->right.x;
-    rPt[1] = itr->right.y;
+    lPt[0] = itr->left_coord.x;
+    lPt[1] = itr->left_coord.y;
+    rPt[0] = itr->right_coord.x;
+    rPt[1] = itr->right_coord.y;
     
     kr::vec3<scalar_t> p3D;
     scalar_t ratio;

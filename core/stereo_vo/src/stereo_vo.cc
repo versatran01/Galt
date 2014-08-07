@@ -152,7 +152,31 @@ void KeyFrame::Update(const cv::Mat &l_image, const cv::Mat &r_image,
                            cv::noArray(), cv::Size(win_size, win_size),
                            max_level, term_criteria);
   
-  //  initialize new features here
+  //  erase features which were not tracked
+  for (auto ite_s = status.begin(); ite_l != status.end();) {
+  
+  }
+  
+  //  initialize new features
+  const scalar_t lfx = model.left().fx(), lfy = model.left().fy();
+  const scalar_t lcx = model.left().cx(), lcy = model.left().cy();
+  const scalar_t rfx = model.right().fx(), rfy = model.right().fy();
+  const scalar_t rcx = model.right().cx(), rcy = model.right().cy();
+  
+  features_.clear();
+  features_.reserve(l_features.size());
+  for (size_t i=0; i < l_features.size(); i++) {
+    Feature feat;
+    feat.left = l_features[i];
+    feat.right = r_features[i];
+    
+    feat.leftCoord.x = (feat.left.x - lcx) / lfx; //  undo K matrix
+    feat.leftCoord.y = (feat.left.y - lcy) / lfy;
+    feat.rightCoord.x = (feat.right.x - rcx) / rfx;
+    feat.rightCoord.y = (feat.right.y - rcy) / rfy;
+    
+    features_.push_back(feat);
+  }
   
   // Create new left features from klt results
   l_features = ExtractByStatus(l_features, status);
@@ -170,13 +194,6 @@ void KeyFrame::Update(const cv::Mat &l_image, const cv::Mat &r_image,
 }
 
 void KeyFrame::Triangulate(const StereoCameraModel& model) {
-    
-  //  get camera intrinsics, assuming image already undistorted
-  const scalar_t lfx = model.left().fx(), lfy = model.left().fy();
-  const scalar_t lcx = model.left().cx(), lcy = model.left().cy();
-  
-  const scalar_t rfx = model.right().fx(), rfy = model.right().fy();
-  const scalar_t rcx = model.right().cx(), rcy = model.right().cy();
       
   kr::vec2<scalar_t> lPt, rPt;
   kr::Pose<scalar_t> poseLeft;  //  identity

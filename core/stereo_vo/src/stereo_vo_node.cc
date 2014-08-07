@@ -119,7 +119,7 @@ void StereoVoNode::StereoCallback(const ImageConstPtr& l_image_msg,
       kr::vec3<scalar_t> p(feat.point.x,feat.point.y,feat.point.z);
       
       //  convert to world coordinates
-      p = pose.q.conjugate().matrix() * p + pose.p;
+      //p = pose.q.conjugate().matrix() * p + pose.p;
       
       p32.x = p[0];
       p32.y = p[1];

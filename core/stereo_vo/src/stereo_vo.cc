@@ -29,10 +29,13 @@ void StereoVo::Initialize(const cv::Mat &l_image, const cv::Mat &r_image,
                           const StereoCameraModel &model) {
   model_ = model;
   key_frame_.Update(l_image, r_image, config_, model);
+  key_frame_.prev_image_ = l_image;
 
   std::cout << "StereoVo initialized, baseline: " << model_.baseline()
             << std::endl;
 
+  current_pose_ = kr::Pose<scalar_t>(kr::quat<scalar_t>(0,1,0,0), kr::vec3<scalar_t>(0,0,10));
+  
   // Create a window for display
   cv::namedWindow("two_frame",
                   CV_WINDOW_NORMAL | CV_WINDOW_KEEPRATIO | CV_GUI_EXPANDED);
@@ -46,11 +49,11 @@ void StereoVo::Iterate(const cv::Mat &l_image, const cv::Mat &r_image) {
   std::vector<uchar> status;
 
   for (const Feature &feat : key_frame_.features_) {
-    l_features.push_back(feat.left);
+    l_features.push_back(feat.next);
   }
 
   if (!l_features.empty()) {
-    TrackFeatures(key_frame_.l_image_, l_image, l_features, new_features,
+    TrackFeatures(key_frame_.prev_image_, l_image, l_features, new_features,
                   status, config_);
   }
 
@@ -59,7 +62,7 @@ void StereoVo::Iterate(const cv::Mat &l_image, const cv::Mat &r_image) {
 
   // Save new features to key frame
   for (unsigned i = 0; i != new_features.size(); ++i) {
-    key_frame_.features_[i].left = new_features[i];
+    key_frame_.features_[i].next = new_features[i];
   }
 
   //  solve for incremental pose update
@@ -69,7 +72,7 @@ void StereoVo::Iterate(const cv::Mat &l_image, const cv::Mat &r_image) {
     std::vector<uchar> inliers;
 
     for (const Feature &feat : key_frame_.features_) {
-      imagePoints.push_back(feat.left);
+      imagePoints.push_back(feat.next);
       worldPoints.push_back(feat.point);
     }
 
@@ -90,7 +93,8 @@ void StereoVo::Iterate(const cv::Mat &l_image, const cv::Mat &r_image) {
     auto pose = kr::Pose<scalar_t>::fromOpenCV(r, t);
 
     //  left-multiply by the keyframe pose to get world pose
-    current_pose_ = key_frame_.pose_.compose(pose);
+    //current_pose_ = key_frame_.pose_.compose(pose);
+    current_pose_ = pose;
   }
 
   // Display images
@@ -99,6 +103,7 @@ void StereoVo::Iterate(const cv::Mat &l_image, const cv::Mat &r_image) {
   if (new_features.size() < static_cast<size_t>(config_.min_features)) {
     key_frame_.Update(l_image, r_image, config_, model_);
   }
+  key_frame_.prev_image_ = l_image;
 }
 
 void StereoVo::Display(const cv::Mat &l_image, const cv::Mat &r_image,
@@ -186,6 +191,7 @@ void KeyFrame::Update(const cv::Mat &l_image, const cv::Mat &r_image,
   for (size_t i = 0; i < l_features.size(); i++) {
     Feature feat;
     feat.left = l_features[i];
+    feat.next = feat.left;
     feat.right = r_features[i];
 
     //  undo K matrix
@@ -265,7 +271,7 @@ void TrackFeatures(const cv::Mat &image1, const cv::Mat &image2,
                            cv::noArray(), cv::Size(win_size, win_size),
                            max_level, term_criteria);
   // Find fundamental matrix
-  cv::findFundamentalMat(features1, features2, cv::FM_RANSAC, 3, 0.99, status2);
+  cv::findFundamentalMat(features1, features2, cv::FM_RANSAC, 1.5, 0.99, status2);
   // Combine two status
   for (size_t i = 0; i < status1.size(); ++i) {
     if (status1[i] && status2[i]) {

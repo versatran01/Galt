@@ -48,6 +48,7 @@ class KeyFrame {
  private:
   void Triangulate(const StereoCameraModel &model);
   cv::Mat l_image_, r_image_;
+  cv::Mat prev_image_;
   std::vector<Feature> features_;
   int length;  /// Number of frames after this keyframe
   kr::Pose<scalar_t> pose_;

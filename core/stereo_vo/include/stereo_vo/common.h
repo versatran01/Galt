@@ -10,6 +10,7 @@ namespace stereo_vo {
 using scalar_t = float;
 using Pose = kr::Pose<scalar_t>;
 using CvPoint2 = cv::Point_<scalar_t>;
+using Corners2 = std::vector<CvPoint2>;
 using CvPoint3 = cv::Point3_<scalar_t>;
 
 }  // namespace stereo_vo

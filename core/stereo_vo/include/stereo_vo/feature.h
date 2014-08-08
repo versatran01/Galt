@@ -28,7 +28,9 @@ class Feature {
   CvPoint2 p_pixel_left_;
   std::vector<Point> points_;
 };
-}
-}
+
+}  // namespace stereo_vo
+
+}  // namespace galt
 
 #endif  // GALT_STEREO_VO_FEATURE_H_

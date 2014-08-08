@@ -190,6 +190,8 @@ const StereoVoDynConfig ReadConfig(const ros::NodeHandle& nh) {
   nh.param<int>("min_features", config.min_features, 50);
   nh.param<int>("max_level", config.max_level, 50);
   nh.param<int>("win_size", config.win_size, 50);
+  nh.param<double>("pnp_ransac_inliers", config.pnp_ransac_inliers, 0.7);
+  nh.param<double>("pnp_ransac_error", config.pnp_ransac_error, 4.0);
   return config;
 }
 

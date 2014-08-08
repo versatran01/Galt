@@ -1,4 +1,5 @@
-#include "stereo_vo/stereo_vo.h"
+#include <stereo_vo/stereo_vo.h>
+#include <stereo_vo/feature.h>
 
 #include <sstream>
 
@@ -44,44 +45,71 @@ void StereoVo::Initialize(const cv::Mat &l_image, const cv::Mat &r_image,
 }
 
 void StereoVo::Iterate(const cv::Mat &l_image, const cv::Mat &r_image) {
-  // Track features across frames
-  std::vector<cv::Point2f> new_features, l_features;
-  std::vector<uchar> status;
-
-  for (const Feature &feat : key_frame_.features_) {
-    l_features.push_back(feat.next);
+  
+  //  track existing features
+  if (!features_.empty() && !previous_l_image_.empty()) {
+    std::vector<CvPoint2> l_updated;
+    TrackFeatures(previous_l_image_,l_image,features_,l_updated);
+    
+    assert(features_.size() == l_updated.size());
+    for (size_t k=0; k < l_updated.size(); k++) {
+      features_[k].set_p_pixel_left(l_updated[k]);
+    }
   }
-
-  if (!l_features.empty()) {
-    TrackFeatures(key_frame_.prev_image_, l_image, l_features, new_features,
-                  status, config_);
+  
+  //  do pnp
+  EstimatePose();
+  
+  //  extract features
+  std::vector<Feature> new_features;
+  ExtractFeatures(l_image, new_features);
+  
+  //  track into right image
+  if (!new_features.empty()) {
+    std::vector<CvPoint2> r_corners;
+    TrackFeatures(l_image,r_image,new_features,r_corners);
+    
+    assert(new_features.size() == r_corners.size());
+    for (size_t k=0; k < new_features.size(); k++) {
+      new_features[k].set_p_pixel_right(r_corners[k]);
+    }
   }
+  
+  //  triangulate new features, if any
+  TriangulateFeatures();
+  
+  //  check if a new keyframe is necessary and add
+  AddKeyFrame();
+  
+  //  TODO: display
+  
+  //  save previous left image for tracking later
+  previous_l_image_ = l_image;
+}
 
-  PruneByStatus(status, key_frame_.features_);
-  PruneByStatus(status, new_features);
-
-  // Save new features to key frame
-  for (unsigned i = 0; i != new_features.size(); ++i) {
-    key_frame_.features_[i].next = new_features[i];
-  }
-
-  //  solve for incremental pose update
-  if (!key_frame_.features_.empty()) {
+void StereoVo::EstimatePose() {
+  
+  if (!features_.empty()) {
+    
     std::vector<CvPoint2> imagePoints;
     std::vector<CvPoint3> worldPoints;
     std::vector<uchar> inliers;
+    
+    imagePoints.reserve(features_.size());
+    worldPoints.reserve(features_.size());
 
-    for (const Feature &feat : key_frame_.features_) {
-      imagePoints.push_back(feat.next);
-      worldPoints.push_back(feat.point);
+    for (const Feature &feat : features_) {
+      imagePoints.push_back(feat.p_pixel_left());
+      worldPoints.push_back(feat.p_world());
     }
 
     cv::Mat rvec = cv::Mat(3, 1, CV_64FC1);
     cv::Mat tvec = cv::Mat(3, 1, CV_64FC1);
-    const size_t minInliers = std::ceil(worldPoints.size() * 0.6);
+    const size_t minInliers = std::ceil(worldPoints.size() * config_.pnp_ransac_inliers);
     cv::solvePnPRansac(worldPoints, imagePoints,
                        model_.left().fullIntrinsicMatrix(),
-                       std::vector<double>(), rvec, tvec, false, 100, 4.0,
+                       std::vector<double>(), rvec, tvec, false, 100, 
+                       config_.pnp_ransac_error,
                        minInliers, inliers, cv::ITERATIVE);
 
     //  convert rotation to quaternion
@@ -90,19 +118,35 @@ void StereoVo::Iterate(const cv::Mat &l_image, const cv::Mat &r_image) {
     kr::vec3<scalar_t> t(tvec.at<double>(0, 0), tvec.at<double>(1, 0),
                          tvec.at<double>(2, 0));
 
-    auto pose = kr::Pose<scalar_t>::fromOpenCV(r, t);
+    auto pose = kr::Pose<scalar_t>::fromVectors(r, t);
 
     //  left-multiply by the keyframe pose to get world pose
-    current_pose_ = key_frame_.pose_.compose(pose);
+    current_pose_ = pose;
+  } else {
+    ROS_WARN("EstimatePose() called but no features available");
   }
+}
 
-  // Display images
-  Display(l_image, r_image, new_features);
-
-  if (new_features.size() < static_cast<size_t>(config_.min_features)) {
-    key_frame_.Update(l_image, r_image, config_, model_, current_pose_);
+bool StereoVo::AddKeyFrame() {
+  bool should_add_key_frame = false;
+  if (key_frames_.empty()) {
+    should_add_key_frame = true;
+  } else {
+    const KeyFrame& last_key_frame = key_frames_.back();
+    
+    //  check distance metric to see if new keyframe is required
+    const double distance = (last_key_frame.pose().p - current_pose_.p).norm();
+    if (distance > config_.keyframe_dist_thresh) {
+      should_add_key_frame = true;
+    }
   }
-  key_frame_.prev_image_ = l_image;
+  
+  if (should_add_key_frame) {
+
+    //  TODO: add a keyframe here eventually
+    
+  }
+  return should_add_key_frame;
 }
 
 void StereoVo::Display(const cv::Mat &l_image, const cv::Mat &r_image,
@@ -214,54 +258,65 @@ void KeyFrame::Update(const cv::Mat &l_image, const cv::Mat &r_image,
   }
 }
 
-scalar_t KeyFrame::Triangulate(const StereoCameraModel &model) {
+void StereoVo::TriangulateFeatures() {
   kr::vec2<scalar_t> lPt, rPt;
-  kr::Pose<scalar_t> poseLeft;  //  identity
-  kr::Pose<scalar_t> poseRight;
-  poseRight.p[0] = model.baseline();
+  Pose poseLeft;  //  identity
+  Pose poseRight; //  shifted right along x
+  poseRight.p[0] = model_.baseline();
 
-  scalar_t depth = 0;
-
-  for (auto itr = features_.begin(); itr != features_.end();) {
-
-    lPt[0] = itr->left_coord.x;
-    lPt[1] = itr->left_coord.y;
-    rPt[0] = itr->right_coord.x;
-    rPt[1] = itr->right_coord.y;
-
-    kr::vec3<scalar_t> p3D;
-    scalar_t ratio;
-
-    depth += kr::triangulate(poseLeft, lPt, poseRight, rPt, p3D, ratio);
-
+  //  initialize new features
+  const scalar_t lfx = model_.left().fx(), lfy = model_.left().fy();
+  const scalar_t lcx = model_.left().cx(), lcy = model_.left().cy();
+  const scalar_t rfx = model_.right().fx(), rfy = model_.right().fy();
+  const scalar_t rcx = model_.right().cx(), rcy = model_.right().cy();
+  
+  for (auto I = features_.begin(); I != features_.end();) {
+    Feature& feature = *I;
     bool failed = false;
-    if (ratio > 1e5) {
-      //  bad, reject this feature
-      failed = true;
-    } else {
-      //  valid, refine the point
-      std::vector<kr::Pose<scalar_t>> poses({poseLeft, poseRight});
-      std::vector<kr::vec2<scalar_t>> obvs({lPt, rPt});
-
-      if (kr::refinePoint(poses, obvs, p3D)) {
-        itr->point = cv::Point3f(p3D[0], p3D[1], p3D[2]);
-      } else {
-        //  failed to converge
+    
+    if (!feature.triangulated()) {
+      //  new feature requires triangulation
+      lPt[0] = feature.p_pixel_left().x;
+      lPt[1] = feature.p_pixel_left().y;
+      rPt[0] = feature.p_pixel_right().x;
+      rPt[1] = feature.p_pixel_right().y;
+     
+      lPt[0] = (lPt[0] - lcx) / lfx;
+      lPt[1] = (lPt[1] - lcy) / lfy;
+      rPt[0] = (rPt[0] - rcx) / rfx;
+      rPt[1] = (rPt[1] - rcy) / rfy;
+      
+      kr::vec3<scalar_t> p3D;
+      scalar_t ratio;
+    
+      //  triangulate 3d position
+      kr::triangulate(poseLeft, lPt, poseRight, rPt, p3D, ratio);
+     
+      if (ratio > 1e5) {
+        //  bad, reject this feature
         failed = true;
+      } else {
+        //  valid, refine the point
+        std::vector<Pose> poses({poseLeft, poseRight});
+        std::vector<kr::vec2<scalar_t>> obvs({lPt, rPt});
+    
+        if (kr::refinePoint(poses, obvs, p3D)) {
+          //  convert to world coordinates
+          p3D = current_pose_.q.conjugate() * p3D + current_pose_.p;
+          feature.set_p_world( CvPoint3(p3D[0], p3D[1], p3D[2]) );
+        } else {
+          //  failed to converge
+          failed = true;
+        }
       }
     }
-
+    
     if (failed) {
-      //  erase feature
-      itr = features_.erase(itr);
+      I = features_.erase(I);
     } else {
-      itr->triangulated = true;
-      itr++;
+      I++;
     }
   }
-  depth /= features_.size();
-  ROS_INFO("Mean depth to scene: %f", depth);
-  return depth;
 }
 
 void TrackFeatures(const cv::Mat &image1, const cv::Mat &image2,

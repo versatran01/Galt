@@ -30,8 +30,11 @@ class Feature {
   void set_p_world(const CvPoint3& p_world) { p_world_ = p_world; }
   
   const CvPoint2& p_pixel_left() const { return p_pixel_left_; }
-  const CvPoint2& p_pixel_right() const { return p_pixel_right_; }
+  void set_p_pixel_left(const CvPoint2& p_pixel_left) {
+    p_pixel_left_ = p_pixel_left;
+  }
   
+  const CvPoint2& p_pixel_right() const { return p_pixel_right_; }
   void set_p_pixel_right(const CvPoint2& p_pixel_right) { 
     p_pixel_right_ = p_pixel_right;
   }

@@ -46,7 +46,16 @@ void StereoVo::Initialize(const cv::Mat &l_image, const cv::Mat &r_image,
 
 void StereoVo::Iterate(const cv::Mat &l_image, const cv::Mat &r_image) {
   
-  //  TODO: track existing features
+  //  track existing features
+  if (!features_.empty() && !previous_l_image_.empty()) {
+    std::vector<CvPoint2> l_updated;
+    TrackFeatures(previous_l_image_,l_image,features_,l_updated);
+    
+    assert(features_.size() == l_updated.size());
+    for (size_t k=0; k < l_updated.size(); k++) {
+      features_[k].set_p_pixel_left(l_updated[k]);
+    }
+  }
   
   //  do pnp
   EstimatePose();
@@ -59,6 +68,8 @@ void StereoVo::Iterate(const cv::Mat &l_image, const cv::Mat &r_image) {
   if (!new_features.empty()) {
     std::vector<CvPoint2> r_corners;
     TrackFeatures(l_image,r_image,new_features,r_corners);
+    
+    assert(new_features.size() == r_corners.size());
     for (size_t k=0; k < new_features.size(); k++) {
       new_features[k].set_p_pixel_right(r_corners[k]);
     }
@@ -71,6 +82,9 @@ void StereoVo::Iterate(const cv::Mat &l_image, const cv::Mat &r_image) {
   AddKeyFrame();
   
   //  TODO: display
+  
+  //  save previous left image for tracking later
+  previous_l_image_ = l_image;
 }
 
 void StereoVo::EstimatePose() {

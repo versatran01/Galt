@@ -109,22 +109,22 @@ void StereoVoNode::StereoCallback(const ImageConstPtr& l_image_msg,
     return;
   }
 
-  stereo_vo_.Iterate(l_image_rect, r_image_rect);
+  /*stereo_vo_.Iterate(l_image_rect, r_image_rect);
   auto current_pose = KrPoseToRosPose(stereo_vo_.GetCurrentPose());
 
   // Publish PointCloud from keyframe pose and features
   PublishPointCloud(stereo_vo_.GetKeyFramePose(),
                     stereo_vo_.GetCurrentFeatures(), l_image_msg->header.stamp,
-                    "0");
-  PublishPoseStamped(current_pose, l_image_msg->header.stamp, "0");
-  PublishTrajectory(current_pose, l_image_msg->header.stamp, "0");
+                    "0");*/
+  //PublishPoseStamped(current_pose, l_image_msg->header.stamp, "0");
+  //PublishTrajectory(current_pose, l_image_msg->header.stamp, "0");
 }
 
 void StereoVoNode::PublishPointCloud(const kr::Pose<scalar_t>& pose,
                                      const std::vector<Feature>& features,
                                      const ros::Time& time,
                                      const std::string& frame_id) const {
-  sensor_msgs::PointCloud cloud;
+  /*sensor_msgs::PointCloud cloud;
   sensor_msgs::ChannelFloat32 channel;
   channel.name = "rgb";
 
@@ -158,7 +158,7 @@ void StereoVoNode::PublishPointCloud(const kr::Pose<scalar_t>& pose,
   cloud.channels.push_back(channel);
   cloud.header.stamp = time;
   cloud.header.frame_id = frame_id;
-  points_pub_.publish(cloud);
+  points_pub_.publish(cloud);*/
 }
 
 void StereoVoNode::PublishPoseStamped(const geometry_msgs::Pose& pose,
@@ -186,8 +186,8 @@ void StereoVoNode::PublishTrajectory(const geometry_msgs::Pose& pose,
 
 const StereoVoDynConfig ReadConfig(const ros::NodeHandle& nh) {
   StereoVoDynConfig config;
-  nh.param<int>("num_features", config.num_features, 100);
-  nh.param<int>("min_features", config.min_features, 50);
+  nh.param<int>("cell_size", config.cell_size, 40);
+  nh.param<int>("max_corners", config.max_corners, 1);
   nh.param<int>("max_level", config.max_level, 50);
   nh.param<int>("win_size", config.win_size, 50);
   nh.param<double>("pnp_ransac_inliers", config.pnp_ransac_inliers, 0.7);

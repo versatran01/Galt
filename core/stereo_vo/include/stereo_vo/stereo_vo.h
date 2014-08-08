@@ -2,6 +2,9 @@
 #define GALT_STEREO_VO_H_
 
 #include "stereo_vo/common.h"
+#include "stereo_vo/key_frame.h"
+#include "stereo_vo/feature.h"
+#include "stereo_vo/feature_detector.h"
 
 #include <vector>
 #include <memory>
@@ -12,7 +15,6 @@
 
 #include "opencv2/core/core.hpp"
 
-#include "stereo_vo/feature_detector.h"
 #include "stereo_vo/StereoVoDynConfig.h"
 
 namespace galt {
@@ -21,11 +23,6 @@ namespace stereo_vo {
 
 using namespace image_geometry;
 using StereoVoConfig = ::stereo_vo::StereoVoDynConfig;
-
-class StereoVo;
-class KeyFrame;
-class Feature;
-class GoodFeatureDetector;
 
 // struct Feature {
 //  Feature() : triangulated(false) {}
@@ -66,13 +63,14 @@ class StereoVo {
   void Iterate(const cv::Mat &l_image, const cv::Mat &r_image);
   void ExtractFeatures(const cv::Mat &image, std::vector<Feature> &features);
   void TrackFeatures(const cv::Mat &image1, const cv::Mat &image2,
-                     std::vector<Feature> &features, std::vector<CvPoint2> &corners);
+                     std::vector<Feature> &features,
+                     std::vector<CvPoint2> &corners);
   void EstimatePose();
 
   void UpdateConfig(const StereoVoConfig &config) { config_ = config; }
 
   bool AddKeyFrame();
-  
+
   const Pose &current_pose() const { return current_pose_; }
   const bool init() const { return init_; }
 
@@ -81,11 +79,11 @@ class StereoVo {
   StereoCameraModel model_;
   StereoVoConfig config_;
 
-  GoodFeatureDetector detector_;
   Pose current_pose_;
-  std::vector<KeyFrame> key_frames_;
-  std::vector<Feature> features_;
-  
+  Features features_;
+  KeyFrames key_frames_;
+  std::unique_ptr<GoodFeatureDetector> detector_;
+
   cv::Mat previous_l_image_;
 
   void TriangulateFeatures();

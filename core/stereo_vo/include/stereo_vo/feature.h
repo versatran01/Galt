@@ -17,36 +17,41 @@ struct Point {
   std::shared_ptr<KeyFrame> key_frame;
 };
 
+using Points = std::vector<Point>;
+
 class Feature {
  public:
+  Feature(const CvPoint2& pixel) : p_pixel_left_{pixel} {}
   const bool ready() const { return ready_; }
-  
+
   const bool triangulated() const { return triangulated_; }
   void set_triangulated(bool triangulated) { triangulated_ = triangulated; }
-  
-  const std::vector<Point>& points() { return points_; }
+
+  const Points& points() { return points_; }
 
   const CvPoint3& p_world() const { return p_world_; }
   void set_p_world(const CvPoint3& p_world) { p_world_ = p_world; }
-  
+
   const CvPoint2& p_pixel_left() const { return p_pixel_left_; }
   void set_p_pixel_left(const CvPoint2& p_pixel_left) {
     p_pixel_left_ = p_pixel_left;
   }
-  
+
   const CvPoint2& p_pixel_right() const { return p_pixel_right_; }
-  void set_p_pixel_right(const CvPoint2& p_pixel_right) { 
+  void set_p_pixel_right(const CvPoint2& p_pixel_right) {
     p_pixel_right_ = p_pixel_right;
   }
-  
+
  private:
   bool ready_{false};
   bool triangulated_{false};
   CvPoint3 p_world_;
   CvPoint2 p_pixel_left_;
   CvPoint2 p_pixel_right_;
-  std::vector<Point> points_;
+  Points points_;
 };
+
+using Features = std::vector<Feature>;
 
 }  // namespace stereo_vo
 

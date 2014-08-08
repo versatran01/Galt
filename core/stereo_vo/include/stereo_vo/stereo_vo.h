@@ -19,7 +19,46 @@ namespace galt {
 
 namespace stereo_vo {
 
-using namespace image_geometry;
+using image_geometry::StereoCameraModel;
+
+class StereoVo {
+ public:
+  StereoVo(const StereoVoConfig& config) : config_(config),
+    detector_(config.cell_size, config.max_corners, 0.005) {}
+
+  void Initialize(const cv::Mat &l_image, const cv::Mat &r_image,
+                  const StereoCameraModel &model);
+  void Iterate(const cv::Mat &l_image, const cv::Mat &r_image);
+  void EstimatePose();
+
+  void UpdateConfig(const StereoVoConfig &config) { config_ = config; }
+
+  bool AddKeyFrame();
+
+  const Pose &current_pose() const { return current_pose_; }
+  const bool init() const { return init_; }
+
+ private:
+  bool init_{false};
+  StereoCameraModel model_;
+  StereoVoConfig config_;
+
+  Pose current_pose_;
+  Features features_;
+  KeyFrames key_frames_;
+  GoodFeatureDetector detector_;
+
+  cv::Mat l_image_prev_;
+  cv::Mat r_image_prev_;
+
+  void TriangulateFeatures();
+};
+
+
+void TrackFeatures(const cv::Mat &image1, const cv::Mat &image2,
+                   Features &features,
+                   std::function<void(Feature *, const CvPoint2 &)> update_func,
+                   const int win_size, const int max_level);
 
 // struct Feature {
 //  Feature() : triangulated(false) {}
@@ -50,45 +89,6 @@ using namespace image_geometry;
 //  int length;  /// Number of frames after this keyframe
 //  kr::Pose<scalar_t> pose_;
 //};
-
-class StereoVo {
- public:
-  StereoVo();
-
-  void Initialize(const cv::Mat &l_image, const cv::Mat &r_image,
-                  const StereoCameraModel &model);
-  void Iterate(const cv::Mat &l_image, const cv::Mat &r_image);
-  void EstimatePose();
-
-  void UpdateConfig(const StereoVoConfig &config) { config_ = config; }
-
-  bool AddKeyFrame();
-
-  const Pose &current_pose() const { return current_pose_; }
-  const bool init() const { return init_; }
-
- private:
-  bool init_{false};
-  StereoCameraModel model_;
-  StereoVoConfig config_;
-
-  Pose current_pose_;
-  Features features_;
-  KeyFrames key_frames_;
-  std::unique_ptr<GoodFeatureDetector> detector_;
-
-  cv::Mat l_image_prev_;
-  cv::Mat r_image_prev_;
-
-  void TriangulateFeatures();
-};
-
-
-void TrackFeatures(const cv::Mat &image1, const cv::Mat &image2,
-                   Features &features,
-                   std::function<void(Feature *, const CvPoint2 &)> update_func,
-                   const int win_size, const int max_level);
-
 }  // namespace stereo_vo
 
 }  // namespace galt

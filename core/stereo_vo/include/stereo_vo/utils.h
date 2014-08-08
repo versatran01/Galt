@@ -10,9 +10,10 @@ namespace stereo_vo {
 
 namespace cv_color {
   const cv::Scalar BLUE = cv::Scalar(255, 0, 0);
-  const cv::Scalar GREEn = cv::Scalar(0, 255, 0);
+  const cv::Scalar GREEN = cv::Scalar(0, 255, 0);
   const cv::Scalar RED = cv::Scalar(0, 0, 255);
   const cv::Scalar YELLOW = cv::Scalar(0, 255, 255);
+  const cv::Scalar ORANGE = cv::Scalar(0, 128, 255);
   const cv::Scalar MAGENTA = cv::Scalar(255, 0, 255);
 }
 

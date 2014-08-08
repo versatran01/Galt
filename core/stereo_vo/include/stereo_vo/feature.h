@@ -12,8 +12,6 @@ namespace stereo_vo {
 
 class KeyFrame;
 
-void UpdateFeatures();
-
 struct Point {
   CvPoint2 p_pixel;
   CvPoint2 p_coord;
@@ -24,8 +22,6 @@ using Points = std::vector<Point>;
 
 class Feature {
  public:
-  friend void UpdateFeatures();
-
   Feature(const CvPoint2& pixel) : p_pixel_left_{pixel} {}
   const bool ready() const { return ready_; }
 
@@ -38,18 +34,18 @@ class Feature {
   void set_p_world(const CvPoint3& p_world) { p_world_ = p_world; }
 
   const CvPoint2& p_pixel_left() const { return p_pixel_left_; }
-  void set_p_pixel_left(const CvPoint2& p_pixel_left) {
-    p_pixel_left_ = p_pixel_left;
+  void set_p_pixel_left(const CvPoint2& p_pixel) {
+    p_pixel_left_ = p_pixel;
   }
 
   const CvPoint2& p_pixel_right() const { return p_pixel_right_; }
-  void set_p_pixel_right(const CvPoint2& p_pixel_right) {
-    p_pixel_right_ = p_pixel_right;
+  void set_p_pixel_right(const CvPoint2& p_pixel) {
+    p_pixel_right_ = p_pixel;
   }
 
-  const CvPoint2& p_pixel_prev() const { return p_pixel_prev_; }
-  void set_p_pixel_prev(const CvPoint2& p_pixel_prev) {
-    p_pixel_prev_ = p_pixel_prev;
+  const CvPoint2& p_pixel_next() const { return p_pixel_next_; }
+  void set_p_pixel_next(const CvPoint2& p_pixel) {
+    p_pixel_next_ = p_pixel;
   }
 
  private:
@@ -57,12 +53,18 @@ class Feature {
   bool triangulated_{false};
   CvPoint3 p_world_;
   CvPoint2 p_pixel_left_;
-  CvPoint2 p_pixel_prev_;
+  CvPoint2 p_pixel_next_;
   CvPoint2 p_pixel_right_;
   Points points_;
 };
 
 using Features = std::vector<Feature>;
+
+inline void UpdateFeatures(Features &features) {
+  for (auto &feature : features) {
+    feature.set_p_pixel_left(feature.p_pixel_next());
+  }
+}
 
 }  // namespace stereo_vo
 

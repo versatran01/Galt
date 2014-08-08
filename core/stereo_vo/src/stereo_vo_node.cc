@@ -11,12 +11,12 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <eigen_conversions/eigen_msg.h>
 
-
 namespace galt {
 
 namespace stereo_vo {
 
-StereoVoNode::StereoVoNode(const ros::NodeHandle& nh) : nh_{nh}, it_{nh} {
+StereoVoNode::StereoVoNode(const ros::NodeHandle& nh)
+    : nh_{nh}, it_{nh}, stereo_vo_(ReadConfig(nh)) {
   // Queue size 1 should be OK;
   // the one that matters is the synchronizer queue size.
   image_transport::TransportHints hints("raw", ros::TransportHints(), nh_);
@@ -41,6 +41,11 @@ StereoVoNode::StereoVoNode(const ros::NodeHandle& nh) : nh_{nh}, it_{nh} {
         boost::bind(&StereoVoNode::StereoCallback, this, _1, _2, _3, _4));
   }
 
+  // Setup dynamic reconfigure server
+  cfg_server_.setCallback(
+      boost::bind(&StereoVoNode::ReconfigureCallback, this, _1, _2));
+
+  // Setup all publishers
   points_pub_ =
       nh_.advertise<sensor_msgs::PointCloud>("triangulated_points", 1);
   pose_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("pose", 1);
@@ -57,11 +62,6 @@ StereoVoNode::StereoVoNode(const ros::NodeHandle& nh) : nh_{nh}, it_{nh} {
   traj_.scale.x = 0.1;
   traj_.lifetime = ros::Duration();
   traj_.pose.orientation.w = 1.0;
-
-  // Read and update StereoVoConfig
-  stereo_vo_.UpdateConfig(ReadConfig(nh_));
-  cfg_server_.setCallback(
-      boost::bind(&StereoVoNode::ReconfigureCallback, this, _1, _2));
 }
 
 void StereoVoNode::SubscribeStereoTopics(
@@ -116,8 +116,8 @@ void StereoVoNode::StereoCallback(const ImageConstPtr& l_image_msg,
   PublishPointCloud(stereo_vo_.GetKeyFramePose(),
                     stereo_vo_.GetCurrentFeatures(), l_image_msg->header.stamp,
                     "0");*/
-  //PublishPoseStamped(current_pose, l_image_msg->header.stamp, "0");
-  //PublishTrajectory(current_pose, l_image_msg->header.stamp, "0");
+  // PublishPoseStamped(current_pose, l_image_msg->header.stamp, "0");
+  // PublishTrajectory(current_pose, l_image_msg->header.stamp, "0");
 }
 
 void StereoVoNode::PublishPointCloud(const kr::Pose<scalar_t>& pose,
@@ -184,8 +184,8 @@ void StereoVoNode::PublishTrajectory(const geometry_msgs::Pose& pose,
   traj_pub_.publish(traj_);
 }
 
-const StereoVoDynConfig ReadConfig(const ros::NodeHandle& nh) {
-  StereoVoDynConfig config;
+const StereoVoConfig ReadConfig(const ros::NodeHandle& nh) {
+  StereoVoConfig config;
   nh.param<int>("cell_size", config.cell_size, 40);
   nh.param<int>("max_corners", config.max_corners, 1);
   nh.param<int>("max_level", config.max_level, 50);

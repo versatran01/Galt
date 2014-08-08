@@ -12,6 +12,7 @@
 
 #include "opencv2/core/core.hpp"
 
+#include "stereo_vo/feature_detector.h"
 #include "stereo_vo/StereoVoDynConfig.h"
 
 namespace galt {
@@ -24,6 +25,7 @@ using StereoVoConfig = ::stereo_vo::StereoVoDynConfig;
 class StereoVo;
 class KeyFrame;
 class Feature;
+class GoodFeatureDetector;
 
 // struct Feature {
 //  Feature() : triangulated(false) {}
@@ -79,6 +81,7 @@ class StereoVo {
   StereoCameraModel model_;
   StereoVoConfig config_;
 
+  GoodFeatureDetector detector_;
   Pose current_pose_;
   std::vector<KeyFrame> key_frames_;
   std::vector<Feature> features_;

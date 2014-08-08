@@ -10,17 +10,25 @@ namespace galt {
 
 namespace stereo_vo {
 
+ using Grid = std::map<std::pair<int, int>, bool>;
+ using Features = std::vector<Feature>;
+
+class Feature;
+
 class FeatureDetectorBase {
  public:
+
   FeatureDetectorBase(int cell_size) : cell_size_{cell_size} {}
   virtual ~FeatureDetectorBase() {}
 
   virtual void DetectFeatures(const cv::Mat& image,
-                              std::vector<Feature>& features) const = 0;
+                              Features& features) const = 0;
+
+ protected:
+  const Grid CreateGrid(const cv::Mat& image, const Features& features) const;
 
  private:
   int cell_size_;
-  std::map<std::pair<int, int>, bool> grid_;
 };
 
 class GoodFeatureDetector : public FeatureDetectorBase {
@@ -28,18 +36,18 @@ class GoodFeatureDetector : public FeatureDetectorBase {
   GoodFeatureDetector(int cell_size, int max_corners, double quality_level,
                       double min_distance)
       : FeatureDetectorBase(cell_size),
-        max_corners_{max_corners},
-        quality_level(quality_level_),
-        min_distance(min_distance_) {}
-  void DetectFeatures(const cv::Mat& image,
-                      std::vector<Feature>& features) const override;
+        max_corners{max_corners},
+        quality_level{quality_level_},
+        min_distance{min_distance_} {}
+
+  void DetectFeatures(const cv::Mat& image, Features& features) const override;
 
  private:
+  void DetectGoodFeatures(const cv::Mat& image, Corners2& corners) const;
+
   int max_corners_;
   double quality_level_;
   double min_distance_;
-
-  void Detect(const cv::Mat& image, Corners2& corners) const;
 };
 
 }  // namespace stereo_vo

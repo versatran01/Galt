@@ -106,7 +106,7 @@ void StereoVo::EstimatePose() {
     kr::vec3<scalar_t> t(tvec.at<double>(0, 0), tvec.at<double>(1, 0),
                          tvec.at<double>(2, 0));
 
-    auto pose = kr::Pose<scalar_t>::fromOpenCV(r, t);
+    auto pose = kr::Pose<scalar_t>::fromVectors(r, t);
 
     //  left-multiply by the keyframe pose to get world pose
     current_pose_ = pose;
@@ -224,54 +224,41 @@ void KeyFrame::Update(const cv::Mat &l_image, const cv::Mat &r_image,
   }
 }
 
-scalar_t KeyFrame::Triangulate(const StereoCameraModel &model) {
+bool StereoVo::TriangulateFeature(const StereoCameraModel &model,
+                                  Feature& feature) {
   kr::vec2<scalar_t> lPt, rPt;
-  kr::Pose<scalar_t> poseLeft;  //  identity
-  kr::Pose<scalar_t> poseRight;
+  Pose poseLeft;  //  identity
+  Pose poseRight; //  shifted right along x
   poseRight.p[0] = model.baseline();
 
-  scalar_t depth = 0;
+  lPt[0] = feature.p_coord_left().x;
+  lPt[1] = feature.p_coord_left().y;
+  rPt[0] = feature.p_coord_right().x;
+  rPt[1] = feature.p_coord_right().y;
 
-  for (auto itr = features_.begin(); itr != features_.end();) {
+  kr::vec3<scalar_t> p3D;
+  scalar_t ratio;
 
-    lPt[0] = itr->left_coord.x;
-    lPt[1] = itr->left_coord.y;
-    rPt[0] = itr->right_coord.x;
-    rPt[1] = itr->right_coord.y;
+  //  triangulate 3d position
+  kr::triangulate(poseLeft, lPt, poseRight, rPt, p3D, ratio);
 
-    kr::vec3<scalar_t> p3D;
-    scalar_t ratio;
+  if (ratio > 1e5) {
+    //  bad, reject this feature
+    return false;
+  } else {
+    //  valid, refine the point
+    std::vector<Pose> poses({poseLeft, poseRight});
+    std::vector<kr::vec2<scalar_t>> obvs({lPt, rPt});
 
-    depth += kr::triangulate(poseLeft, lPt, poseRight, rPt, p3D, ratio);
-
-    bool failed = false;
-    if (ratio > 1e5) {
-      //  bad, reject this feature
-      failed = true;
+    if (kr::refinePoint(poses, obvs, p3D)) {
+      feature.set_p_world( CvPoint3(p3D[0], p3D[1], p3D[2]) );
     } else {
-      //  valid, refine the point
-      std::vector<kr::Pose<scalar_t>> poses({poseLeft, poseRight});
-      std::vector<kr::vec2<scalar_t>> obvs({lPt, rPt});
-
-      if (kr::refinePoint(poses, obvs, p3D)) {
-        itr->point = cv::Point3f(p3D[0], p3D[1], p3D[2]);
-      } else {
-        //  failed to converge
-        failed = true;
-      }
-    }
-
-    if (failed) {
-      //  erase feature
-      itr = features_.erase(itr);
-    } else {
-      itr->triangulated = true;
-      itr++;
+      //  failed to converge
+      return false;
     }
   }
-  depth /= features_.size();
-  ROS_INFO("Mean depth to scene: %f", depth);
-  return depth;
+
+  return true;
 }
 
 void TrackFeatures(const cv::Mat &image1, const cv::Mat &image2,

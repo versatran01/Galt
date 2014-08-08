@@ -81,7 +81,8 @@ class StereoVo {
   std::vector<KeyFrame> key_frames_;
   std::vector<Feature> features_;
 
-  scalar_t Triangulate(const StereoCameraModel &model);
+  bool TriangulateFeature(const StereoCameraModel &model,
+                          Feature& feature);
   void Display(const cv::Mat &l_image, const cv::Mat &r_image,
                const std::vector<CvPoint2> &new_corners);
 };

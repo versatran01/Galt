@@ -66,37 +66,6 @@ void StereoVo::Iterate(const cv::Mat &l_image, const cv::Mat &r_image) {
     key_frame_.features_[i].next = new_features[i];
   }
 
-  //  solve for incremental pose update
-  if (!key_frame_.features_.empty()) {
-    std::vector<CvPoint2> imagePoints;
-    std::vector<CvPoint3> worldPoints;
-    std::vector<uchar> inliers;
-
-    for (const Feature &feat : key_frame_.features_) {
-      imagePoints.push_back(feat.next);
-      worldPoints.push_back(feat.point);
-    }
-
-    cv::Mat rvec = cv::Mat(3, 1, CV_64FC1);
-    cv::Mat tvec = cv::Mat(3, 1, CV_64FC1);
-    const size_t minInliers = std::ceil(worldPoints.size() * 0.6);
-    cv::solvePnPRansac(worldPoints, imagePoints,
-                       model_.left().fullIntrinsicMatrix(),
-                       std::vector<double>(), rvec, tvec, false, 100, 4.0,
-                       minInliers, inliers, cv::ITERATIVE);
-
-    //  convert rotation to quaternion
-    kr::vec3<scalar_t> r(rvec.at<double>(0, 0), rvec.at<double>(1, 0),
-                         rvec.at<double>(2, 0));
-    kr::vec3<scalar_t> t(tvec.at<double>(0, 0), tvec.at<double>(1, 0),
-                         tvec.at<double>(2, 0));
-
-    auto pose = kr::Pose<scalar_t>::fromOpenCV(r, t);
-
-    //  left-multiply by the keyframe pose to get world pose
-    current_pose_ = key_frame_.pose_.compose(pose);
-  }
-
   // Display images
   Display(l_image, r_image, new_features);
 

@@ -11,6 +11,8 @@
 #include <kr_math/feature.hpp>
 #include <kr_math/pose.hpp>
 
+#include <stereo_vo/key_frame.h>
+
 #include <Eigen/Geometry>
 
 namespace galt {
@@ -29,10 +31,10 @@ StereoVo::StereoVo() {}
 void StereoVo::Initialize(const cv::Mat &l_image, const cv::Mat &r_image,
                           const StereoCameraModel &model) {
   model_ = model;
-  key_frame_.Update(l_image, r_image, config_, model, kr::Pose<scalar_t>(),
+  /*key_frame_.Update(l_image, r_image, config_, model, kr::Pose<scalar_t>(),
                     true);
   current_pose_ = key_frame_.pose_;
-  key_frame_.prev_image_ = l_image;
+  key_frame_.prev_image_ = l_image;*/
 
   std::cout << "StereoVo initialized, baseline: " << model_.baseline()
             << std::endl;
@@ -49,7 +51,7 @@ void StereoVo::Iterate(const cv::Mat &l_image, const cv::Mat &r_image) {
   //  track existing features
   if (!features_.empty() && !previous_l_image_.empty()) {
     std::vector<CvPoint2> l_updated;
-    TrackFeatures(previous_l_image_,l_image,features_,l_updated);
+    //TrackFeatures(previous_l_image_,l_image,features_,l_updated);
     
     assert(features_.size() == l_updated.size());
     for (size_t k=0; k < l_updated.size(); k++) {
@@ -62,12 +64,12 @@ void StereoVo::Iterate(const cv::Mat &l_image, const cv::Mat &r_image) {
   
   //  extract features
   std::vector<Feature> new_features;
-  ExtractFeatures(l_image, new_features);
+  //ExtractFeatures(l_image, new_features);
   
   //  track into right image
   if (!new_features.empty()) {
     std::vector<CvPoint2> r_corners;
-    TrackFeatures(l_image,r_image,new_features,r_corners);
+    //TrackFeatures(l_image,r_image,new_features,r_corners);
     
     assert(new_features.size() == r_corners.size());
     for (size_t k=0; k < new_features.size(); k++) {
@@ -156,8 +158,8 @@ void StereoVo::Display(const cv::Mat &l_image, const cv::Mat &r_image,
   static cv::Mat two_frame(2 * n_rows, 2 * n_cols, CV_8UC1);
 
   // Copy 2 frames 4 images on to one image
-  key_frame_.l_image_.copyTo(two_frame(cv::Rect(0, 0, n_cols, n_rows)));
-  key_frame_.r_image_.copyTo(two_frame(cv::Rect(n_cols, 0, n_cols, n_rows)));
+  //key_frame_.l_image_.copyTo(two_frame(cv::Rect(0, 0, n_cols, n_rows)));
+  //key_frame_.r_image_.copyTo(two_frame(cv::Rect(n_cols, 0, n_cols, n_rows)));
   l_image.copyTo(two_frame(cv::Rect(0, n_rows, n_cols, n_rows)));
   r_image.copyTo(two_frame(cv::Rect(n_cols, n_rows, n_cols, n_rows)));
 
@@ -166,7 +168,7 @@ void StereoVo::Display(const cv::Mat &l_image, const cv::Mat &r_image,
   cv::cvtColor(two_frame, two_frame_color, CV_GRAY2BGR);
 
   // Draw triangulated features on key frame
-  for (const auto &feature : key_frame_.features_) {
+  /*for (const auto &feature : key_frame_.features_) {
     auto r_p = feature.right + CvPoint2(n_cols, 0);
     cv::circle(two_frame_color, feature.left, 3, cv_color.blue, 2);
     cv::circle(two_frame_color, r_p, 3, cv_color.green, 2);
@@ -180,7 +182,7 @@ void StereoVo::Display(const cv::Mat &l_image, const cv::Mat &r_image,
     auto n_p = *it_new + CvPoint2(0, n_rows);
     cv::circle(two_frame_color, n_p, 3, cv_color.red, 2);
     cv::line(two_frame_color, it_feat->left, n_p, cv_color.red, 1);
-  }
+  }*/
 
   // Add text annotation
   double offset_x = 10.0, offset_y = 30.0;
@@ -194,7 +196,7 @@ void StereoVo::Display(const cv::Mat &l_image, const cv::Mat &r_image,
               cv_color.yellow, thickness);
   // How many matching features?
   std::ostringstream ss;
-  ss << key_frame_.features_.size();
+  //ss << key_frame_.features_.size();
   cv::putText(two_frame_color, ss.str(),
               CvPoint2(offset_x, n_rows - offset_y / 2), font, scale,
               cv_color.yellow, thickness);
@@ -204,7 +206,7 @@ void StereoVo::Display(const cv::Mat &l_image, const cv::Mat &r_image,
   cv::waitKey(1);
 }
 
-void KeyFrame::Update(const cv::Mat &l_image, const cv::Mat &r_image,
+/*void KeyFrame::Update(const cv::Mat &l_image, const cv::Mat &r_image,
                       const StereoVoConfig &config,
                       const StereoCameraModel &model,
                       const kr::Pose<scalar_t> &pose, bool init) {
@@ -256,7 +258,7 @@ void KeyFrame::Update(const cv::Mat &l_image, const cv::Mat &r_image,
     pose_ = kr::Pose<scalar_t>(kr::quat<scalar_t>(0, 1, 0, 0),
                                kr::vec3<scalar_t>(0, 0, meanDepth));
   }
-}
+}*/
 
 void StereoVo::TriangulateFeatures() {
   kr::vec2<scalar_t> lPt, rPt;

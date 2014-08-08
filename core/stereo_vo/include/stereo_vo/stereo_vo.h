@@ -2,6 +2,8 @@
 #define GALT_STEREO_VO_H_
 
 #include "stereo_vo/common.h"
+#include "stereo_vo/key_frame.h"
+#include "stereo_vo/feature.h"
 
 #include <vector>
 #include <memory>
@@ -22,8 +24,6 @@ using namespace image_geometry;
 using StereoVoConfig = ::stereo_vo::StereoVoDynConfig;
 
 class StereoVo;
-class KeyFrame;
-class Feature;
 
 // struct Feature {
 //  Feature() : triangulated(false) {}

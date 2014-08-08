@@ -69,6 +69,8 @@ class StereoVo {
 
   void UpdateConfig(const StereoVoConfig &config) { config_ = config; }
 
+  void AddKeyFrame();
+  
   const Pose &current_pose() const { return current_pose_; }
   const bool init() const { return init_; }
 

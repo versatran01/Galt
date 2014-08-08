@@ -46,6 +46,11 @@ void StereoVo::Initialize(const cv::Mat &l_image, const cv::Mat &r_image,
 
 void StereoVo::Iterate(const cv::Mat &l_image, const cv::Mat &r_image) {
   
+  //  TODO: track existing features
+  
+  //  do pnp
+  EstimatePose();
+  
   //  extract features
   std::vector<Feature> new_features;
   ExtractFeatures(l_image, new_features);
@@ -62,36 +67,10 @@ void StereoVo::Iterate(const cv::Mat &l_image, const cv::Mat &r_image) {
   //  triangulate new features, if any
   TriangulateFeatures();
   
+  //  check if a new keyframe is necessary and add
+  AddKeyFrame();
   
-  
-  // Track features across frames
-  /*std::vector<cv::Point2f> new_features, l_features;
-  std::vector<uchar> status;
-
-  for (const Feature &feat : key_frame_.features_) {
-    l_features.push_back(feat.next);
-  }
-
-  if (!l_features.empty()) {
-    TrackFeatures(key_frame_.prev_image_, l_image, l_features, new_features,
-                  status, config_);
-  }
-
-  PruneByStatus(status, key_frame_.features_);
-  PruneByStatus(status, new_features);
-
-  // Save new features to key frame
-  for (unsigned i = 0; i != new_features.size(); ++i) {
-    key_frame_.features_[i].next = new_features[i];
-  }
-
-  // Display images
-  Display(l_image, r_image, new_features);
-
-  if (new_features.size() < static_cast<size_t>(config_.min_features)) {
-    key_frame_.Update(l_image, r_image, config_, model_, current_pose_);
-  }
-  key_frame_.prev_image_ = l_image;*/
+  //  TODO: display
 }
 
 void StereoVo::EstimatePose() {
@@ -132,6 +111,28 @@ void StereoVo::EstimatePose() {
   } else {
     ROS_WARN("EstimatePose() called but no features available");
   }
+}
+
+bool StereoVo::AddKeyFrame() {
+  bool should_add_key_frame = false;
+  if (key_frames_.empty()) {
+    should_add_key_frame = true;
+  } else {
+    const KeyFrame& last_key_frame = key_frames_.back();
+    
+    //  check distance metric to see if new keyframe is required
+    const double distance = (last_key_frame.pose().p - current_pose_.p).norm();
+    if (distance > config_.keyframe_dist_thresh) {
+      should_add_key_frame = true;
+    }
+  }
+  
+  if (should_add_key_frame) {
+
+    //  TODO: add a keyframe here eventually
+    
+  }
+  return should_add_key_frame;
 }
 
 void StereoVo::Display(const cv::Mat &l_image, const cv::Mat &r_image,

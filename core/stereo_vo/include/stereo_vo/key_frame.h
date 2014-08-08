@@ -7,7 +7,6 @@ namespace galt {
 
 namespace stereo_vo {
 
-
 class KeyFrame {
  public:
   const Pose pose() const { return pose_; }
@@ -18,6 +17,7 @@ class KeyFrame {
 };
 
 using KeyFrames = std::vector<KeyFrame>;
+
 }  // namespace stereo_vo
 
 }  // namespace galt

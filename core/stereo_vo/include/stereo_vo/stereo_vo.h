@@ -15,14 +15,11 @@
 
 #include "opencv2/core/core.hpp"
 
-#include "stereo_vo/StereoVoDynConfig.h"
-
 namespace galt {
 
 namespace stereo_vo {
 
 using namespace image_geometry;
-using StereoVoConfig = ::stereo_vo::StereoVoDynConfig;
 
 // struct Feature {
 //  Feature() : triangulated(false) {}
@@ -61,10 +58,6 @@ class StereoVo {
   void Initialize(const cv::Mat &l_image, const cv::Mat &r_image,
                   const StereoCameraModel &model);
   void Iterate(const cv::Mat &l_image, const cv::Mat &r_image);
-  void ExtractFeatures(const cv::Mat &image, std::vector<Feature> &features);
-  void TrackFeatures(const cv::Mat &image1, const cv::Mat &image2,
-                     std::vector<Feature> &features,
-                     std::vector<CvPoint2> &corners);
   void EstimatePose();
 
   void UpdateConfig(const StereoVoConfig &config) { config_ = config; }
@@ -84,31 +77,17 @@ class StereoVo {
   KeyFrames key_frames_;
   std::unique_ptr<GoodFeatureDetector> detector_;
 
-  cv::Mat previous_l_image_;
+  cv::Mat l_image_prev_;
+  cv::Mat r_image_prev_;
 
   void TriangulateFeatures();
-  void Display(const cv::Mat &l_image, const cv::Mat &r_image,
-               const std::vector<CvPoint2> &new_corners);
 };
 
-// template <typename T>
-// void PruneByStatus(const std::vector<uchar> &status, std::vector<T> &objects)
-// {
-//  auto ite_p = objects.begin();
-//  for (auto ite_s = status.begin(); ite_s != status.end(); ite_s++) {
-//    if (*ite_s) {
-//      ite_p++;
-//    } else {
-//      ite_p = objects.erase(ite_p);
-//    }
-//  }
-//}
 
-// void TrackFeatures(const cv::Mat &image1, const cv::Mat &image2,
-//                   std::vector<CvPoint2> &features1,
-//                   std::vector<CvPoint2> &features2, std::vector<uchar>
-// &status,
-//                   const StereoVoConfig &config);
+void TrackFeatures(const cv::Mat &image1, const cv::Mat &image2,
+                   Features &features,
+                   std::function<void(Feature *, const CvPoint2 &)> update_func,
+                   const int win_size, const int max_level);
 
 }  // namespace stereo_vo
 

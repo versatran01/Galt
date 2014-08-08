@@ -2,6 +2,7 @@
 #define GALT_STEREO_VO_FEATURE_H_
 
 #include <memory>
+#include <functional>
 
 #include "stereo_vo/common.h"
 
@@ -10,6 +11,8 @@ namespace galt {
 namespace stereo_vo {
 
 class KeyFrame;
+
+void UpdateFeatures();
 
 struct Point {
   CvPoint2 p_pixel;
@@ -21,6 +24,8 @@ using Points = std::vector<Point>;
 
 class Feature {
  public:
+  friend void UpdateFeatures();
+
   Feature(const CvPoint2& pixel) : p_pixel_left_{pixel} {}
   const bool ready() const { return ready_; }
 
@@ -42,11 +47,17 @@ class Feature {
     p_pixel_right_ = p_pixel_right;
   }
 
+  const CvPoint2& p_pixel_prev() const { return p_pixel_prev_; }
+  void set_p_pixel_prev(const CvPoint2& p_pixel_prev) {
+    p_pixel_prev_ = p_pixel_prev;
+  }
+
  private:
   bool ready_{false};
   bool triangulated_{false};
   CvPoint3 p_world_;
   CvPoint2 p_pixel_left_;
+  CvPoint2 p_pixel_prev_;
   CvPoint2 p_pixel_right_;
   Points points_;
 };

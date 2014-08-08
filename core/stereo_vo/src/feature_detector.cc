@@ -21,9 +21,9 @@ const Grid FeatureDetectorBase::CreateGrid(const cv::Mat &image,
   return grid;
 }
 
-void GoodFeatureDetector::DetectFeatures(const cv::Mat &image,
-                                         Features &features) const {
-  Corners2 corners;
+void FeatureDetectorBase::AddFeatures(const cv::Mat &image,
+                                      Features &features) const {
+  CvCorners2 corners;
   // Create a grid
   Grid grid = CreateGrid(image, features);
   // Iterate through the grid
@@ -36,19 +36,25 @@ void GoodFeatureDetector::DetectFeatures(const cv::Mat &image,
       cv::Mat cell_image =
           image(cv::Range(y * cell_size_, (y + 1) * cell_size_),
                 cv::Range(x * cell_size_, (x + 1) * cell_size_));
-      cv::goodFeaturesToTrack(cell_image, corners, max_corners_, quality_level_,
-                              min_distance_);
+      DetectFeatures(cell_image, corners);
       // Add to existing features
       if (!corners.empty()) {
-        auto p = corners.front();
-        p.x += x * cell_size_;
-        p.y += y * cell_size_;
+        for (auto corner : corners) {
+          corner.x += x * cell_size_;
+          corner.y += y * cell_size_;
 
-        Feature feature(p);
-        features.push_back(feature);
+          Feature feature(corner);
+          features.push_back(feature);
+        }
       }
     }
   }
+}
+
+void GoodFeatureDetector::DetectFeatures(const cv::Mat &image,
+                                         CvCorners2 &corners) const {
+  cv::goodFeaturesToTrack(image, corners, max_corners_, quality_level_,
+                          min_distance_);
 }
 
 }  // namespace stereo_vo

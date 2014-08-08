@@ -19,7 +19,8 @@ class FeatureDetectorBase {
   virtual ~FeatureDetectorBase() {}
 
   virtual void DetectFeatures(const cv::Mat& image,
-                              Features& features) const = 0;
+                              CvCorners2& corners) const = 0;
+  void AddFeatures(const cv::Mat& image, Features& features) const;
 
  protected:
   const Grid CreateGrid(const cv::Mat& image, const Features& features) const;
@@ -34,7 +35,7 @@ class GoodFeatureDetector : public FeatureDetectorBase {
         quality_level_{quality_level},
         min_distance_{static_cast<double>(cell_size / max_corners)} {}
 
-  void DetectFeatures(const cv::Mat& image, Features& features) const override;
+  void DetectFeatures(const cv::Mat& image, CvCorners2& corners) const override;
 
  private:
   int max_corners_;

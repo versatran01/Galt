@@ -43,9 +43,8 @@ void StereoVo::Initialize(const cv::Mat &l_image, const cv::Mat &r_image,
 }
 
 void StereoVo::Iterate(const cv::Mat &l_image, const cv::Mat &r_image) {
-
-  //  track existing features
-  if (!features_.empty() && !previous_l_image_.empty()) {
+  // Track features in previous frame into current frame
+  if (!features_.empty() && !l_image_prev_.empty()) {
     std::vector<CvPoint2> l_updated;
     // TrackFeatures(previous_l_image_,l_image,features_,l_updated);
 
@@ -55,13 +54,18 @@ void StereoVo::Iterate(const cv::Mat &l_image, const cv::Mat &r_image) {
     }
   }
 
+  TrackFeatures(l_image_prev_, l_image, features_, &Feature::set_p_pixel_right,
+                config_.win_size, config_.max_level);
+
   //  do pnp
   EstimatePose();
 
-  //  extract features
-  std::vector<Feature> new_features;
-  // ExtractFeatures(l_image, new_features);
+  // Extract features
+  detector_->AddFeatures(l_image, features_);
 
+  // Track features in left image into right image
+
+  /*
   //  track into right image
   if (!new_features.empty()) {
     std::vector<CvPoint2> r_corners;
@@ -72,17 +76,22 @@ void StereoVo::Iterate(const cv::Mat &l_image, const cv::Mat &r_image) {
       new_features[k].set_p_pixel_right(r_corners[k]);
     }
   }
+  */
 
-  //  triangulate new features, if any
+  // triangulate new features, if any
   TriangulateFeatures();
 
-  //  check if a new keyframe is necessary and add
+  // check if a new keyframe is necessary and add
   AddKeyFrame();
 
-  //  TODO: display
+  // TODO: display
+  Display(l_image_prev_, l_image, r_image_prev_, r_image, features_);
 
-  //  save previous left image for tracking later
-  previous_l_image_ = l_image;
+  // Save previous left image for tracking later, and right image for display
+  l_image_prev_ = l_image;
+  r_image_prev_ = r_image;
+  // Update features for next iteration
+  //  UpdateFeatures();
 }
 
 void StereoVo::EstimatePose() {
@@ -145,21 +154,21 @@ bool StereoVo::AddKeyFrame() {
   return should_add_key_frame;
 }
 
-void StereoVo::Display(const cv::Mat &l_image, const cv::Mat &r_image,
-                       const std::vector<CvPoint2> &new_features) {
-  int n_rows = l_image.rows;
-  int n_cols = l_image.cols;
-  static cv::Mat two_frame(2 * n_rows, 2 * n_cols, CV_8UC1);
+//void StereoVo::Display(const cv::Mat &l_image, const cv::Mat &r_image,
+//                       const Features &features) {
+//  int n_rows = l_image.rows;
+//  int n_cols = l_image.cols;
+//  static cv::Mat two_frame(2 * n_rows, 2 * n_cols, CV_8UC1);
 
   // Copy 2 frames 4 images on to one image
   // key_frame_.l_image_.copyTo(two_frame(cv::Rect(0, 0, n_cols, n_rows)));
   // key_frame_.r_image_.copyTo(two_frame(cv::Rect(n_cols, 0, n_cols, n_rows)));
-  l_image.copyTo(two_frame(cv::Rect(0, n_rows, n_cols, n_rows)));
-  r_image.copyTo(two_frame(cv::Rect(n_cols, n_rows, n_cols, n_rows)));
+//  l_image.copyTo(two_frame(cv::Rect(0, n_rows, n_cols, n_rows)));
+//  r_image.copyTo(two_frame(cv::Rect(n_cols, n_rows, n_cols, n_rows)));
 
   // Convert to color
-  cv::Mat two_frame_color;
-  cv::cvtColor(two_frame, two_frame_color, CV_GRAY2BGR);
+//  cv::Mat two_frame_color;
+//  cv::cvtColor(two_frame, two_frame_color, CV_GRAY2BGR);
 
   // Draw triangulated features on key frame
   /*for (const auto &feature : key_frame_.features_) {
@@ -179,26 +188,26 @@ void StereoVo::Display(const cv::Mat &l_image, const cv::Mat &r_image,
   }*/
 
   // Add text annotation
-  double offset_x = 10.0, offset_y = 30.0;
-  auto font = cv::FONT_HERSHEY_SIMPLEX;
-  double scale = 1.0, thickness = 2.0;
+//  double offset_x = 10.0, offset_y = 30.0;
+//  auto font = cv::FONT_HERSHEY_SIMPLEX;
+//  double scale = 1.0, thickness = 2.0;
   // Which frame?
-  cv::putText(two_frame_color, "key frame", CvPoint2(offset_x, offset_y), font,
-              scale, cv_color.yellow, thickness);
-  cv::putText(two_frame_color, "current frame",
-              CvPoint2(n_cols + offset_x, n_rows + offset_y), font, scale,
-              cv_color.yellow, thickness);
+//  cv::putText(two_frame_color, "key frame", CvPoint2(offset_x, offset_y), font,
+//              scale, cv_color.yellow, thickness);
+//  cv::putText(two_frame_color, "current frame",
+//              CvPoint2(n_cols + offset_x, n_rows + offset_y), font, scale,
+//              cv_color.yellow, thickness);
   // How many matching features?
-  std::ostringstream ss;
+//  std::ostringstream ss;
   // ss << key_frame_.features_.size();
-  cv::putText(two_frame_color, ss.str(),
-              CvPoint2(offset_x, n_rows - offset_y / 2), font, scale,
-              cv_color.yellow, thickness);
+//  cv::putText(two_frame_color, ss.str(),
+//              CvPoint2(offset_x, n_rows - offset_y / 2), font, scale,
+//              cv_color.yellow, thickness);
 
   // Display image
-  cv::imshow("two_frame", two_frame_color);
-  cv::waitKey(1);
-}
+//  cv::imshow("two_frame", two_frame_color);
+//  cv::waitKey(1);
+//}
 
 /*void KeyFrame::Update(const cv::Mat &l_image, const cv::Mat &r_image,
                       const StereoVoConfig &config,
@@ -313,6 +322,13 @@ void StereoVo::TriangulateFeatures() {
       I++;
     }
   }
+}
+
+void TrackFeatures(const cv::Mat &image1, const cv::Mat &image2,
+                   Features &features,
+                   std::function<void(Feature *, const CvPoint2 &)> update_func,
+                   const int win_size, const int max_level) {
+ ;
 }
 
 // void TrackFeatures(const cv::Mat &image1, const cv::Mat &image2,

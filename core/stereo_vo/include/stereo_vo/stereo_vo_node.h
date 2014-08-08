@@ -78,7 +78,7 @@ class StereoVoNode {
 };  // class StereoVoNode
 
 const StereoVoDynConfig ReadConfig(const ros::NodeHandle& nh);
-geometry_msgs::Pose KrPoseToRosPose(const kr::Pose<scalar_t>& kr_pose);
+geometry_msgs::Pose KrPoseToRosPose(const Pose& kr_pose);
 
 }  // namespace stereo_vo
 

@@ -28,7 +28,8 @@ StereoVo::StereoVo() {}
 void StereoVo::Initialize(const cv::Mat &l_image, const cv::Mat &r_image,
                           const StereoCameraModel &model) {
   model_ = model;
-  key_frame_.Update(l_image,r_image,config_,model,kr::Pose<scalar_t>(),true);
+  key_frame_.Update(l_image, r_image, config_, model, kr::Pose<scalar_t>(),
+                    true);
   current_pose_ = key_frame_.pose_;
   key_frame_.prev_image_ = l_image;
 
@@ -97,7 +98,7 @@ void StereoVo::Iterate(const cv::Mat &l_image, const cv::Mat &r_image) {
 
   // Display images
   Display(l_image, r_image, new_features);
-  
+
   if (new_features.size() < static_cast<size_t>(config_.min_features)) {
     key_frame_.Update(l_image, r_image, config_, model_, current_pose_);
   }
@@ -206,22 +207,21 @@ void KeyFrame::Update(const cv::Mat &l_image, const cv::Mat &r_image,
   l_image_ = l_image;
   r_image_ = r_image;
   if (!init) {
-   pose_ = pose;
+    pose_ = pose;
   } else {
-   pose_ = kr::Pose<scalar_t>(kr::quat<scalar_t>(0, 1, 0, 0),
-                              kr::vec3<scalar_t>(0, 0, meanDepth));
+    pose_ = kr::Pose<scalar_t>(kr::quat<scalar_t>(0, 1, 0, 0),
+                               kr::vec3<scalar_t>(0, 0, meanDepth));
   }
 }
 
 scalar_t KeyFrame::Triangulate(const StereoCameraModel &model) {
-
   kr::vec2<scalar_t> lPt, rPt;
   kr::Pose<scalar_t> poseLeft;  //  identity
   kr::Pose<scalar_t> poseRight;
   poseRight.p[0] = model.baseline();
 
-  scalar_t depth=0;
-  
+  scalar_t depth = 0;
+
   for (auto itr = features_.begin(); itr != features_.end();) {
 
     lPt[0] = itr->left_coord.x;
@@ -233,7 +233,7 @@ scalar_t KeyFrame::Triangulate(const StereoCameraModel &model) {
     scalar_t ratio;
 
     depth += kr::triangulate(poseLeft, lPt, poseRight, rPt, p3D, ratio);
-    
+
     bool failed = false;
     if (ratio > 1e5) {
       //  bad, reject this feature

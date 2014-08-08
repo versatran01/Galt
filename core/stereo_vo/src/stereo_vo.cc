@@ -1,4 +1,5 @@
-#include "stereo_vo/stereo_vo.h"
+#include <stereo_vo/stereo_vo.h>
+#include <stereo_vo/feature.h>
 
 #include <sstream>
 
@@ -103,6 +104,46 @@ void StereoVo::Iterate(const cv::Mat &l_image, const cv::Mat &r_image) {
     key_frame_.Update(l_image, r_image, config_, model_, current_pose_);
   }
   key_frame_.prev_image_ = l_image;
+}
+
+void StereoVo::EstimatePose() {
+  
+  if (!features_.empty()) {
+    
+    std::vector<CvPoint2> imagePoints;
+    std::vector<CvPoint3> worldPoints;
+    std::vector<uchar> inliers;
+    
+    imagePoints.reserve(features_.size());
+    worldPoints.reserve(features_.size());
+
+    for (const Feature &feat : features_) {
+      imagePoints.push_back(feat.p_pixel_left());
+      worldPoints.push_back(feat.p_world());
+    }
+
+    cv::Mat rvec = cv::Mat(3, 1, CV_64FC1);
+    cv::Mat tvec = cv::Mat(3, 1, CV_64FC1);
+    const size_t minInliers = std::ceil(worldPoints.size() * config_.pnp_ransac_inliers);
+    cv::solvePnPRansac(worldPoints, imagePoints,
+                       model_.left().fullIntrinsicMatrix(),
+                       std::vector<double>(), rvec, tvec, false, 100, 
+                       config_.pnp_ransac_error,
+                       minInliers, inliers, cv::ITERATIVE);
+
+    //  convert rotation to quaternion
+    kr::vec3<scalar_t> r(rvec.at<double>(0, 0), rvec.at<double>(1, 0),
+                         rvec.at<double>(2, 0));
+    kr::vec3<scalar_t> t(tvec.at<double>(0, 0), tvec.at<double>(1, 0),
+                         tvec.at<double>(2, 0));
+
+    auto pose = kr::Pose<scalar_t>::fromOpenCV(r, t);
+
+    //  left-multiply by the keyframe pose to get world pose
+    current_pose_ = pose;
+  } else {
+    ROS_WARN("EstimatePose() called but no features available");
+  }
 }
 
 void StereoVo::Display(const cv::Mat &l_image, const cv::Mat &r_image,

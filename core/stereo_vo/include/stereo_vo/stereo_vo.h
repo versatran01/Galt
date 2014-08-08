@@ -62,9 +62,9 @@ class StereoVo {
   void Initialize(const cv::Mat &l_image, const cv::Mat &r_image,
                   const StereoCameraModel &model);
   void Iterate(const cv::Mat &l_image, const cv::Mat &r_image);
-  void ExtractFeatures(const cv::Mat &image, std::vector &features);
+  void ExtractFeatures(const cv::Mat &image, std::vector<Feature> &features);
   void TrackFeatures(const cv::Mat &image1, const cv::Mat &image2,
-                     std::vector &features, std::vector<CvPoint2> &corners);
+                     std::vector<Feature> &features, std::vector<CvPoint2> &corners);
   void EstimatePose();
 
   void UpdateConfig(const StereoVoConfig &config) { config_ = config; }

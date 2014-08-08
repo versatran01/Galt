@@ -22,6 +22,10 @@ class Feature {
   const bool ready() const { return ready_; }
   const std::vector<Point>& points() { return points_; }
 
+  const CvPoint3& p_world() const { return p_world_; }
+  
+  const CvPoint2& p_pixel_left() const { return p_pixel_left_; }
+  
  private:
   bool ready_{false};
   CvPoint3 p_world_;

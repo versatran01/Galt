@@ -45,8 +45,27 @@ void StereoVo::Initialize(const cv::Mat &l_image, const cv::Mat &r_image,
 }
 
 void StereoVo::Iterate(const cv::Mat &l_image, const cv::Mat &r_image) {
+  
+  //  extract features
+  std::vector<Feature> new_features;
+  ExtractFeatures(l_image, new_features);
+  
+  //  track into right image
+  if (!new_features.empty()) {
+    std::vector<CvPoint2> r_corners;
+    TrackFeatures(l_image,r_image,new_features,r_corners);
+    for (size_t k=0; k < new_features.size(); k++) {
+      new_features[k].set_p_pixel_right(r_corners[k]);
+    }
+  }
+  
+  //  triangulate new features, if any
+  TriangulateFeatures();
+  
+  
+  
   // Track features across frames
-  std::vector<cv::Point2f> new_features, l_features;
+  /*std::vector<cv::Point2f> new_features, l_features;
   std::vector<uchar> status;
 
   for (const Feature &feat : key_frame_.features_) {
@@ -72,7 +91,7 @@ void StereoVo::Iterate(const cv::Mat &l_image, const cv::Mat &r_image) {
   if (new_features.size() < static_cast<size_t>(config_.min_features)) {
     key_frame_.Update(l_image, r_image, config_, model_, current_pose_);
   }
-  key_frame_.prev_image_ = l_image;
+  key_frame_.prev_image_ = l_image;*/
 }
 
 void StereoVo::EstimatePose() {

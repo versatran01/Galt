@@ -32,6 +32,10 @@ class Feature {
   const CvPoint2& p_pixel_left() const { return p_pixel_left_; }
   const CvPoint2& p_pixel_right() const { return p_pixel_right_; }
   
+  void set_p_pixel_right(const CvPoint2& p_pixel_right) { 
+    p_pixel_right_ = p_pixel_right;
+  }
+  
  private:
   bool ready_{false};
   bool triangulated_{false};

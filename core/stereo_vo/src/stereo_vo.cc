@@ -251,6 +251,8 @@ bool StereoVo::TriangulateFeature(const StereoCameraModel &model,
     std::vector<kr::vec2<scalar_t>> obvs({lPt, rPt});
 
     if (kr::refinePoint(poses, obvs, p3D)) {
+      //  convert to world coordinates
+      p3D = current_pose_.q.conjugate() * p3D + current_pose_.p;
       feature.set_p_world( CvPoint3(p3D[0], p3D[1], p3D[2]) );
     } else {
       //  failed to converge

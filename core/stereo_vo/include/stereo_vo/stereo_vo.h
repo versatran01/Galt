@@ -38,6 +38,8 @@ class StereoVo {
   const Pose &current_pose() const { return current_pose_; }
   const bool init() const { return init_; }
 
+  const Features& features() const { return features_; }
+  
  private:
   bool init_{false};
   StereoCameraModel model_;

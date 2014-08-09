@@ -41,11 +41,11 @@ void Display(const cv::Mat &l_image_prev, const cv::Mat &l_image,
       if (feature.ready()) {  // optimized
         color = cv_color::GREEN;
       } else {  // triangulated
-        color = cv_color::ORANGE;
+        color = cv_color::BLUE;
       }
       cv::circle(display, l_p, 3, color, 2);
       cv::circle(display, r_p, 3, color, 2);
-      cv::circle(display, n_p, 3, color, 2);
+      cv::circle(display, n_p, 4, color, 2);
       cv::line(display, l_p, r_p, color, 1);
       cv::line(display, l_p, n_p, color, 1);
     }

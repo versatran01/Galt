@@ -28,6 +28,8 @@ void StereoVo::Initialize(const cv::Mat &l_image, const cv::Mat &r_image,
   // Save current images to previous images
   l_image_prev_ = l_image;
   r_image_prev_ = r_image;
+  current_pose_.q = kr::quat<scalar_t>(0,1,0,0);
+  current_pose_.p = kr::vec3<scalar_t>(0,0,10);
   // Create a window for display
   cv::namedWindow("display",
                   CV_WINDOW_NORMAL | CV_WINDOW_KEEPRATIO | CV_GUI_EXPANDED);
@@ -46,10 +48,10 @@ void StereoVo::Iterate(const cv::Mat &l_image, const cv::Mat &r_image) {
   // Track features from prev left into next left, assign pixel_next
   TrackFeatures(l_image_prev_, l_image, features_, &Feature::set_p_pixel_next,
                 config_.win_size, config_.max_level);
-  // Triangulate points with features in stereo images
-//  TriangulateFeatures();
   // Estimate pose using PnP
-//  EstimatePose();
+  EstimatePose();
+  // Triangulate points with features in stereo images
+  TriangulateFeatures();
   // Add new features for tracking later
   detector_.AddFeatures(l_image, features_);
   // Check if a new keyframe is necessary and add
@@ -72,8 +74,13 @@ void StereoVo::EstimatePose() {
     worldPoints.reserve(features_.size());
 
     for (const Feature &feat : features_) {
-      imagePoints.push_back(feat.p_pixel_left());
-      worldPoints.push_back(feat.p_world());
+      if (feat.triangulated()) {
+        imagePoints.push_back(feat.p_pixel_left());
+        worldPoints.push_back(feat.p_world());
+      }
+    }
+    if (imagePoints.empty()) {
+      return;
     }
 
     cv::Mat rvec = cv::Mat(3, 1, CV_64FC1);
@@ -219,6 +226,7 @@ void StereoVo::TriangulateFeatures() {
           //  convert to world coordinates
           p3D = current_pose_.q.conjugate() * p3D + current_pose_.p;
           feature.set_p_world(CvPoint3(p3D[0], p3D[1], p3D[2]));
+          feature.set_triangulated(true);
         } else {
           //  failed to converge
           failed = true;

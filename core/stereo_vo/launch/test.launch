@@ -7,7 +7,7 @@
     <arg name="bagfile_home" value="$(env GALT_BAGFILES)"/>
     <arg name="bagfile" default="day2/fly/2014-07-25-18-14-12.bag"/>
 
-    <arg name="cell_size" default="40"/>
+    <arg name="cell_size" default="65"/>
     <arg name="max_corners" default="1"/>
     <arg name="max_level" default="3"/>
     <arg name="win_size" default="11"/>
@@ -15,7 +15,7 @@
     <arg name="rviz" default="false"/>
 
     <node pkg="rosbag" type="play" name="player"
-        args="-l $(arg bagfile_home)/$(arg bagfile)">
+        args="-l $(arg bagfile_home)/$(arg bagfile) -s 70">
     </node>
 
     <node pkg="stereo_image_proc" type="stereo_image_proc"

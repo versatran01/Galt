@@ -10,7 +10,8 @@ namespace stereo_vo {
 
 void Display(const cv::Mat &l_image_prev, const cv::Mat &l_image,
              const cv::Mat &r_image_prev, const cv::Mat &r_image,
-             const Features &features) {
+             const Features &features,
+             const std::vector<std::shared_ptr<KeyFrame>> &key_frames) {
   int n_rows = l_image.rows;
   int n_cols = l_image.cols;
   static cv::Mat display_gray(2 * n_rows, 2 * n_cols, CV_8UC1);
@@ -63,9 +64,14 @@ void Display(const cv::Mat &l_image_prev, const cv::Mat &l_image,
               cv_color::YELLOW, thickness);
   // How many matching features?
   std::ostringstream ss;
-  ss << features.size();
+  ss << "Features: " << features.size();
   cv::putText(display, ss.str(), CvPoint2(offset_x, n_rows - offset_y / 2),
               font, scale, cv_color::YELLOW, thickness);
+  ss.str(std::string());
+  ss << "Key frames: " << key_frames.size();
+  cv::putText(display, ss.str(),
+              CvPoint2(n_cols + offset_x, n_rows - offset_y / 2), font, scale,
+              cv_color::YELLOW, thickness);
 
   // Display image
   cv::imshow("display", display);

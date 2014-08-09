@@ -49,7 +49,7 @@ class StereoVo {
 
   Pose current_pose_;
   Features features_;
-  KeyFrames key_frames_;
+  std::vector<std::shared_ptr<KeyFrame>> key_frames_;
   GoodFeatureDetector detector_;
 
   cv::Mat l_image_prev_;

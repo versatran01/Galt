@@ -57,7 +57,8 @@ void StereoVo::Iterate(const cv::Mat &l_image, const cv::Mat &r_image) {
   // Check if a new keyframe is necessary and add
   AddKeyFrame(current_pose(), l_image, r_image);
   // Visualization (optional)
-  Display(l_image_prev_, l_image, r_image_prev_, r_image, features_);
+  Display(l_image_prev_, l_image, r_image_prev_, r_image, features_,
+          key_frames_);
   // Save previous left image for tracking later, and right image for display
   l_image_prev_ = l_image;
   r_image_prev_ = r_image;
@@ -85,12 +86,12 @@ bool StereoVo::EstimatePose() {
 
     cv::Mat rvec = cv::Mat(3, 1, CV_64FC1);
     cv::Mat tvec = cv::Mat(3, 1, CV_64FC1);
-//    const size_t minInliers =
-//        std::ceil(worldPoints.size() * config_.pnp_ransac_inliers);
-    cv::solvePnP(
-        worldPoints, imagePoints, model_.left().fullIntrinsicMatrix(),
-        std::vector<double>(), rvec, tvec);/*, false, 100, config_.pnp_ransac_error,
-        minInliers, inliers, cv::ITERATIVE);*/
+    //    const size_t minInliers =
+    //        std::ceil(worldPoints.size() * config_.pnp_ransac_inliers);
+    cv::solvePnP(worldPoints, imagePoints, model_.left().fullIntrinsicMatrix(),
+                 std::vector<double>(), rvec,
+                 tvec); /*, false, 100, config_.pnp_ransac_error,
+minInliers, inliers, cv::ITERATIVE);*/
 
     //  convert rotation to quaternion
     kr::vec3<scalar_t> r(rvec.at<double>(0, 0), rvec.at<double>(1, 0),
@@ -115,9 +116,9 @@ bool StereoVo::AddKeyFrame(const Pose &pose, const cv::Mat &l_image,
   if (key_frames_.empty()) {
     should_add_key_frame = true;
   } else {
-    const KeyFrame &last_key_frame = key_frames_.back();
+    const auto &last_key_frame = key_frames_.back();
     //  check distance metric to see if new keyframe is required
-    const double distance = (last_key_frame.pose().p - current_pose_.p).norm();
+    const double distance = (last_key_frame->pose().p - current_pose_.p).norm();
     if (distance > config_.keyframe_dist_thresh) {
       should_add_key_frame = true;
     }
@@ -126,6 +127,17 @@ bool StereoVo::AddKeyFrame(const Pose &pose, const cv::Mat &l_image,
   if (should_add_key_frame) {
     //  TODO: add a keyframe here eventually
     auto key_frame = std::make_shared<KeyFrame>(pose, l_image, r_image);
+    key_frames_.push_back(key_frame);
+    for (auto &feature : features_) {
+      if (feature.triangulated()) {
+        auto p_pixel = feature.p_pixel_next();
+        auto p_coord =
+            PixelToCoord(model_.left().fx(), model_.left().fy(),
+                         model_.left().cx(), model_.left().cy(), p_pixel);
+        Point point(p_pixel, p_coord, key_frame);
+        feature.AddToPoints(point);
+      }
+    }
   }
   return should_add_key_frame;
 }

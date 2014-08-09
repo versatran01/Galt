@@ -23,7 +23,6 @@ const Grid FeatureDetectorBase::CreateGrid(const cv::Mat &image,
 
 void FeatureDetectorBase::AddFeatures(const cv::Mat &image,
                                       Features &features) const {
-  ROS_INFO("In AddFeatures");
   CvCorners2 corners;
   // Create a grid
   Grid grid = CreateGrid(image, features);
@@ -52,7 +51,6 @@ void FeatureDetectorBase::AddFeatures(const cv::Mat &image,
       }
     }
   }
-  ROS_INFO_STREAM("size of features: " << features.size());
 }
 
 void GoodFeatureDetector::DetectFeatures(const cv::Mat &image,

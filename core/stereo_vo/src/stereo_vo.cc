@@ -37,15 +37,12 @@ void StereoVo::Initialize(const cv::Mat &l_image, const cv::Mat &r_image,
 }
 
 void StereoVo::Iterate(const cv::Mat &l_image, const cv::Mat &r_image) {
-  ROS_INFO("before update features");
   // Update features for this iteration, assign pixel_next -> pixel_left
   UpdateFeatures(features_);
-  ROS_INFO("before track features right");
   // Track features from prev left into prev right, assign pixel_right
   TrackFeatures(l_image_prev_, r_image_prev_, features_,
                 &Feature::set_p_pixel_right, config_.win_size,
                 config_.max_level);
-  ROS_INFO("before track features next");
   // Track features from prev left into next left, assign pixel_next
   TrackFeatures(l_image_prev_, l_image, features_, &Feature::set_p_pixel_next,
                 config_.win_size, config_.max_level);
@@ -251,7 +248,6 @@ void TrackFeatures(const cv::Mat &image1, const cv::Mat &image2,
     corners1.push_back(feature.p_pixel_left());
   }
   CvCorners2 corners2;
-  ROS_INFO_STREAM("feat: " << features.size() << " crn1: " << corners1.size() << " crn2: " << corners2.size());
   // Do optical flow
   cv::calcOpticalFlowPyrLK(image1, image2, corners1, corners2, status,
                            cv::noArray(), cv::Size(win_size, win_size),
@@ -260,7 +256,6 @@ void TrackFeatures(const cv::Mat &image1, const cv::Mat &image2,
   PruneByStatus(status, features);
   PruneByStatus(status, corners1);
   PruneByStatus(status, corners2);
-  ROS_INFO_STREAM("feat: " << features.size() << " crn1: " << corners1.size() << " crn2: " << corners2.size());
   status.clear();
   // Do find fundamental matrix
   cv::findFundamentalMat(corners1, corners2, cv::FM_RANSAC, 1.5, 0.99, status);

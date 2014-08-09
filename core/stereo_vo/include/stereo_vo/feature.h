@@ -22,7 +22,7 @@ using Points = std::vector<Point>;
 
 class Feature {
  public:
-  Feature(const CvPoint2& pixel) : p_pixel_left_{pixel} {}
+  Feature(const CvPoint2& pixel) : p_pixel_next_{pixel} {}
   const bool ready() const { return ready_; }
 
   const bool triangulated() const { return triangulated_; }

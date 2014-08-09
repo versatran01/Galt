@@ -49,9 +49,9 @@ void StereoVo::Iterate(const cv::Mat &l_image, const cv::Mat &r_image) {
   TrackFeatures(l_image_prev_, l_image, features_, &Feature::set_p_pixel_next,
                 config_.win_size, config_.max_level);
   // Estimate pose using PnP
-  EstimatePose();
+  const bool hadViableFeatures = EstimatePose();
   // Triangulate points with features in stereo images
-  TriangulateFeatures();
+  TriangulateFeatures(!hadViableFeatures || true);
   // Add new features for tracking later
   detector_.AddFeatures(l_image, features_);
   // Check if a new keyframe is necessary and add
@@ -63,7 +63,7 @@ void StereoVo::Iterate(const cv::Mat &l_image, const cv::Mat &r_image) {
   r_image_prev_ = r_image;
 }
 
-void StereoVo::EstimatePose() {
+bool StereoVo::EstimatePose() {
   if (!features_.empty()) {
 
     std::vector<CvPoint2> imagePoints;
@@ -74,26 +74,23 @@ void StereoVo::EstimatePose() {
     worldPoints.reserve(features_.size());
 
     for (const Feature &feat : features_) {
-      if (feat.triangulated()) {
+      if (feat.triangulated() && feat.ready()) {
         imagePoints.push_back(feat.p_pixel_left());
         worldPoints.push_back(feat.p_world());
       }
     }
     if (imagePoints.empty()) {
-      return;
+      return false;
     }
 
     cv::Mat rvec = cv::Mat(3, 1, CV_64FC1);
     cv::Mat tvec = cv::Mat(3, 1, CV_64FC1);
-    const size_t minInliers =
-        std::ceil(worldPoints.size() * config_.pnp_ransac_inliers);
-    cv::solvePnP(worldPoints, imagePoints, model_.left().fullIntrinsicMatrix(),
-                 std::vector<double>(), rvec, tvec);
-    //    cv::solvePnPRansac(
-    //        worldPoints, imagePoints, model_.left().fullIntrinsicMatrix(),
-    //        std::vector<double>(), rvec, tvec, false, 100,
-    // config_.pnp_ransac_error,
-    //        minInliers, inliers, cv::ITERATIVE);
+//    const size_t minInliers =
+//        std::ceil(worldPoints.size() * config_.pnp_ransac_inliers);
+    cv::solvePnP(
+        worldPoints, imagePoints, model_.left().fullIntrinsicMatrix(),
+        std::vector<double>(), rvec, tvec);/*, false, 100, config_.pnp_ransac_error,
+        minInliers, inliers, cv::ITERATIVE);*/
 
     //  convert rotation to quaternion
     kr::vec3<scalar_t> r(rvec.at<double>(0, 0), rvec.at<double>(1, 0),
@@ -105,9 +102,11 @@ void StereoVo::EstimatePose() {
 
     //  left-multiply by the keyframe pose to get world pose
     current_pose_ = pose;
+    return true;
   } else {
     ROS_WARN("EstimatePose() called but no features available");
   }
+  return false;
 }
 
 bool StereoVo::AddKeyFrame(const Pose &pose, const cv::Mat &l_image,
@@ -131,7 +130,7 @@ bool StereoVo::AddKeyFrame(const Pose &pose, const cv::Mat &l_image,
   return should_add_key_frame;
 }
 
-void StereoVo::TriangulateFeatures() {
+void StereoVo::TriangulateFeatures(bool set_ready) {
   kr::vec2<scalar_t> lPt, rPt;
   Pose poseLeft;   //  identity
   Pose poseRight;  //  shifted right along x
@@ -178,8 +177,28 @@ void StereoVo::TriangulateFeatures() {
           p3D = current_pose_.q.conjugate() * p3D + current_pose_.p;
           feature.set_p_world(CvPoint3(p3D[0], p3D[1], p3D[2]));
           feature.set_triangulated(true);
+          feature.set_ready(set_ready);  //  set ready if indicated by iterate
         } else {
           //  failed to converge
+          failed = true;
+        }
+      }
+    } else if (!feature.ready()) {
+      //  check if we can refine the feature
+      if (feature.points().size() >= 2) {
+        std::vector<Pose> poses;
+        std::vector<kr::vec2<scalar_t>> obvs;
+        kr::vec3<scalar_t> p3D;
+
+        for (const Point &p : feature.points()) {
+          poses.push_back(p.key_frame->pose());
+          obvs.push_back(kr::vec2<scalar_t>(p.p_coord.x, p.p_coord.y));
+        }
+
+        if (kr::refinePoint(poses, obvs, p3D)) {
+          feature.set_p_world(CvPoint3(p3D[0], p3D[1], p3D[2]));
+          feature.set_ready(true);
+        } else {
           failed = true;
         }
       }

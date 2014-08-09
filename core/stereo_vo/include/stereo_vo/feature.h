@@ -24,7 +24,8 @@ class Feature {
  public:
   Feature(const CvPoint2& pixel) : p_pixel_next_{pixel} {}
   const bool ready() const { return ready_; }
-
+  void set_ready(bool ready) { ready_ = ready; }
+  
   const bool triangulated() const { return triangulated_; }
   void set_triangulated(bool triangulated) { triangulated_ = triangulated; }
 

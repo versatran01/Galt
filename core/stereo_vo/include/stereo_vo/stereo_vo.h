@@ -30,7 +30,7 @@ class StereoVo {
   void Initialize(const cv::Mat &l_image, const cv::Mat &r_image,
                   const StereoCameraModel &model);
   void Iterate(const cv::Mat &l_image, const cv::Mat &r_image);
-  void EstimatePose();
+  bool EstimatePose();
 
   void UpdateConfig(const StereoVoConfig &config) { config_ = config; }
 
@@ -55,7 +55,7 @@ class StereoVo {
   cv::Mat l_image_prev_;
   cv::Mat r_image_prev_;
 
-  void TriangulateFeatures();
+  void TriangulateFeatures(bool set_ready);
 };
 
 void TrackFeatures(const cv::Mat &image1, const cv::Mat &image2,

@@ -93,8 +93,8 @@ void StereoVoNode::StereoCallback(const ImageConstPtr& l_image_msg,
   }
   CameraInfo linfo = *l_cinfo_msg;
   CameraInfo rinfo = *r_cinfo_msg;
-  linfo.header.frame_id = "/camera";
-  rinfo.header.frame_id = "/camera";
+  linfo.header.frame_id = "/stereo";
+  rinfo.header.frame_id = "/stereo";
   model.fromCameraInfo(linfo, rinfo);
 
   // Get stereo images
@@ -109,8 +109,8 @@ void StereoVoNode::StereoCallback(const ImageConstPtr& l_image_msg,
     return;
   }
 
-  /*stereo_vo_.Iterate(l_image_rect, r_image_rect);
-  auto current_pose = KrPoseToRosPose(stereo_vo_.GetCurrentPose());
+  stereo_vo_.Iterate(l_image_rect, r_image_rect);
+  /*auto current_pose = KrPoseToRosPose(stereo_vo_.GetCurrentPose());
 
   // Publish PointCloud from keyframe pose and features
   PublishPointCloud(stereo_vo_.GetKeyFramePose(),
@@ -195,7 +195,7 @@ const StereoVoConfig ReadConfig(const ros::NodeHandle& nh) {
   return config;
 }
 
-geometry_msgs::Pose KrPoseToRosPose(const kr::Pose<scalar_t>& kr_pose) {
+geometry_msgs::Pose KrPoseToRosPose(const Pose& kr_pose) {
   geometry_msgs::Pose ros_pose;
   ros_pose.orientation.w = kr_pose.q.w();
   ros_pose.orientation.x = -kr_pose.q.x();

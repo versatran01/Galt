@@ -24,7 +24,7 @@ using image_geometry::StereoCameraModel;
 class StereoVo {
  public:
   StereoVo(const StereoVoConfig& config) : config_(config),
-    detector_(config.cell_size, config.max_corners, 0.005) {}
+    detector_(config.cell_size, config.max_corners, 0.05) {}
 
   void Initialize(const cv::Mat &l_image, const cv::Mat &r_image,
                   const StereoCameraModel &model);

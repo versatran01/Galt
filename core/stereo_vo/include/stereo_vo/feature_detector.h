@@ -4,14 +4,14 @@
 #include "stereo_vo/common.h"
 #include "stereo_vo/feature.h"
 
-#include <map>
+#include <set>
 #include <utility>
 
 namespace galt {
 
 namespace stereo_vo {
 
-using Grid = std::map<std::pair<int, int>, bool>;
+using Grid = std::set<std::pair<int, int>>;
 
 class FeatureDetectorBase {
  public:

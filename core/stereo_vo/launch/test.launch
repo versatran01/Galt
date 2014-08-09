@@ -7,8 +7,8 @@
     <arg name="bagfile_home" value="$(env GALT_BAGFILES)"/>
     <arg name="bagfile" default="day2/fly/2014-07-25-18-14-12.bag"/>
 
-    <arg name="num_features" default="100"/>
-    <arg name="min_features" default="50"/>
+    <arg name="cell_size" default="40"/>
+    <arg name="max_corners" default="1"/>
     <arg name="max_level" default="3"/>
     <arg name="win_size" default="11"/>
 
@@ -24,8 +24,8 @@
 
     <node pkg="stereo_vo" type="stereo_vo_node" name="stereo_vo"
         output="screen" ns="$(arg stereo_ns)">
-        <param name="num_features" value="$(arg num_features)"/>
-        <param name="min_features" value="$(arg min_features)"/>
+        <param name="cell_size" value="$(arg cell_size)"/>
+        <param name="max_corners" value="$(arg max_corners)"/>
         <param name="max_level" value="$(arg max_level)"/>
         <param name="win_size" value="$(arg win_size)"/>
     </node>

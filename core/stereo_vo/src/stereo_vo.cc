@@ -28,8 +28,8 @@ void StereoVo::Initialize(const cv::Mat &l_image, const cv::Mat &r_image,
   // Save current images to previous images
   l_image_prev_ = l_image;
   r_image_prev_ = r_image;
-  current_pose_.q = kr::quat<scalar_t>(0,1,0,0);
-  current_pose_.p = kr::vec3<scalar_t>(0,0,10);
+  current_pose_.q = kr::quat<scalar_t>(0, 1, 0, 0);
+  current_pose_.p = kr::vec3<scalar_t>(0, 0, 10);
   // Create a window for display
   cv::namedWindow("display",
                   CV_WINDOW_NORMAL | CV_WINDOW_KEEPRATIO | CV_GUI_EXPANDED);
@@ -55,7 +55,7 @@ void StereoVo::Iterate(const cv::Mat &l_image, const cv::Mat &r_image) {
   // Add new features for tracking later
   detector_.AddFeatures(l_image, features_);
   // Check if a new keyframe is necessary and add
-//  AddKeyFrame();
+  AddKeyFrame(current_pose(), l_image, r_image);
   // Visualization (optional)
   Display(l_image_prev_, l_image, r_image_prev_, r_image, features_);
   // Save previous left image for tracking later, and right image for display
@@ -87,10 +87,13 @@ void StereoVo::EstimatePose() {
     cv::Mat tvec = cv::Mat(3, 1, CV_64FC1);
     const size_t minInliers =
         std::ceil(worldPoints.size() * config_.pnp_ransac_inliers);
-    cv::solvePnPRansac(
-        worldPoints, imagePoints, model_.left().fullIntrinsicMatrix(),
-        std::vector<double>(), rvec, tvec, false, 100, config_.pnp_ransac_error,
-        minInliers, inliers, cv::ITERATIVE);
+    cv::solvePnP(worldPoints, imagePoints, model_.left().fullIntrinsicMatrix(),
+                 std::vector<double>(), rvec, tvec);
+    //    cv::solvePnPRansac(
+    //        worldPoints, imagePoints, model_.left().fullIntrinsicMatrix(),
+    //        std::vector<double>(), rvec, tvec, false, 100,
+    // config_.pnp_ransac_error,
+    //        minInliers, inliers, cv::ITERATIVE);
 
     //  convert rotation to quaternion
     kr::vec3<scalar_t> r(rvec.at<double>(0, 0), rvec.at<double>(1, 0),
@@ -107,7 +110,8 @@ void StereoVo::EstimatePose() {
   }
 }
 
-bool StereoVo::AddKeyFrame() {
+bool StereoVo::AddKeyFrame(const Pose &pose, const cv::Mat &l_image,
+                           const cv::Mat &r_image) {
   bool should_add_key_frame = false;
   if (key_frames_.empty()) {
     should_add_key_frame = true;
@@ -122,63 +126,10 @@ bool StereoVo::AddKeyFrame() {
 
   if (should_add_key_frame) {
     //  TODO: add a keyframe here eventually
+    auto key_frame = std::make_shared<KeyFrame>(pose, l_image, r_image);
   }
   return should_add_key_frame;
 }
-
-/*void KeyFrame::Update(const cv::Mat &l_image, const cv::Mat &r_image,
-                      const StereoVoConfig &config,
-                      const StereoCameraModel &model,
-                      const kr::Pose<scalar_t> &pose, bool init) {
-  // Collect relevant options
-  int num_features = config.num_features;
-
-  std::vector<CvPoint2> l_features, r_features;
-  std::vector<uchar> status;
-  // Find features
-  cv::goodFeaturesToTrack(l_image, l_features, num_features, 0.01, 10);
-  if (l_features.empty()) {
-    ROS_WARN("No new features found");
-    return;  //  no new features
-  }
-
-  TrackFeatures(l_image, r_image, l_features, r_features, status, config);
-  PruneByStatus(status, l_features);
-  PruneByStatus(status, r_features);
-
-  //  initialize new features
-  const scalar_t lfx = model.left().fx(), lfy = model.left().fy();
-  const scalar_t lcx = model.left().cx(), lcy = model.left().cy();
-  const scalar_t rfx = model.right().fx(), rfy = model.right().fy();
-  const scalar_t rcx = model.right().cx(), rcy = model.right().cy();
-
-  features_.clear();
-  features_.reserve(l_features.size());
-  for (size_t i = 0; i < l_features.size(); i++) {
-    Feature feat;
-    feat.left = l_features[i];
-    feat.next = feat.left;
-    feat.right = r_features[i];
-
-    //  undo K matrix
-    feat.left_coord.x = (feat.left.x - lcx) / lfx;
-    feat.left_coord.y = (feat.left.y - lcy) / lfy;
-    feat.right_coord.x = (feat.right.x - rcx) / rfx;
-    feat.right_coord.y = (feat.right.y - rcy) / rfy;
-
-    features_.push_back(feat);
-  }
-
-  const scalar_t meanDepth = Triangulate(model);
-  l_image_ = l_image;
-  r_image_ = r_image;
-  if (!init) {
-    pose_ = pose;
-  } else {
-    pose_ = kr::Pose<scalar_t>(kr::quat<scalar_t>(0, 1, 0, 0),
-                               kr::vec3<scalar_t>(0, 0, meanDepth));
-  }
-}*/
 
 void StereoVo::TriangulateFeatures() {
   kr::vec2<scalar_t> lPt, rPt;

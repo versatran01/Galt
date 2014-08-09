@@ -23,8 +23,9 @@ using image_geometry::StereoCameraModel;
 
 class StereoVo {
  public:
-  StereoVo(const StereoVoConfig& config) : config_(config),
-    detector_(config.cell_size, config.max_corners, 0.05) {}
+  StereoVo(const StereoVoConfig &config)
+      : config_(config),
+        detector_(config.cell_size, config.max_corners, 0.05) {}
 
   void Initialize(const cv::Mat &l_image, const cv::Mat &r_image,
                   const StereoCameraModel &model);
@@ -33,13 +34,14 @@ class StereoVo {
 
   void UpdateConfig(const StereoVoConfig &config) { config_ = config; }
 
-  bool AddKeyFrame();
+  bool AddKeyFrame(const Pose &pose, const cv::Mat &l_image,
+                   const cv::Mat &r_image);
 
   const Pose &current_pose() const { return current_pose_; }
   const bool init() const { return init_; }
 
-  const Features& features() const { return features_; }
-  
+  const Features &features() const { return features_; }
+
  private:
   bool init_{false};
   StereoCameraModel model_;
@@ -55,7 +57,6 @@ class StereoVo {
 
   void TriangulateFeatures();
 };
-
 
 void TrackFeatures(const cv::Mat &image1, const cv::Mat &image2,
                    Features &features,

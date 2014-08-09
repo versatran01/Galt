@@ -9,11 +9,15 @@ namespace stereo_vo {
 
 class KeyFrame {
  public:
-  const Pose pose() const { return pose_; }
+  KeyFrame(const Pose &pose, const cv::Mat &l_image, const cv::Mat &r_image)
+      : pose_(pose), l_image_(l_image), r_image_(r_image) {}
+  const Pose &pose() const { return pose_; }
+  const cv::Mat &l_image() const { return l_image_; }
+  const cv::Mat &r_image() const { return r_image_; }
 
  private:
-  cv::Mat l_image_, r_image_;
   Pose pose_;
+  cv::Mat l_image_, r_image_;
 };
 
 using KeyFrames = std::vector<KeyFrame>;

@@ -28,6 +28,9 @@ void FeatureDetectorBase::AddFeatures(const cv::Mat &image,
   Grid grid = CreateGrid(image, features);
   const int grid_dim_x = static_cast<int>(image.cols / cell_size_);
   const int grid_dim_y = static_cast<int>(image.rows / cell_size_);
+  // Don't add features if some percentage of the grid is filled
+  double k = 0.7;
+  if (grid.size() > (k * grid_dim_x * grid_dim_y)) return;
   // Iterate through each dimension of the grid
   for (int y = 0; y < grid_dim_y; ++y) {
     for (int x = 0; x < grid_dim_x; ++x) {

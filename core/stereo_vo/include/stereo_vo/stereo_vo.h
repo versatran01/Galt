@@ -45,8 +45,8 @@ class StereoVo {
 
  private:
   
-  void TrackTemporal(const cv::Mat& l_image_prev, const cv::Mat& l_image,
-                     std::set<Feature::Id>& removable);
+  //void TrackTemporal(const cv::Mat& l_image_prev, const cv::Mat& l_image,
+  //                   std::set<Feature::Id>& removable);
     
   bool init_{false};
   StereoCameraModel model_;

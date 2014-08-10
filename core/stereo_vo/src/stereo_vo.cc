@@ -43,7 +43,7 @@ void StereoVo::Iterate(const cv::Mat &l_image, const cv::Mat &r_image) {
   std::vector<Feature> new_features;
   std::set<Feature::Id> removables;
   
-  TrackTemporal(l_image_prev_, l_image, removables);
+  //TrackTemporal(l_image_prev_, l_image, removables);
   
   //  remove features here...
   

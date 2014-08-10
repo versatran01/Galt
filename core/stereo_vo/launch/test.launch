@@ -19,6 +19,11 @@
     <arg name="kf_size" value="4"/>
     <arg name="kf_min_filled" value="0.7"/>
 
+    <arg name="pnp_ransac_error" value="5.0"/>
+    <arg name="pnp_ransac_inliers" value="0.7"/>
+
+    <arg name="tri_max_eigenratio" value="100000"/>
+
     <node pkg="rosbag" type="play" name="player"
         args="-l $(arg bagfile_home)/$(arg bagfile) -s 70">
     </node>
@@ -39,6 +44,11 @@
         <param name="kf_dist" value="$(arg kf_dist)"/>
         <param name="kf_size" value="$(arg kf_size)"/>
         <param name="kf_min_filled" value="$(arg kf_min_filled)"/>
+
+        <param name="pnp_ransac_error" value="$(arg pnp_ransac_error)"/>
+        <param name="pnp_ransac_inliers" value="$(arg pnp_ransac_inliers)"/>
+
+        <param name="tri_max_eigenratio" value="$(arg tri_max_eigenratio)"/>
     </node>
 
     <node if="$(arg disparity)"

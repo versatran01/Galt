@@ -4,7 +4,8 @@
 #include <memory>
 #include <functional>
 
-#include "stereo_vo/common.h"
+#include <stereo_vo/common.h>
+#include <image_geometry/stereo_camera_model.h>
 
 namespace galt {
 
@@ -14,8 +15,11 @@ class Feature {
  public:
   typedef uint64_t Id;
 
+  Feature(Id id, const CvPoint2& p_pixel_left, bool init) : 
+    id_(id), p_pixel_left_(p_pixel_left), init_(init) {}
+  
   Feature(Id id, const CvPoint3& p_cam_left, const CvPoint2& p_pixel_left,
-          const CvPoint2& p_pixel_right, bool init=false)
+          const CvPoint2& p_pixel_right, bool init)
       : id_(id),
         p_cam_left_(p_cam_left),
         p_pixel_left_(p_pixel_left),
@@ -31,6 +35,20 @@ class Feature {
   const CvPoint2& p_pixel_right() const { return p_pixel_right_; }
   void set_p_pixel_right(const CvPoint2& p_pixel) { p_pixel_right_ = p_pixel; }
 
+  /**
+   * @brief Triangulate a feature in the current camera frame.
+   * 
+   * @param model ROS Stereo Camera model
+   * @param eigen_threshold Maximum ratio of largest to smallest eigenvalues. 
+   * Those features exceeding this ratio are discarded.
+   * 
+   * @return True on success, false if the feature is rejected as an outlier.
+   * @note Those features which are rejected should be removed from the
+   * feature list.
+   */
+  bool triangulate(const image_geometry::StereoCameraModel& model,
+                   scalar_t eigen_threshold);
+  
  private:
   Id id_;
   CvPoint3 p_cam_left_;

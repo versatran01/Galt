@@ -126,69 +126,6 @@ void StereoVo::AddKeyFrame(const Pose &pose, const CvStereoImage &stereo_image,
   }
 }
 
-/*void StereoVo::TriangulateFeatures(bool set_ready) {
-  kr::vec2<scalar_t> lPt, rPt;
-  Pose poseLeft;   //  identity
-  Pose poseRight;  //  shifted right along x
-  poseRight.p[0] = model_.baseline();
-
-  //  initialize new features
-  const scalar_t lfx = model_.left().fx(), lfy = model_.left().fy();
-  const scalar_t lcx = model_.left().cx(), lcy = model_.left().cy();
-  const scalar_t rfx = model_.right().fx(), rfy = model_.right().fy();
-  const scalar_t rcx = model_.right().cx(), rcy = model_.right().cy();
-
-  for (auto I = features_.begin(); I != features_.end();) {
-    Feature &feature = *I;
-    bool failed = false;
-
-    if (!feature.triangulated()) {
-      //  new feature requires triangulation
-      lPt[0] = feature.p_pixel_left().x;
-      lPt[1] = feature.p_pixel_left().y;
-      rPt[0] = feature.p_pixel_right().x;
-      rPt[1] = feature.p_pixel_right().y;
-
-      lPt[0] = (lPt[0] - lcx) / lfx;
-      lPt[1] = (lPt[1] - lcy) / lfy;
-      rPt[0] = (rPt[0] - rcx) / rfx;
-      rPt[1] = (rPt[1] - rcy) / rfy;
-
-      kr::vec3<scalar_t> p3D;
-      scalar_t ratio;
-
-      //  triangulate 3d position
-      kr::triangulate(poseLeft, lPt, poseRight, rPt, p3D, ratio);
-
-      if (ratio > 1e5) {
-        //  bad, reject this feature
-        failed = true;
-      } else {
-        //  valid, refine the point
-        std::vector<Pose> poses({poseLeft, poseRight});
-        std::vector<kr::vec2<scalar_t>> obvs({lPt, rPt});
-
-        if (kr::refinePoint(poses, obvs, p3D)) {
-          //  convert to world coordinates
-          p3D = current_pose_.q.conjugate() * p3D + current_pose_.p;
-          feature.set_p_world(CvPoint3(p3D[0], p3D[1], p3D[2]));
-          feature.set_triangulated(true);
-          //feature.set_ready(set_ready);  //  set ready if indicated by iterate
-        } else {
-          //  failed to converge
-          failed = true;
-        }
-      }
-    }
-
-    if (failed) {
-      I = features_.erase(I);
-    } else {
-      I++;
-    }
-  }
-}*/
-
 // void TrackFeatures(const cv::Mat &image1, const cv::Mat &image2,
 
 //                   std::function<void(Feature *, const CvPoint2 &)>

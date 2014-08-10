@@ -194,6 +194,8 @@ const StereoVoConfig ReadConfig(const ros::NodeHandle& nh) {
   nh.param<int>("kf_size", config.kf_size, 4);
   nh.param<double>("kf_dist", config.kf_dist, 1.5);
   nh.param<double>("kf_min_filled", config.kf_min_filled, 0.7);
+  
+  nh.param<double>("tri_max_eigenratio", config.tri_max_eigenratio, 1.0e5);
   return config;
 }
 

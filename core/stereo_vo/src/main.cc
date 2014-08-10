@@ -9,8 +9,8 @@ int main(int argc, char **argv) {
   try {  
     galt::stereo_vo::StereoVoNode stereo_vo_node(nh);
     ros::spin();
-  } catch (std::exception& e) {
-    ROS_ERROR("Fatal error: %s", e.what());
+  } catch (const std::exception& e) {
+    ROS_ERROR("StereoVo: %s", e.what());
     return -1;
   }
   return 0;

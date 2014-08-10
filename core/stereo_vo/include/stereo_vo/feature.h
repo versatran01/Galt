@@ -15,12 +15,15 @@ class Feature {
   typedef uint64_t Id;
 
   Feature(Id id, const CvPoint3& p_cam_left, const CvPoint2& p_pixel_left,
-          const CvPoint2& p_pixel_right, bool init=false)
+          const CvPoint2& p_pixel_right, bool init)
       : id_(id),
         p_cam_left_(p_cam_left),
         p_pixel_left_(p_pixel_left),
         p_pixel_right_(p_pixel_right),
         init_(init) {}
+
+  Feature(Id id, const CvPoint2& p_pixel_left, bool init)
+      : id_(id), p_pixel_left_(p_pixel_left), init_(init) {}
 
   const CvPoint3& p_cam_left() const { return p_cam_left_; }
   void set_p_cam_left(const CvPoint3& p_cam_left) { p_cam_left_ = p_cam_left; }
@@ -30,6 +33,9 @@ class Feature {
 
   const CvPoint2& p_pixel_right() const { return p_pixel_right_; }
   void set_p_pixel_right(const CvPoint2& p_pixel) { p_pixel_right_ = p_pixel; }
+
+  const bool& init() const { return init_; }
+  void set_init(const bool& init) { init_ = init; }
 
  private:
   Id id_;

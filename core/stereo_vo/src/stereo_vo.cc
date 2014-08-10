@@ -46,22 +46,22 @@ void StereoVo::Iterate(const CvStereoImage &stereo_image) {
 
   std::vector<Feature> tracked_features;
   std::set<Feature::Id> removables;
-
-  // TrackTemporal(l_image_prev_, l_image, removables);
-
   // remove features here...
 
   auto relative_pose = EstimatePose();
-  current_pose_ = current_pose_.compose(relative_pose);
+  current_pose_ = current_pose().compose(relative_pose);
 
   // This will check if it's necessary to add new keyframes and add it if true
   AddKeyFrame(current_pose(), stereo_image, tracked_features);
 
   // Windowed optimization here
-  // Check if key_frame_.size() == N
+  if (key_frames_.size() == config_.kf_size) {
+    // Do optimization
+    key_frames_.pop_front();
+  }
 
   // Visualization (optional)
-  Display(stereo_image, tracked_features, key_frames_.back());
+//  Display(stereo_image, tracked_features, key_frames_.back());
 
   // Save stereo image and tracked features for next iteration
   stereo_image_prev_ = stereo_image;
@@ -108,21 +108,20 @@ Pose StereoVo::EstimatePose() {
 
 void StereoVo::AddKeyFrame(const Pose &pose, const CvStereoImage &stereo_image,
                            std::vector<Feature> features) {
-  bool should_add_key_frame = false;
-  if (key_frames_.empty()) {
-    should_add_key_frame = true;
-  } else {
-    const auto &last_key_frame = key_frames_.back();
-    //  check distance metric to see if new keyframe is required
-    const double distance = (last_key_frame.pose().p - current_pose_.p).norm();
-    if (distance > config_.kf_dist) {
-      should_add_key_frame = true;
-    }
-    //  do another check on feature distribution then set should_add_key_frame
-  }
+  const auto dist = current_pose().p.norm();
+  const auto filled = detector_.GridFilled(stereo_image.first, features);
+  // Check distance and feature distribution metric
+  if ((dist > config_.kf_dist) || (filled < config_.kf_min_filled)) {
+    // Add new features to current features
 
-  if (should_add_key_frame) {
-    //  TODO: add a keyframe here eventually
+    // Track features in stereo image
+
+    // Triangulate matched features
+    if (key_frames_.empty()) {
+      // Reinitialize current pose with triangulated depth
+    }
+    // Add key frame to queue
+    ROS_INFO("Added a new keyframe, dist: %f, filled: %f", dist, filled);
   }
 }
 

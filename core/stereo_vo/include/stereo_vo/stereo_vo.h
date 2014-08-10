@@ -50,17 +50,12 @@ class StereoVo {
   StereoVoConfig config_;
 
   Pose current_pose_;
-  Feature::Id feature_cnt_;
   GoodFeatureDetector detector_;
   std::vector<Feature> features_;
   std::deque<KeyFrame> key_frames_;
   CvStereoImage stereo_image_prev_;
 };
 
-void TrackFeatures(const cv::Mat &image1, const cv::Mat &image2,
-                   std::vector<Feature> &features,
-                   std::function<void(Feature *, const CvPoint2 &)> update_func,
-                   const int win_size, const int max_level);
 }  // namespace stereo_vo
 
 }  // namespace galt

@@ -20,10 +20,10 @@ class FeatureDetectorBase {
 
   virtual void DetectFeatures(const cv::Mat& image,
                               CvCorners2& corners) const = 0;
-  void AddFeatures(const cv::Mat& image, Features& features) const;
+  void AddFeatures(const cv::Mat& image, std::vector<Feature> &features) const;
 
  protected:
-  const Grid CreateGrid(const cv::Mat& image, const Features& features) const;
+  const Grid CreateGrid(const cv::Mat& image, const std::vector<Feature>& features) const;
   int cell_size_;
 };
 

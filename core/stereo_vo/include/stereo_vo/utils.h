@@ -5,6 +5,8 @@
 #include "stereo_vo/feature.h"
 #include "stereo_vo/key_frame.h"
 
+#include <deque>
+
 namespace galt {
 
 namespace stereo_vo {
@@ -34,8 +36,8 @@ void PruneByStatus(const std::vector<U> &status, std::vector<T> &objects) {
 
 void Display(const cv::Mat &l_image_prev, const cv::Mat &l_image,
              const cv::Mat &r_image_prev, const cv::Mat &r_image,
-             const Features &features,
-             const std::vector<std::shared_ptr<KeyFrame> > &key_frames);
+             const std::vector<Feature> &features,
+             const std::deque<KeyFrame> &key_frames);
 
 static inline CvPoint2 PixelToCoord(double fx, double fy, double cx, double cy,
                                     const CvPoint2 &pixel) {

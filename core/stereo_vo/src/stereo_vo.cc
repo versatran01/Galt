@@ -23,13 +23,13 @@ namespace stereo_vo {
 void StereoVo::Initialize(const cv::Mat &l_image, const cv::Mat &r_image,
                           const StereoCameraModel &model) {
   model_ = model;
-  // Detect features for the first time
-  detector_.AddFeatures(l_image, features_);
+ 
+  //  call addKeyframe here
+  
   // Save current images to previous images
   l_image_prev_ = l_image;
   r_image_prev_ = r_image;
-  current_pose_.q = kr::quat<scalar_t>(0, 1, 0, 0);
-  current_pose_.p = kr::vec3<scalar_t>(0, 0, 10);
+  
   // Create a window for display
   cv::namedWindow("display",
                   CV_WINDOW_NORMAL | CV_WINDOW_KEEPRATIO | CV_GUI_EXPANDED);
@@ -39,23 +39,24 @@ void StereoVo::Initialize(const cv::Mat &l_image, const cv::Mat &r_image,
 }
 
 void StereoVo::Iterate(const cv::Mat &l_image, const cv::Mat &r_image) {
-  // Update features for this iteration, assign pixel_next -> pixel_left
-  UpdateFeatures(features_);
-  // Track features from prev left into prev right, assign pixel_right
-  TrackFeatures(l_image_prev_, r_image_prev_, features_,
-                &Feature::set_p_pixel_right, config_.win_size,
-                config_.max_level);
-  // Track features from prev left into next left, assign pixel_next
-  TrackFeatures(l_image_prev_, l_image, features_, &Feature::set_p_pixel_next,
-                config_.win_size, config_.max_level);
-  // Estimate pose using PnP
-  const bool hadViableFeatures = EstimatePose();
-  // Triangulate points with features in stereo images
-  TriangulateFeatures(!hadViableFeatures || true);
-  // Add new features for tracking later
-  detector_.AddFeatures(l_image, features_);
+  
+  std::vector<Feature> new_features;
+  std::set<Feature::Id> removables;
+  
+  TrackTemporal(l_image_prev_, l_image, removables);
+  
+  //  remove features here...
+  
+  auto relative_pose = EstimatePose();
+  current_pose_ = current_pose_.compose(relative_pose);
+  
   // Check if a new keyframe is necessary and add
   AddKeyFrame(current_pose(), l_image, r_image);
+  
+  //  check keyframe size > N
+  //  then do optimization as necessary
+  //  remove the oldest keyframe(s)
+  
   // Visualization (optional)
   Display(l_image_prev_, l_image, r_image_prev_, r_image, features_,
           key_frames_);
@@ -64,7 +65,7 @@ void StereoVo::Iterate(const cv::Mat &l_image, const cv::Mat &r_image) {
   r_image_prev_ = r_image;
 }
 
-bool StereoVo::EstimatePose() {
+Pose StereoVo::EstimatePose() {
   if (!features_.empty()) {
 
     std::vector<CvPoint2> imagePoints;
@@ -75,23 +76,18 @@ bool StereoVo::EstimatePose() {
     worldPoints.reserve(features_.size());
 
     for (const Feature &feat : features_) {
-      if (feat.triangulated() && feat.ready()) {
-        imagePoints.push_back(feat.p_pixel_left());
-        worldPoints.push_back(feat.p_world());
-      }
-    }
-    if (imagePoints.empty()) {
-      return false;
+      imagePoints.push_back(feat.p_pixel_left());
+      worldPoints.push_back(feat.p_cam_left());
     }
 
     cv::Mat rvec = cv::Mat(3, 1, CV_64FC1);
     cv::Mat tvec = cv::Mat(3, 1, CV_64FC1);
-    //    const size_t minInliers =
-    //        std::ceil(worldPoints.size() * config_.pnp_ransac_inliers);
-    cv::solvePnP(worldPoints, imagePoints, model_.left().fullIntrinsicMatrix(),
+    const size_t minInliers =
+      std::ceil(worldPoints.size() * config_.pnp_ransac_inliers);
+    cv::solvePnPRansac(worldPoints, imagePoints, model_.left().fullIntrinsicMatrix(),
                  std::vector<double>(), rvec,
-                 tvec); /*, false, 100, config_.pnp_ransac_error,
-minInliers, inliers, cv::ITERATIVE);*/
+                 tvec, false, 100, config_.pnp_ransac_error,
+                 minInliers, inliers, cv::ITERATIVE);
 
     //  convert rotation to quaternion
     kr::vec3<scalar_t> r(rvec.at<double>(0, 0), rvec.at<double>(1, 0),
@@ -99,18 +95,15 @@ minInliers, inliers, cv::ITERATIVE);*/
     kr::vec3<scalar_t> t(tvec.at<double>(0, 0), tvec.at<double>(1, 0),
                          tvec.at<double>(2, 0));
 
-    auto pose = kr::Pose<scalar_t>::fromVectors(r, t);
-
-    //  left-multiply by the keyframe pose to get world pose
-    current_pose_ = pose;
-    return true;
-  } else {
-    ROS_WARN("EstimatePose() called but no features available");
+    auto pose = Pose::fromVectors(r, t);
+    return pose;
   }
-  return false;
+  
+  throw std::runtime_error("EstimatePose called with empty features");
+  return Pose();
 }
 
-bool StereoVo::AddKeyFrame(const Pose &pose, const cv::Mat &l_image,
+void StereoVo::AddKeyFrame(const Pose &pose, const cv::Mat &l_image,
                            const cv::Mat &r_image) {
   bool should_add_key_frame = false;
   if (key_frames_.empty()) {
@@ -118,31 +111,19 @@ bool StereoVo::AddKeyFrame(const Pose &pose, const cv::Mat &l_image,
   } else {
     const auto &last_key_frame = key_frames_.back();
     //  check distance metric to see if new keyframe is required
-    const double distance = (last_key_frame->pose().p - current_pose_.p).norm();
+    const double distance = (last_key_frame.pose().p - current_pose_.p).norm();
     if (distance > config_.keyframe_dist_thresh) {
       should_add_key_frame = true;
     }
+    //  do another check on feature distribution then set should_add_key_frame
   }
 
   if (should_add_key_frame) {
     //  TODO: add a keyframe here eventually
-    auto key_frame = std::make_shared<KeyFrame>(pose, l_image, r_image);
-    key_frames_.push_back(key_frame);
-    for (auto &feature : features_) {
-      if (feature.triangulated()) {
-        auto p_pixel = feature.p_pixel_next();
-        auto p_coord =
-            PixelToCoord(model_.left().fx(), model_.left().fy(),
-                         model_.left().cx(), model_.left().cy(), p_pixel);
-        Point point(p_pixel, p_coord, key_frame);
-        feature.AddToPoints(point);
-      }
-    }
   }
-  return should_add_key_frame;
 }
 
-void StereoVo::TriangulateFeatures(bool set_ready) {
+/*void StereoVo::TriangulateFeatures(bool set_ready) {
   kr::vec2<scalar_t> lPt, rPt;
   Pose poseLeft;   //  identity
   Pose poseRight;  //  shifted right along x
@@ -189,28 +170,9 @@ void StereoVo::TriangulateFeatures(bool set_ready) {
           p3D = current_pose_.q.conjugate() * p3D + current_pose_.p;
           feature.set_p_world(CvPoint3(p3D[0], p3D[1], p3D[2]));
           feature.set_triangulated(true);
-          feature.set_ready(set_ready);  //  set ready if indicated by iterate
+          //feature.set_ready(set_ready);  //  set ready if indicated by iterate
         } else {
           //  failed to converge
-          failed = true;
-        }
-      }
-    } else if (!feature.ready()) {
-      //  check if we can refine the feature
-      if (feature.points().size() >= 2) {
-        std::vector<Pose> poses;
-        std::vector<kr::vec2<scalar_t>> obvs;
-        kr::vec3<scalar_t> p3D;
-
-        for (const Point &p : feature.points()) {
-          poses.push_back(p.key_frame->pose());
-          obvs.push_back(kr::vec2<scalar_t>(p.p_coord.x, p.p_coord.y));
-        }
-
-        if (kr::refinePoint(poses, obvs, p3D)) {
-          feature.set_p_world(CvPoint3(p3D[0], p3D[1], p3D[2]));
-          feature.set_ready(true);
-        } else {
           failed = true;
         }
       }
@@ -222,47 +184,47 @@ void StereoVo::TriangulateFeatures(bool set_ready) {
       I++;
     }
   }
-}
+}*/
 
-void TrackFeatures(const cv::Mat &image1, const cv::Mat &image2,
-                   Features &features,
-                   std::function<void(Feature *, const CvPoint2 &)> update_func,
-                   const int win_size, const int max_level) {
-  static cv::TermCriteria term_criteria(
-      cv::TermCriteria::COUNT + cv::TermCriteria::EPS, 25, 0.01);
-  std::vector<uchar> status;
-  CvCorners2 corners1;
-  corners1.reserve(features.size());
-  // Put pixel left into features1
-  for (const auto &feature : features) {
-    corners1.push_back(feature.p_pixel_left());
-  }
-  CvCorners2 corners2;
-  // Do optical flow
-  cv::calcOpticalFlowPyrLK(image1, image2, corners1, corners2, status,
-                           cv::noArray(), cv::Size(win_size, win_size),
-                           max_level, term_criteria);
-  // TODO: improve this part later
-  PruneByStatus(status, features);
-  PruneByStatus(status, corners1);
-  PruneByStatus(status, corners2);
-  status.clear();
-  // Do find fundamental matrix
-  cv::findFundamentalMat(corners1, corners2, cv::FM_RANSAC, 1.5, 0.99, status);
-  PruneByStatus(status, features);
-  PruneByStatus(status, corners1);
-  PruneByStatus(status, corners2);
-  // Update features
-  ROS_ASSERT_MSG((features.size() == corners1.size()) &&
-                     (features.size() == corners2.size()),
-                 "Dimension mismatch");
-  auto it_cnr2 = corners2.cbegin();
-  auto it_cnr2_e = corners2.cend();
-  auto it_feat = features.begin();
-  for (; it_cnr2 != it_cnr2_e; it_cnr2++, it_feat++) {
-    update_func(&(*it_feat), *it_cnr2);
-  }
-}
+//void TrackFeatures(const cv::Mat &image1, const cv::Mat &image2,
+                   
+//                   std::function<void(Feature *, const CvPoint2 &)> update_func,
+//                   const int win_size, const int max_level) {
+////  static cv::TermCriteria term_criteria(
+////      cv::TermCriteria::COUNT + cv::TermCriteria::EPS, 25, 0.01);
+////  std::vector<uchar> status;
+////  CvCorners2 corners1;
+////  corners1.reserve(features.size());
+////  // Put pixel left into features1
+////  for (const auto &feature : features) {
+////    corners1.push_back(feature.p_pixel_left());
+////  }
+////  CvCorners2 corners2;
+////  // Do optical flow
+////  cv::calcOpticalFlowPyrLK(image1, image2, corners1, corners2, status,
+////                           cv::noArray(), cv::Size(win_size, win_size),
+////                           max_level, term_criteria);
+////  // TODO: improve this part later
+////  PruneByStatus(status, features);
+////  PruneByStatus(status, corners1);
+////  PruneByStatus(status, corners2);
+////  status.clear();
+////  // Do find fundamental matrix
+////  cv::findFundamentalMat(corners1, corners2, cv::FM_RANSAC, 1.5, 0.99, status);
+////  PruneByStatus(status, features);
+////  PruneByStatus(status, corners1);
+////  PruneByStatus(status, corners2);
+////  // Update features
+////  ROS_ASSERT_MSG((features.size() == corners1.size()) &&
+////                     (features.size() == corners2.size()),
+////                 "Dimension mismatch");
+////  auto it_cnr2 = corners2.cbegin();
+////  auto it_cnr2_e = corners2.cend();
+////  auto it_feat = features.begin();
+////  for (; it_cnr2 != it_cnr2_e; it_cnr2++, it_feat++) {
+////    update_func(&(*it_feat), *it_cnr2);
+////  }
+//}
 
 }  // namespace stereo_vo
 

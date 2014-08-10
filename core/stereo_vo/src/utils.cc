@@ -1,5 +1,6 @@
 #include "stereo_vo/utils.h"
 
+#include <deque>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
@@ -10,8 +11,8 @@ namespace stereo_vo {
 
 void Display(const cv::Mat &l_image_prev, const cv::Mat &l_image,
              const cv::Mat &r_image_prev, const cv::Mat &r_image,
-             const Features &features,
-             const std::vector<std::shared_ptr<KeyFrame>> &key_frames) {
+             const std::vector<Feature> &features,
+             const std::deque<KeyFrame> &key_frames) {
   int n_rows = l_image.rows;
   int n_cols = l_image.cols;
   static cv::Mat display_gray(2 * n_rows, 2 * n_cols, CV_8UC1);
@@ -30,26 +31,26 @@ void Display(const cv::Mat &l_image_prev, const cv::Mat &l_image,
   // newly added (pixel_next, not triangulated - red)
   // triangulated (pixel_left, pixel_right, pixel_next - orange)
   // optimized (pixel_left, pixel-right, pixel_next, - green)
-  for (const auto &feature : features) {
+  for (const Feature &feature : features) {
     auto l_p = feature.p_pixel_left();
     auto r_p = feature.p_pixel_right() + CvPoint2(n_cols, 0);
-    auto n_p = feature.p_pixel_next() + CvPoint2(0, n_rows);
+    //auto n_p = feature.p_pixel_next() + CvPoint2(0, n_rows);
 
-    if (!feature.triangulated()) {  // newly added
-      cv::circle(display, n_p, 3, cv_color::RED, 2);
-    } else {
-      cv::Scalar color;
-      if (feature.ready()) {  // optimized
-        color = cv_color::GREEN;
-      } else {  // triangulated
-        color = cv_color::BLUE;
-      }
-      cv::circle(display, l_p, 3, color, 2);
-      cv::circle(display, r_p, 3, color, 2);
-      cv::circle(display, n_p, 4, color, 2);
-      cv::line(display, l_p, r_p, color, 1);
-      cv::line(display, l_p, n_p, color, 1);
-    }
+//    if (!feature.triangulated()) {  // newly added
+//      cv::circle(display, n_p, 3, cv_color::RED, 2);
+//    } else {
+//      cv::Scalar color;
+//      if (feature.ready()) {  // optimized
+//        color = cv_color::GREEN;
+//      } else {  // triangulated
+//        color = cv_color::BLUE;
+//      }
+//      cv::circle(display, l_p, 3, color, 2);
+//      cv::circle(display, r_p, 3, color, 2);
+//      cv::circle(display, n_p, 4, color, 2);
+//      cv::line(display, l_p, r_p, color, 1);
+//      cv::line(display, l_p, n_p, color, 1);
+//    }
   }
 
   // Add text annotation

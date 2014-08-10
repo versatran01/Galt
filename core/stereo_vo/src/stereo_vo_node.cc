@@ -130,23 +130,23 @@ void StereoVoNode::PublishPointCloud(const std::vector<Feature>& features,
     float val;
   } color;
   for (const Feature& feat : features) {
-    if (feat.triangulated()) {
-      geometry_msgs::Point32 p32;
-      kr::vec3<scalar_t> p(feat.p_world().x, feat.p_world().y, feat.p_world().z);
+    geometry_msgs::Point32 p32;
+    kr::vec3<scalar_t> p(feat.p_cam_left().x, 
+                         feat.p_cam_left().y, 
+                         feat.p_cam_left().z);
 
-      p32.x = p[0];
-      p32.y = p[1];
-      p32.z = p[2];
+    p32.x = p[0];
+    p32.y = p[1];
+    p32.z = p[2];
 
-      cloud.points.push_back(p32);
+    cloud.points.push_back(p32);
 
-      color.rgb[0] = 255;
-      color.rgb[1] = 255;
-      color.rgb[2] = 0;
-      color.rgb[3] = 0;
+    color.rgb[0] = 255;
+    color.rgb[1] = 255;
+    color.rgb[2] = 0;
+    color.rgb[3] = 0;
 
-      channel.values.push_back(color.val);
-    }
+    channel.values.push_back(color.val);
   }
 
   cloud.channels.push_back(channel);
@@ -186,6 +186,7 @@ const StereoVoConfig ReadConfig(const ros::NodeHandle& nh) {
   nh.param<int>("win_size", config.win_size, 50);
   nh.param<double>("pnp_ransac_inliers", config.pnp_ransac_inliers, 0.7);
   nh.param<double>("pnp_ransac_error", config.pnp_ransac_error, 4.0);
+  nh.param<double>("keyframe_dist_thresh", config.keyframe_dist_thresh, 3.0);
   return config;
 }
 

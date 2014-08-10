@@ -11,6 +11,7 @@
     <arg name="max_corners" default="1"/>
     <arg name="max_level" default="3"/>
     <arg name="win_size" default="11"/>
+    <arg name="keyframe_dist_thresh" value="1"/>
 
     <arg name="rviz" default="false"/>
 
@@ -28,6 +29,7 @@
         <param name="max_corners" value="$(arg max_corners)"/>
         <param name="max_level" value="$(arg max_level)"/>
         <param name="win_size" value="$(arg win_size)"/>
+        <param name="keyframe_dist_thresh" value="$(arg keyframe_dist_thresh)"/>
     </node>
 
     <node if="$(arg disparity)"

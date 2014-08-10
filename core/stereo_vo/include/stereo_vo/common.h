@@ -13,8 +13,9 @@ using scalar_t = float;
 using Pose = kr::Pose<scalar_t>;
 using CvPoint2 = cv::Point_<scalar_t>;
 using CvPoint3 = cv::Point3_<scalar_t>;
-using CvCorners2 = std::vector<CvPoint2>;
+using CvStereoImage = std::pair<cv::Mat, cv::Mat>;
 using StereoVoConfig = ::stereo_vo::StereoVoDynConfig;
+using StereoVoDynConfig = ::stereo_vo::StereoVoDynConfig;
 
 }  // namespace stereo_vo
 

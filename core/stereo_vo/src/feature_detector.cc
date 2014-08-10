@@ -8,8 +8,8 @@ namespace galt {
 
 namespace stereo_vo {
 
-const Grid FeatureDetectorBase::CreateGrid(const cv::Mat &image,
-                                           const std::vector<Feature> &features) const {
+const Grid FeatureDetectorBase::CreateGrid(
+    const cv::Mat &image, const std::vector<Feature> &features) const {
   Grid grid;
   // Marked filled grid
   for (const auto &feature : features) {
@@ -23,7 +23,7 @@ const Grid FeatureDetectorBase::CreateGrid(const cv::Mat &image,
 
 void FeatureDetectorBase::AddFeatures(const cv::Mat &image,
                                       std::vector<Feature> &features) const {
-  CvCorners2 corners;
+  std::vector<CvPoint2> corners;
   // Create a grid
   Grid grid = CreateGrid(image, features);
   const int grid_dim_x = static_cast<int>(image.cols / cell_size_);
@@ -48,19 +48,19 @@ void FeatureDetectorBase::AddFeatures(const cv::Mat &image,
             corner.y += y * cell_size_;
 
             //  create a new feature here...
-            //Feature feature(corner);
-            //features.push_back(feature);
+            // Feature feature(corner);
+            // features.push_back(feature);
           }
         }
       }
     }
   }
-  
+
   /// call feature.triangulate() here for each feature
 }
 
 void GoodFeatureDetector::DetectFeatures(const cv::Mat &image,
-                                         CvCorners2 &corners) const {
+                                         std::vector<CvPoint2> &corners) const {
   cv::goodFeaturesToTrack(image, corners, max_corners_, quality_level_,
                           min_distance_);
 }

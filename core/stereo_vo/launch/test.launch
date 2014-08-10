@@ -3,17 +3,21 @@
     <arg name="manager" default="stereo_vo"/>
     <arg name="stereo_ns" default="/mv_stereo"/>
     <arg name="disparity" default="false"/>
+    <arg name="rviz" default="false"/>
 
     <arg name="bagfile_home" value="$(env GALT_BAGFILES)"/>
     <arg name="bagfile" default="day2/fly/2014-07-25-18-14-12.bag"/>
 
-    <arg name="cell_size" default="55"/>
-    <arg name="max_corners" default="1"/>
-    <arg name="max_level" default="3"/>
-    <arg name="win_size" default="11"/>
-    <arg name="keyframe_dist_thresh" value="1"/>
+    <arg name="shi_cell_size" default="50"/>
+    <arg name="shi_max_corners" default="1"/>
+    <arg name="shi_quality_level" default="0.05"/>
 
-    <arg name="rviz" default="false"/>
+    <arg name="klt_max_level" default="3"/>
+    <arg name="klt_win_size" default="13"/>
+
+    <arg name="kf_dist" value="1.5"/>
+    <arg name="kf_size" value="4"/>
+    <arg name="kf_min_filled" value="0.7"/>
 
     <node pkg="rosbag" type="play" name="player"
         args="-l $(arg bagfile_home)/$(arg bagfile) -s 70">
@@ -25,11 +29,16 @@
 
     <node pkg="stereo_vo" type="stereo_vo_node" name="stereo_vo"
         output="screen" ns="$(arg stereo_ns)">
-        <param name="cell_size" value="$(arg cell_size)"/>
-        <param name="max_corners" value="$(arg max_corners)"/>
-        <param name="max_level" value="$(arg max_level)"/>
-        <param name="win_size" value="$(arg win_size)"/>
-        <param name="keyframe_dist_thresh" value="$(arg keyframe_dist_thresh)"/>
+        <param name="shi_cell_size" value="$(arg shi_cell_size)"/>
+        <param name="shi_max_corners" value="$(arg shi_max_corners)"/>
+        <param name="shi_quality_level" value="$(arg shi_quality_level)"/>
+
+        <param name="klt_max_level" value="$(arg klt_max_level)"/>
+        <param name="klt_win_size" value="$(arg klt_win_size)"/>
+
+        <param name="kf_dist" value="$(arg kf_dist)"/>
+        <param name="kf_size" value="$(arg kf_size)"/>
+        <param name="kf_min_filled" value="$(arg kf_min_filled)"/>
     </node>
 
     <node if="$(arg disparity)"

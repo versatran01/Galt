@@ -2,6 +2,7 @@
 #define GALT_STEREO_VO_NODE_H_
 
 #include <memory>
+#include <utility>
 #include <cstdint>
 
 #include <ros/ros.h>
@@ -24,6 +25,7 @@
 #include <visualization_msgs/Marker.h>
 
 #include "stereo_vo/stereo_vo.h"
+#include "stereo_vo/common.h"
 
 namespace galt {
 
@@ -31,7 +33,6 @@ namespace stereo_vo {
 
 using namespace sensor_msgs;
 using namespace message_filters::sync_policies;
-using StereoVoDynConfig = ::stereo_vo::StereoVoDynConfig;
 
 class StereoVoNode {
  public:
@@ -66,6 +67,7 @@ class StereoVoNode {
                       const ImageConstPtr& r_image_msg,
                       const CameraInfoConstPtr& r_cinfo_msg);
   void ReconfigureCallback(const StereoVoDynConfig& config, int level);
+
   void PublishPoseStamped(const geometry_msgs::Pose& pose,
                           const ros::Time& time,
                           const std::string& frame_id) const;

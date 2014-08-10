@@ -13,10 +13,14 @@ namespace stereo_vo {
 class Feature {
  public:
   typedef uint64_t Id;
-    
+
   Feature(Id id, const CvPoint3& p_cam_left, const CvPoint2& p_pixel_left,
-          const CvPoint2& p_pixel_right, bool init) : id_(id), p_cam_left_(p_cam_left),
-          p_pixel_left_(p_pixel_left), p_pixel_right_(p_pixel_right), init_(init) {}
+          const CvPoint2& p_pixel_right, bool init=false)
+      : id_(id),
+        p_cam_left_(p_cam_left),
+        p_pixel_left_(p_pixel_left),
+        p_pixel_right_(p_pixel_right),
+        init_(init) {}
 
   const CvPoint3& p_cam_left() const { return p_cam_left_; }
   void set_p_cam_left(const CvPoint3& p_cam_left) { p_cam_left_ = p_cam_left; }

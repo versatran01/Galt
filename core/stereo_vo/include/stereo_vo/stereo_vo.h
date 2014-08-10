@@ -26,40 +26,35 @@ class StereoVo {
  public:
   StereoVo(const StereoVoConfig &config)
       : config_(config),
-        detector_(config.cell_size, config.max_corners, 0.05) {}
+        detector_(config.cell_size, config.shi_max_corners,
+                  config.shi_quality_level) {}
 
-  void Initialize(const cv::Mat &l_image, const cv::Mat &r_image,
-                  const StereoCameraModel &model);
-  void Iterate(const cv::Mat &l_image, const cv::Mat &r_image);
-  Pose EstimatePose();
-
-  void UpdateConfig(const StereoVoConfig &config) { config_ = config; }
-
-  void AddKeyFrame(const Pose &pose, const cv::Mat &l_image,
-                   const cv::Mat &r_image);
-  
-  const Pose &current_pose() const { return current_pose_; }
   const bool init() const { return init_; }
-
+  const Pose &current_pose() const { return current_pose_; }
   const std::vector<Feature> &features() const { return features_; }
 
+  void Initialize(const CvStereoImage &stereo_image,
+                  const StereoCameraModel &model);
+  void Iterate(const CvStereoImage &stereo_image);
+  void UpdateConfig(const StereoVoConfig &config) { config_ = config; }
+
  private:
-  
-  //void TrackTemporal(const cv::Mat& l_image_prev, const cv::Mat& l_image,
+  Pose EstimatePose();
+  void AddKeyFrame(const Pose &pose, const CvStereoImage &stereo_image,
+                   std::vector<Feature> features);
+  // void TrackTemporal(const cv::Mat& l_image_prev, const cv::Mat& l_image,
   //                   std::set<Feature::Id>& removable);
-    
+
   bool init_{false};
   StereoCameraModel model_;
   StereoVoConfig config_;
 
   Pose current_pose_;
+  Feature::Id feature_cnt_;
+  GoodFeatureDetector detector_;
   std::vector<Feature> features_;
   std::deque<KeyFrame> key_frames_;
-  GoodFeatureDetector detector_;
-  Feature::Id featureCount_;
-
-  cv::Mat l_image_prev_;
-  cv::Mat r_image_prev_;
+  CvStereoImage stereo_image_prev_;
 };
 
 void TrackFeatures(const cv::Mat &image1, const cv::Mat &image2,
@@ -70,4 +65,4 @@ void TrackFeatures(const cv::Mat &image1, const cv::Mat &image2,
 
 }  // namespace galt
 
-#endif  // GALT_STEREO_VO_H
+#endif  // GALT_STEREO_VO_H_

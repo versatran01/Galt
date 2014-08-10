@@ -20,49 +20,52 @@ namespace galt {
 
 namespace stereo_vo {
 
-void StereoVo::Initialize(const cv::Mat &l_image, const cv::Mat &r_image,
+void StereoVo::Initialize(const CvStereoImage &stereo_image,
                           const StereoCameraModel &model) {
   model_ = model;
- 
-  //  call addKeyframe here
-  
-  // Save current images to previous images
-  l_image_prev_ = l_image;
-  r_image_prev_ = r_image;
-  
+  // Add the first stereo image as first keyframe
+  // At this moment, we use current_pose as input, but inherently will use
+  // estimated depth to reinitialize current_pose.
+  // Later will replace this with estimates of other sensors.
+  std::vector<Feature> tracked_features;
+  AddKeyFrame(current_pose(), stereo_image, tracked_features);
+
+  // Save stereo image and tracked features for next iteration
+  stereo_image_prev_ = stereo_image;
+  features_ = tracked_features;
+
   // Create a window for display
+  // TODO: replace this with published topic later
   cv::namedWindow("display",
                   CV_WINDOW_NORMAL | CV_WINDOW_KEEPRATIO | CV_GUI_EXPANDED);
   init_ = true;
-  std::cout << "StereoVo initialized, baseline: " << model_.baseline()
-            << std::endl;
+  ROS_INFO_STREAM("StereVo initialized, baseline: " << model_.baseline());
 }
 
-void StereoVo::Iterate(const cv::Mat &l_image, const cv::Mat &r_image) {
-  
-  std::vector<Feature> new_features;
+void StereoVo::Iterate(const CvStereoImage &stereo_image) {
+
+  std::vector<Feature> tracked_features;
   std::set<Feature::Id> removables;
-  
-  //TrackTemporal(l_image_prev_, l_image, removables);
-  
-  //  remove features here...
-  
+
+  // TrackTemporal(l_image_prev_, l_image, removables);
+
+  // remove features here...
+
   auto relative_pose = EstimatePose();
   current_pose_ = current_pose_.compose(relative_pose);
-  
-  // Check if a new keyframe is necessary and add
-  AddKeyFrame(current_pose(), l_image, r_image);
-  
-  //  check keyframe size > N
-  //  then do optimization as necessary
-  //  remove the oldest keyframe(s)
-  
+
+  // This will check if it's necessary to add new keyframes and add it if true
+  AddKeyFrame(current_pose(), stereo_image, tracked_features);
+
+  // Windowed optimization here
+  // Check if key_frame_.size() == N
+
   // Visualization (optional)
-  Display(l_image_prev_, l_image, r_image_prev_, r_image, features_,
-          key_frames_);
-  // Save previous left image for tracking later, and right image for display
-  l_image_prev_ = l_image;
-  r_image_prev_ = r_image;
+  Display(stereo_image, tracked_features, key_frames_.back());
+
+  // Save stereo image and tracked features for next iteration
+  stereo_image_prev_ = stereo_image;
+  features_ = tracked_features;
 }
 
 Pose StereoVo::EstimatePose() {
@@ -83,11 +86,11 @@ Pose StereoVo::EstimatePose() {
     cv::Mat rvec = cv::Mat(3, 1, CV_64FC1);
     cv::Mat tvec = cv::Mat(3, 1, CV_64FC1);
     const size_t minInliers =
-      std::ceil(worldPoints.size() * config_.pnp_ransac_inliers);
-    cv::solvePnPRansac(worldPoints, imagePoints, model_.left().fullIntrinsicMatrix(),
-                 std::vector<double>(), rvec,
-                 tvec, false, 100, config_.pnp_ransac_error,
-                 minInliers, inliers, cv::ITERATIVE);
+        std::ceil(worldPoints.size() * config_.pnp_ransac_inliers);
+    cv::solvePnPRansac(
+        worldPoints, imagePoints, model_.left().fullIntrinsicMatrix(),
+        std::vector<double>(), rvec, tvec, false, 100, config_.pnp_ransac_error,
+        minInliers, inliers, cv::ITERATIVE);
 
     //  convert rotation to quaternion
     kr::vec3<scalar_t> r(rvec.at<double>(0, 0), rvec.at<double>(1, 0),
@@ -98,13 +101,13 @@ Pose StereoVo::EstimatePose() {
     auto pose = Pose::fromVectors(r, t);
     return pose;
   }
-  
+
   throw std::runtime_error("EstimatePose called with empty features");
   return Pose();
 }
 
-void StereoVo::AddKeyFrame(const Pose &pose, const cv::Mat &l_image,
-                           const cv::Mat &r_image) {
+void StereoVo::AddKeyFrame(const Pose &pose, const CvStereoImage &stereo_image,
+                           std::vector<Feature> features) {
   bool should_add_key_frame = false;
   if (key_frames_.empty()) {
     should_add_key_frame = true;
@@ -112,7 +115,7 @@ void StereoVo::AddKeyFrame(const Pose &pose, const cv::Mat &l_image,
     const auto &last_key_frame = key_frames_.back();
     //  check distance metric to see if new keyframe is required
     const double distance = (last_key_frame.pose().p - current_pose_.p).norm();
-    if (distance > config_.keyframe_dist_thresh) {
+    if (distance > config_.kf_dist) {
       should_add_key_frame = true;
     }
     //  do another check on feature distribution then set should_add_key_frame
@@ -186,9 +189,10 @@ void StereoVo::AddKeyFrame(const Pose &pose, const cv::Mat &l_image,
   }
 }*/
 
-//void TrackFeatures(const cv::Mat &image1, const cv::Mat &image2,
-                   
-//                   std::function<void(Feature *, const CvPoint2 &)> update_func,
+// void TrackFeatures(const cv::Mat &image1, const cv::Mat &image2,
+
+//                   std::function<void(Feature *, const CvPoint2 &)>
+// update_func,
 //                   const int win_size, const int max_level) {
 ////  static cv::TermCriteria term_criteria(
 ////      cv::TermCriteria::COUNT + cv::TermCriteria::EPS, 25, 0.01);
@@ -210,7 +214,8 @@ void StereoVo::AddKeyFrame(const Pose &pose, const cv::Mat &l_image,
 ////  PruneByStatus(status, corners2);
 ////  status.clear();
 ////  // Do find fundamental matrix
-////  cv::findFundamentalMat(corners1, corners2, cv::FM_RANSAC, 1.5, 0.99, status);
+////  cv::findFundamentalMat(corners1, corners2, cv::FM_RANSAC, 1.5, 0.99,
+/// status);
 ////  PruneByStatus(status, features);
 ////  PruneByStatus(status, corners1);
 ////  PruneByStatus(status, corners2);

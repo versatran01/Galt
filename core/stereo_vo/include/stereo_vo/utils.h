@@ -34,11 +34,8 @@ void PruneByStatus(const std::vector<U> &status, std::vector<T> &objects) {
   }
 }
 
-void Display(const cv::Mat &l_image_prev, const cv::Mat &l_image,
-             const cv::Mat &r_image_prev, const cv::Mat &r_image,
-             const std::vector<Feature> &features,
-             const std::deque<KeyFrame> &key_frames);
-
+void Display(const CvStereoImage &stereo_image,
+             const std::vector<Feature> features, const KeyFrame &key_frame);
 static inline CvPoint2 PixelToCoord(double fx, double fy, double cx, double cy,
                                     const CvPoint2 &pixel) {
   return CvPoint2((pixel.x - cx) / fx, (pixel.y - cy) / fy);

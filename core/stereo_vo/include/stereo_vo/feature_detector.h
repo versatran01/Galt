@@ -19,11 +19,12 @@ class FeatureDetectorBase {
   virtual ~FeatureDetectorBase() {}
 
   virtual void DetectFeatures(const cv::Mat& image,
-                              CvCorners2& corners) const = 0;
-  void AddFeatures(const cv::Mat& image, std::vector<Feature> &features) const;
+                              std::vector<CvPoint2>& corners) const = 0;
+  void AddFeatures(const cv::Mat& image, std::vector<Feature>& features) const;
 
  protected:
-  const Grid CreateGrid(const cv::Mat& image, const std::vector<Feature>& features) const;
+  const Grid CreateGrid(const cv::Mat& image,
+                        const std::vector<Feature>& features) const;
   int cell_size_;
 };
 
@@ -35,7 +36,8 @@ class GoodFeatureDetector : public FeatureDetectorBase {
         quality_level_{quality_level},
         min_distance_{static_cast<double>(cell_size / max_corners)} {}
 
-  void DetectFeatures(const cv::Mat& image, CvCorners2& corners) const override;
+  void DetectFeatures(const cv::Mat& image,
+                      std::vector<CvPoint2>& corners) const override;
 
  private:
   int max_corners_;
@@ -47,4 +49,4 @@ class GoodFeatureDetector : public FeatureDetectorBase {
 
 }  // namespace galt
 
-#endif  // GALT_STEREO_VO_FEATURE_DETECTOR_H
+#endif  // GALT_STEREO_VO_FEATURE_DETECTOR_H_

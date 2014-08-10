@@ -86,8 +86,8 @@ void StereoVoNode::StereoCallback(const ImageConstPtr& l_image_msg,
                                   const ImageConstPtr& r_image_msg,
                                   const CameraInfoConstPtr& r_cinfo_msg) {
   // Get stereo camera infos
-  static image_geometry::StereoCameraModel model;
-  if (!model.initialized() && (!l_cinfo_msg->K[0] || !r_cinfo_msg->K[0])) {
+  static image_geometry::StereoCameraModel stereo_model;
+  if (!stereo_model.initialized() && (!l_cinfo_msg->K[0] || !r_cinfo_msg->K[0])) {
     ROS_WARN_THROTTLE(1, "Uncalibrated camera.");
     return;
   }
@@ -95,25 +95,26 @@ void StereoVoNode::StereoCallback(const ImageConstPtr& l_image_msg,
   CameraInfo rinfo = *r_cinfo_msg;
   linfo.header.frame_id = "/stereo";
   rinfo.header.frame_id = "/stereo";
-  model.fromCameraInfo(linfo, rinfo);
+  stereo_model.fromCameraInfo(linfo, rinfo);
 
   // Get stereo images
   cv::Mat l_image_rect =
       cv_bridge::toCvCopy(l_image_msg, image_encodings::MONO8)->image;
   cv::Mat r_image_rect =
       cv_bridge::toCvCopy(r_image_msg, image_encodings::MONO8)->image;
+  auto stereo_image = std::make_pair(l_image_rect, r_image_rect);
 
   // Initialize stereo visual odometry if not
   if (!stereo_vo_.init()) {
-    stereo_vo_.Initialize(l_image_rect, r_image_rect, model);
+    stereo_vo_.Initialize(stereo_image, stereo_model);
     return;
   }
 
-  stereo_vo_.Iterate(l_image_rect, r_image_rect);
+  stereo_vo_.Iterate(stereo_image);
   auto current_pose = KrPoseToRosPose(stereo_vo_.current_pose());
 
   // Publish PointCloud from keyframe pose and features
-  PublishPointCloud(stereo_vo_.features(), l_image_msg->header.stamp,"0");
+  PublishPointCloud(stereo_vo_.features(), l_image_msg->header.stamp, "0");
   PublishPoseStamped(current_pose, l_image_msg->header.stamp, "0");
   PublishTrajectory(current_pose, l_image_msg->header.stamp, "0");
 }
@@ -129,10 +130,10 @@ void StereoVoNode::PublishPointCloud(const std::vector<Feature>& features,
     uint8_t rgb[4];
     float val;
   } color;
+
   for (const Feature& feat : features) {
     geometry_msgs::Point32 p32;
-    kr::vec3<scalar_t> p(feat.p_cam_left().x, 
-                         feat.p_cam_left().y, 
+    kr::vec3<scalar_t> p(feat.p_cam_left().x, feat.p_cam_left().y,
                          feat.p_cam_left().z);
 
     p32.x = p[0];
@@ -180,13 +181,19 @@ void StereoVoNode::PublishTrajectory(const geometry_msgs::Pose& pose,
 
 const StereoVoConfig ReadConfig(const ros::NodeHandle& nh) {
   StereoVoConfig config;
-  nh.param<int>("cell_size", config.cell_size, 40);
-  nh.param<int>("max_corners", config.max_corners, 1);
-  nh.param<int>("max_level", config.max_level, 50);
-  nh.param<int>("win_size", config.win_size, 50);
+  nh.param<int>("cell_size", config.cell_size, 50);
+  nh.param<int>("shi_max_corners", config.shi_max_corners, 1);
+  nh.param<double>("shi_quality_level", config.shi_quality_level, 0.05);
+
+  nh.param<int>("klt_max_level", config.klt_max_level, 3);
+  nh.param<int>("klt_win_size", config.klt_win_size, 13);
+
   nh.param<double>("pnp_ransac_inliers", config.pnp_ransac_inliers, 0.7);
   nh.param<double>("pnp_ransac_error", config.pnp_ransac_error, 4.0);
-  nh.param<double>("keyframe_dist_thresh", config.keyframe_dist_thresh, 3.0);
+
+  nh.param<int>("kf_size", config.kf_size, 4);
+  nh.param<double>("kf_dist", config.kf_dist, 1.5);
+  nh.param<double>("kf_min_filled", config.kf_min_filled, 0.7);
   return config;
 }
 

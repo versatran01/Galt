@@ -10,7 +10,7 @@ namespace galt {
 
 namespace stereo_vo {
 
-const Grid FeatureDetectorBase::CreateGrid(
+const Grid GridDetectorBase::CreateGrid(
     const std::vector<Corner> &corners) const {
   Grid grid;
   // Marked filled grid
@@ -22,7 +22,7 @@ const Grid FeatureDetectorBase::CreateGrid(
   return grid;
 }
 
-double FeatureDetectorBase::GridFilled(const cv::Mat &image,
+double GridDetectorBase::GridFilled(const cv::Mat &image,
                                        const std::vector<Corner> &corners) {
   grid_ = CreateGrid(corners);
   grid_cols_ = static_cast<int>(image.cols / cell_size_);
@@ -30,7 +30,7 @@ double FeatureDetectorBase::GridFilled(const cv::Mat &image,
   return static_cast<double>(grid_.size()) / (grid_cols_ * grid_rows_);
 }
 
-void FeatureDetectorBase::AddFeatures(const cv::Mat &image,
+void GridDetectorBase::AddFeatures(const cv::Mat &image,
                                       std::vector<Corner> &corners) {
   // Create a new grid if necessary
   if (grid_.empty()) grid_ = CreateGrid(corners);
@@ -63,6 +63,21 @@ void GoodFeatureDetector::DetectCorners(
     const cv::Mat &image, std::vector<CvPoint2> &cv_points) const {
   cv::goodFeaturesToTrack(image, cv_points, max_corners_, quality_level_,
                           min_distance_);
+}
+
+void GlobalFeatureDetector::AddFeatures(const cv::Mat& image, 
+                                        std::vector<Corner>& corners) {
+  
+  //  mark old features as old
+  for (Corner &corner : corners) corner.set_init(false);
+  
+  std::vector<CvPoint2> points;
+  cv::goodFeaturesToTrack(image,points,max_corners_ - corners.size(),
+                          quality_level_,min_distance_);
+    
+  for (CvPoint2 &point : points) {
+    corners.emplace_back(cnt_++, point, true);
+  }
 }
 
 }  // namespace stereo_vo

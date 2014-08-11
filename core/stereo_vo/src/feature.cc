@@ -41,7 +41,10 @@ bool Feature::triangulate(const image_geometry::StereoCameraModel &model,
   if (!kr::refinePoint(poses, obvs, p3D)) {
     return false;
   }
-
+  
+  p_cam_left_.x = p3D[0];
+  p_cam_left_.y = p3D[1];
+  p_cam_left_.z = p3D[2];
   return true;
 }
 

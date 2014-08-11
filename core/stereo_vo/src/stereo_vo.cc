@@ -15,6 +15,7 @@
 #include <kr_math/base_types.hpp>
 #include <kr_math/feature.hpp>
 #include <kr_math/pose.hpp>
+#include <kr_math/SO3.hpp>
 
 #include <Eigen/Geometry>
 
@@ -32,11 +33,10 @@ void StereoVo::Initialize(const CvStereoImage &stereo_image,
   // estimated depth to reinitialize current_pose. Later will be replaced with
   // estimates of other sensors.
   std::vector<Corner> tracked_corners;
-  AddKeyFrame(current_pose(), stereo_image, tracked_corners);
+  AddKeyFrame(relative_pose(), stereo_image, tracked_corners);
 
   // Save stereo image and tracked corners for next iteration
   stereo_image_prev_ = stereo_image;
-  key_frame_prev_ = key_frames_.back();
   corners_ = tracked_corners;
 
   // Create a window for display
@@ -53,20 +53,20 @@ void StereoVo::Iterate(const CvStereoImage &stereo_image) {
   // Remove corresponding features in last key frame only if they are newly
   // initialized
   TrackTemporal(stereo_image_prev_.first, stereo_image.first, corners_,
-                tracked_corners, key_frame_prev_);
+                tracked_corners, key_frame_prev());
 
   // Estimate pose using 2D-to-3D correspondences
   // 2D - currently tracked corners
   // 3D - features in last key frame
-  auto relative_pose = EstimatePose();
-  current_pose_ = current_pose().compose(relative_pose);
-
+  relative_pose_ = EstimatePose();
+  absolute_pose_ = key_frame_prev().pose().compose(relative_pose_);
+  
   // Check whether to add key frame based on the following criteria
   // 1. Camera has moved some distance away from the last key frame pose
   // 2. The percentage of cells with corners is below some threshold
   // After this step, tracked_corners will contain both old corners and newly
   // added corners
-  AddKeyFrame(current_pose(), stereo_image, tracked_corners);
+  AddKeyFrame(absolute_pose_, stereo_image, tracked_corners);
 
   // Do a windowed optimization if window size is reached
   if (key_frames_.size() == static_cast<unsigned>(config_.kf_size)) {
@@ -77,7 +77,7 @@ void StereoVo::Iterate(const CvStereoImage &stereo_image) {
   }
 
   // Visualization (optional)
-  Display(stereo_image, tracked_corners, key_frame_prev_);
+  Display(stereo_image, tracked_corners, key_frame_prev());
 
   // Save stereo image and tracked corners for next iteration
   stereo_image_prev_ = stereo_image;
@@ -121,10 +121,7 @@ void StereoVo::TrackTemporal(const cv::Mat &image_prev, const cv::Mat &image,
 }
 
 Pose StereoVo::EstimatePose() {
-  if (key_frame_prev_.features().empty()) {
-    throw std::runtime_error("EstimatePose called with empty features");
-  }
-  const size_t N = key_frame_prev_.features().size();
+  const size_t N = key_frame_prev().features().size();
   
   std::vector<CvPoint2> imagePoints;
   std::vector<CvPoint3> worldPoints;
@@ -133,9 +130,17 @@ Pose StereoVo::EstimatePose() {
   imagePoints.reserve(N);
   worldPoints.reserve(N);
   
-  for (const auto &feat : key_frame_prev_.features()) {
-    imagePoints.push_back(feat.second.p_pixel_left());
-    worldPoints.push_back(feat.second.p_cam_left());
+  for (const Corner& corner : corners_) {
+    const auto id = corner.id();
+    const auto ite = key_frame_prev().features().find(id);
+    if (ite != key_frame_prev().features().end()) {
+      const auto &feat = ite->second;
+      imagePoints.push_back(corner.p_pixel());
+      worldPoints.push_back(feat.p_cam_left());
+    }    
+  }
+  if (imagePoints.empty()) {
+    throw std::runtime_error("EstimatePose called with empty features");
   }
   
   cv::Mat rvec = cv::Mat(3, 1, CV_64FC1);
@@ -159,10 +164,13 @@ Pose StereoVo::EstimatePose() {
 
 void StereoVo::AddKeyFrame(const Pose &pose, const CvStereoImage &stereo_image,
                            std::vector<Corner> &corners) {
-  const auto dist = pose.p.norm();
-  const auto filled = detector_.GridFilled(stereo_image.first, corners);
+  const auto dist = relative_pose().p.norm();
+  const auto angles = kr::getRPY(relative_pose().q.matrix());
+  const auto yaw = angles[2];
+  //const auto filled = detector_.GridFilled(stereo_image.first, corners);
   // Check distance and feature distribution metric
-  if ((dist > config_.kf_dist) || (filled < config_.kf_min_filled)) {
+  if ((dist > config_.kf_dist) || (corners.size() < config_.kf_min_filled*config_.shi_max_corners) ||
+      (std::abs(yaw) > 45.0/180 * M_PI)) {
     std::map<Feature::Id, Feature> features;
     // Add new corners to current corners
     // After this, we will have two types of corner in corners
@@ -179,13 +187,13 @@ void StereoVo::AddKeyFrame(const Pose &pose, const CvStereoImage &stereo_image,
         depth += feat.second.p_cam_left().z;
       }
       depth /= features.size();
-      current_pose_.q = kr::quat<scalar_t>(0,1,0,0);
-      current_pose_.p = kr::vec3<scalar_t>(0,0,depth);
+      relative_pose_.q = kr::quat<scalar_t>(0,1,0,0);
+      relative_pose_.p = kr::vec3<scalar_t>(0,0,depth);
     }
     // Add key frame to queue with current_pose, features and stereo_image
-    key_frames_.emplace_back(current_pose(), features, stereo_image);
-    key_frame_prev_ = key_frames_.back();
-    ROS_INFO("Added a new keyframe, dist: %f, filled: %f", dist, filled);
+    key_frames_.emplace_back(pose, features, stereo_image);    
+    
+    //ROS_INFO("Added a new keyframe, dist: %f, filled: %f", dist, filled);
   }
 }
 
@@ -224,6 +232,9 @@ void StereoVo::OpticalFlow(const cv::Mat &image1, const cv::Mat &image2,
                            const std::vector<CvPoint2>& points1,
                            std::vector<CvPoint2>& points2,
                            std::vector<uchar>& status) {
+  if (points1.empty()) {
+    return;
+  }
   int win_size = config_.klt_win_size;
   int max_level = config_.klt_max_level;
   static cv::TermCriteria term_criteria(

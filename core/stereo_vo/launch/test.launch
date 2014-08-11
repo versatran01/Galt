@@ -6,26 +6,28 @@
     <arg name="rviz" default="false"/>
 
     <arg name="bagfile_home" value="$(env GALT_BAGFILES)"/>
-    <arg name="bagfile" default="day2/fly/2014-07-25-18-14-12.bag"/>
+    <arg name="bagfile" default="day1/noon/2014-07-24-20-29-15.bag"/>
+    <arg name="bagfile_start" default="0"/>
 
     <arg name="shi_cell_size" default="50"/>
-    <arg name="shi_max_corners" default="1"/>
-    <arg name="shi_quality_level" default="0.05"/>
+    <arg name="shi_max_corners" default="300"/>
+    <arg name="shi_quality_level" default="0.01"/>
+    <arg name="shi_min_distance" default="10"/>
 
     <arg name="klt_max_level" default="3"/>
     <arg name="klt_win_size" default="13"/>
 
-    <arg name="kf_dist" value="2"/>
+    <arg name="kf_dist" value="3"/>
     <arg name="kf_size" value="4"/>
     <arg name="kf_min_filled" value="0.5"/>
 
-    <arg name="pnp_ransac_error" value="2.0"/>
-    <arg name="pnp_ransac_inliers" value="0.7"/>
+    <arg name="pnp_ransac_error" value="4.0"/>
+    <arg name="pnp_ransac_inliers" value="0.6"/>
 
     <arg name="tri_max_eigenratio" value="100000"/>
 
     <node pkg="rosbag" type="play" name="player"
-        args="-l $(arg bagfile_home)/$(arg bagfile)">
+        args="-s $(arg bagfile_start) $(arg bagfile_home)/$(arg bagfile)">
     </node>
 
     <node pkg="stereo_image_proc" type="stereo_image_proc"
@@ -37,6 +39,7 @@
         <param name="shi_cell_size" value="$(arg shi_cell_size)"/>
         <param name="shi_max_corners" value="$(arg shi_max_corners)"/>
         <param name="shi_quality_level" value="$(arg shi_quality_level)"/>
+        <param name="shi_min_distance" value="$(arg shi_min_distance)"/>
 
         <param name="klt_max_level" value="$(arg klt_max_level)"/>
         <param name="klt_win_size" value="$(arg klt_win_size)"/>

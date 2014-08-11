@@ -14,9 +14,17 @@ namespace stereo_vo {
 using Grid = std::set<std::pair<int, int>>;
 
 class FeatureDetectorBase {
- public:
-  FeatureDetectorBase(int cell_size) : cell_size_{cell_size} {}
+public:
   virtual ~FeatureDetectorBase() {}
+  virtual void AddFeatures(const cv::Mat& image, std::vector<Corner>& corners) = 0;
+  
+protected:
+  Feature::Id cnt_{0};
+};
+
+class GridDetectorBase : public FeatureDetectorBase {
+ public:
+  GridDetectorBase(int cell_size) : cell_size_{cell_size} {}
 
   virtual void DetectCorners(const cv::Mat& image,
                              std::vector<CvPoint2>& corners) const = 0;
@@ -28,13 +36,12 @@ class FeatureDetectorBase {
   int cell_size_;
   Grid grid_;
   int grid_rows_, grid_cols_;
-  Feature::Id cnt_{0};
 };
 
-class GoodFeatureDetector : public FeatureDetectorBase {
+class GoodFeatureDetector : public GridDetectorBase {
  public:
   GoodFeatureDetector(int cell_size, int max_corners, double quality_level)
-      : FeatureDetectorBase(cell_size),
+      : GridDetectorBase(cell_size),
         max_corners_{max_corners},
         quality_level_{quality_level},
         min_distance_{static_cast<double>(cell_size / max_corners)} {}
@@ -48,6 +55,20 @@ class GoodFeatureDetector : public FeatureDetectorBase {
   double min_distance_;
 };
 
+class GlobalFeatureDetector : public FeatureDetectorBase {
+public:
+  GlobalFeatureDetector(int max_corners, double quality_level, double min_distance)
+      : max_corners_{max_corners},
+        quality_level_{quality_level},
+        min_distance_{min_distance} {}
+  
+  void AddFeatures(const cv::Mat& image, std::vector<Corner>& corners);
+  
+private:
+  int max_corners_;
+  double quality_level_;
+  double min_distance_;
+};
 }  // namespace stereo_vo
 
 }  // namespace galt

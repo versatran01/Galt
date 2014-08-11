@@ -26,13 +26,28 @@ class StereoVo {
  public:
   StereoVo(const StereoVoConfig &config)
       : config_(config),
-        detector_(config.cell_size, config.shi_max_corners,
-                  config.shi_quality_level) {}
+        detector_(config.shi_max_corners,
+                  config.shi_quality_level,
+                  config.shi_min_distance) {}
 
   const bool init() const { return init_; }
-  const Pose &current_pose() const { return current_pose_; }
+  
+  /**
+   * @brief Pose with respect to the last recorded keyframe.
+   * @return kr::Pose
+   */
+  const Pose &relative_pose() const { return relative_pose_; }
+  
+  /**
+   * @brief Pose with respect to the world frame.
+   * @return kr::Pose
+   */
+  const Pose &absolute_pose() const { return absolute_pose_; }
+  
   const std::vector<Corner> &corners() const { return corners_; }
 
+  const std::deque<KeyFrame> &key_frames() const { return key_frames_; }
+  
   void Initialize(const CvStereoImage &stereo_image,
                   const StereoCameraModel &model);
   void Iterate(const CvStereoImage &stereo_image);
@@ -51,15 +66,16 @@ class StereoVo {
   void OpticalFlow(const cv::Mat &image1, const cv::Mat &image2,
                    const std::vector<CvPoint2> &points1,
                    std::vector<CvPoint2> &points2, std::vector<uchar> &status);
+  KeyFrame& key_frame_prev() { return key_frames_.back(); }
   bool init_{false};
   StereoCameraModel model_;
   StereoVoConfig config_;
 
-  Pose current_pose_;
-  GoodFeatureDetector detector_;
+  Pose relative_pose_;
+  Pose absolute_pose_;
+  GlobalFeatureDetector detector_;
   std::vector<Corner> corners_;
   std::deque<KeyFrame> key_frames_;
-  KeyFrame key_frame_prev_;
   CvStereoImage stereo_image_prev_;
 };
 

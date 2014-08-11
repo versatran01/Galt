@@ -58,8 +58,8 @@ void StereoVo::Iterate(const CvStereoImage &stereo_image) {
   // Estimate pose using 2D-to-3D correspondences
   // 2D - currently tracked corners
   // 3D - features in last key frame
-  // auto relative_pose = EstimatePose();
-  // current_pose_ = current_pose().compose(relative_pose);
+  auto relative_pose = EstimatePose();
+  current_pose_ = current_pose().compose(relative_pose);
 
   // Check whether to add key frame based on the following criteria
   // 1. Camera has moved some distance away from the last key frame pose
@@ -121,43 +121,40 @@ void StereoVo::TrackTemporal(const cv::Mat &image_prev, const cv::Mat &image,
 }
 
 Pose StereoVo::EstimatePose() {
-  //  if (!features_.empty()) {
-
-  //    std::vector<CvPoint2> imagePoints;
-  //    std::vector<CvPoint3> worldPoints;
-  //    std::vector<uchar> inliers;
-
-  //    imagePoints.reserve(features_.size());
-  //    worldPoints.reserve(features_.size());
-
-  //    for (const Feature &feat : features_) {
-  //      imagePoints.push_back(feat.p_pixel_left());
-  //      worldPoints.push_back(feat.p_cam_left());
-  //    }
-
-  //    cv::Mat rvec = cv::Mat(3, 1, CV_64FC1);
-  //    cv::Mat tvec = cv::Mat(3, 1, CV_64FC1);
-  //    const size_t minInliers =
-  //        std::ceil(worldPoints.size() * config_.pnp_ransac_inliers);
-  //    cv::solvePnPRansac(
-  //        worldPoints, imagePoints, model_.left().fullIntrinsicMatrix(),
-  //        std::vector<double>(), rvec, tvec, false, 100,
-  // config_.pnp_ransac_error,
-  //        minInliers, inliers, cv::ITERATIVE);
-
-  //  convert rotation to quaternion
-  //    kr::vec3<scalar_t> r(rvec.at<double>(0, 0), rvec.at<double>(1, 0),
-  //                         rvec.at<double>(2, 0));
-  //    kr::vec3<scalar_t> t(tvec.at<double>(0, 0), tvec.at<double>(1, 0),
-  //                         tvec.at<double>(2, 0));
-
-  //    auto pose = Pose::fromVectors(r, t);
-  //    return pose;
-  //  }
-
-  //  throw std::runtime_error("EstimatePose called with empty features");
-  //  return Pose();
-  return current_pose();
+  if (key_frame_prev_.features().empty()) {
+    throw std::runtime_error("EstimatePose called with empty features");
+  }
+  const size_t N = key_frame_prev_.features().size();
+  
+  std::vector<CvPoint2> imagePoints;
+  std::vector<CvPoint3> worldPoints;
+  std::vector<uchar> inliers;
+  
+  imagePoints.reserve(N);
+  worldPoints.reserve(N);
+  
+  for (const auto &feat : key_frame_prev_.features()) {
+    imagePoints.push_back(feat.second.p_pixel_left());
+    worldPoints.push_back(feat.second.p_cam_left());
+  }
+  
+  cv::Mat rvec = cv::Mat(3, 1, CV_64FC1);
+  cv::Mat tvec = cv::Mat(3, 1, CV_64FC1);
+  const size_t minInliers =
+      std::ceil(worldPoints.size() * config_.pnp_ransac_inliers);
+  cv::solvePnPRansac(
+        worldPoints, imagePoints, model_.left().fullIntrinsicMatrix(),
+        std::vector<double>(), rvec, tvec, false, 100,
+        config_.pnp_ransac_error,
+        minInliers, inliers, cv::ITERATIVE);
+  
+  kr::vec3<scalar_t> r(rvec.at<double>(0, 0), rvec.at<double>(1, 0),
+                       rvec.at<double>(2, 0));
+  kr::vec3<scalar_t> t(tvec.at<double>(0, 0), tvec.at<double>(1, 0),
+                       tvec.at<double>(2, 0));
+  
+  auto pose = Pose::fromVectors(r, t);
+  return pose;
 }
 
 void StereoVo::AddKeyFrame(const Pose &pose, const CvStereoImage &stereo_image,
@@ -176,7 +173,14 @@ void StereoVo::AddKeyFrame(const Pose &pose, const CvStereoImage &stereo_image,
     // triangulation score. Features will be created based on the corners left
     TrackSpatial(stereo_image, corners, features);
     if (key_frames_.empty()) {
-      // Reinitialize current pose with triangulated depth
+      //  some hacky initializing code just for better visualization
+      double depth=0;
+      for (const std::pair<Feature::Id,Feature>& feat : features) {
+        depth += feat.second.p_cam_left().z;
+      }
+      depth /= features.size();
+      current_pose_.q = kr::quat<scalar_t>(0,1,0,0);
+      current_pose_.p = kr::vec3<scalar_t>(0,0,depth);
     }
     // Add key frame to queue with current_pose, features and stereo_image
     key_frames_.emplace_back(current_pose(), features, stereo_image);

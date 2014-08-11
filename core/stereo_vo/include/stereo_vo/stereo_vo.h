@@ -31,7 +31,7 @@ class StereoVo {
 
   const bool init() const { return init_; }
   const Pose &current_pose() const { return current_pose_; }
-  const std::vector<Feature> &features() const { return features_; }
+  const std::vector<Corner> &corners() const { return corners_; }
 
   void Initialize(const CvStereoImage &stereo_image,
                   const StereoCameraModel &model);
@@ -39,20 +39,27 @@ class StereoVo {
   void UpdateConfig(const StereoVoConfig &config) { config_ = config; }
 
  private:
-  Pose EstimatePose();
   void AddKeyFrame(const Pose &pose, const CvStereoImage &stereo_image,
-                   std::vector<Feature> features);
-  // void TrackTemporal(const cv::Mat& l_image_prev, const cv::Mat& l_image,
-  //                   std::set<Feature::Id>& removable);
-
+                   std::vector<Corner> &corners);
+  void TrackSpatial(const CvStereoImage &stereo_image,
+                    std::vector<Corner> &corners,
+                    std::map<Feature::Id, Feature> &features);
+  void TrackTemporal(const cv::Mat &image_prev, const cv::Mat &image,
+                     const std::vector<Corner> &corners1,
+                     std::vector<Corner> &corners2, KeyFrame &key_frame);
+  Pose EstimatePose();
+  void OpticalFlow(const cv::Mat &image1, const cv::Mat &image2,
+                   const std::vector<CvPoint2> &points1,
+                   std::vector<CvPoint2> &points2, std::vector<uchar> &status);
   bool init_{false};
   StereoCameraModel model_;
   StereoVoConfig config_;
 
   Pose current_pose_;
   GoodFeatureDetector detector_;
-  std::vector<Feature> features_;
+  std::vector<Corner> corners_;
   std::deque<KeyFrame> key_frames_;
+  KeyFrame key_frame_prev_;
   CvStereoImage stereo_image_prev_;
 };
 

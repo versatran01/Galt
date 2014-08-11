@@ -21,6 +21,22 @@ const cv::Scalar MAGENTA = cv::Scalar(255, 0, 255);
 }
 
 template <typename T, typename U>
+void PruneByStatus(const std::vector<U> &status, std::vector<T> &objects,
+                   std::vector<T> &removed) {
+  ROS_ASSERT_MSG(status.size() == objects.size(),
+                 "status and object size mismatch");
+  auto it_obj = objects.begin();
+  for (const auto &s : status) {
+    if (s) {
+      it_obj++;
+    } else {
+      removed.push_back(*it_obj);
+      it_obj = objects.erase(it_obj);
+    }
+  }
+}
+
+template <typename T, typename U>
 void PruneByStatus(const std::vector<U> &status, std::vector<T> &objects) {
   ROS_ASSERT_MSG(status.size() == objects.size(),
                  "status and object size mismatch");

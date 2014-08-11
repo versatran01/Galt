@@ -20,11 +20,11 @@ class FeatureDetectorBase {
 
   virtual void DetectCorners(const cv::Mat& image,
                              std::vector<CvPoint2>& corners) const = 0;
-  double GridFilled(const cv::Mat& image, const std::vector<Feature>& features);
-  void AddFeatures(const cv::Mat& image, std::vector<Feature>& features);
+  void AddFeatures(const cv::Mat& image, std::vector<Corner>& corners);
+  double GridFilled(const cv::Mat& image, const std::vector<Corner>& corners);
 
  protected:
-  const Grid CreateGrid(const std::vector<Feature>& features) const;
+  const Grid CreateGrid(const std::vector<Corner>& corners) const;
   int cell_size_;
   Grid grid_;
   int grid_rows_, grid_cols_;
@@ -40,7 +40,7 @@ class GoodFeatureDetector : public FeatureDetectorBase {
         min_distance_{static_cast<double>(cell_size / max_corners)} {}
 
   void DetectCorners(const cv::Mat& image,
-                     std::vector<CvPoint2>& corners) const override;
+                     std::vector<CvPoint2>& cv_points) const override;
 
  private:
   int max_corners_;

@@ -114,47 +114,47 @@ void StereoVoNode::StereoCallback(const ImageConstPtr& l_image_msg,
   auto current_pose = KrPoseToRosPose(stereo_vo_.current_pose());
 
   // Publish PointCloud from keyframe pose and features
-  PublishPointCloud(stereo_vo_.features(), l_image_msg->header.stamp, "0");
+//  PublishPointCloud(stereo_vo_.features(), l_image_msg->header.stamp, "0");
   PublishPoseStamped(current_pose, l_image_msg->header.stamp, "0");
   PublishTrajectory(current_pose, l_image_msg->header.stamp, "0");
 }
 
-void StereoVoNode::PublishPointCloud(const std::vector<Feature>& features,
-                                     const ros::Time& time,
-                                     const std::string& frame_id) const {
-  sensor_msgs::PointCloud cloud;
-  sensor_msgs::ChannelFloat32 channel;
-  channel.name = "rgb";
+//void StereoVoNode::PublishPointCloud(const std::vector<Feature>& features,
+//                                     const ros::Time& time,
+//                                     const std::string& frame_id) const {
+//  sensor_msgs::PointCloud cloud;
+//  sensor_msgs::ChannelFloat32 channel;
+//  channel.name = "rgb";
 
-  union {
-    uint8_t rgb[4];
-    float val;
-  } color;
+//  union {
+//    uint8_t rgb[4];
+//    float val;
+//  } color;
 
-  for (const Feature& feat : features) {
-    geometry_msgs::Point32 p32;
-    kr::vec3<scalar_t> p(feat.p_cam_left().x, feat.p_cam_left().y,
-                         feat.p_cam_left().z);
+//  for (const Feature& feat : features) {
+//    geometry_msgs::Point32 p32;
+//    kr::vec3<scalar_t> p(feat.p_cam_left().x, feat.p_cam_left().y,
+//                         feat.p_cam_left().z);
 
-    p32.x = p[0];
-    p32.y = p[1];
-    p32.z = p[2];
+//    p32.x = p[0];
+//    p32.y = p[1];
+//    p32.z = p[2];
 
-    cloud.points.push_back(p32);
+//    cloud.points.push_back(p32);
 
-    color.rgb[0] = 255;
-    color.rgb[1] = 255;
-    color.rgb[2] = 0;
-    color.rgb[3] = 0;
+//    color.rgb[0] = 255;
+//    color.rgb[1] = 255;
+//    color.rgb[2] = 0;
+//    color.rgb[3] = 0;
 
-    channel.values.push_back(color.val);
-  }
+//    channel.values.push_back(color.val);
+//  }
 
-  cloud.channels.push_back(channel);
-  cloud.header.stamp = time;
-  cloud.header.frame_id = frame_id;
-  points_pub_.publish(cloud);
-}
+//  cloud.channels.push_back(channel);
+//  cloud.header.stamp = time;
+//  cloud.header.frame_id = frame_id;
+//  points_pub_.publish(cloud);
+//}
 
 void StereoVoNode::PublishPoseStamped(const geometry_msgs::Pose& pose,
                                       const ros::Time& time,
@@ -194,6 +194,8 @@ const StereoVoConfig ReadConfig(const ros::NodeHandle& nh) {
   nh.param<int>("kf_size", config.kf_size, 4);
   nh.param<double>("kf_dist", config.kf_dist, 1.5);
   nh.param<double>("kf_min_filled", config.kf_min_filled, 0.7);
+  
+  nh.param<double>("tri_max_eigenratio", config.tri_max_eigenratio, 1.0e5);
   return config;
 }
 

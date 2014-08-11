@@ -34,6 +34,9 @@ include_directories(
 
 add_library(${PROJECT_NAME}
     src/stereo_vo.cc
+    src/feature_detector.cc
+    src/utils.cc
+    src/feature.cc
 )
 target_link_libraries(${PROJECT_NAME}
     ${catkin_LIBRARIES}

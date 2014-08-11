@@ -6,7 +6,12 @@ int main(int argc, char **argv) {
   ros::init(argc, argv, "stereo_vo");
   ros::NodeHandle nh("~");
 
-  galt::stereo_vo::StereoVoNode stereo_vo_node(nh);
-
-  ros::spin();
+  try {  
+    galt::stereo_vo::StereoVoNode stereo_vo_node(nh);
+    ros::spin();
+  } catch (const std::exception& e) {
+    ROS_ERROR("StereoVo: %s", e.what());
+    return -1;
+  }
+  return 0;
 }

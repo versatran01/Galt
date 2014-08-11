@@ -51,11 +51,7 @@ void PruneByStatus(const std::vector<U> &status, std::vector<T> &objects) {
 }
 
 void Display(const CvStereoImage &stereo_image,
-             const std::vector<Feature> features, const KeyFrame &key_frame);
-static inline CvPoint2 PixelToCoord(double fx, double fy, double cx, double cy,
-                                    const CvPoint2 &pixel) {
-  return CvPoint2((pixel.x - cx) / fx, (pixel.y - cy) / fy);
-}
+             const std::vector<Corner> &corners, const KeyFrame &key_frame);
 
 }  // namespace stereo_vo
 

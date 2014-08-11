@@ -58,8 +58,8 @@ void StereoVo::Iterate(const CvStereoImage &stereo_image) {
   // Estimate pose using 2D-to-3D correspondences
   // 2D - currently tracked corners
   // 3D - features in last key frame
-  // auto relative_pose = EstimatePose();
-  // current_pose_ = current_pose().compose(relative_pose);
+  auto relative_pose = EstimatePose();
+  current_pose_ = current_pose().compose(relative_pose);
 
   // Check whether to add key frame based on the following criteria
   // 1. Camera has moved some distance away from the last key frame pose

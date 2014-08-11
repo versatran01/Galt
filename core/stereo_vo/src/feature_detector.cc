@@ -27,7 +27,7 @@ double FeatureDetectorBase::GridFilled(const cv::Mat &image,
   grid_ = CreateGrid(corners);
   grid_cols_ = static_cast<int>(image.cols / cell_size_);
   grid_rows_ = static_cast<int>(image.rows / cell_size_);
-  return static_cast<double>(grid_.size() / (grid_cols_ * grid_rows_));
+  return static_cast<double>(grid_.size()) / (grid_cols_ * grid_rows_);
 }
 
 void FeatureDetectorBase::AddFeatures(const cv::Mat &image,

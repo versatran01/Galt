@@ -77,7 +77,7 @@ void StereoVo::Iterate(const CvStereoImage &stereo_image) {
   }
 
   // Visualization (optional)
-  //  Display(stereo_image, tracked_corners, key_frames_.back());
+  Display(stereo_image, tracked_corners, key_frame_prev_);
 
   // Save stereo image and tracked corners for next iteration
   stereo_image_prev_ = stereo_image;

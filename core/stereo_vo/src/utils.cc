@@ -10,7 +10,7 @@ namespace galt {
 namespace stereo_vo {
 
 void Display(const CvStereoImage &stereo_image,
-             const std::vector<Corner> &features, const KeyFrame &key_frame) {
+             const std::vector<Corner> &corners, const KeyFrame &key_frame) {
   auto &l_image = stereo_image.first;
   auto &r_image = stereo_image.second;
   auto &l_image_prev = key_frame.l_image();
@@ -29,53 +29,55 @@ void Display(const CvStereoImage &stereo_image,
   cv::Mat display;
   cv::cvtColor(display_gray, display, CV_GRAY2BGR);
 
-  // Draw features with different color code
-  // newly added (pixel_next, not triangulated - red)
-  // triangulated (pixel_left, pixel_right, pixel_next - orange)
-  // optimized (pixel_left, pixel-right, pixel_next, - green)
-  //  for (const Feature& feature : features) {
-  // auto l_p = feature.p_pixel_left();
-  // auto r_p = feature.p_pixel_right() + CvPoint2(n_cols, 0);
-  // auto n_p = feature.p_pixel_next() + CvPoint2(0, n_rows);
-
-  //    if (!feature.triangulated()) {  // newly added
-  //      cv::circle(display, n_p, 3, cv_color::RED, 2);
-  //    } else {
-  //      cv::Scalar color;
-  //      if (feature.ready()) {  // optimized
-  //        color = cv_color::GREEN;
-  //      } else {  // triangulated
-  //        color = cv_color::BLUE;
-  //      }
-  //      cv::circle(display, l_p, 3, color, 2);
-  //      cv::circle(display, r_p, 3, color, 2);
-  //      cv::circle(display, n_p, 4, color, 2);
-  //      cv::line(display, l_p, r_p, color, 1);
-  //      cv::line(display, l_p, n_p, color, 1);
-  //    }
-  //  }
-
   // Add text annotation
-  //  double offset_x = 10.0, offset_y = 30.0;
-  //  auto font = cv::FONT_HERSHEY_SIMPLEX;
-  //  double scale = 1.0, thickness = 2.0;
+  double offset_x = 10.0, offset_y = 30.0;
+  auto font = cv::FONT_HERSHEY_SIMPLEX;
+  double scale = 1.0, thickness = 2.0;
+  auto text_color = cv_color::CYAN;
   // Which frame?
-  //  cv::putText(display, "previous frame", CvPoint2(offset_x, offset_y), font,
-  //              scale, cv_color::YELLOW, thickness);
-  //  cv::putText(display, "current frame",
-  //              CvPoint2(n_cols + offset_x, n_rows + offset_y), font, scale,
-  //              cv_color::YELLOW, thickness);
-  //  // How many matching features?
-  //  std::ostringstream ss;
-  //  ss << "Features: " << features.size();
+  cv::putText(display, "key frame", CvPoint2(offset_x, offset_y), font, scale,
+              text_color, thickness);
+  cv::putText(display, "current frame", CvPoint2(offset_x, n_rows + offset_y),
+              font, scale, text_color, thickness);
+  // How many matching features?
+  std::ostringstream ss;
+  ss << "C/F: " << corners.size() << "/" << key_frame.features().size();
+  cv::putText(display, ss.str(), CvPoint2(offset_x, n_rows * 2 - offset_y / 2),
+              font, scale, text_color, thickness);
+  //  ss.str(std::string());
+  //  ss << "Features: " << key_frame.features().size();
   //  cv::putText(display, ss.str(), CvPoint2(offset_x, n_rows - offset_y / 2),
   //              font, scale, cv_color::YELLOW, thickness);
-  //  ss.str(std::string());
-  //  ss << "Key frames: " << key_frames.size();
-  //  cv::putText(display, ss.str(),
-  //              CvPoint2(n_cols + offset_x, n_rows - offset_y / 2), font,
-  // scale,
-  //              cv_color::YELLOW, thickness);
+
+  // Draw currently tracked corners on current frame and key frame
+  for (const Corner &corner : corners) {
+    auto p = corner.p_pixel() + CvPoint2(0, n_rows);
+    auto color = cv_color::RED;
+    if (corner.init()) color = cv_color::MAGENTA;
+    cv::circle(display, p, 2, color, 2);
+    cv::circle(display, corner.p_pixel(), 1, color, 2);
+  }
+
+  // Draw key frame features
+  const auto &feature_map = key_frame.features();
+  for (const auto &feature_pair : feature_map) {
+    const Feature &feature = feature_pair.second;
+    auto color = cv_color::GREEN;
+    if (feature.init()) color = cv_color::ORANGE;
+    cv::circle(display, feature.p_pixel(), 1, color, 2);
+    cv::circle(display, feature.p_pixel_right() + CvPoint2(n_cols, 0), 2, color,
+               2);
+  }
+
+  // Draw lines between corresponding corners
+  for (const Corner &corner : corners) {
+    auto it = feature_map.find(corner.id());
+    if (it != feature_map.end()) {
+      const CvPoint2 &p1 = corner.p_pixel();
+      const CvPoint2 &p2 = it->second.p_pixel();
+      cv::line(display, p1, p2, cv_color::YELLOW);
+    }
+  }
 
   // Display image
   cv::imshow("display", display);

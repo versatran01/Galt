@@ -114,7 +114,9 @@ void StereoVo::TrackTemporal(const cv::Mat &image_prev, const cv::Mat &image,
   auto it_id = ids.cbegin(), it_id_e = ids.cend();
   auto it_pts = points2.cbegin();
   for (; it_id != it_id_e; ++it_id, ++it_pts) {
-    corners2.emplace_back(*it_id, *it_pts, true);
+    // It doesn't matter here if these corners are init or not
+    // AddFeatures will set all of them to false
+    corners2.emplace_back(*it_id, *it_pts, false);
   }
 }
 

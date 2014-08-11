@@ -18,6 +18,7 @@ const cv::Scalar RED = cv::Scalar(0, 0, 255);
 const cv::Scalar YELLOW = cv::Scalar(0, 255, 255);
 const cv::Scalar ORANGE = cv::Scalar(0, 128, 255);
 const cv::Scalar MAGENTA = cv::Scalar(255, 0, 255);
+const cv::Scalar CYAN = cv::Scalar(255, 255, 0);
 }
 
 template <typename T, typename U>

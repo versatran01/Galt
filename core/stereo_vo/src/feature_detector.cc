@@ -14,7 +14,7 @@ const Grid FeatureDetectorBase::CreateGrid(
     const std::vector<Corner> &corners) const {
   Grid grid;
   // Marked filled grid
-  for (const auto &corner : corners) {
+  for (const Corner &corner : corners) {
     const int x = static_cast<int>(corner.p_pixel().x / cell_size_);
     const int y = static_cast<int>(corner.p_pixel().y / cell_size_);
     grid.emplace(x, y);
@@ -35,7 +35,7 @@ void FeatureDetectorBase::AddFeatures(const cv::Mat &image,
   // Create a new grid if necessary
   if (grid_.empty()) grid_ = CreateGrid(corners);
   // Mark all tracked corners as old
-  for (auto &corner : corners) corner.set_init(false);
+  for (Corner &corner : corners) corner.set_init(false);
   // Iterate through each dimension of the grid
   for (int y = 0; y < grid_rows_; ++y) {
     for (int x = 0; x < grid_cols_; ++x) {
@@ -48,7 +48,7 @@ void FeatureDetectorBase::AddFeatures(const cv::Mat &image,
                   cv::Range(x * cell_size_, (x + 1) * cell_size_));
         DetectCorners(cell_image, new_points);
         // Add new corners to existing corners
-        for (auto &point : new_points) {
+        for (CvPoint2 &point : new_points) {
           point.x += x * cell_size_;
           point.y += y * cell_size_;
           corners.emplace_back(cnt_++, point, true);

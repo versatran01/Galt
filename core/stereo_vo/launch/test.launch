@@ -19,7 +19,7 @@
     <arg name="kf_size" value="4"/>
     <arg name="kf_min_filled" value="0.5"/>
 
-    <arg name="pnp_ransac_error" value="5.0"/>
+    <arg name="pnp_ransac_error" value="2.0"/>
     <arg name="pnp_ransac_inliers" value="0.7"/>
 
     <arg name="tri_max_eigenratio" value="100000"/>

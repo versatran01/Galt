@@ -171,7 +171,14 @@ void StereoVo::AddKeyFrame(const Pose &pose, const CvStereoImage &stereo_image,
     // triangulation score. Features will be created based on the corners left
     TrackSpatial(stereo_image, corners, features);
     if (key_frames_.empty()) {
-      // Reinitialize current pose with triangulated depth
+      //  some hacky initializing code just for better visualization
+      double depth=0;
+      for (const std::pair<Feature::Id,Feature>& feat : features) {
+        depth += feat.second.p_cam_left().z;
+      }
+      depth /= features.size();
+      current_pose_.q = kr::quat<scalar_t>(0,1,0,0);
+      current_pose_.p = kr::vec3<scalar_t>(0,0,depth);
     }
     // Add key frame to queue with current_pose, features and stereo_image
     key_frames_.emplace_back(current_pose(), features, stereo_image);

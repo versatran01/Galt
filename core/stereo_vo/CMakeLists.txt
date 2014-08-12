@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8.3)
 project(stereo_vo)
 
 set(CMAKE_CXX_FLAGS "-Wall -std=c++11 -fPIC")
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake/")
 
 find_package(catkin REQUIRED COMPONENTS
     roscpp nodelet

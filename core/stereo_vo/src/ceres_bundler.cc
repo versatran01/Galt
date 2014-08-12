@@ -80,20 +80,20 @@ void CeresBundler::AddResidualBlock(const Edge &edge, image_geometry::PinholeCam
   const CameraNode& cam = cam_ite->second;
   const Point3Node& point = point_ite->second;
   
-  ceres::CostFunction * func;
+  ceres::CostFunction * func=0;
   if (point.locked()) {
     //  this point appears in a previous frame, use fixed residual
     //  2 x 6 cost function
     func = FixedReprojectionError::Create(edge.x(), edge.y(), 
                                           model, point.ptr());
     
+    problem_.AddResidualBlock(func, NULL, cam.ptr());
   } else {
     //  optimize the point also
     //  2 x (6+3) cost function
     func = ReprojectionError::Create(edge.x(), edge.y(), model);
+    problem_.AddResidualBlock(func, NULL, cam.ptr(), point.ptr());
   }
-  
-  
 }
 
 void CeresBundler::SolveProblem() {

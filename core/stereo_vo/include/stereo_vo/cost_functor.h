@@ -97,13 +97,13 @@ struct FixedReprojectionError {
                                      const PinholeCameraModel& model,
                                      const CvPoint3& point3) {
     return (new ceres::AutoDiffCostFunction<FixedReprojectionError, 2, 6>(
-        new ReprojectionError(x, y, model, point3)));
+        new FixedReprojectionError(x, y, model, point3)));
   }
 
   double x;
   double y;
-  CvPoint3 point3;
   PinholeCameraModel model;
+  CvPoint3 point3;
 };
 
 }  // namespace stereo_vo

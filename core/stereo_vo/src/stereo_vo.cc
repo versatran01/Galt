@@ -130,13 +130,12 @@ Pose StereoVo::EstimatePose() {
   imagePoints.reserve(N);
   worldPoints.reserve(N);
 
-  const auto &feature_map = key_frame_prev().features();
   for (const Corner &corner : corners_) {
-    const auto it = feature_map.find(corner.id());
-    if (it != feature_map.end()) {
+    const auto it = features_.find(corner.id());
+    if (it != features_.end()) {
       const Feature &feat = it->second;
       imagePoints.push_back(corner.p_pixel());
-      worldPoints.push_back(feat.p_cam_left());
+      worldPoints.push_back(feat.p_world());
     }
   }
 

@@ -14,11 +14,12 @@ namespace stereo_vo {
 using Grid = std::set<std::pair<int, int>>;
 
 class FeatureDetectorBase {
-public:
+ public:
   virtual ~FeatureDetectorBase() {}
-  virtual void AddFeatures(const cv::Mat& image, std::vector<Corner>& corners) = 0;
-  
-protected:
+  virtual void AddFeatures(const cv::Mat& image,
+                           std::vector<Corner>& corners) = 0;
+
+ protected:
   Feature::Id cnt_{0};
 };
 
@@ -56,19 +57,21 @@ class GoodFeatureDetector : public GridDetectorBase {
 };
 
 class GlobalFeatureDetector : public FeatureDetectorBase {
-public:
-  GlobalFeatureDetector(int max_corners, double quality_level, double min_distance)
+ public:
+  GlobalFeatureDetector(int max_corners, double quality_level,
+                        double min_distance)
       : max_corners_{max_corners},
         quality_level_{quality_level},
         min_distance_{min_distance} {}
-  
+
   void AddFeatures(const cv::Mat& image, std::vector<Corner>& corners);
-  
-private:
+
+ private:
   int max_corners_;
   double quality_level_;
   double min_distance_;
 };
+
 }  // namespace stereo_vo
 
 }  // namespace galt

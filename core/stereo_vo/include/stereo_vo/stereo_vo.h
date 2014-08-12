@@ -14,6 +14,7 @@
 #include <image_geometry/stereo_camera_model.h>
 #include <kr_math/pose.hpp>
 
+#include <ceres/ceres.h>
 #include "opencv2/core/core.hpp"
 
 namespace galt {

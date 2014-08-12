@@ -61,7 +61,6 @@ void CeresBundler::CreateGraph(const std::deque<KeyFrame> &key_frames) {
           storage_.push_back(p_world(2));
         } else {
           // Didn't find it in mutable, it must be an immutable feature
-
         }
       }
     }
@@ -172,18 +171,36 @@ void CeresBundler::AddResidualBlock(const Edge &edge,
   const CameraNode &cam = cam_ite->second;
   const Point3Node &point = point_ite->second;
 
-  ceres::CostFunction *func;
+  ceres::CostFunction *func = 0;
   if (point.locked()) {
     //  this point appears in a previous frame, use fixed residual
     //  2 x 6 cost function
     func =
         FixedReprojectionError::Create(edge.x(), edge.y(), model, point.ptr());
 
+    problem_.AddResidualBlock(func, NULL, cam.ptr());
   } else {
     //  optimize the point also
     //  2 x (6+3) cost function
     func = ReprojectionError::Create(edge.x(), edge.y(), model);
+    problem_.AddResidualBlock(func, NULL, cam.ptr(), point.ptr());
   }
+}
+
+void CeresBundler::SolveProblem() {
+
+  //  configure ceres options, hardcode most of these for now
+  options_ = ceres::Solver::Options();
+  options_.max_num_iterations = 5;
+  options_.num_threads = 1;
+  options_.max_solver_time_in_seconds = 10;
+  options_.gradient_tolerance = 1e-16;
+  options_.gradient_tolerance = 1e-12;
+  options_.use_inner_iterations = true;
+  options_.linear_solver_type = ceres::SPARSE_SCHUR;
+  options_.preconditioner_type = ceres::JACOBI;
+  options_.visibility_clustering_type = ceres::CANONICAL_VIEWS;
+  options_.sparse_linear_algebra_library_type = ceres::EIGEN_SPARSE;
 }
 
 void CeresBundler::SolveProblem() {}

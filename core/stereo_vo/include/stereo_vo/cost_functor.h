@@ -103,7 +103,7 @@ struct FixedReprojectionError {
   double x;
   double y;
   PinholeCameraModel model;
-  const double * point3;
+  const double* point3;
 };
 
 }  // namespace stereo_vo

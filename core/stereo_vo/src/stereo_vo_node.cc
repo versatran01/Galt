@@ -87,7 +87,8 @@ void StereoVoNode::StereoCallback(const ImageConstPtr& l_image_msg,
                                   const CameraInfoConstPtr& r_cinfo_msg) {
   // Get stereo camera infos
   static image_geometry::StereoCameraModel stereo_model;
-  if (!stereo_model.initialized() && (!l_cinfo_msg->K[0] || !r_cinfo_msg->K[0])) {
+  if (!stereo_model.initialized() &&
+      (!l_cinfo_msg->K[0] || !r_cinfo_msg->K[0])) {
     ROS_WARN_THROTTLE(1, "Uncalibrated camera.");
     return;
   }
@@ -133,26 +134,25 @@ void StereoVoNode::PublishPointCloud(const std::deque<KeyFrame>& key_frames,
 
   for (const KeyFrame& key_frame : key_frames) {
     const Pose& pose = key_frame.pose();
-    
+
     color.rgb[0] = 255;
     color.rgb[1] = 255;
     color.rgb[2] = 0;
     color.rgb[3] = 0;
-    
+
     for (const auto& feat : key_frame.features()) {
       const Feature& feature = feat.second;
-      
+
       geometry_msgs::Point32 p32;
-      kr::vec3<scalar_t> p(feature.p_cam_left().x,
-                           feature.p_cam_left().y,
+      kr::vec3<scalar_t> p(feature.p_cam_left().x, feature.p_cam_left().y,
                            feature.p_cam_left().z);
-      
+
       p = pose.q.conjugate().matrix() * p + pose.p;
-      
+
       p32.x = p[0];
       p32.y = p[1];
       p32.z = p[2];
-      
+
       cloud.points.push_back(p32);
       channel.values.push_back(color.val);
     }
@@ -193,7 +193,7 @@ const StereoVoConfig ReadConfig(const ros::NodeHandle& nh) {
   nh.param<int>("shi_max_corners", config.shi_max_corners, 200);
   nh.param<double>("shi_quality_level", config.shi_quality_level, 0.01);
   nh.param<double>("shi_min_distance", config.shi_min_distance, 12);
-  
+
   nh.param<int>("klt_max_level", config.klt_max_level, 3);
   nh.param<int>("klt_win_size", config.klt_win_size, 13);
 
@@ -203,7 +203,7 @@ const StereoVoConfig ReadConfig(const ros::NodeHandle& nh) {
   nh.param<int>("kf_size", config.kf_size, 4);
   nh.param<double>("kf_dist", config.kf_dist, 1.5);
   nh.param<double>("kf_min_filled", config.kf_min_filled, 0.7);
-  
+
   nh.param<double>("tri_max_eigenratio", config.tri_max_eigenratio, 1.0e5);
   return config;
 }

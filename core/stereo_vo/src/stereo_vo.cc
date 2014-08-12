@@ -180,6 +180,7 @@ void StereoVo::AddKeyFrame(const Pose &pose, const CvStereoImage &stereo_image,
     // We will remove corners that are lost during tracking and have bad
     // triangulation score. Features will be created based on the corners left
     TrackSpatial(stereo_image, corners, features);
+
     if (key_frames_.empty()) {
       //  some hacky initializing code just for better visualization
       double depth = 0;
@@ -219,9 +220,9 @@ void StereoVo::TrackSpatial(const CvStereoImage &stereo_image,
   for (; it_crn != it_crn_e; ++it_crn, ++it_pts) {
     // Create a feature using corner and pixel_right
     Feature feature(*it_crn, *it_pts);
-    if (feature.triangulate(model_, config_.tri_max_eigenratio)) {
-      features[it_crn->id()] = feature;
-    }
+    //    if (feature.triangulate(model_, config_.tri_max_eigenratio)) {
+    //      features[it_crn->id()] = feature;
+    //    }
   }
 }
 

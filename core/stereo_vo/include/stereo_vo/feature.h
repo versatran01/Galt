@@ -44,20 +44,6 @@ class Feature {
   const CvPoint3& p_world() const { return p_world_; }
   void set_p_world(const CvPoint3& p_world) { p_world_ = p_world; }
   
-  /**
-   * @brief Triangulate a feature in the current camera frame.
-   *
-   * @param model ROS Stereo Camera model
-   * @param eigen_threshold Maximum ratio of largest to smallest eigenvalues.
-   * Those features exceeding this ratio are discarded.
-   *
-   * @return True on success, false if the feature is rejected as an outlier.
-   * @note Those features which are rejected should be removed from the
-   * feature list.
-   */
-  //bool triangulate(const image_geometry::StereoCameraModel& model,
-  //                 scalar_t eigen_threshold);
-
  private:
   Id id_;
   CvPoint3 p_world_;

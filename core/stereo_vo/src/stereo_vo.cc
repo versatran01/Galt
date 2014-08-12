@@ -242,6 +242,49 @@ void StereoVo::OpticalFlow(const cv::Mat &image1, const cv::Mat &image2,
                            max_level, term_criteria);
 }
 
+bool StereoVo::TriangulatePoint(const CvPoint2& left,
+                                const CvPoint2& right,
+                                CvPoint3& output) {
+  //  camera model
+  const scalar_t lfx = model_.left().fx(), lfy = model_.left().fy();
+  const scalar_t lcx = model_.left().cx(), lcy = model_.left().cy();
+  const scalar_t rfx = model_.right().fx(), rfy = model_.right().fy();
+  const scalar_t rcx = model_.right().cx(), rcy = model_.right().cy();
+
+  Pose poseLeft;   //  identity
+  Pose poseRight;  //  shifted right along x
+  poseRight.p[0] = model_.baseline();
+
+  //  normalized coordinates
+  kr::vec2<scalar_t> lPt((left.x - lcx) / lfx, 
+                         (left.y - lcy) / lfy);
+  kr::vec2<scalar_t> rPt((right.x - rcx) / rfx,
+                         (right.y - rcy) / rfy);
+
+  kr::vec3<scalar_t> p3D;
+  scalar_t ratio;
+
+  kr::triangulate(poseLeft, lPt, poseRight, rPt, p3D, ratio);
+
+  if (ratio > config_.tri_max_eigenratio) {
+    return false;
+  }
+
+  //  point is valid, refine it some more
+  std::vector<Pose> poses({poseLeft, poseRight});
+  std::vector<kr::vec2<scalar_t>> obvs({lPt, rPt});
+
+  if (!kr::refinePoint(poses, obvs, p3D)) {
+    return false;
+  }
+
+  output.x = p3D[0];
+  output.y = p3D[1];
+  output.z = p3D[2];
+  return true;
+  
+}
+
 }  // namespace stereo_vo
 
 }  // namespace galt

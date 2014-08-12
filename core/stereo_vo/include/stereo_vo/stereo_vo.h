@@ -63,6 +63,19 @@ class StereoVo {
   void OpticalFlow(const cv::Mat &image1, const cv::Mat &image2,
                    const std::vector<CvPoint2> &points1,
                    std::vector<CvPoint2> &points2, std::vector<uchar> &status);
+  
+  /**
+   * @brief TriangulatePoint
+   * @param left Left observation in pixels.
+   * @param right Right observation in pixels.
+   * @param output Resulting 3D point.
+   * @return False if the triangulation is poor and the feature should be
+   * rejected.
+   */
+  bool TriangulatePoint(const CvPoint2& left,
+                        const CvPoint2& right,
+                        CvPoint3& output);
+  
   KeyFrame &key_frame_prev() { return key_frames_.back(); }
   bool init_{false};
   StereoCameraModel model_;

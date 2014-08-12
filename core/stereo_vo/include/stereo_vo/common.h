@@ -7,6 +7,7 @@
 #include "stereo_vo/StereoVoDynConfig.h"
 
 namespace galt {
+
 namespace stereo_vo {
 
 using scalar_t = float;

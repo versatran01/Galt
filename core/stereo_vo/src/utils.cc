@@ -73,7 +73,7 @@ void Display(const CvStereoImage &stereo_image,
   for (const Corner &corner : corners) {
     auto it = feature_map.find(corner.id());
     if (it != feature_map.end()) {
-      const Feature& feature = it->second;
+      const Feature &feature = it->second;
       const CvPoint2 &p1 = corner.p_pixel();
       const CvPoint2 &p2 = feature.p_pixel();
       cv::line(display, p1, p2, cv_color::YELLOW);

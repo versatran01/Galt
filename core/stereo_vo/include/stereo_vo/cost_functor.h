@@ -57,8 +57,8 @@ struct ReprojectionError {
   PinholeCameraModel model;
 };
 
-struct FixReprojectionError {
-  FixReprojectionError(double x, double y, const PinholeCameraModel& model,
+struct FixedReprojectionError {
+  FixedReprojectionError(double x, double y, const PinholeCameraModel& model,
                        const CvPoint3& point3)
       : x(x), y(y), model(model), point3(point3) {}
 
@@ -96,7 +96,7 @@ struct FixReprojectionError {
   static ceres::CostFunction* Create(const double x, const double y,
                                      const PinholeCameraModel& model,
                                      const CvPoint3& point3) {
-    return (new ceres::AutoDiffCostFunction<FixReprojectionError, 2, 6>(
+    return (new ceres::AutoDiffCostFunction<FixedReprojectionError, 2, 6>(
         new ReprojectionError(x, y, model, point3)));
   }
 

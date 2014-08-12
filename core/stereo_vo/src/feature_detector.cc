@@ -23,7 +23,7 @@ const Grid GridDetectorBase::CreateGrid(
 }
 
 double GridDetectorBase::GridFilled(const cv::Mat &image,
-                                       const std::vector<Corner> &corners) {
+                                    const std::vector<Corner> &corners) {
   grid_ = CreateGrid(corners);
   grid_cols_ = static_cast<int>(image.cols / cell_size_);
   grid_rows_ = static_cast<int>(image.rows / cell_size_);
@@ -31,7 +31,7 @@ double GridDetectorBase::GridFilled(const cv::Mat &image,
 }
 
 void GridDetectorBase::AddFeatures(const cv::Mat &image,
-                                      std::vector<Corner> &corners) {
+                                   std::vector<Corner> &corners) {
   // Create a new grid if necessary
   if (grid_.empty()) grid_ = CreateGrid(corners);
   // Mark all tracked corners as old
@@ -65,16 +65,16 @@ void GoodFeatureDetector::DetectCorners(
                           min_distance_);
 }
 
-void GlobalFeatureDetector::AddFeatures(const cv::Mat& image, 
-                                        std::vector<Corner>& corners) {
-  
+void GlobalFeatureDetector::AddFeatures(const cv::Mat &image,
+                                        std::vector<Corner> &corners) {
+
   //  mark old features as old
   for (Corner &corner : corners) corner.set_init(false);
-  
+
   std::vector<CvPoint2> points;
-  cv::goodFeaturesToTrack(image,points,max_corners_ - corners.size(),
-                          quality_level_,min_distance_);
-    
+  cv::goodFeaturesToTrack(image, points, max_corners_ - corners.size(),
+                          quality_level_, min_distance_);
+
   for (CvPoint2 &point : points) {
     corners.emplace_back(cnt_++, point, true);
   }

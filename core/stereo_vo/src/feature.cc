@@ -7,7 +7,6 @@ namespace stereo_vo {
 
 bool Feature::triangulate(const image_geometry::StereoCameraModel &model,
                           scalar_t eigen_threshold) {
-
   //  camera model
   const scalar_t lfx = model.left().fx(), lfy = model.left().fy();
   const scalar_t lcx = model.left().cx(), lcy = model.left().cy();
@@ -19,8 +18,7 @@ bool Feature::triangulate(const image_geometry::StereoCameraModel &model,
   poseRight.p[0] = model.baseline();
 
   //  normalized coordinates
-  kr::vec2<scalar_t> lPt((p_pixel_.x - lcx) / lfx,
-                         (p_pixel_.y - lcy) / lfy);
+  kr::vec2<scalar_t> lPt((p_pixel_.x - lcx) / lfx, (p_pixel_.y - lcy) / lfy);
 
   kr::vec2<scalar_t> rPt((p_pixel_right_.x - rcx) / rfx,
                          (p_pixel_right_.y - rcy) / rfy);
@@ -41,7 +39,7 @@ bool Feature::triangulate(const image_geometry::StereoCameraModel &model,
   if (!kr::refinePoint(poses, obvs, p3D)) {
     return false;
   }
-  
+
   p_cam_left_.x = p3D[0];
   p_cam_left_.y = p3D[1];
   p_cam_left_.z = p3D[2];

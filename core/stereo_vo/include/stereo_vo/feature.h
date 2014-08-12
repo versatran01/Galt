@@ -35,28 +35,15 @@ class Corner {
   bool init_;
 };
 
-class Feature : public Corner {
+class Feature {
  public:
-  //  Feature(const Corner::Id& id, const CvPoint2& p_pixel_left,
-  //          const CvPoint2& p_pixel_right, const CvPoint3& p_cam_left,
-  //          const bool& init)
-  //      : Corner(id, p_pixel_left, init),
-  //        p_pixel_right_(p_pixel_right),
-  //        p_cam_left_(p_cam_left) {}
-
+  typedef uint64_t Id;
+  
   Feature() = default;
-  Feature(const Corner& corner, const CvPoint2& p_pixel_right)
-      : Corner(corner), p_pixel_right_(p_pixel_right) {}
 
-  const CvPoint3& p_cam_left() const { return p_cam_left_; }
-  void set_p_cam_left(const CvPoint3& p_cam_left) { p_cam_left_ = p_cam_left; }
-
-  const CvPoint2& p_pixel_right() const { return p_pixel_right_; }
-  void set_p_pixel_right(const CvPoint2& p_pixel) { p_pixel_right_ = p_pixel; }
-
-  const CvPoint2& p_pixel_left() const { return p_pixel(); }
-  void set_p_pixel_left(const CvPoint2& p_pixel) { set_p_pixel(p_pixel); }
-
+  const CvPoint3& p_world() const { return p_world_; }
+  void set_p_world(const CvPoint3& p_world) { p_world_ = p_world; }
+  
   /**
    * @brief Triangulate a feature in the current camera frame.
    *
@@ -68,12 +55,27 @@ class Feature : public Corner {
    * @note Those features which are rejected should be removed from the
    * feature list.
    */
-  bool triangulate(const image_geometry::StereoCameraModel& model,
-                   scalar_t eigen_threshold);
+  //bool triangulate(const image_geometry::StereoCameraModel& model,
+  //                 scalar_t eigen_threshold);
 
  private:
-  CvPoint2 p_pixel_right_;
-  CvPoint3 p_cam_left_;
+  Id id_;
+  CvPoint3 p_world_;
+};
+
+class Observation {
+public:
+  Observation(Feature::Id feature_id) :
+    feature_id_(feature_id) {}
+  
+  const CvPoint2& p_pixel_left() const { return p_pixel_left_; }
+  void set_p_pixel_left(const CvPoint2& p_pixel_left) {
+    p_pixel_left_ = p_pixel_left;
+  }
+  
+private:
+  Feature::Id feature_id_;
+  CvPoint2 p_pixel_left_;
 };
 
 }  // namespace stereo_vo

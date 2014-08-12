@@ -13,17 +13,17 @@ namespace stereo_vo {
 class KeyFrame {
  public:
   KeyFrame() {}
-  KeyFrame(const Pose &pose, const std::map<Feature::Id, Feature> &features,
+  KeyFrame(const Pose &pose, const std::vector<Observation> &observations,
            const CvStereoImage &stereo_image)
-      : pose_(pose), features_(features), stereo_image_(stereo_image) {}
+      : pose_(pose), observations_(observations), stereo_image_(stereo_image) {}
 
   const Pose &pose() const { return pose_; }
   const cv::Mat &l_image() const { return stereo_image_.first; }
   const cv::Mat &r_image() const { return stereo_image_.second; }
   const CvStereoImage &stereo_image() const { return stereo_image_; }
-  const std::map<Feature::Id, Feature> &features() const { return features_; }
+  const std::vector<Observation> &observations() const { return observations_; }
 
-  void PruneById(const std::vector<Feature::Id> ids_to_remove) {
+  /*void PruneById(const std::vector<Feature::Id> ids_to_remove) {
     for (const auto& id : ids_to_remove) {
       auto it = features_.find(id);
       if (it != features_.end()) {
@@ -32,11 +32,11 @@ class KeyFrame {
         }
       }
     }
-  }
+  }*/
 
  private:
   Pose pose_;
-  std::map<Feature::Id, Feature> features_;
+  std::vector<Observation> observations_;
   CvStereoImage stereo_image_;
 };
 

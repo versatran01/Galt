@@ -18,7 +18,13 @@ void CeresBundler::CreateGraph(const std::deque<KeyFrame> &key_frames) {
 }
 
 void CeresBundler::NukeEverything(bool from_orbit) {
-  
+  storage_.clear();
+  fixed_.clear(); 
+  edges_.clear();
+  mutables_.clear();
+  immutables_.clear();
+  cameras_.clear();
+  point3s_.clear();
 }
 
 void CeresBundler::SplitFeatureIds(const std::deque<KeyFrame> &key_frames) {

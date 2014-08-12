@@ -86,7 +86,7 @@ class StereoVo {
   GlobalFeatureDetector detector_;
   std::vector<Corner> corners_;
   std::deque<KeyFrame> key_frames_;
-  std::map<Feature::Id,Feature> features_;
+  std::map<Feature::Id, Feature> features_;
   CvStereoImage stereo_image_prev_;
 };
 

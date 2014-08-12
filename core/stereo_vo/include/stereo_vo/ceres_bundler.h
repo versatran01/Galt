@@ -19,6 +19,8 @@ namespace stereo_vo {
 class NodeBase {
  public:
   using Id = uint64_t;
+  NodeBase(const Id id, double *ptr) : id_(id), ptr_(ptr) {}
+
   double *ptr() const { return ptr_; }
   const Id id() const { return id_; }
 
@@ -29,12 +31,15 @@ class NodeBase {
 
 class CameraNode : public NodeBase {
  public:
-  const int kSize = 6;
+  CameraNode(const Id id, double *ptr) : NodeBase(id, ptr) {}
+  static const int kSize = 6;
 };
 
 class Point3Node : public NodeBase {
  public:
-  const int kSize = 3;
+  Point3Node(const Id id, double *ptr, const bool locked)
+      : NodeBase(id, ptr), locked_(locked) {}
+  static const int kSize = 3;
   const bool locked() const { return locked_; }
 
  private:
@@ -60,8 +65,7 @@ class Edge {
 
 class CeresBundler {
  public:
-  
-  CeresBundler() {}
+  CeresBundler() { options_.linear_solver_type = ceres::SPARSE_SCHUR; }
   void Optimize(std::deque<KeyFrame> &key_frames,
                 const image_geometry::StereoCameraModel &cameraModel,
                 int win_size);
@@ -74,27 +78,27 @@ class CeresBundler {
   // Temporary function that resets relevant member variables
   void NukeEverything(bool from_orbit = true);
   // Iterate through all features and classify them into mutables or immutables
-  void SplitFeatureIds(const std::deque<KeyFrame>& key_frames);
-  void AddResidualBlock(const Edge &edge, 
-                        image_geometry::PinholeCameraModel& model);
+  void SplitFeatureIds(const std::deque<KeyFrame> &key_frames);
+  void AddResidualBlock(const Edge &edge,
+                        image_geometry::PinholeCameraModel &model);
   // Set ceres-related options and solve problem
   void SolveProblem();
-  // Update key frames with results from ceres-solver
-  void UpdateKeyFrames(std::deque<KeyFrame>& key_frames);
-  
+  // Update key frames will results from ceres-solver
+  void UpdateKeyFrames(std::deque<KeyFrame> &key_frames);
+
   ceres::Problem problem_;
   ceres::Solver::Options options_;
-    
+
   image_geometry::StereoCameraModel model_;
-  
-  size_t winSize_;  //  size of the window in # of keyframes
+
+  size_t win_size_;  //  size of the window in # of keyframes
 
   std::vector<double> storage_;  // a contiguous block of memory that stores
                                  // mutable camera poses and 3d points that will
                                  // be optimized, we store points first and then
                                  // camera poses
   std::vector<double> fixed_;    // a contiguous block of memeory that stores
-                                 // immutable 3d points that will not be optimized
+  // immutable 3d points that will not be optimized
   std::vector<Edge> edges_;
 
   std::set<Feature::Id>

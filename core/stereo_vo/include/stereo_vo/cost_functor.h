@@ -59,7 +59,7 @@ struct ReprojectionError {
 
 struct FixedReprojectionError {
   FixedReprojectionError(double x, double y, const PinholeCameraModel& model,
-                       const CvPoint3& point3)
+                         const double* point3)
       : x(x), y(y), model(model), point3(point3) {}
 
   template <typename T>
@@ -67,9 +67,9 @@ struct FixedReprojectionError {
     // camera[0,1,2] are the angle-axis rotation.
     T p[3];
     T p_world[3];
-    p_world[0] = T(point3.x);
-    p_world[1] = T(point3.y);
-    p_world[2] = T(point3.z);
+    p_world[0] = T(point3[0]);
+    p_world[1] = T(point3[1]);
+    p_world[2] = T(point3[2]);
     // Rotates point from world frame to camera frame
     ceres::AngleAxisRotatePoint(camera, p_world, p);
     // camera[3,4,5] are the translation.
@@ -95,7 +95,7 @@ struct FixedReprojectionError {
   // the client code.
   static ceres::CostFunction* Create(const double x, const double y,
                                      const PinholeCameraModel& model,
-                                     const CvPoint3& point3) {
+                                     const double* point3) {
     return (new ceres::AutoDiffCostFunction<FixedReprojectionError, 2, 6>(
         new FixedReprojectionError(x, y, model, point3)));
   }
@@ -103,7 +103,7 @@ struct FixedReprojectionError {
   double x;
   double y;
   PinholeCameraModel model;
-  CvPoint3 point3;
+  const double * point3;
 };
 
 }  // namespace stereo_vo

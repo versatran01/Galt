@@ -5,6 +5,8 @@
 #include "stereo_vo/key_frame.h"
 #include "stereo_vo/feature.h"
 
+#include "image_geometry/stereo_camera_model.h"
+
 #include <deque>
 #include <map>
 
@@ -58,8 +60,12 @@ class Edge {
 
 class CeresBundler {
  public:
-  CeresBundler() { options_.linear_solver_type = ceres::SPARSE_SCHUR; }
-  void Optimize(std::deque<KeyFrame> &key_frames, int win_size);
+  CeresBundler() { 
+    options_.linear_solver_type = ceres::SPARSE_SCHUR; 
+  }
+  void Optimize(std::deque<KeyFrame> &key_frames,
+                const image_geometry::StereoCameraModel &cameraModel,
+                int win_size);
 
  private:
   // Iterate through key frames, then iterate through features, store features
@@ -70,7 +76,8 @@ class CeresBundler {
   void NukeEverything(bool from_orbit = true);
   // Iterate through all features and classify them into mutables or immutables
   void SplitFeatureIds(const std::deque<KeyFrame>& key_frames);
-  void AddResidualBlock(const Edge &edge);
+  void AddResidualBlock(const Edge &edge, 
+                        image_geometry::PinholeCameraModel& model);
   // Set ceres-related options and solve problem
   void SolveProblem();
   // Update key frames will results from ceres-solver
@@ -78,6 +85,8 @@ class CeresBundler {
 
   ceres::Problem problem_;
   ceres::Solver::Options options_;
+    
+  image_geometry::StereoCameraModel model_;
   
   size_t winSize_;  //  size of the window in # of keyframes
 
@@ -86,7 +95,7 @@ class CeresBundler {
                                  // be optimized, we store points first and then
                                  // camera poses
   std::vector<double> fixed_;    // a contiguous block of memeory that stores
-                               // immutable 3d points that will not be optimized
+                                 // immutable 3d points that will not be optimized
   std::vector<Edge> edges_;
 
   std::set<Feature::Id>

@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 2.8.3)
 project(stereo_vo)
 
 set(CMAKE_CXX_FLAGS "-Wall -std=c++11 -fPIC")
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
 
 find_package(catkin REQUIRED COMPONENTS
     roscpp nodelet
@@ -14,6 +15,13 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 find_package(OpenCV)
+find_package(Glog)
+IF (GLOG_FOUND)
+  MESSAGE("Found Google Log header in: ${GLOG_INCLUDE_DIRS}")
+  MESSAGE("Google Log library: ${GLOG_LIBRARY}")
+ELSE (GLOG_FOUND)
+  MESSAGE(FATAL_ERROR "Can't find Google Log.")
+ENDIF (GLOG_FOUND)
 
 generate_dynamic_reconfigure_options(
     cfg/StereoVoDyn.cfg
@@ -30,6 +38,7 @@ include_directories(include)
 include_directories(
     ${catkin_INCLUDE_DIRS}
     ${OpenCV_INCLUDE_DIRS}
+    ${GLOG_INCLUDE_DIRS}
 )
 
 add_library(${PROJECT_NAME}
@@ -43,6 +52,7 @@ target_link_libraries(${PROJECT_NAME}
     ${catkin_LIBRARIES}
     ${OpenCV_LIBRARIES}
     ceres
+    ${GLOG_LIBRARIES}
 )
 
 add_executable(${PROJECT_NAME}_node

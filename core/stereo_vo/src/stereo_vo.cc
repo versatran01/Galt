@@ -69,11 +69,11 @@ void StereoVo::Iterate(const CvStereoImage &stereo_image) {
   AddKeyFrame(absolute_pose_, stereo_image, tracked_corners);
 
   // Do a windowed optimization if window size is reached
-  if (key_frames_.size() == static_cast<unsigned>(config_.kf_size)) {
+  if (key_frames_.size() > static_cast<unsigned>(config_.kf_size)) {
     // Do awesome optimization which will update poses and features in all
     // keyframes
-    // BundleAdjustment();
-    key_frames_.pop_front();
+//    BundleAdjustment();
+    if (key_frames_.size() == 20) key_frames_.pop_front();
   }
 
   // Visualization (optional)

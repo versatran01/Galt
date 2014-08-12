@@ -119,6 +119,8 @@ void CeresBundler::SolveProblem() {
 
 void CeresBundler::UpdateKeyFrames(std::deque<KeyFrame> &key_frames) {
   
+  //  update 
+  
 }
 
 }

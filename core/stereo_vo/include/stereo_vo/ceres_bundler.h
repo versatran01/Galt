@@ -79,7 +79,7 @@ class CeresBundler {
                         image_geometry::PinholeCameraModel& model);
   // Set ceres-related options and solve problem
   void SolveProblem();
-  // Update key frames will results from ceres-solver
+  // Update key frames with results from ceres-solver
   void UpdateKeyFrames(std::deque<KeyFrame>& key_frames);
   
   ceres::Problem problem_;

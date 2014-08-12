@@ -98,6 +98,23 @@ void CeresBundler::AddResidualBlock(const Edge &edge, image_geometry::PinholeCam
 
 void CeresBundler::SolveProblem() {
   
+  //  configure ceres options, hardcode most of these for now
+  options_ = ceres::Solver::Options();
+  options_.max_num_iterations = 5;
+  options_.num_threads = 1;
+  options_.max_solver_time_in_seconds = 10;
+  options_.gradient_tolerance = 1e-16;
+  options_.gradient_tolerance = 1e-12;
+  options_.use_inner_iterations = true;
+  options_.linear_solver_type = ceres::SPARSE_SCHUR;
+  options_.preconditioner_type = ceres::JACOBI;
+  options_.visibility_clustering_type = ceres::CANONICAL_VIEWS;
+  options_.sparse_linear_algebra_library_type = ceres::EIGEN_SPARSE;
+  
+  ceres::Solver::Summary summary;
+  ceres::Solve(options_,&problem_,&summary);
+  
+  ROS_INFO_STREAM("Solving summary: " << summary.FullReport() << "\n");
 }
 
 void CeresBundler::UpdateKeyFrames(std::deque<KeyFrame> &key_frames) {

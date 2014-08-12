@@ -60,9 +60,8 @@ class Edge {
 
 class CeresBundler {
  public:
-  CeresBundler() { 
-    options_.linear_solver_type = ceres::SPARSE_SCHUR; 
-  }
+  
+  CeresBundler() {}
   void Optimize(std::deque<KeyFrame> &key_frames,
                 const image_geometry::StereoCameraModel &cameraModel,
                 int win_size);
@@ -82,7 +81,7 @@ class CeresBundler {
   void SolveProblem();
   // Update key frames will results from ceres-solver
   void UpdateKeyFrames(std::deque<KeyFrame>& key_frames);
-
+  
   ceres::Problem problem_;
   ceres::Solver::Options options_;
     

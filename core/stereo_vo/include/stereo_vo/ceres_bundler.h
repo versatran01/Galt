@@ -58,7 +58,7 @@ class Edge {
 
 class CeresBundler {
  public:
-  CeresBundler() { options_.linear_solver_type = ceres::DENSE_SCHUR; }
+  CeresBundler() { options_.linear_solver_type = ceres::SPARSE_SCHUR; }
   void Optimize(std::deque<KeyFrame> &key_frames, int win_size);
 
  private:
@@ -67,17 +67,19 @@ class CeresBundler {
   // tracked in window into fixed. And for each featrue, create an edge
   void CreateGraph(const std::deque<KeyFrame> &key_frames);
   // Temporary function that resets relevant member variables
-  void NukeEverything();
+  void NukeEverything(bool from_orbit = true);
   // Iterate through all features and classify them into mutables or immutables
-  void SplitFeatureIds();
+  void SplitFeatureIds(const std::deque<KeyFrame>& key_frames);
   void AddResidualBlock(const Edge &edge);
   // Set ceres-related options and solve problem
   void SolveProblem();
   // Update key frames will results from ceres-solver
-  void UpdateKeyFrames();
+  void UpdateKeyFrames(std::deque<KeyFrame>& key_frames);
 
   ceres::Problem problem_;
   ceres::Solver::Options options_;
+  
+  size_t winSize_;  //  size of the window in # of keyframes
 
   std::vector<double> storage_;  // a contiguous block of memory that stores
                                  // mutable camera poses and 3d points that will

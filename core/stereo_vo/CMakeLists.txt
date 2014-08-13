@@ -45,7 +45,7 @@ add_library(${PROJECT_NAME}
     src/stereo_vo.cc
     src/corner_detector.cc
     src/utils.cc
-#    src/ceres_bundler.cc
+    src/ceres_bundler.cc
 )
 target_link_libraries(${PROJECT_NAME}
     ${catkin_LIBRARIES}

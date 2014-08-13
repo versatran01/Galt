@@ -134,21 +134,19 @@ void CeresBundler::SplitFeatureIds(
     const KeyFrame &kf = *kfi;
 
     bool features_found = false;
-    for (const std::pair<Feature::Id, Feature> &feat : kf.features()) {
-      const Feature::Id id = feat.second.id();
-
+    for (const Corner& corner : kf.corners()) {
       if (in_window) {
         //  assume this is a mutable point, since it is in the window
-        mutables_.insert(id);
+        mutables_.insert(corner.id());
       } else {
         //  this point is also in past keyframes, move it to immutables
-        const auto ite = mutables_.find(id);
+        const auto ite = mutables_.find(corner.id());
         if (ite != mutables_.end()) {
           mutables_.erase(ite);
-          immutables_.insert(id);
+          immutables_.insert(corner.id());
           features_found = true;
         } else {
-          //  nothing to be done, this point is irrelevant to us
+          //  do nothing, this corner is not useful to us 
         }
       }
     }

@@ -25,6 +25,16 @@ void CeresBundler::CreateGraph(const std::deque<KeyFrame> &key_frames,
   // Iterate through keyframe the first time to save camera poses
   NodeBase::Id cam_id = 0;
   temp_ = features;
+  
+  const size_t storageSize = win_size_*6 + mutables_.size()*3;
+  const size_t fixSize = immutables_.size()*3;
+  
+  storage_.resize(storageSize);
+  fixed_.resize(fixSize);
+  
+  size_t storageIndex=0;
+  size_t fixedIndex=0;
+  
   // Iterate through key frame backwards to save camera pose and then through
   // features to save 3d points
   //auto itb_kf = key_frames.cend() - win_size_, ite_kf = key_frames.cend();
@@ -35,14 +45,14 @@ void CeresBundler::CreateGraph(const std::deque<KeyFrame> &key_frames,
     Eigen::AngleAxis<scalar_t> aa(key_frame.pose().q);
     const auto r_vec = aa.axis() * aa.angle();
     const auto t_vec = key_frame.pose().translation();
-    storage_.push_back(r_vec(0));
-    storage_.push_back(r_vec(1));
-    storage_.push_back(r_vec(2));
-    storage_.push_back(t_vec(0));
-    storage_.push_back(t_vec(1));
-    storage_.push_back(t_vec(2));
+    storage_[storageIndex++] = r_vec(0);
+    storage_[storageIndex++] = r_vec(1);
+    storage_[storageIndex++] = r_vec(2);
+    storage_[storageIndex++] = t_vec(0);
+    storage_[storageIndex++] = t_vec(1);
+    storage_[storageIndex++] = t_vec(2);
     
-    CameraNode c_node(cam_id, &storage_[storage_.size()-6]);
+    CameraNode c_node(cam_id, &storage_[storageIndex-CameraNode::kSize]);
     //ROS_INFO("cam: %f, %f, %f, %f, %f, %f",
     //         c_node.ptr()[0], c_node.ptr()[1], c_node.ptr()[2], c_node.ptr()[3], c_node.ptr()[4], c_node.ptr()[5]);
     cameras_.emplace(cam_id, c_node);
@@ -59,25 +69,24 @@ void CeresBundler::CreateGraph(const std::deque<KeyFrame> &key_frames,
     auto ite_feat = features.find(mut_id);
     assert(ite_feat != features.end());
     const Feature& feature = ite_feat->second;
-    storage_.push_back(feature.p_world().x);
-    storage_.push_back(feature.p_world().y);
-    storage_.push_back(feature.p_world().z);
-    Point3Node p_node(mut_id, &storage_[storage_.size()-3], false);
-    ROS_WARN("mut (before): %f, %f, %f",p_node.ptr()[0],p_node.ptr()[1], p_node.ptr()[2]);
+    storage_[storageIndex++] = feature.p_world().x;
+    storage_[storageIndex++] = feature.p_world().y;
+    storage_[storageIndex++] = feature.p_world().z;
+    Point3Node p_node(mut_id, &storage_[storageIndex-Point3Node::kSize], false);
+    //ROS_WARN("mut (before): %f, %f, %f",p_node.ptr()[0],p_node.ptr()[1], p_node.ptr()[2]);
     point3s_[mut_id] = p_node;
     
-    Point3Node junk = point3s_[mut_id];
-    ROS_WARN("mut (before): %f, %f, %f",junk.ptr()[0],junk.ptr()[1], junk.ptr()[2]);
+    //ROS_WARN("mut (before): %f, %f, %f",junk.ptr()[0],junk.ptr()[1], junk.ptr()[2]);
   }
 
   for (const Feature::Id immut_id : immutables_) {
     auto ite_feat = features.find(immut_id);
     assert(ite_feat != features.end());
     const Feature& feature = ite_feat->second;
-    fixed_.push_back(feature.p_world().x);
-    fixed_.push_back(feature.p_world().y);
-    fixed_.push_back(feature.p_world().z);
-    Point3Node p_node(immut_id, &fixed_[fixed_.size()-3], true);
+    fixed_[fixedIndex++] = feature.p_world().x;
+    fixed_[fixedIndex++] = feature.p_world().y;
+    fixed_[fixedIndex++] = feature.p_world().z;
+    Point3Node p_node(immut_id, &fixed_[fixedIndex-Point3Node::kSize], true);
     //ROS_WARN("immut (before): %f, %f, %f",p_node.ptr()[0],p_node.ptr()[1], p_node.ptr()[2]);
     //point3s_.emplace(immut_id, p_node);
     point3s_[immut_id] = p_node;
@@ -87,8 +96,6 @@ void CeresBundler::CreateGraph(const std::deque<KeyFrame> &key_frames,
   for (const Edge& edge : edges_) {
     AddResidualBlock(edge,model_.left());
   }
-  
-  assert(false);
 }
 
 void CeresBundler::NukeEverything(bool from_orbit) {
@@ -150,29 +157,23 @@ void CeresBundler::AddResidualBlock(const Edge &edge,
   if (point.locked()) {
     //  this point appears in a previous frame, use fixed residual
     //  2 x 6 cost function
-    //func =
-    //    FixedReprojectionError::Create(edge.x(), edge.y(), model, point.ptr());
-
-    //ROS_INFO("point (locked): %f, %f, %f", point.ptr()[0],point.ptr()[1],point.ptr()[2]);
+    func =
+        FixedReprojectionError::Create(edge.x(), edge.y(), model, point.ptr());
     
     auto feat_ite = temp_.find(point.id());
     ROS_ASSERT_MSG(feat_ite != temp_.end(), "Derp!");
-    
-    Feature& feat = feat_ite->second;
-    
-    //ROS_INFO("Feature: %f, %f, %f", feat.p_world().x, feat.p_world().y, feat.p_world().z);
-    
+            
     ROS_ASSERT_MSG(cam.ptr() != NULL, "Pointer is missing");
-    //problem_.AddResidualBlock(func, NULL, cam.ptr());
+    problem_.AddResidualBlock(func, NULL, cam.ptr());
   } else {
     //ROS_INFO("point (unlocked): %f, %f, %f", point.ptr()[0],point.ptr()[1],point.ptr()[2]);
     
     //  optimize the point also
     //  2 x (6+3) cost function
-    //func = ReprojectionError::Create(edge.x(), edge.y(), model);
+    func = ReprojectionError::Create(edge.x(), edge.y(), model);
     ROS_ASSERT_MSG(cam.ptr() != NULL, "Pointer is missing");
     ROS_ASSERT_MSG(point.ptr() != NULL, "Pointer is missing");
-    //problem_.AddResidualBlock(func, NULL, cam.ptr(), point.ptr());
+    problem_.AddResidualBlock(func, NULL, cam.ptr(), point.ptr());
   }
 }
 
@@ -180,15 +181,15 @@ void CeresBundler::SolveProblem() {
 
   //  configure ceres options, hardcode most of these for now
   options_ = ceres::Solver::Options();
-  options_.max_num_iterations = 5;
-  options_.num_threads = 1;
+  options_.max_num_iterations = 20;
+  options_.num_threads = 2;
   options_.max_solver_time_in_seconds = 10;
-  options_.gradient_tolerance = 1e-16;
-  options_.function_tolerance = 1e-12;
-  options_.use_inner_iterations = false;
-  options_.linear_solver_type = ceres::SPARSE_NORMAL_CHOLESKY;
-  options_.preconditioner_type = ceres::JACOBI;
-  options_.visibility_clustering_type = ceres::CANONICAL_VIEWS;
+  //options_.gradient_tolerance = 1e-16;
+  //options_.function_tolerance = 1e-12;
+  //options_.use_inner_iterations = false;
+  options_.linear_solver_type = ceres::DENSE_SCHUR;
+  //options_.preconditioner_type = ceres::JACOBI;
+  //options_.visibility_clustering_type = ceres::CANONICAL_VIEWS;
   //options_.sparse_linear_algebra_library_type = ceres::EIGEN_SPARSE;
 
   ceres::Solver::Summary summary;

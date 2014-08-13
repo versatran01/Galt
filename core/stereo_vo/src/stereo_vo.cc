@@ -109,8 +109,7 @@ void StereoVo::TrackTemporal(const cv::Mat &image_prev, const cv::Mat &image,
   status.clear();
 
   // Find fundamental matrix to reject outliers in tracking
-  cv::findFundamentalMat(points_in, points_tracked, cv::FM_RANSAC, 1.5, 0.99,
-                         status);
+  FindFundamentalMat(points_in, points_tracked, status);
   PruneByStatus(status, ids, ids_to_remove);
   PruneByStatus(status, points_tracked);
 
@@ -206,13 +205,13 @@ void StereoVo::AddKeyFrame(const CvStereoImage &stereo_image,
   // Detect new corners based on distribution/number of current corners
   // Mark current corners as old corners
   std::vector<Corner> new_corners;
-  detector_.AddCorners(stereo_image.first, corners, new_corners);
+  detector_.AddCorners(stereo_image.first, corners);
   ROS_INFO("new corners: %d", int(new_corners.size()));
   // Track new corners from left image to right image and return corresponding
   // points on the right image. Corners will be removed from new corners if they
   // are lost during tracking
   std::vector<CvPoint2> right_points;
-  TrackSpatial(stereo_image, new_corners, right_points);
+  TrackSpatial(stereo_image, corners, right_points);
 
   if (key_frames_.empty()) {
     //  make up a pose that looks pretty
@@ -221,9 +220,7 @@ void StereoVo::AddKeyFrame(const CvStereoImage &stereo_image,
   }
 
   // Retriangulate in current pose
-  Triangulate(new_corners, right_points);
-  // Add new corners to corners
-  corners.insert(corners.end(), new_corners.begin(), new_corners.end());
+  Triangulate(corners, right_points);
 
   // Add key frame to queue with current_pose, features and stereo_image
   key_frames_.emplace_back(relative_pose(), corners, stereo_image);
@@ -282,7 +279,7 @@ void StereoVo::TrackSpatial(const CvStereoImage &stereo_image,
     ROS_WARN("OpticalFlow failed to track any features");
     return;
   }
-  cv::findFundamentalMat(l_points, r_points, cv::FM_RANSAC, 1.5, 0.99, status);
+  FindFundamentalMat(l_points, r_points, status);
   PruneByStatus(status, r_points);
   PruneByStatus(status, corners);
   // Verify that outputs have the same size
@@ -302,10 +299,16 @@ void StereoVo::OpticalFlow(const cv::Mat &image1, const cv::Mat &image2,
   int win_size = config_.klt_win_size;
   int max_level = config_.klt_max_level;
   static cv::TermCriteria term_criteria(
-      cv::TermCriteria::COUNT + cv::TermCriteria::EPS, 25, 0.01);
+      cv::TermCriteria::COUNT + cv::TermCriteria::EPS, 25, 0.005);
   cv::calcOpticalFlowPyrLK(image1, image2, points1, points2, status,
                            cv::noArray(), cv::Size(win_size, win_size),
                            max_level, term_criteria);
+}
+
+void StereoVo::FindFundamentalMat(const std::vector<CvPoint2> &points1,
+                                  const std::vector<CvPoint2> &points2,
+                                  std::vector<uchar> &status) {
+  cv::findFundamentalMat(points1, points2, cv::FM_RANSAC, 1.5, 0.99, status);
 }
 
 bool StereoVo::TriangulatePoint(const CvPoint2 &left,

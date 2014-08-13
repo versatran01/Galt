@@ -26,8 +26,8 @@ class StereoVo {
  public:
   StereoVo(const StereoVoConfig &config)
       : config_(config),
-        detector_(config.cell_size, config.shi_max_corners,
-                  config.shi_quality_level, config.shi_min_distance) {}
+        detector_(config.shi_max_corners, config.shi_quality_level,
+                  config.shi_min_distance) {}
 
   const bool init() const { return init_; }
   const std::map<Feature::Id, Feature> features() const { return features_; }
@@ -58,8 +58,7 @@ class StereoVo {
   void TrackSpatial(const CvStereoImage &stereo_image,
                     std::vector<Corner> &corners,
                     std::vector<CvPoint2> &r_points);
-  void Triangulate(std::vector<Corner> &corners, 
-                   std::vector<CvPoint2> &points);
+  void Triangulate(std::vector<Corner> &corners, std::vector<CvPoint2> &points);
   void TrackTemporal(const cv::Mat &image_prev, const cv::Mat &image,
                      const std::vector<Corner> &corners_input,
                      std::vector<Corner> &corners_output, KeyFrame &key_frame);
@@ -67,6 +66,9 @@ class StereoVo {
   void OpticalFlow(const cv::Mat &image1, const cv::Mat &image2,
                    const std::vector<CvPoint2> &points1,
                    std::vector<CvPoint2> &points2, std::vector<uchar> &status);
+  void FindFundamentalMat(const std::vector<CvPoint2> &points1,
+                          const std::vector<CvPoint2> &points2,
+                          std::vector<uchar> &status);
 
   /**
    * @brief TriangulatePoint
@@ -87,7 +89,7 @@ class StereoVo {
 
   Pose relative_pose_;
   Pose absolute_pose_;  /// Absolute pose, for display
-  GoodFeatureDetector detector_;
+  GlobalCornerDetector detector_;
   std::vector<Corner> corners_;
   std::deque<KeyFrame> key_frames_;
   std::map<Feature::Id, Feature> features_;

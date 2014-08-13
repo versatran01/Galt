@@ -83,7 +83,7 @@ void GlobalCornerDetector::AddCorners(const cv::Mat &image,
   cv::goodFeaturesToTrack(image, points, max_corners_ - corners.size(),
                           quality_level_, min_distance_);
 
-  for (CvPoint2 &point : points) {
+  for (const CvPoint2 &point : points) {
     new_corners.emplace_back(cnt_++, point, true);
   }
 }

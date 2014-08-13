@@ -51,7 +51,7 @@ class StereoVo {
                    std::vector<Corner> &corners);
   void TrackSpatial(const CvStereoImage &stereo_image,
                     std::vector<Corner> &corners,
-                    std::vector<CvPoint2> &points);
+                    std::vector<CvPoint2> &r_points);
   void Triangulate(std::vector<Corner> &corners, std::vector<CvPoint2> &points);
   void TrackTemporal(const cv::Mat &image_prev, const cv::Mat &image,
                      const std::vector<Corner> &corners_input,

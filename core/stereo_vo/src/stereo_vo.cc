@@ -206,14 +206,13 @@ bool StereoVo::ShouldAddKeyFrame(size_t num_corners) const {
 void StereoVo::AddKeyFrame(const Pose &pose, const CvStereoImage &stereo_image,
                            std::vector<Corner> &corners) {
   /// @todo: create observations and add to key frame
-  // Add new corners to current corners
-  // After this, we will have two types of corner in corners
-  // One is tracked from previous key frame, the other is newly added
+  // Detect new corners based on distribution/number of current corners
+  // Mark current corners as old corners
   std::vector<Corner> new_corners;
   detector_.AddCorners(stereo_image.first, corners, new_corners);
-  // Track corners from left image to right image and triangulate them
-  // We will remove corners that are lost during tracking and have bad
-  // triangulation score. Observations will be created based on the corners left
+  // Track new corners from left image to right image and return corresponding
+  // points on the right image. Corners will be removed from new corners if they
+  // are lost during tracking
   std::vector<CvPoint2> right_points;
   TrackSpatial(stereo_image, new_corners, right_points);
   // Triangulate will change both new_corners and features based on the
@@ -250,33 +249,25 @@ void StereoVo::Triangulate(std::vector<Corner> &corners,
 
 void StereoVo::TrackSpatial(const CvStereoImage &stereo_image,
                             std::vector<Corner> &corners,
-                            std::vector<CvPoint2> &points) {
-  /// @todo: this also needs to be changed
-  std::vector<CvPoint2> points1, points2;
+                            std::vector<CvPoint2> &r_points) {
+  // Put pixel of corners into l_points
+  std::vector<CvPoint2> l_points;
+  for (const Corner &corner : corners) l_points.push_back(corner.p_pixel());
   std::vector<uchar> status;
-  for (const Corner &c : corners) points1.push_back(c.p_pixel());
   // LK tracker
-  OpticalFlow(stereo_image.first, stereo_image.second, points1, points2,
+  OpticalFlow(stereo_image.first, stereo_image.second, l_points, r_points,
               status);
-  PruneByStatus(status, points1);
-  PruneByStatus(status, points2);
+  PruneByStatus(status, l_points);
+  PruneByStatus(status, r_points);
   PruneByStatus(status, corners);
   status.clear();
   // Find fundamental matrix
-  cv::findFundamentalMat(points1, points2, cv::FM_RANSAC, 1.5, 0.99, status);
-  PruneByStatus(status, points2);
+  cv::findFundamentalMat(l_points, r_points, cv::FM_RANSAC, 1.5, 0.99, status);
+  PruneByStatus(status, r_points);
   PruneByStatus(status, corners);
-  ROS_ASSERT_MSG(corners.size() == points2.size(), "Dimension mismatch");
-  // Now we use corners and points2 to create new features
-  auto it_crn = corners.cbegin(), it_crn_e = corners.cend();
-  auto it_pts = points2.cbegin();
-  //  for (; it_crn != it_crn_e; ++it_crn, ++it_pts) {
-  // Create a feature using corner and pixel_right
-  //    Feature feature(*it_crn, *it_pts);
-  //    if (feature.triangulate(model_, config_.tri_max_eigenratio)) {
-  //      features[it_crn->id()] = feature;
-  //    }
-  //  }
+  // Verify that outputs have the same size
+  ROS_ASSERT_MSG(corners.size() == r_points.size(),
+                 "TrackSpatial Dimension mismatch");
 }
 
 void StereoVo::OpticalFlow(const cv::Mat &image1, const cv::Mat &image2,

@@ -75,7 +75,7 @@ void StereoVo::Iterate(const CvStereoImage &stereo_image) {
     // Do awesome optimization which will update poses and features in all
     // keyframes
     //    BundleAdjustment();
-    if (key_frames_.size() == 20) key_frames_.pop_front();
+    if (key_frames_.size() == 8) key_frames_.pop_front();
   }
 
   // Visualization (optional)

@@ -133,6 +133,8 @@ void StereoVoNode::PublishPointCloud(
     float val;
   } color;
 
+  //  use this pose to convert back to world
+  const Pose& pose = stereo_vo_.absolute_pose();
 
   color.rgb[0] = 255;
   color.rgb[1] = 255;
@@ -143,9 +145,9 @@ void StereoVoNode::PublishPointCloud(
     const Feature& feature = feat.second;
 
     geometry_msgs::Point32 p32;
-    kr::vec3<scalar_t> p(feature.p_world().x, 
-                         feature.p_world().y,
-                         feature.p_world().z);
+    kr::vec3<scalar_t> p(feature.p_cam().x, 
+                         feature.p_cam().y,
+                         feature.p_cam().z);
 
     p32.x = p[0];
     p32.y = p[1];

@@ -253,7 +253,7 @@ void StereoVo::Triangulate(std::vector<Corner> &corners,
         features_[id] = feat;
       } else {
         //  already in map, update coordinate
-        Feature& feat = *feat_ite;
+        Feature& feat = feat_ite->second;
         feat.set_p_cam(p3D);
       }
       

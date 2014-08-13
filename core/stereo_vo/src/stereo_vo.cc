@@ -177,12 +177,14 @@ bool StereoVo::ShouldAddKeyFrame(size_t num_corners) const {
   const KeyFrame &kf_prev = key_frames_.back();
   const Pose diff = absolute_pose().difference(kf_prev.pose());
   if (diff.p.norm() > config_.kf_dist_thresh) {
+    ROS_INFO("Distance: %f", diff.p.norm());
     //  over distance threshold, add keyframe
     return true;
   }
 
   const kr::vec3<scalar_t> &angles = kr::getRPY(diff.q.matrix());
   if (std::abs(angles[2] * 180 / M_PI) > config_.kf_yaw_thresh) {
+    ROS_INFO("Angle: %f", angles[2]);
     //  over yaw angle threshold, add keyframe
     return true;
   }
@@ -190,6 +192,7 @@ bool StereoVo::ShouldAddKeyFrame(size_t num_corners) const {
   const size_t min_corners =
       std::ceil(config_.kf_min_filled * config_.shi_max_corners);
   if (num_corners < min_corners) {
+    ROS_INFO("Corners: %i", (int)num_corners);
     //  insufficent features, add keyframe with new ones
     return true;
   }
@@ -268,6 +271,10 @@ void StereoVo::TrackSpatial(const CvStereoImage &stereo_image,
   PruneByStatus(status, corners);
   status.clear();
   // Find fundamental matrix
+  if (l_points.empty()) {
+    ROS_WARN("OpticalFlow failed to track any features");
+    return;
+  }
   cv::findFundamentalMat(l_points, r_points, cv::FM_RANSAC, 1.5, 0.99, status);
   PruneByStatus(status, r_points);
   PruneByStatus(status, corners);
@@ -280,6 +287,11 @@ void StereoVo::OpticalFlow(const cv::Mat &image1, const cv::Mat &image2,
                            const std::vector<CvPoint2> &points1,
                            std::vector<CvPoint2> &points2,
                            std::vector<uchar> &status) {
+  if (points1.empty()) {
+    //  don't let calc optical flow assert
+    ROS_WARN("OpticalFlow() called with no points");
+    return;
+  }
   int win_size = config_.klt_win_size;
   int max_level = config_.klt_max_level;
   static cv::TermCriteria term_criteria(

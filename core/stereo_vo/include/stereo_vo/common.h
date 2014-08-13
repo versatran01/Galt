@@ -10,7 +10,7 @@ namespace galt {
 
 namespace stereo_vo {
 
-using scalar_t = double;
+using scalar_t = float;
 using Pose = kr::Pose<scalar_t>;
 using CvPoint2 = cv::Point_<scalar_t>;
 using CvPoint3 = cv::Point3_<scalar_t>;

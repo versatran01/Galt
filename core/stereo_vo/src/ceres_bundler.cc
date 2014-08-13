@@ -201,11 +201,18 @@ void CeresBundler::SolveProblem() {
   options_.preconditioner_type = ceres::JACOBI;
   options_.visibility_clustering_type = ceres::CANONICAL_VIEWS;
   options_.sparse_linear_algebra_library_type = ceres::EIGEN_SPARSE;
+  
+  ceres::Solver::Summary summary;
+  ceres::Solve(options_,&problem_,&summary);
+  
+  ROS_INFO_STREAM("Summary " << summary.BriefReport());
 }
 
-void CeresBundler::SolveProblem() {}
-
-void CeresBundler::UpdateKeyFrames(std::deque<KeyFrame> &key_frames) {}
+void CeresBundler::UpdateKeyFrames(std::deque<KeyFrame> &key_frames) {
+  
+  auto 
+  
+}
 
 }  // namespace stereo_vo
 

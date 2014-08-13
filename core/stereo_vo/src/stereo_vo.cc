@@ -121,7 +121,7 @@ void StereoVo::TrackTemporal(const cv::Mat &image_prev, const cv::Mat &image,
 }
 
 Pose StereoVo::EstimatePose() {
-  const size_t N = key_frame_prev().features().size();
+  const size_t N = features_.size();  //  max number of features we will use
 
   std::vector<CvPoint2> imagePoints;
   std::vector<CvPoint3> worldPoints;

@@ -31,12 +31,6 @@ class StereoVo {
 
   const bool init() const { return init_; }
   const std::map<Feature::Id, Feature> features() const { return features_; }
-
-  /**
-   * @brief Pose with respect to the previous key frame.
-   * @return kr::Pose
-   */
-  const Pose &relative_pose() const { return relative_pose_; }
   
   /**
    * @brief Pose with respect to the world frame.
@@ -87,7 +81,6 @@ class StereoVo {
   StereoCameraModel model_;
   StereoVoConfig config_;
 
-  Pose relative_pose_;
   Pose absolute_pose_;  /// Absolute pose, for display
   GlobalCornerDetector detector_;
   std::vector<Corner> corners_;

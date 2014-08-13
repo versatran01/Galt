@@ -58,8 +58,7 @@ void StereoVo::Iterate(const CvStereoImage &stereo_image) {
   // Estimate pose using 2D-to-3D correspondences
   // 2D - currently tracked corners
   // 3D - features in last key frame
-  relative_pose_ = EstimatePose();
-  absolute_pose_ = key_frame_prev().pose().compose(relative_pose_);
+  absolute_pose_ = EstimatePose();
 
   // Check whether to add key frame based on the following criteria
   // 1. Movement exceeds config_.kf_dist_thresh
@@ -143,7 +142,7 @@ Pose StereoVo::EstimatePose() {
     if (it != features_.end()) {
       const Feature &feat = it->second;
       imagePoints.push_back(corner.p_pixel());
-      worldPoints.push_back(feat.p_cam());
+      worldPoints.push_back(feat.p_world());
     }
   }
 
@@ -165,6 +164,7 @@ Pose StereoVo::EstimatePose() {
   kr::vec3<scalar_t> t(tvec.at<double>(0, 0), tvec.at<double>(1, 0),
                        tvec.at<double>(2, 0));
 
+  //  this is now an absolute pose
   return Pose::fromVectors(r, t);
 }
 
@@ -174,7 +174,7 @@ bool StereoVo::ShouldAddKeyFrame(size_t num_corners) const {
     return true;
   }
 
-  const Pose& diff = relative_pose();
+  const Pose& diff = absolute_pose().difference(key_frame_prev().pose());
   if (diff.p.norm() > config_.kf_dist_thresh) {
     ROS_INFO("Distance: %f", diff.p.norm());
     //  over distance threshold, add keyframe
@@ -215,8 +215,8 @@ void StereoVo::AddKeyFrame(const CvStereoImage &stereo_image,
 
   if (key_frames_.empty()) {
     //  make up a pose that looks pretty
-    relative_pose_.q = kr::quat<scalar_t>(0, 1, 0, 0);
-    relative_pose_.p = kr::vec3<scalar_t>(0, 0, 10);
+    absolute_pose_.q = kr::quat<scalar_t>(0, 1, 0, 0);
+    absolute_pose_.p = kr::vec3<scalar_t>(0, 0, 10);
   }
 
   // Retriangulate in current pose
@@ -251,7 +251,7 @@ void StereoVo::Triangulate(std::vector<Corner> &corners,
       } else {
         //  already in map, update coordinate
         Feature& feat = feat_ite->second;
-        feat.set_p_cam(p3D);
+        feat.set_p_world(p3D);
       }
       
       ite_corner++;

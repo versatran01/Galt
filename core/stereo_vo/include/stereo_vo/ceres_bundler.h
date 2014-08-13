@@ -84,7 +84,7 @@ class CeresBundler {
   void SplitFeatureIds(const std::deque<KeyFrame> &key_frames,
                        const std::map<Feature::Id, Feature> &features);
   void AddResidualBlock(const Edge &edge,
-                        image_geometry::PinholeCameraModel &model);
+                        const image_geometry::PinholeCameraModel &model);
   // Set ceres-related options and solve problem
   void SolveProblem();
   // Update key frames will results from ceres-solver

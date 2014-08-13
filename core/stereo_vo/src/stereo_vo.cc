@@ -72,9 +72,9 @@ void StereoVo::Iterate(const CvStereoImage &stereo_image) {
 
   // Do a windowed optimization if window size is reached
   if (key_frames_.size() > static_cast<unsigned>(config_.kf_size)) {
-    // Do awesome optimization which will update poses and features in all
-    // keyframes
-    //    BundleAdjustment();
+    
+    bundler_.Optimize(key_frames_,features_,model_,config_.kf_size);
+    
     if (key_frames_.size() == 8) key_frames_.pop_front();
   }
 
@@ -150,8 +150,9 @@ Pose StereoVo::EstimatePose() {
     throw std::runtime_error("EstimatePose called with empty features");
   }
 
-  cv::Mat rvec = cv::Mat(3, 1, CV_64FC1);
-  cv::Mat tvec = cv::Mat(3, 1, CV_64FC1);
+  static cv::Mat rvec = cv::Mat::zeros(3,3,CV_64FC1);
+  static cv::Mat tvec = cv::Mat::zeros(3,3,CV_64FC1);
+  
   const size_t minInliers =
       std::ceil(worldPoints.size() * config_.pnp_ransac_inliers);
   cv::solvePnPRansac(worldPoints, imagePoints,

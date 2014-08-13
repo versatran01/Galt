@@ -32,7 +32,7 @@ void CeresBundler::CreateGraph(const std::deque<KeyFrame> &key_frames,
     // Add key frame pose to camera pose
     Eigen::AngleAxis<scalar_t> aa(key_frame.pose().q);
     const auto r_vec = aa.axis() * aa.angle();
-    const auto t_vec = key_frame.pose().p;
+    const auto t_vec = key_frame.pose().translation();
     CameraNode c_node(cam_id, &*storage_.end());
     storage_.push_back(r_vec(0));
     storage_.push_back(r_vec(1));
@@ -50,7 +50,9 @@ void CeresBundler::CreateGraph(const std::deque<KeyFrame> &key_frames,
   }
 
   for (const Feature::Id mut_id : mutables_) {
-    const Feature& feature = features[mut_id];
+    auto ite_feat = features.find(mut_id);
+    assert(ite_feat != features.end());
+    const Feature& feature = ite_feat->second;
     Point3Node p_node(mut_id, &*storage_.end(), false);
     storage_.push_back(feature.p_world().x);
     storage_.push_back(feature.p_world().y);
@@ -59,12 +61,19 @@ void CeresBundler::CreateGraph(const std::deque<KeyFrame> &key_frames,
   }
 
   for (const Feature::Id immut_id : immutables_) {
-    const Feature& feature = features[mut_id];
-    Point3Node p_node(mut_id, &*storage_.end(), true);
+    auto ite_feat = features.find(immut_id);
+    assert(ite_feat != features.end());
+    const Feature& feature = ite_feat->second;
+    Point3Node p_node(immut_id, &*storage_.end(), true);
     fixed_.push_back(feature.p_world().x);
     fixed_.push_back(feature.p_world().y);
     fixed_.push_back(feature.p_world().z);
     point3s_.emplace(immut_id, p_node);
+  }
+  
+  //  create residuals
+  for (const Edge& edge : edges_) {
+    AddResidualBlock(edge,model_.left());
   }
 }
 
@@ -118,7 +127,7 @@ void CeresBundler::SplitFeatureIds(
 }
 
 void CeresBundler::AddResidualBlock(const Edge &edge,
-                                    image_geometry::PinholeCameraModel &model) {
+                                    const image_geometry::PinholeCameraModel &model) {
 
   //  create residuals for this edge
   auto cam_ite = cameras_.find(edge.cam_id());
@@ -155,7 +164,7 @@ void CeresBundler::SolveProblem() {
   options_.max_solver_time_in_seconds = 10;
   options_.gradient_tolerance = 1e-16;
   options_.function_tolerance = 1e-12;
-  options_.use_inner_iterations = true;
+  options_.use_inner_iterations = false;
   options_.linear_solver_type = ceres::SPARSE_SCHUR;
   options_.preconditioner_type = ceres::JACOBI;
   options_.visibility_clustering_type = ceres::CANONICAL_VIEWS;
@@ -172,6 +181,7 @@ void CeresBundler::UpdateMap(std::deque<KeyFrame> &key_frames,
 
   //  iterate forwards over keyframes, consider only those in window
   size_t kf_count = 0;
+  NodeBase::Id camId=0;
   for (auto kf_ite = key_frames.begin(); kf_ite != key_frames.end();
        kf_ite++, kf_count++) {
 
@@ -180,8 +190,23 @@ void CeresBundler::UpdateMap(std::deque<KeyFrame> &key_frames,
     }
 
     /// @todo: fetch updated keyframe pose here and write back to map
-    Pose kf_pose;
+    auto ite_cam = cameras_.find(camId++);
+    assert(ite_cam != cameras_.end());
+    
+    const CameraNode& cam = ite_cam->second;
+    const double * cam_vec = cam.ptr(); // [r t]
+    
+    kr::vec3<scalar_t> r,t;
+    r[0] = cam_vec[0];
+    r[1] = cam_vec[1];
+    r[2] = cam_vec[2];
+    t[0] = cam_vec[3];
+    t[1] = cam_vec[4];
+    t[2] = cam_vec[5];
+    const Pose kf_pose = Pose::fromVectors(r,t);
 
+    kf_ite->set_pose(kf_pose); //  update pose
+    
     for (const Corner &corner : kf_ite->corners()) {
       //  pull corrected point from results
       auto p3_ite = point3s_.find(corner.id());

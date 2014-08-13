@@ -5,6 +5,7 @@
 #include "stereo_vo/key_frame.h"
 #include "stereo_vo/feature.h"
 #include "stereo_vo/corner_detector.h"
+#include "stereo_vo/ceres_bundler.h"
 
 #include <vector>
 #include <memory>
@@ -76,7 +77,8 @@ class StereoVo {
                         CvPoint3 &output);
 
   KeyFrame &key_frame_prev() { return key_frames_.back(); }
-
+  const KeyFrame& key_frame_prev() const { return key_frames_.back(); }
+  
   bool init_{false};
   StereoCameraModel model_;
   StereoVoConfig config_;
@@ -87,6 +89,8 @@ class StereoVo {
   std::deque<KeyFrame> key_frames_;
   std::map<Feature::Id, Feature> features_;
   CvStereoImage stereo_image_prev_;
+  
+  CeresBundler bundler_;
 };
 
 }  // namespace stereo_vo

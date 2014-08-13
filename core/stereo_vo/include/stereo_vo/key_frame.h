@@ -18,6 +18,7 @@ class KeyFrame {
       : pose_(pose), corners_(corners), stereo_image_(stereo_image) {}
 
   const Pose &pose() const { return pose_; }
+  void set_pose(const Pose& pose) { pose_ = pose; }
   const cv::Mat &l_image() const { return stereo_image_.first; }
   const cv::Mat &r_image() const { return stereo_image_.second; }
   const CvStereoImage &stereo_image() const { return stereo_image_; }

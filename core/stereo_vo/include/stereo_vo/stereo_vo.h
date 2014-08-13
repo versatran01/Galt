@@ -52,7 +52,8 @@ class StereoVo {
   void TrackSpatial(const CvStereoImage &stereo_image,
                     std::vector<Corner> &corners,
                     std::vector<CvPoint2> &r_points);
-  void Triangulate(std::vector<Corner> &corners, std::vector<CvPoint2> &points);
+  void Triangulate(const Pose& pose, std::vector<Corner> &corners, 
+                   std::vector<CvPoint2> &points);
   void TrackTemporal(const cv::Mat &image_prev, const cv::Mat &image,
                      const std::vector<Corner> &corners_input,
                      std::vector<Corner> &corners_output, KeyFrame &key_frame);
@@ -69,7 +70,7 @@ class StereoVo {
    * @return False if the triangulation is poor and the feature should be
    * rejected.
    */
-  bool TriangulatePoint(const CvPoint2 &left, const CvPoint2 &right,
+  bool TriangulatePoint(const Pose &pose, const CvPoint2 &left, const CvPoint2 &right,
                         CvPoint3 &output);
 
   KeyFrame &key_frame_prev() { return key_frames_.back(); }

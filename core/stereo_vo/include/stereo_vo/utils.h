@@ -5,6 +5,7 @@
 #include "stereo_vo/feature.h"
 #include "stereo_vo/key_frame.h"
 
+#include <algorithm>
 #include <deque>
 
 namespace galt {
@@ -52,7 +53,8 @@ void PruneByStatus(const std::vector<U> &status, std::vector<T> &objects) {
 }
 
 void Display(const CvStereoImage &stereo_image,
-             const std::vector<Corner> &corners, const KeyFrame &key_frame);
+             const std::vector<Corner> &tracked_corners,
+             const KeyFrame &key_frame);
 
 }  // namespace stereo_vo
 

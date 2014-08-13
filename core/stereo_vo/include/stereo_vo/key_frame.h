@@ -23,26 +23,19 @@ class KeyFrame {
   const CvStereoImage &stereo_image() const { return stereo_image_; }
   const std::vector<Corner> &corners() const { return corners_; }
 
-  bool RemoveById(const std::vector<Feature::Id>& ids_to_remove) {
+  void RemoveById(const std::vector<Feature::Id> &ids_to_remove) {
     //  not terribly efficient, but ids_to_remove will typically be small
-    bool erased = false;
-    for (const Feature::Id& id : ids_to_remove) {
-      auto predicate = [=](const Corner& c) -> bool { 
-        return c.id()==id; 
-      };
-      auto ite = std::find_if(corners_.begin(), 
-                              corners_.end(), 
-                              predicate);
+    for (const Feature::Id &id : ids_to_remove) {
+      auto ite = std::find_if(corners_.begin(), corners_.end(),
+                              [id](const Corner &c) { return c.id() == id; });
       if (ite != corners_.end()) {
         if (ite->init()) {
           corners_.erase(ite);
-          erased = true;
         }
       }
     }
-    return erased;
   }
-  
+
  private:
   Pose pose_;
   std::vector<Corner> corners_;

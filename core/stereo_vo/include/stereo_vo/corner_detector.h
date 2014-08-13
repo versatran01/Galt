@@ -32,7 +32,7 @@ class GridDetectorBase : public CornerDetectorBase {
   double GridFilled(const cv::Mat& image,
                     const std::vector<Corner>& corners) const;
   virtual void DetectPoints(const cv::Mat& image, const cv::Mat& mask,
-                            const int num_points,
+                            const int num_corners,
                             std::vector<CvPoint2>& points) const = 0;
 
  protected:
@@ -52,7 +52,7 @@ class GoodFeatureDetector : public GridDetectorBase {
 
  private:
   void DetectPoints(const cv::Mat& image, const cv::Mat& mask,
-                    const int num_points,
+                    const int num_corners,
                     std::vector<CvPoint2>& points) const override;
   int max_corners_;
   double quality_level_;

@@ -29,8 +29,8 @@ void StereoVo::Initialize(const CvStereoImage &stereo_image,
                           const StereoCameraModel &model) {
   model_ = model;
   // Add the first stereo image as first keyframe
-  // At this moment, we use current_pose as input, but inherently will use
-  // estimated depth to reinitialize current_pose. Later will be replaced with
+  // At this moment, we use current pose as input, but inherently will use
+  // estimated depth to reinitialize a new pose. Later will be replaced with
   // estimates of other sensors.
   std::vector<Corner> tracked_corners;
   AddKeyFrame(absolute_pose(), stereo_image, tracked_corners);
@@ -50,7 +50,7 @@ void StereoVo::Initialize(const CvStereoImage &stereo_image,
 void StereoVo::Iterate(const CvStereoImage &stereo_image) {
   std::vector<Corner> tracked_corners;
   // Track corners from previous frame into current frame
-  // Remove corresponding features in last key frame only if they are newly
+  // Remove corresponding corners in last key frame only if they are newly
   // initialized
   TrackTemporal(stereo_image_prev_.first, stereo_image.first, corners_,
                 tracked_corners, key_frame_prev());
@@ -95,14 +95,13 @@ void StereoVo::TrackTemporal(const cv::Mat &image_prev, const cv::Mat &image,
   std::vector<Feature::Id> ids, ids_to_remove;
 
   for (const Corner &corner : corners_input) {
-    //  pictures in left image
+    // Points in left image
     points_in.push_back(corner.p_pixel());
     ids.push_back(corner.id());
   }
 
-  //  track and remove mismatches
+  // Track and remove mismatches
   OpticalFlow(image_prev, image, points_in, points_tracked, status);
-
   PruneByStatus(status, ids, ids_to_remove);
   PruneByStatus(status, points_in);
   PruneByStatus(status, points_tracked);
@@ -114,17 +113,12 @@ void StereoVo::TrackTemporal(const cv::Mat &image_prev, const cv::Mat &image,
   PruneByStatus(status, ids, ids_to_remove);
   PruneByStatus(status, points_tracked);
 
-  ROS_ASSERT_MSG(ids.size() == points_tracked.size(), "Dimension mismatch");
+  // Verify that ids is of the same dimension as points_tracked
+  ROS_ASSERT_MSG(ids.size() == points_tracked.size(),
+                 "TrackSpatial Dimension mismatch");
 
-  //  remove singlet observations from previous keyframes as required
-  for (auto it_kf = key_frames_.rbegin(); it_kf != key_frames_.rend();
-       it_kf++) {
-
-    KeyFrame &kf = *it_kf;
-    if (!kf.RemoveById(ids_to_remove)) {
-      break;  //  nothing in this keyframe to remove, we can stop checking
-    }
-  }
+  //  remove singlet observations from previous keyframe as required
+  key_frame.RemoveById(ids_to_remove);
 
   auto it_pts = points_tracked.cbegin();
   for (auto it_id = ids.cbegin(); it_id != ids.cend(); ++it_id, ++it_pts) {
@@ -210,41 +204,53 @@ void StereoVo::AddKeyFrame(const Pose &pose, const CvStereoImage &stereo_image,
   // Mark current corners as old corners
   std::vector<Corner> new_corners;
   detector_.AddCorners(stereo_image.first, corners, new_corners);
+  ROS_INFO("new corners: %d", int(new_corners.size()));
   // Track new corners from left image to right image and return corresponding
   // points on the right image. Corners will be removed from new corners if they
   // are lost during tracking
   std::vector<CvPoint2> right_points;
   TrackSpatial(stereo_image, new_corners, right_points);
+
+  if (key_frames_.empty()) {
+    //  make up a pose that looks pretty
+    absolute_pose_.q = kr::quat<scalar_t>(0, 1, 0, 0);
+    absolute_pose_.p = kr::vec3<scalar_t>(0, 0, 10);
+  }
+
   // Triangulate will change both new_corners and features based on the
   // triangulation results
-  Triangulate(new_corners, right_points);
+  Triangulate(absolute_pose_, new_corners, right_points);
   // Add new corners to corners
   corners.insert(corners.end(), new_corners.begin(), new_corners.end());
 
-  if (key_frames_.empty()) {
-    //  first keyframe, calculate depth
-    double depth = 0;
-
-    size_t count = 0;
-    for (const Corner &corner : corners) {
-      auto ite = features_.find(corner.id());
-      if (ite != features_.end()) {
-        const Feature &feat = ite->second;
-        // depth +=
-        count++;
-      }
-    }
-
-    absolute_pose_.q = kr::quat<scalar_t>(0, 1, 0, 0);
-    absolute_pose_.p = kr::vec3<scalar_t>(0, 0, depth);
-  }
   // Add key frame to queue with current_pose, features and stereo_image
   key_frames_.emplace_back(pose, corners, stereo_image);
 }
 
-void StereoVo::Triangulate(std::vector<Corner> &corners,
+void StereoVo::Triangulate(const Pose &pose, std::vector<Corner> &corners,
                            std::vector<CvPoint2> &points) {
-  ;
+
+  auto ite_p = points.begin();
+  for (auto ite_corner = corners.begin(); ite_corner != corners.end();) {
+    const Feature::Id &id = ite_corner->id();
+    if (features_.find(id) == features_.end()) {
+      //  insert a new feature here
+      CvPoint3 p3D;
+      const bool tri =
+          TriangulatePoint(pose, ite_corner->p_pixel(), *ite_p, p3D);
+      if (!tri) {
+        //  failed
+        ite_corner = corners.erase(ite_corner);
+        ite_p = points.erase(ite_p);
+      } else {
+        //  add to map
+        Feature feat(id, p3D);
+        features_[id] = feat;
+        ite_corner++;
+        ite_p++;
+      }
+    }
+  }
 }
 
 void StereoVo::TrackSpatial(const CvStereoImage &stereo_image,
@@ -283,8 +289,8 @@ void StereoVo::OpticalFlow(const cv::Mat &image1, const cv::Mat &image2,
                            max_level, term_criteria);
 }
 
-bool StereoVo::TriangulatePoint(const CvPoint2 &left, const CvPoint2 &right,
-                                CvPoint3 &output) {
+bool StereoVo::TriangulatePoint(const Pose &pose, const CvPoint2 &left,
+                                const CvPoint2 &right, CvPoint3 &output) {
   //  camera model
   const scalar_t lfx = model_.left().fx(), lfy = model_.left().fy();
   const scalar_t lcx = model_.left().cx(), lcy = model_.left().cy();
@@ -315,6 +321,9 @@ bool StereoVo::TriangulatePoint(const CvPoint2 &left, const CvPoint2 &right,
   if (!kr::refinePoint(poses, obvs, p3D)) {
     return false;
   }
+
+  //  correct with pose
+  p3D = pose.q.conjugate().matrix() * p3D + pose.p;
 
   output.x = p3D[0];
   output.y = p3D[1];

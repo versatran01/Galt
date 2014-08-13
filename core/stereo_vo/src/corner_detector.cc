@@ -5,6 +5,7 @@
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/video/video.hpp>
+#include <opencv2/highgui/highgui.hpp>
 
 namespace galt {
 
@@ -40,7 +41,8 @@ const cv::Mat GridDetectorBase::CreateMask(const cv::Mat &image,
     for (int x = 0; x < grid_cols; ++x) {
       // If a cell does not have any corners, fill that part of the mask
       if (grid.find(std::make_pair(x, y)) == grid.end()) {
-        mask(cv::Rect(x, y, cell_size_, cell_size_)) = 1;
+        mask(cv::Rect(x * cell_size_, y * cell_size_, cell_size_, cell_size_)) =
+            255;
       }
     }
   }
@@ -56,6 +58,8 @@ void GridDetectorBase::AddCorners(const cv::Mat &image,
   const Grid grid = CreateGrid(corners);
   // Initialize a mask
   const cv::Mat mask = CreateMask(image, grid);
+  cv::imshow("mask", mask);
+  cv::waitKey(1);
   // Detect corners only in mask
   std::vector<CvPoint2> points;
   DetectPoints(image, mask, corners.size(), points);
@@ -67,9 +71,10 @@ void GridDetectorBase::AddCorners(const cv::Mat &image,
 
 void GoodFeatureDetector::DetectPoints(const cv::Mat &image,
                                        const cv::Mat &mask,
-                                       const int num_points,
+                                       const int num_corners,
                                        std::vector<CvPoint2> &points) const {
-  cv::goodFeaturesToTrack(image, points, max_corners_ - num_points,
+  if (max_corners_ < num_corners) return;
+  cv::goodFeaturesToTrack(image, points, max_corners_ - num_corners,
                           quality_level_, min_distance_, mask);
 }
 

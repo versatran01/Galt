@@ -84,6 +84,7 @@ void GlobalCornerDetector::AddCorners(const cv::Mat &image,
 
   std::vector<CvPoint2> points;
   auto num_corners = max_corners_ - corners.size();
+  if (num_corners < 1) return;
   cv::goodFeaturesToTrack(image, points, num_corners, quality_level_,
                           min_distance_);
 

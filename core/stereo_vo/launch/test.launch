@@ -12,8 +12,8 @@
 
     <arg name="shi_cell_size" default="50"/>
     <arg name="shi_max_corners" default="300"/>
-    <arg name="shi_quality_level" default="0.01"/>
-    <arg name="shi_min_distance" default="15"/>
+    <arg name="shi_quality_level" default="0.0001"/>
+    <arg name="shi_min_distance" default="22"/>
 
     <arg name="klt_max_level" default="3"/>
     <arg name="klt_win_size" default="13"/>

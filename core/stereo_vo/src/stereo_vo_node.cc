@@ -123,7 +123,7 @@ void StereoVoNode::StereoCallback(const ImageConstPtr& l_image_msg,
 void StereoVoNode::PublishPointCloud(
     const std::map<Feature::Id, Feature>& features, const ros::Time& time,
     const std::string& frame_id) const {
-  /*
+  
   sensor_msgs::PointCloud cloud;
   sensor_msgs::ChannelFloat32 channel;
   channel.name = "rgb";
@@ -133,37 +133,32 @@ void StereoVoNode::PublishPointCloud(
     float val;
   } color;
 
-  for (const KeyFrame& key_frame : key_frames) {
-    const Pose& pose = key_frame.pose();
 
-    color.rgb[0] = 255;
-    color.rgb[1] = 255;
-    color.rgb[2] = 0;
-    color.rgb[3] = 0;
+  color.rgb[0] = 255;
+  color.rgb[1] = 255;
+  color.rgb[2] = 0;
+  color.rgb[3] = 0;
 
-    for (const auto& feat : key_frame.features()) {
-      const Feature& feature = feat.second;
+  for (const auto& feat : features) {
+    const Feature& feature = feat.second;
 
-      geometry_msgs::Point32 p32;
-      kr::vec3<scalar_t> p(feature.p_cam_left().x, feature.p_cam_left().y,
-                           feature.p_cam_left().z);
+    geometry_msgs::Point32 p32;
+    kr::vec3<scalar_t> p(feature.p_world().x, 
+                         feature.p_world().y,
+                         feature.p_world().z);
 
-      p = pose.q.conjugate().matrix() * p + pose.p;
+    p32.x = p[0];
+    p32.y = p[1];
+    p32.z = p[2];
 
-      p32.x = p[0];
-      p32.y = p[1];
-      p32.z = p[2];
-
-      cloud.points.push_back(p32);
-      channel.values.push_back(color.val);
-    }
+    cloud.points.push_back(p32);
+    channel.values.push_back(color.val);
   }
 
   cloud.channels.push_back(channel);
   cloud.header.stamp = time;
   cloud.header.frame_id = frame_id;
   points_pub_.publish(cloud);
-  */
 }
 
 void StereoVoNode::PublishPoseStamped(const geometry_msgs::Pose& pose,

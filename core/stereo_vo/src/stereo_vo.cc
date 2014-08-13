@@ -67,7 +67,7 @@ void StereoVo::Iterate(const CvStereoImage &stereo_image) {
   // After this step, tracked_corners will contain both old corners and newly
   // added corners
   if (ShouldAddKeyFrame(tracked_corners.size())) {
-    AddKeyFrame(absolute_pose(), stereo_image, tracked_corners);
+     AddKeyFrame(absolute_pose(), stereo_image, tracked_corners);
   }
 
   // Do a windowed optimization if window size is reached
@@ -154,10 +154,13 @@ Pose StereoVo::EstimatePose() {
   cv::Mat tvec = cv::Mat(3, 1, CV_64FC1);
   const size_t minInliers =
       std::ceil(worldPoints.size() * config_.pnp_ransac_inliers);
-  cv::solvePnPRansac(worldPoints, imagePoints,
-                     model_.left().fullIntrinsicMatrix(), std::vector<double>(),
-                     rvec, tvec, false, 100, config_.pnp_ransac_error,
-                     minInliers, inliers, cv::ITERATIVE);
+    cv::solvePnPRansac(worldPoints, imagePoints,
+                       model_.left().fullIntrinsicMatrix(),
+   std::vector<double>(),
+                       rvec, tvec, false, 100, config_.pnp_ransac_error,
+                       minInliers, inliers, cv::ITERATIVE);
+//  cv::solvePnP(worldPoints, imagePoints, model_.left().fullIntrinsicMatrix(),
+//               std::vector<double>(), rvec, tvec);
   kr::vec3<scalar_t> r(rvec.at<double>(0, 0), rvec.at<double>(1, 0),
                        rvec.at<double>(2, 0));
   kr::vec3<scalar_t> t(tvec.at<double>(0, 0), tvec.at<double>(1, 0),
@@ -172,22 +175,26 @@ bool StereoVo::ShouldAddKeyFrame(size_t num_corners) const {
     return true;
   }
 
-  //  const KeyFrame &kf_prev = key_frames_.back();
-  //  const Pose diff = absolute_pose().difference(kf_prev.pose());
-  //  if (diff.p.norm() > config_.kf_dist_thresh) {
-  //    //  over distance threshold, add keyframe
-  //    return true;
-  //  }
+  const KeyFrame &kf_prev = key_frames_.back();
+  const Pose diff = absolute_pose().difference(kf_prev.pose());
+  if (diff.p.norm() > config_.kf_dist_thresh) {
+    //    ROS_INFO("Distance: %f", diff.p.norm());
+    //  over distance threshold, add keyframe
+    //    return false;
+  }
 
-  //  const kr::vec3<scalar_t> &angles = kr::getRPY(diff.q.matrix());
-  //  if (std::abs(angles[2] * 180 / M_PI) > config_.kf_yaw_thresh) {
-  //    //  over yaw angle threshold, add keyframe
-  //    return true;
-  //  }
+  const kr::vec3<scalar_t> &angles = kr::getRPY(diff.q.matrix());
+  if (std::abs(angles[2] * 180 / M_PI) > config_.kf_yaw_thresh) {
+    //    ROS_INFO("Angle: %f", angles[2]);
+    //  over yaw angle threshold, add keyframe
+    //    return false;
+  }
 
   const size_t min_corners =
       std::ceil(config_.kf_min_filled * config_.shi_max_corners);
   if (num_corners < min_corners) {
+    //    ROS_INFO("Corners: %i, min corners: %i", (int)num_corners,
+    // (int)min_corners);
     //  insufficent features, add keyframe with new ones
     return true;
   }
@@ -265,6 +272,10 @@ void StereoVo::TrackSpatial(const CvStereoImage &stereo_image,
   PruneByStatus(status, corners);
   status.clear();
   // Find fundamental matrix
+  if (l_points.empty()) {
+    ROS_WARN("OpticalFlow failed to track any features");
+    return;
+  }
   FindFundamentalMat(l_points, r_points, status);
   PruneByStatus(status, r_points);
   PruneByStatus(status, corners);
@@ -277,6 +288,11 @@ void StereoVo::OpticalFlow(const cv::Mat &image1, const cv::Mat &image2,
                            const std::vector<CvPoint2> &points1,
                            std::vector<CvPoint2> &points2,
                            std::vector<uchar> &status) {
+  if (points1.empty()) {
+    //  don't let calc optical flow assert
+    ROS_WARN("OpticalFlow() called with no points");
+    return;
+  }
   int win_size = config_.klt_win_size;
   int max_level = config_.klt_max_level;
   static cv::TermCriteria term_criteria(
@@ -289,7 +305,7 @@ void StereoVo::OpticalFlow(const cv::Mat &image1, const cv::Mat &image2,
 void StereoVo::FindFundamentalMat(const std::vector<CvPoint2> &points1,
                                   const std::vector<CvPoint2> &points2,
                                   std::vector<uchar> &status) {
-  cv::findFundamentalMat(points1, points2, cv::FM_RANSAC, 1, 0.99, status);
+  cv::findFundamentalMat(points1, points2, cv::FM_RANSAC, 1.5, 0.99, status);
 }
 
 bool StereoVo::TriangulatePoint(const Pose &pose, const CvPoint2 &left,

@@ -59,6 +59,7 @@ void StereoVo::Iterate(const CvStereoImage &stereo_image) {
   // 2D - currently tracked corners
   // 3D - features in last key frame
   relative_pose_ = EstimatePose();
+  absolute_pose_ = key_frame_prev().pose().compose(relative_pose_);
 
   // Check whether to add key frame based on the following criteria
   // 1. Movement exceeds config_.kf_dist_thresh
@@ -240,7 +241,6 @@ void StereoVo::Triangulate(std::vector<Corner> &corners,
         TriangulatePoint(ite_corner->p_pixel(), *ite_p, p3D);
     if (!tri) {
       //  failed erase from corners
-      /// @todo: Should we actually erase here?
       ite_corner = corners.erase(ite_corner);
       ite_p = points.erase(ite_p);
     } else {

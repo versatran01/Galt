@@ -33,10 +33,16 @@ class StereoVo {
   const std::map<Feature::Id, Feature> features() const { return features_; }
 
   /**
-   * @brief Pose with respect to the world frame.
+   * @brief Pose with respect to the previous key frame.
    * @return kr::Pose
    */
   const Pose &relative_pose() const { return relative_pose_; }
+  
+  /**
+   * @brief Pose with respect to the world frame.
+   * @return kr::Pose
+   */
+  const Pose &absolute_pose() const { return absolute_pose_; }
   const std::vector<Corner> &corners() const { return corners_; }
   const std::deque<KeyFrame> &key_frames() const { return key_frames_; }
 
@@ -47,12 +53,12 @@ class StereoVo {
 
  private:
   bool ShouldAddKeyFrame(size_t num_corners) const;
-  void AddKeyFrame(const Pose &pose, const CvStereoImage &stereo_image,
+  void AddKeyFrame(const CvStereoImage &stereo_image,
                    std::vector<Corner> &corners);
   void TrackSpatial(const CvStereoImage &stereo_image,
                     std::vector<Corner> &corners,
                     std::vector<CvPoint2> &r_points);
-  void Triangulate(const Pose& pose, std::vector<Corner> &corners, 
+  void Triangulate(std::vector<Corner> &corners, 
                    std::vector<CvPoint2> &points);
   void TrackTemporal(const cv::Mat &image_prev, const cv::Mat &image,
                      const std::vector<Corner> &corners_input,
@@ -70,7 +76,7 @@ class StereoVo {
    * @return False if the triangulation is poor and the feature should be
    * rejected.
    */
-  bool TriangulatePoint(const Pose &pose, const CvPoint2 &left, const CvPoint2 &right,
+  bool TriangulatePoint(const CvPoint2 &left, const CvPoint2 &right,
                         CvPoint3 &output);
 
   KeyFrame &key_frame_prev() { return key_frames_.back(); }
@@ -80,6 +86,7 @@ class StereoVo {
   StereoVoConfig config_;
 
   Pose relative_pose_;
+  Pose absolute_pose_;  /// Absolute pose, for display
   GoodFeatureDetector detector_;
   std::vector<Corner> corners_;
   std::deque<KeyFrame> key_frames_;

@@ -11,6 +11,7 @@
 #include <map>
 
 #include <ceres/ceres.h>
+#include <ceres/solver.h>
 
 namespace galt {
 

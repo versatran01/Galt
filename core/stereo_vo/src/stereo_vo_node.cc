@@ -203,7 +203,8 @@ const StereoVoConfig ReadConfig(const ros::NodeHandle& nh) {
   nh.param<double>("pnp_ransac_error", config.pnp_ransac_error, 4.0);
 
   nh.param<int>("kf_size", config.kf_size, 4);
-  nh.param<double>("kf_dist", config.kf_dist, 1.5);
+  nh.param<double>("kf_dist_thresh", config.kf_dist_thresh, 1.5);
+  nh.param<double>("kf_yaw_thresh", config.kf_yaw_thresh, 45);
   nh.param<double>("kf_min_filled", config.kf_min_filled, 0.7);
 
   nh.param<double>("tri_max_eigenratio", config.tri_max_eigenratio, 1.0e5);

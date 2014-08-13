@@ -67,7 +67,7 @@ class Edge {
 class CeresBundler {
  public:
   CeresBundler() { options_.linear_solver_type = ceres::SPARSE_SCHUR; }
-  void Optimize(std::deque<KeyFrame> &key_frames,
+  void Optimize(std::deque<KeyFrame> &key_frames, std::map<Feature::Id, Feature> &features,
                 const image_geometry::StereoCameraModel &cameraModel,
                 int win_size);
 
@@ -75,17 +75,19 @@ class CeresBundler {
   // Iterate through key frames, then iterate through features, store features
   // in windowed key frames into storage and features outside window but still
   // tracked in window into fixed. And for each featrue, create an edge
-  void CreateGraph(const std::deque<KeyFrame> &key_frames);
+  void CreateGraph(const std::deque<KeyFrame> &key_frames,
+                   const std::map<Feature::Id,Feature>& features);
   // Temporary function that resets relevant member variables
   void NukeEverything(bool from_orbit = true);
   // Iterate through all features and classify them into mutables or immutables
-  void SplitFeatureIds(const std::deque<KeyFrame> &key_frames);
+  void SplitFeatureIds(const std::deque<KeyFrame> &key_frames,
+                       const std::map<Feature::Id,Feature>& features);
   void AddResidualBlock(const Edge &edge,
                         image_geometry::PinholeCameraModel &model);
   // Set ceres-related options and solve problem
   void SolveProblem();
   // Update key frames will results from ceres-solver
-  void UpdateKeyFrames(std::deque<KeyFrame> &key_frames);
+  void UpdateMap(std::deque<KeyFrame> &key_frames, std::map<Feature::Id, Feature> &features);
 
   ceres::Problem problem_;
   ceres::Solver::Options options_;

@@ -10,17 +10,18 @@ namespace stereo_vo {
 
 void CeresBundler::Optimize(
     std::deque<KeyFrame> &key_frames,
+    std::map<Feature::Id,Feature> &features,
     const image_geometry::StereoCameraModel &cameraModel, int win_size) {
   win_size_ = win_size;
   model_ = cameraModel;
   NukeEverything();
-  SplitFeatureIds(key_frames);
-  CreateGraph(key_frames);
+  SplitFeatureIds(key_frames,features);
+  CreateGraph(key_frames,features);
   SolveProblem();
-  UpdateKeyFrames(key_frames);
+  UpdateMap(key_frames,features);
 }
 
-void CeresBundler::CreateGraph(const std::deque<KeyFrame> &key_frames) {
+void CeresBundler::CreateGraph(const std::deque<KeyFrame> &key_frames, const std::map<Feature::Id, Feature> &features) {
   // Iterate through keyframe the first time to save camera poses
   NodeBase::Id id = 0;
   // Iterate through key frame backwards and then through features to save 3d
@@ -120,7 +121,10 @@ void CeresBundler::NukeEverything(bool from_orbit) {
   point3s_.clear();
 }
 
-void CeresBundler::SplitFeatureIds(const std::deque<KeyFrame> &key_frames) {
+void CeresBundler::SplitFeatureIds(
+    const std::deque<KeyFrame> &key_frames,
+    const std::map<Feature::Id,Feature>& features) {
+  
   //  iterate over key frames and sort all features into one of two groups
   size_t kf_count = 0;
   for (auto kfi = key_frames.rbegin(); kfi != key_frames.rend(); kfi++) {
@@ -208,9 +212,10 @@ void CeresBundler::SolveProblem() {
   ROS_INFO_STREAM("Summary " << summary.BriefReport());
 }
 
-void CeresBundler::UpdateKeyFrames(std::deque<KeyFrame> &key_frames) {
+void CeresBundler::UpdateMap(std::deque<KeyFrame> &key_frames,
+                             std::map<Feature::Id,Feature>& features) {
   
-  auto 
+   
   
 }
 

@@ -149,6 +149,8 @@ void StereoVoNode::PublishPointCloud(
                          feature.p_cam().y,
                          feature.p_cam().z);
 
+    p = pose.q.conjugate().matrix() * p + pose.p;
+    
     p32.x = p[0];
     p32.y = p[1];
     p32.z = p[2];

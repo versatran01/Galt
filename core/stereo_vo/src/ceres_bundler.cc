@@ -9,32 +9,32 @@ namespace galt {
 namespace stereo_vo {
 
 void CeresBundler::Optimize(
-    std::deque<KeyFrame> &key_frames,
-    std::map<Feature::Id,Feature> &features,
+    std::deque<KeyFrame> &key_frames, std::map<Feature::Id, Feature> &features,
     const image_geometry::StereoCameraModel &cameraModel, int win_size) {
   win_size_ = win_size;
   model_ = cameraModel;
   NukeEverything();
-  SplitFeatureIds(key_frames,features);
-  CreateGraph(key_frames,features);
+  SplitFeatureIds(key_frames, features);
+  CreateGraph(key_frames, features);
   SolveProblem();
-  UpdateMap(key_frames,features);
+  UpdateMap(key_frames, features);
 }
 
-void CeresBundler::CreateGraph(const std::deque<KeyFrame> &key_frames, const std::map<Feature::Id, Feature> &features) {
+void CeresBundler::CreateGraph(const std::deque<KeyFrame> &key_frames,
+                               const std::map<Feature::Id, Feature> &features) {
   // Iterate through keyframe the first time to save camera poses
   NodeBase::Id id = 0;
-  // Iterate through key frame backwards and then through features to save 3d
-  // points
+  // Iterate through key frame backwards to save camera pose and then through
+  // features to save 3d points
   auto itb_kf = key_frames.rbegin(), ite_kf = key_frames.rend();
-  for (auto it_kf = itb_kf; it != ite_kf; ++it) {
+  for (auto it_kf = itb_kf; it_kf != ite_kf; ++it_kf) {
     bool in_window = (it_kf - itb_kf) > win_size_;
     const KeyFrame &key_frame = *it_kf;
     if (in_window) {
       // Add key frame pose to camera pose
       Eigen::AngleAxis<scalar_t> aa(key_frame.pose().q);
       const auto r_vec = aa.axis() * aa.angle();
-      const auto t_vec = it->pose().p;
+      const auto t_vec = key_frame.pose().p;
       CameraNode c_node(id, &*storage_.rbegin());
       storage_.push_back(r_vec(0));
       storage_.push_back(r_vec(1));
@@ -44,10 +44,12 @@ void CeresBundler::CreateGraph(const std::deque<KeyFrame> &key_frames, const std
       storage_.push_back(t_vec(2));
       cameras_.emplace(id, c_node);
       id++;
-      // Because we are in window, all the features will be either mutable or
-      // immutable. So we check if feature is in mutable, if not, then it must
-      // be immutable
-      const auto &features = key_frame.features();
+      // Now we iterate every observation in each key frame and add it to edges
+      for (const Corner& corner : key_frame.corners()) {
+        const Feature::Id id = corner.id();
+        const Feature& feature = features[id];
+
+      }
       for (const std::pair<Featuer::Id, Feature> &feature_pair : features) {
         const Feature &feature = feature_pair.second;
         kr::vec3<scalar_t> p_cam(feature.p_cam_left().x, feature.p_cam_left().y,
@@ -123,8 +125,8 @@ void CeresBundler::NukeEverything(bool from_orbit) {
 
 void CeresBundler::SplitFeatureIds(
     const std::deque<KeyFrame> &key_frames,
-    const std::map<Feature::Id,Feature>& features) {
-  
+    const std::map<Feature::Id, Feature> &features) {
+
   //  iterate over key frames and sort all features into one of two groups
   size_t kf_count = 0;
   for (auto kfi = key_frames.rbegin(); kfi != key_frames.rend(); kfi++) {
@@ -205,19 +207,15 @@ void CeresBundler::SolveProblem() {
   options_.preconditioner_type = ceres::JACOBI;
   options_.visibility_clustering_type = ceres::CANONICAL_VIEWS;
   options_.sparse_linear_algebra_library_type = ceres::EIGEN_SPARSE;
-  
+
   ceres::Solver::Summary summary;
-  ceres::Solve(options_,&problem_,&summary);
-  
+  ceres::Solve(options_, &problem_, &summary);
+
   ROS_INFO_STREAM("Summary " << summary.BriefReport());
 }
 
 void CeresBundler::UpdateMap(std::deque<KeyFrame> &key_frames,
-                             std::map<Feature::Id,Feature>& features) {
-  
-   
-  
-}
+                             std::map<Feature::Id, Feature> &features) {}
 
 }  // namespace stereo_vo
 

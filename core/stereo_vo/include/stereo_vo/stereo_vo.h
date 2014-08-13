@@ -46,14 +46,14 @@ class StereoVo {
   void UpdateConfig(const StereoVoConfig &config) { config_ = config; }
 
  private:
-  bool ShouldAddKeyFrame() const;
+  bool ShouldAddKeyFrame(size_t num_corners) const;
   void AddKeyFrame(const Pose &pose, const CvStereoImage &stereo_image,
                    std::vector<Corner> &corners);
   void TrackSpatial(const CvStereoImage &stereo_image,
                     std::vector<Corner> &corners);
   void TrackTemporal(const cv::Mat &image_prev, const cv::Mat &image,
-                     const std::vector<Corner> &corners1,
-                     std::vector<Corner> &corners2, KeyFrame &key_frame);
+                     const std::vector<Corner> &corners_input,
+                     std::vector<Corner> &corners_output, KeyFrame &key_frame);
   Pose EstimatePose();
   void OpticalFlow(const cv::Mat &image1, const cv::Mat &image2,
                    const std::vector<CvPoint2> &points1,

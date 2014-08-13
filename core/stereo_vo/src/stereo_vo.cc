@@ -86,40 +86,51 @@ void StereoVo::Iterate(const CvStereoImage &stereo_image) {
   corners_ = tracked_corners;
 }
 
-void StereoVo::TrackTemporal(const cv::Mat &image_prev, const cv::Mat &image,
-                             const std::vector<Corner> &corners1,
-                             std::vector<Corner> &corners2,
+void StereoVo::TrackTemporal(const cv::Mat &image_prev, 
+                             const cv::Mat &image,
+                             const std::vector<Corner> &corners_input,
+                             std::vector<Corner> &corners_output,
                              KeyFrame &key_frame) {
-  /// @todo: change this so that it only remove corners from key frame
-  std::vector<CvPoint2> points1, points2;
+  std::vector<CvPoint2> points_in, points_tracked;
   std::vector<uchar> status;
   std::vector<Feature::Id> ids, ids_to_remove;
-  for (const auto &c : corners1) {
-    points1.push_back(c.p_pixel());
-    ids.push_back(c.id());
+  
+  for (const Corner &corner : corners_input) {
+    //  pictures in left image
+    points_in.push_back(corner.p_pixel());
+    ids.push_back(corner.id());
   }
-  status.reserve(points1.size());
-  // LK tracker
-  OpticalFlow(image_prev, image, points1, points2, status);
+  
+  //  track and remove mismatches
+  OpticalFlow(image_prev, image, points_in, points_tracked, status);
+  
   PruneByStatus(status, ids, ids_to_remove);
-  PruneByStatus(status, points1);
-  PruneByStatus(status, points2);
+  PruneByStatus(status, points_in);
+  PruneByStatus(status, points_tracked);
   status.clear();
-  status.reserve(points1.size());
-  // Find fundamental matrix
-  cv::findFundamentalMat(points1, points2, cv::FM_RANSAC, 1.5, 0.99, status);
+  
+  // Find fundamental matrix to reject outliers in tracking
+  cv::findFundamentalMat(points_in, points_tracked, cv::FM_RANSAC, 1.5, 0.99, status);
   PruneByStatus(status, ids, ids_to_remove);
-  PruneByStatus(status, points2);
-  ROS_ASSERT_MSG(ids.size() == points2.size(), "Dimension mismatch");
-  // Prune features in last key frame
-//  key_frame.PruneById(ids_to_remove);
-  // Reconstruct corners for later use
-  auto it_id = ids.cbegin(), it_id_e = ids.cend();
-  auto it_pts = points2.cbegin();
-  for (; it_id != it_id_e; ++it_id, ++it_pts) {
+  PruneByStatus(status, points_tracked);
+  
+  ROS_ASSERT_MSG(ids.size() == points_tracked.size(), "Dimension mismatch");
+ 
+  //  remove singlet observations from previous keyframes as required
+  for (auto it_kf = key_frames_.rbegin(); 
+       it_kf != key_frames_.rend(); it_kf++) {
+    
+    KeyFrame& kf = *it_kf;
+    if (!kf.RemoveById(ids_to_remove)) {
+      break;  //  nothing in this keyframe to remove, we can stop checking
+    }
+  }
+  
+  auto it_pts = points_tracked.cbegin();
+  for (auto it_id = ids.cbegin(); it_id != ids.cend(); ++it_id, ++it_pts) {
     // It doesn't matter here if these corners are init or not
     // AddFeatures will set all of them to false
-    corners2.emplace_back(*it_id, *it_pts, false);
+    corners_output.emplace_back(*it_id, *it_pts, false);
   }
 }
 
@@ -205,12 +216,19 @@ void StereoVo::AddKeyFrame(const Pose &pose, const CvStereoImage &stereo_image,
   TrackSpatial(stereo_image, corners);
 
   if (key_frames_.empty()) {
-    /// @todo: fix hacky initialization
-    double depth = 10;
-    // for (const std::pair<Feature::Id, Feature> &feat : features()) {
-    //   depth += feat.second.p_world().z;
-    // }
-    //      depth /= features.size();
+    //  first keyframe, calculate depth
+    double depth = 0;
+    
+    size_t count=0;
+    for (const Corner& corner : corners) {
+      auto ite = features_.find(corner.id());
+      if (ite != features_.end()) {
+        const Feature& feat = ite->second;
+        //depth += 
+        count++;
+      }
+    }
+    
     absolute_pose_.q = kr::quat<scalar_t>(0, 1, 0, 0);
     absolute_pose_.p = kr::vec3<scalar_t>(0, 0, depth);
   }

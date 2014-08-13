@@ -20,11 +20,15 @@ namespace stereo_vo {
 class NodeBase {
  public:
   using Id = uint64_t;
+  NodeBase() {}
   NodeBase(const Id id, double *ptr) : id_(id), ptr_(ptr) {}
 
   double *ptr() const { return ptr_; }
   const Id id() const { return id_; }
 
+  NodeBase(const NodeBase&) = default;
+  NodeBase& operator = (const NodeBase&) = default;
+  
  protected:
   Id id_;
   double *ptr_;
@@ -32,17 +36,25 @@ class NodeBase {
 
 class CameraNode : public NodeBase {
  public:
+  CameraNode() {}
   CameraNode(const Id id, double *ptr) : NodeBase(id, ptr) {}
   static const int kSize = 6;
+  
+  CameraNode(const CameraNode&) = default;
+  CameraNode& operator = (const CameraNode&) = default;
 };
 
 class Point3Node : public NodeBase {
  public:
+  Point3Node() {}
   Point3Node(const Id id, double *ptr, const bool locked)
       : NodeBase(id, ptr), locked_(locked) {}
   static const int kSize = 3;
   const bool locked() const { return locked_; }
 
+  Point3Node(const Point3Node&) = default;
+  Point3Node& operator = (const Point3Node&) = default;
+  
  private:
   bool locked_;
 };
@@ -94,6 +106,8 @@ class CeresBundler {
   ceres::Problem problem_;
   ceres::Solver::Options options_;
 
+  std::map<Feature::Id, Feature> temp_;
+  
   image_geometry::StereoCameraModel model_;
 
   size_t win_size_;  //  size of the window in # of keyframes

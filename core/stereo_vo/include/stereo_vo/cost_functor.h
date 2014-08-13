@@ -22,7 +22,7 @@ struct ReprojectionError {
   bool operator()(const T* const camera, const T* const point3,
                   T* residuals) const {
     // camera[0,1,2] are the angle-axis rotation.
-    T p[3];
+    /*T p[3];
     // Rotates point from world frame to camera frame
     ceres::AngleAxisRotatePoint(camera, point3, p);
     // camera[3,4,5] are the translation.
@@ -40,7 +40,9 @@ struct ReprojectionError {
 
     // The error is the difference between the predicted and observed position.
     residuals[0] = predicted_x - T(x);
-    residuals[1] = predicted_y - T(y);
+    residuals[1] = predicted_y - T(y);*/
+    residuals[0] = T(0);
+    residuals[1] = T(0);
     return true;
   }
 
@@ -65,7 +67,7 @@ struct FixedReprojectionError {
   template <typename T>
   bool operator()(const T* const camera, T* residuals) const {
     // camera[0,1,2] are the angle-axis rotation.
-    T p[3];
+    /*T p[3];
     T p_world[3];
     p_world[0] = T(point3[0]);
     p_world[1] = T(point3[1]);
@@ -87,7 +89,9 @@ struct FixedReprojectionError {
 
     // The error is the difference between the predicted and observed position.
     residuals[0] = predicted_x - T(x);
-    residuals[1] = predicted_y - T(y);
+    residuals[1] = predicted_y - T(y);*/
+    residuals[0] = T(0);
+    residuals[1] = T(0);
     return true;
   }
 

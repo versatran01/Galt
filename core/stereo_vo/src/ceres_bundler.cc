@@ -24,57 +24,71 @@ void CeresBundler::CreateGraph(const std::deque<KeyFrame> &key_frames,
                                const std::map<Feature::Id, Feature> &features) {
   // Iterate through keyframe the first time to save camera poses
   NodeBase::Id cam_id = 0;
+  temp_ = features;
   // Iterate through key frame backwards to save camera pose and then through
   // features to save 3d points
-  auto itb_kf = key_frames.cend() - win_size_, ite_kf = key_frames.cend();
-  for (auto it_kf = itb_kf; it_kf != ite_kf; ++it_kf) {
-    const KeyFrame &key_frame = *it_kf;
+  //auto itb_kf = key_frames.cend() - win_size_, ite_kf = key_frames.cend();
+  //for (auto it_kf = itb_kf; it_kf != ite_kf; ++it_kf) {
+  for (size_t k = key_frames.size()-1; k >= key_frames.size()-win_size_; k--) {
+    const KeyFrame &key_frame = key_frames[k];
     // Add key frame pose to camera pose
     Eigen::AngleAxis<scalar_t> aa(key_frame.pose().q);
     const auto r_vec = aa.axis() * aa.angle();
     const auto t_vec = key_frame.pose().translation();
-    CameraNode c_node(cam_id, &*storage_.end());
     storage_.push_back(r_vec(0));
     storage_.push_back(r_vec(1));
     storage_.push_back(r_vec(2));
     storage_.push_back(t_vec(0));
     storage_.push_back(t_vec(1));
     storage_.push_back(t_vec(2));
+    
+    CameraNode c_node(cam_id, &storage_[storage_.size()-6]);
+    //ROS_INFO("cam: %f, %f, %f, %f, %f, %f",
+    //         c_node.ptr()[0], c_node.ptr()[1], c_node.ptr()[2], c_node.ptr()[3], c_node.ptr()[4], c_node.ptr()[5]);
     cameras_.emplace(cam_id, c_node);
-    cam_id++;
     // Now we iterate every observation in each key frame and add it to edges
     for (const Corner &corner : key_frame.corners()) {
       const Feature::Id feat_id = corner.id();
+      //ROS_INFO("%f, %f", corner.p_pixel().x, corner.p_pixel().y);
       edges_.emplace_back(cam_id, feat_id, corner.p_pixel().x, corner.p_pixel().y);
     }
+    cam_id++;    
   }
 
   for (const Feature::Id mut_id : mutables_) {
     auto ite_feat = features.find(mut_id);
     assert(ite_feat != features.end());
     const Feature& feature = ite_feat->second;
-    Point3Node p_node(mut_id, &*storage_.end(), false);
     storage_.push_back(feature.p_world().x);
     storage_.push_back(feature.p_world().y);
     storage_.push_back(feature.p_world().z);
-    point3s_.emplace(mut_id, p_node);
+    Point3Node p_node(mut_id, &storage_[storage_.size()-3], false);
+    ROS_WARN("mut (before): %f, %f, %f",p_node.ptr()[0],p_node.ptr()[1], p_node.ptr()[2]);
+    point3s_[mut_id] = p_node;
+    
+    Point3Node junk = point3s_[mut_id];
+    ROS_WARN("mut (before): %f, %f, %f",junk.ptr()[0],junk.ptr()[1], junk.ptr()[2]);
   }
 
   for (const Feature::Id immut_id : immutables_) {
     auto ite_feat = features.find(immut_id);
     assert(ite_feat != features.end());
     const Feature& feature = ite_feat->second;
-    Point3Node p_node(immut_id, &*storage_.end(), true);
     fixed_.push_back(feature.p_world().x);
     fixed_.push_back(feature.p_world().y);
     fixed_.push_back(feature.p_world().z);
-    point3s_.emplace(immut_id, p_node);
+    Point3Node p_node(immut_id, &fixed_[fixed_.size()-3], true);
+    //ROS_WARN("immut (before): %f, %f, %f",p_node.ptr()[0],p_node.ptr()[1], p_node.ptr()[2]);
+    //point3s_.emplace(immut_id, p_node);
+    point3s_[immut_id] = p_node;
   }
   
   //  create residuals
   for (const Edge& edge : edges_) {
     AddResidualBlock(edge,model_.left());
   }
+  
+  assert(false);
 }
 
 void CeresBundler::NukeEverything(bool from_orbit) {
@@ -99,7 +113,6 @@ void CeresBundler::SplitFeatureIds(
     const bool in_window = (kf_count < win_size_);
     const KeyFrame &kf = *kfi;
 
-    bool features_found = false;
     for (const Corner &corner : kf.corners()) {
       if (in_window) {
         //  assume this is a mutable point, since it is in the window
@@ -110,16 +123,10 @@ void CeresBundler::SplitFeatureIds(
         if (ite != mutables_.end()) {
           mutables_.erase(ite);
           immutables_.insert(corner.id());
-          features_found = true;
         } else {
           //  do nothing, this corner is not useful to us
         }
       }
-    }
-
-    if (!features_found) {
-      //  no more features found in this keyframe, we can bail out early
-      break;
     }
 
     kf_count++;
@@ -133,8 +140,8 @@ void CeresBundler::AddResidualBlock(const Edge &edge,
   auto cam_ite = cameras_.find(edge.cam_id());
   auto point_ite = point3s_.find(edge.pt3_id());
 
-  ROS_ASSERT_MSG((cam_ite != cameras_.end()) && (point_ite != point3s_.end()),
-                 "Graph is malformed");
+  ROS_ASSERT_MSG(cam_ite != cameras_.end(),"Graph is malformed");
+  ROS_ASSERT_MSG(point_ite != point3s_.end(), "Graph is malformed");
 
   const CameraNode &cam = cam_ite->second;
   const Point3Node &point = point_ite->second;
@@ -143,15 +150,29 @@ void CeresBundler::AddResidualBlock(const Edge &edge,
   if (point.locked()) {
     //  this point appears in a previous frame, use fixed residual
     //  2 x 6 cost function
-    func =
-        FixedReprojectionError::Create(edge.x(), edge.y(), model, point.ptr());
+    //func =
+    //    FixedReprojectionError::Create(edge.x(), edge.y(), model, point.ptr());
 
-    problem_.AddResidualBlock(func, NULL, cam.ptr());
+    //ROS_INFO("point (locked): %f, %f, %f", point.ptr()[0],point.ptr()[1],point.ptr()[2]);
+    
+    auto feat_ite = temp_.find(point.id());
+    ROS_ASSERT_MSG(feat_ite != temp_.end(), "Derp!");
+    
+    Feature& feat = feat_ite->second;
+    
+    //ROS_INFO("Feature: %f, %f, %f", feat.p_world().x, feat.p_world().y, feat.p_world().z);
+    
+    ROS_ASSERT_MSG(cam.ptr() != NULL, "Pointer is missing");
+    //problem_.AddResidualBlock(func, NULL, cam.ptr());
   } else {
+    //ROS_INFO("point (unlocked): %f, %f, %f", point.ptr()[0],point.ptr()[1],point.ptr()[2]);
+    
     //  optimize the point also
     //  2 x (6+3) cost function
-    func = ReprojectionError::Create(edge.x(), edge.y(), model);
-    problem_.AddResidualBlock(func, NULL, cam.ptr(), point.ptr());
+    //func = ReprojectionError::Create(edge.x(), edge.y(), model);
+    ROS_ASSERT_MSG(cam.ptr() != NULL, "Pointer is missing");
+    ROS_ASSERT_MSG(point.ptr() != NULL, "Pointer is missing");
+    //problem_.AddResidualBlock(func, NULL, cam.ptr(), point.ptr());
   }
 }
 
@@ -165,10 +186,10 @@ void CeresBundler::SolveProblem() {
   options_.gradient_tolerance = 1e-16;
   options_.function_tolerance = 1e-12;
   options_.use_inner_iterations = false;
-  options_.linear_solver_type = ceres::SPARSE_SCHUR;
+  options_.linear_solver_type = ceres::SPARSE_NORMAL_CHOLESKY;
   options_.preconditioner_type = ceres::JACOBI;
   options_.visibility_clustering_type = ceres::CANONICAL_VIEWS;
-  options_.sparse_linear_algebra_library_type = ceres::EIGEN_SPARSE;
+  //options_.sparse_linear_algebra_library_type = ceres::EIGEN_SPARSE;
 
   ceres::Solver::Summary summary;
   ceres::Solve(options_, &problem_, &summary);

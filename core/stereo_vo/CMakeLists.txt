@@ -43,7 +43,7 @@ include_directories(
 
 add_library(${PROJECT_NAME}
     src/stereo_vo.cc
-    src/feature_detector.cc
+    src/corner_detector.cc
     src/utils.cc
 #    src/ceres_bundler.cc
 )

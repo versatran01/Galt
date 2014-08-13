@@ -176,7 +176,7 @@ void StereoVo::AddKeyFrame(const Pose &pose, const CvStereoImage &stereo_image,
     // Add new corners to current corners
     // After this, we will have two types of corner in corners
     // One is tracked from previous key frame, the other is newly added
-    detector_.AddFeatures(stereo_image.first, corners);
+    detector_.AddCorners(stereo_image.first, corners);
     // Track corners from left image to right image and triangulate them
     // We will remove corners that are lost during tracking and have bad
     // triangulation score. Observations will be created based on the corners left
@@ -202,7 +202,7 @@ void StereoVo::TrackSpatial(const CvStereoImage &stereo_image,
   /// @todo: this also needs to be changed
   std::vector<CvPoint2> points1, points2;
   std::vector<uchar> status;
-  for (const auto &c : corners) points1.push_back(c.p_pixel());
+  for (const Corner &c : corners) points1.push_back(c.p_pixel());
   // LK tracker
   OpticalFlow(stereo_image.first, stereo_image.second, points1, points2,
               status);

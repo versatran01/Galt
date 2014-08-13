@@ -4,7 +4,7 @@
 #include "stereo_vo/common.h"
 #include "stereo_vo/key_frame.h"
 #include "stereo_vo/feature.h"
-#include "stereo_vo/feature_detector.h"
+#include "stereo_vo/corner_detector.h"
 
 #include <vector>
 #include <memory>
@@ -26,8 +26,8 @@ class StereoVo {
  public:
   StereoVo(const StereoVoConfig &config)
       : config_(config),
-        detector_(config.shi_max_corners, config.shi_quality_level,
-                  config.shi_min_distance) {}
+        detector_(config.cell_size, config.shi_max_corners,
+                  config.shi_quality_level, config.shi_min_distance) {}
 
   const bool init() const { return init_; }
   const std::map<Feature::Id, Feature> features() const { return features_; }
@@ -76,7 +76,7 @@ class StereoVo {
   StereoVoConfig config_;
 
   Pose absolute_pose_;
-  GlobalFeatureDetector detector_;
+  GoodFeatureDetector detector_;
   std::vector<Corner> corners_;
   std::deque<KeyFrame> key_frames_;
   std::map<Feature::Id, Feature> features_;

@@ -33,7 +33,7 @@ void StereoVo::Initialize(const CvStereoImage &stereo_image,
   // estimated depth to reinitialize a new pose. Later will be replaced with
   // estimates of other sensors.
   std::vector<Corner> tracked_corners;
-  AddKeyFrame(absolute_pose(), stereo_image, tracked_corners);
+  AddKeyFrame(stereo_image, tracked_corners);
 
   // Save stereo image and tracked corners for next iteration
   stereo_image_prev_ = stereo_image;
@@ -58,7 +58,7 @@ void StereoVo::Iterate(const CvStereoImage &stereo_image) {
   // Estimate pose using 2D-to-3D correspondences
   // 2D - currently tracked corners
   // 3D - features in last key frame
-  absolute_pose_ = EstimatePose();
+  relative_pose_ = EstimatePose();
 
   // Check whether to add key frame based on the following criteria
   // 1. Movement exceeds config_.kf_dist_thresh
@@ -67,7 +67,7 @@ void StereoVo::Iterate(const CvStereoImage &stereo_image) {
   // After this step, tracked_corners will contain both old corners and newly
   // added corners
   if (ShouldAddKeyFrame(tracked_corners.size())) {
-    AddKeyFrame(absolute_pose(), stereo_image, tracked_corners);
+    AddKeyFrame(stereo_image, tracked_corners);
   }
 
   // Do a windowed optimization if window size is reached
@@ -143,7 +143,7 @@ Pose StereoVo::EstimatePose() {
     if (it != features_.end()) {
       const Feature &feat = it->second;
       imagePoints.push_back(corner.p_pixel());
-      worldPoints.push_back(feat.p_world());
+      worldPoints.push_back(feat.p_cam());
     }
   }
 
@@ -174,8 +174,7 @@ bool StereoVo::ShouldAddKeyFrame(size_t num_corners) const {
     return true;
   }
 
-  const KeyFrame &kf_prev = key_frames_.back();
-  const Pose diff = absolute_pose().difference(kf_prev.pose());
+  const Pose& diff = relative_pose();
   if (diff.p.norm() > config_.kf_dist_thresh) {
     ROS_INFO("Distance: %f", diff.p.norm());
     //  over distance threshold, add keyframe
@@ -200,7 +199,7 @@ bool StereoVo::ShouldAddKeyFrame(size_t num_corners) const {
   return false;
 }
 
-void StereoVo::AddKeyFrame(const Pose &pose, const CvStereoImage &stereo_image,
+void StereoVo::AddKeyFrame(const CvStereoImage &stereo_image,
                            std::vector<Corner> &corners) {
   /// @todo: create observations and add to key frame
   // Detect new corners based on distribution/number of current corners
@@ -216,42 +215,50 @@ void StereoVo::AddKeyFrame(const Pose &pose, const CvStereoImage &stereo_image,
 
   if (key_frames_.empty()) {
     //  make up a pose that looks pretty
-    absolute_pose_.q = kr::quat<scalar_t>(0, 1, 0, 0);
-    absolute_pose_.p = kr::vec3<scalar_t>(0, 0, 10);
+    relative_pose_.q = kr::quat<scalar_t>(0, 1, 0, 0);
+    relative_pose_.p = kr::vec3<scalar_t>(0, 0, 10);
   }
 
-  // Triangulate will change both new_corners and features based on the
-  // triangulation results
-  Triangulate(absolute_pose_, new_corners, right_points);
+  // Retriangulate in current pose
+  Triangulate(new_corners, right_points);
   // Add new corners to corners
   corners.insert(corners.end(), new_corners.begin(), new_corners.end());
 
   // Add key frame to queue with current_pose, features and stereo_image
-  key_frames_.emplace_back(pose, corners, stereo_image);
+  key_frames_.emplace_back(relative_pose(), corners, stereo_image);
 }
 
-void StereoVo::Triangulate(const Pose &pose, std::vector<Corner> &corners,
+void StereoVo::Triangulate(std::vector<Corner> &corners,
                            std::vector<CvPoint2> &points) {
 
   auto ite_p = points.begin();
   for (auto ite_corner = corners.begin(); ite_corner != corners.end();) {
-    const Feature::Id &id = ite_corner->id();
-    if (features_.find(id) == features_.end()) {
-      //  insert a new feature here
-      CvPoint3 p3D;
-      const bool tri =
-          TriangulatePoint(pose, ite_corner->p_pixel(), *ite_p, p3D);
-      if (!tri) {
-        //  failed
-        ite_corner = corners.erase(ite_corner);
-        ite_p = points.erase(ite_p);
-      } else {
-        //  add to map
+    
+    //  re-triangulate
+    CvPoint3 p3D;
+    const bool tri =
+        TriangulatePoint(ite_corner->p_pixel(), *ite_p, p3D);
+    if (!tri) {
+      //  failed erase from corners
+      /// @todo: Should we actually erase here?
+      ite_corner = corners.erase(ite_corner);
+      ite_p = points.erase(ite_p);
+    } else {
+      //  retrieve feature from map
+      const Feature::Id &id = ite_corner->id();
+      auto feat_ite = features_.find(id);
+      if (feat_ite == features_.end()) {
+        //  does not exist, add to map
         Feature feat(id, p3D);
         features_[id] = feat;
-        ite_corner++;
-        ite_p++;
+      } else {
+        //  already in map, update coordinate
+        Feature& feat = *feat_ite;
+        feat.set_p_cam(p3D);
       }
+      
+      ite_corner++;
+      ite_p++;
     }
   }
 }
@@ -301,7 +308,7 @@ void StereoVo::OpticalFlow(const cv::Mat &image1, const cv::Mat &image2,
                            max_level, term_criteria);
 }
 
-bool StereoVo::TriangulatePoint(const Pose &pose, const CvPoint2 &left,
+bool StereoVo::TriangulatePoint(const CvPoint2 &left,
                                 const CvPoint2 &right, CvPoint3 &output) {
   //  camera model
   const scalar_t lfx = model_.left().fx(), lfy = model_.left().fy();
@@ -333,9 +340,6 @@ bool StereoVo::TriangulatePoint(const Pose &pose, const CvPoint2 &left,
   if (!kr::refinePoint(poses, obvs, p3D)) {
     return false;
   }
-
-  //  correct with pose
-  p3D = pose.q.conjugate().matrix() * p3D + pose.p;
 
   output.x = p3D[0];
   output.y = p3D[1];

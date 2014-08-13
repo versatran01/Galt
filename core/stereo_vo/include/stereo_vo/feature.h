@@ -40,15 +40,15 @@ class Feature {
   using Id = uint64_t;
 
   Feature() = default;
-  Feature(Feature::Id id, const CvPoint3& p_world)
-      : id_(id), p_world_(p_world) {}
+  Feature(Feature::Id id, const CvPoint3& p_cam)
+      : id_(id), p_cam_(p_cam) {}
 
-  const CvPoint3& p_world() const { return p_world_; }
-  void set_p_world(const CvPoint3& p_world) { p_world_ = p_world; }
+  const CvPoint3& p_cam() const { return p_cam_; }
+  void set_p_cam(const CvPoint3& p_cam) { p_cam_ = p_cam; }
 
  private:
   Id id_;
-  CvPoint3 p_world_;
+  CvPoint3 p_cam_;
 };
 
 //class Observation {

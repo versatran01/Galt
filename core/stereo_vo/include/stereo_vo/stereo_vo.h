@@ -36,7 +36,7 @@ class StereoVo {
    * @brief Pose with respect to the world frame.
    * @return kr::Pose
    */
-  const Pose &absolute_pose() const { return absolute_pose_; }
+  const Pose &relative_pose() const { return relative_pose_; }
   const std::vector<Corner> &corners() const { return corners_; }
   const std::deque<KeyFrame> &key_frames() const { return key_frames_; }
 
@@ -79,7 +79,7 @@ class StereoVo {
   StereoCameraModel model_;
   StereoVoConfig config_;
 
-  Pose absolute_pose_;
+  Pose relative_pose_;
   GoodFeatureDetector detector_;
   std::vector<Corner> corners_;
   std::deque<KeyFrame> key_frames_;

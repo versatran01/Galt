@@ -37,32 +37,33 @@ class Corner {
 
 class Feature {
  public:
-  typedef uint64_t Id;
-  
+  using Id = uint64_t;
+
   Feature() = default;
+  Feature(Feature::Id id, const CvPoint3& p_world)
+      : id_(id), p_world_(p_world) {}
 
   const CvPoint3& p_world() const { return p_world_; }
   void set_p_world(const CvPoint3& p_world) { p_world_ = p_world; }
-  
+
  private:
   Id id_;
   CvPoint3 p_world_;
 };
 
-class Observation {
-public:
-  Observation(Feature::Id feature_id) :
-    feature_id_(feature_id) {}
-  
-  const CvPoint2& p_pixel_left() const { return p_pixel_left_; }
-  void set_p_pixel_left(const CvPoint2& p_pixel_left) {
-    p_pixel_left_ = p_pixel_left;
-  }
-  
-private:
-  Feature::Id feature_id_;
-  CvPoint2 p_pixel_left_;
-};
+//class Observation {
+// public:
+//  Observation() = default;
+//  Observation(Feature::Id id, const CvPoint2& p_pixel)
+//      : id_(id), p_pixel_(p_pixel) {}
+
+//  const CvPoint2& p_pixel() const { return p_pixel_; }
+//  void set_p_pixel(const CvPoint2& p_pixel) { p_pixel_ = p_pixel; }
+
+// private:
+//  Feature::Id id_;
+//  CvPoint2 p_pixel_;
+//};
 
 }  // namespace stereo_vo
 

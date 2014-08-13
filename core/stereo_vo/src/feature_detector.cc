@@ -65,6 +65,12 @@ void GoodFeatureDetector::DetectCorners(
                           min_distance_);
 }
 
+cv::Mat GlobalFeatureDetector::CreateMask(const cv::Mat &image,
+                                          const std::vector<Corner> &corners) {
+  /// @todo: Create a mask that has no corners in it
+  return image;  // so that it compiles
+}
+
 void GlobalFeatureDetector::AddFeatures(const cv::Mat &image,
                                         std::vector<Corner> &corners) {
 
@@ -72,7 +78,9 @@ void GlobalFeatureDetector::AddFeatures(const cv::Mat &image,
   for (Corner &corner : corners) corner.set_init(false);
 
   std::vector<CvPoint2> points;
-  cv::goodFeaturesToTrack(image, points, max_corners_ - corners.size(),
+  /// @todo: Mask the image here, only detect features that are
+  cv::Mat masked_image = CreateMask(image, corners);
+  cv::goodFeaturesToTrack(masked_image, points, max_corners_ - corners.size(),
                           quality_level_, min_distance_);
 
   for (CvPoint2 &point : points) {

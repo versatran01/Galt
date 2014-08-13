@@ -30,12 +30,7 @@ class StereoVo {
                   config.shi_min_distance) {}
 
   const bool init() const { return init_; }
-
-  /**
-   * @brief Pose with respect to the last recorded keyframe.
-   * @return kr::Pose
-   */
-  const Pose &relative_pose() const { return relative_pose_; }
+  const std::map<Feature::Id, Feature> features() const { return features_; }
 
   /**
    * @brief Pose with respect to the world frame.
@@ -54,8 +49,7 @@ class StereoVo {
   void AddKeyFrame(const Pose &pose, const CvStereoImage &stereo_image,
                    std::vector<Corner> &corners);
   void TrackSpatial(const CvStereoImage &stereo_image,
-                    std::vector<Corner> &corners,
-                    std::map<Feature::Id, Feature> &features);
+                    std::vector<Corner> &corners);
   void TrackTemporal(const cv::Mat &image_prev, const cv::Mat &image,
                      const std::vector<Corner> &corners1,
                      std::vector<Corner> &corners2, KeyFrame &key_frame);
@@ -63,7 +57,7 @@ class StereoVo {
   void OpticalFlow(const cv::Mat &image1, const cv::Mat &image2,
                    const std::vector<CvPoint2> &points1,
                    std::vector<CvPoint2> &points2, std::vector<uchar> &status);
-  
+
   /**
    * @brief TriangulatePoint
    * @param left Left observation in pixels.
@@ -72,16 +66,15 @@ class StereoVo {
    * @return False if the triangulation is poor and the feature should be
    * rejected.
    */
-  bool TriangulatePoint(const CvPoint2& left,
-                        const CvPoint2& right,
-                        CvPoint3& output);
-  
+  bool TriangulatePoint(const CvPoint2 &left, const CvPoint2 &right,
+                        CvPoint3 &output);
+
   KeyFrame &key_frame_prev() { return key_frames_.back(); }
+
   bool init_{false};
   StereoCameraModel model_;
   StereoVoConfig config_;
 
-  Pose relative_pose_;
   Pose absolute_pose_;
   GlobalFeatureDetector detector_;
   std::vector<Corner> corners_;

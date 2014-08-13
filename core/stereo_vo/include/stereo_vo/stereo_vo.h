@@ -46,6 +46,7 @@ class StereoVo {
   void UpdateConfig(const StereoVoConfig &config) { config_ = config; }
 
  private:
+  bool ShouldAddKeyFrame() const;
   void AddKeyFrame(const Pose &pose, const CvStereoImage &stereo_image,
                    std::vector<Corner> &corners);
   void TrackSpatial(const CvStereoImage &stereo_image,

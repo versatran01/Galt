@@ -18,7 +18,8 @@
     <arg name="klt_max_level" default="3"/>
     <arg name="klt_win_size" default="13"/>
 
-    <arg name="kf_dist" value="3"/>
+    <arg name="kf_dist_thresh" value="3"/>
+    <arg name="kf_yaw_thresh" value="45"/>
     <arg name="kf_size" value="4"/>
     <arg name="kf_min_filled" value="0.5"/>
 
@@ -45,7 +46,8 @@
         <param name="klt_max_level" value="$(arg klt_max_level)"/>
         <param name="klt_win_size" value="$(arg klt_win_size)"/>
 
-        <param name="kf_dist" value="$(arg kf_dist)"/>
+        <param name="kf_dist_thresh" value="$(arg kf_dist_thresh)"/>
+        <param name="kf_yaw_thresh" value="$(arg kf_yaw_thresh)"/>
         <param name="kf_size" value="$(arg kf_size)"/>
         <param name="kf_min_filled" value="$(arg kf_min_filled)"/>
 

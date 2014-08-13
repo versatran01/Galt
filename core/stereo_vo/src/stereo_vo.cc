@@ -61,11 +61,14 @@ void StereoVo::Iterate(const CvStereoImage &stereo_image) {
   absolute_pose_ = EstimatePose();
 
   // Check whether to add key frame based on the following criteria
-  // 1. Camera has moved some distance away from the last key frame pose
-  // 2. The percentage of cells with corners is below some threshold
+  // 1. Movement exceeds config_.kf_dist_thresh
+  // 2. Yaw angle exceeds config_.kf_yaw_thresh
+  // 3. Number of features falls below threshold (see ShouldAddKeyFrame)
   // After this step, tracked_corners will contain both old corners and newly
   // added corners
-  AddKeyFrame(absolute_pose(), stereo_image, tracked_corners);
+  if (ShouldAddKeyFrame(tracked_corners.size())) {
+    AddKeyFrame(absolute_pose(), stereo_image, tracked_corners);
+  }
 
   // Do a windowed optimization if window size is reached
   if (key_frames_.size() > static_cast<unsigned>(config_.kf_size)) {
@@ -160,41 +163,59 @@ Pose StereoVo::EstimatePose() {
   return Pose::fromVectors(r, t);
 }
 
+bool StereoVo::ShouldAddKeyFrame(size_t num_corners) const {
+  //  no keyframes, add one
+  if (key_frames_.empty()) {
+    return true;
+  }
+  
+  const KeyFrame& kf_prev = key_frames_.back();
+  const Pose diff = absolute_pose().difference(kf_prev.pose());
+  if (diff.p.norm() > config_.kf_dist_thresh) {
+    //  over distance threshold, add keyframe
+    return true;
+  }
+  
+  const kr::vec3<scalar_t>& angles = kr::getRPY(diff.q.matrix());
+  if (std::abs(angles[2]*180/M_PI) > config_.kf_yaw_thresh) {
+    //  over yaw angle threshold, add keyframe
+    return true;
+  }
+  
+  const size_t min_corners = 
+      std::ceil(config_.kf_min_filled * config_.shi_max_corners);
+  if (num_corners < min_corners) {
+    //  insufficent features, add keyframe with new ones
+    return true;
+  }
+  
+  return false;
+}
+
 void StereoVo::AddKeyFrame(const Pose &pose, const CvStereoImage &stereo_image,
                            std::vector<Corner> &corners) {
-  // TODO: Calculate relative pose
-  auto relative_pose = absolute_pose();
-  const auto dist = relative_pose.p.norm();
-  const auto angles = kr::getRPY(relative_pose.q.matrix());
-  const auto yaw = angles[2];
-  // const auto filled = detector_.GridFilled(stereo_image.first, corners);
-  // Check distance and feature distribution metric
-  if ((dist > config_.kf_dist) ||
-      (corners.size() < config_.kf_min_filled * config_.shi_max_corners) ||
-      (std::abs(yaw) > 45.0 / 180 * M_PI)) {
-    /// @todo: create observations and add to key frame
-    // Add new corners to current corners
-    // After this, we will have two types of corner in corners
-    // One is tracked from previous key frame, the other is newly added
-    detector_.AddFeatures(stereo_image.first, corners);
-    // Track corners from left image to right image and triangulate them
-    // We will remove corners that are lost during tracking and have bad
-    // triangulation score. Observations will be created based on the corners left
-    TrackSpatial(stereo_image, corners);
+  /// @todo: create observations and add to key frame
+  // Add new corners to current corners
+  // After this, we will have two types of corner in corners
+  // One is tracked from previous key frame, the other is newly added
+  detector_.AddFeatures(stereo_image.first, corners);
+  // Track corners from left image to right image and triangulate them
+  // We will remove corners that are lost during tracking and have bad
+  // triangulation score. Observations will be created based on the corners left
+  TrackSpatial(stereo_image, corners);
 
-    if (key_frames_.empty()) {
-      /// @todo: fix hacky initialization
-      double depth = 10;
-      // for (const std::pair<Feature::Id, Feature> &feat : features()) {
-      //   depth += feat.second.p_world().z;
-      // }
-      //      depth /= features.size();
-      absolute_pose_.q = kr::quat<scalar_t>(0, 1, 0, 0);
-      absolute_pose_.p = kr::vec3<scalar_t>(0, 0, depth);
-    }
-    // Add key frame to queue with current_pose, features and stereo_image
-    key_frames_.emplace_back(pose, corners, stereo_image);
+  if (key_frames_.empty()) {
+    /// @todo: fix hacky initialization
+    double depth = 10;
+    // for (const std::pair<Feature::Id, Feature> &feat : features()) {
+    //   depth += feat.second.p_world().z;
+    // }
+    //      depth /= features.size();
+    absolute_pose_.q = kr::quat<scalar_t>(0, 1, 0, 0);
+    absolute_pose_.p = kr::vec3<scalar_t>(0, 0, depth);
   }
+  // Add key frame to queue with current_pose, features and stereo_image
+  key_frames_.emplace_back(pose, corners, stereo_image);
 }
 
 void StereoVo::TrackSpatial(const CvStereoImage &stereo_image,

@@ -72,6 +72,7 @@ class StereoVoNode {
                           const ros::Time& time,
                           const std::string& frame_id) const;
   void PublishPointCloud(const std::map<Feature::Id, Feature>& features,
+                         const std::vector<Corner>& corners,
                          const ros::Time& time,
                          const std::string& frame_id) const;
   void PublishTrajectory(const geometry_msgs::Pose& pose, const ros::Time& time,

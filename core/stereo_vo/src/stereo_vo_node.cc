@@ -115,13 +115,16 @@ void StereoVoNode::StereoCallback(const ImageConstPtr& l_image_msg,
   auto camera_pose = KrPoseToRosPose(stereo_vo_.absolute_pose());
 
   // Publish PointCloud from keyframe pose and features
-  PublishPointCloud(stereo_vo_.features(), l_image_msg->header.stamp, "0");
+  PublishPointCloud(stereo_vo_.features(), stereo_vo_.corners(),
+                    l_image_msg->header.stamp, "0");
   PublishPoseStamped(camera_pose, l_image_msg->header.stamp, "0");
   PublishTrajectory(camera_pose, l_image_msg->header.stamp, "0");
 }
 
 void StereoVoNode::PublishPointCloud(
-    const std::map<Feature::Id, Feature>& features, const ros::Time& time,
+    const std::map<Feature::Id, Feature>& features, 
+    const std::vector<Corner> &corners, 
+    const ros::Time& time,
     const std::string& frame_id) const {
   
   sensor_msgs::PointCloud cloud;
@@ -141,6 +144,13 @@ void StereoVoNode::PublishPointCloud(
   color.rgb[2] = 0;
   color.rgb[3] = 0;
 
+  for (const Corner& corner : corners) {
+    
+    const auto& id = corner.id();
+    
+    
+  }
+  
   for (const auto& feat : features) {
     const Feature& feature = feat.second;
 

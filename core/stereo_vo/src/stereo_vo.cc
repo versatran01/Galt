@@ -108,8 +108,7 @@ void StereoVo::TrackTemporal(const cv::Mat &image_prev, const cv::Mat &image,
   status.clear();
 
   // Find fundamental matrix to reject outliers in tracking
-  cv::findFundamentalMat(points_in, points_tracked, cv::FM_RANSAC, 1.5, 0.99,
-                         status);
+  FindFundamentalMat(points_in, points_tracked, status);
   PruneByStatus(status, ids, ids_to_remove);
   PruneByStatus(status, points_tracked);
 
@@ -159,7 +158,6 @@ Pose StereoVo::EstimatePose() {
                      model_.left().fullIntrinsicMatrix(), std::vector<double>(),
                      rvec, tvec, false, 100, config_.pnp_ransac_error,
                      minInliers, inliers, cv::ITERATIVE);
-
   kr::vec3<scalar_t> r(rvec.at<double>(0, 0), rvec.at<double>(1, 0),
                        rvec.at<double>(2, 0));
   kr::vec3<scalar_t> t(tvec.at<double>(0, 0), tvec.at<double>(1, 0),
@@ -174,18 +172,18 @@ bool StereoVo::ShouldAddKeyFrame(size_t num_corners) const {
     return true;
   }
 
-  const KeyFrame &kf_prev = key_frames_.back();
-  const Pose diff = absolute_pose().difference(kf_prev.pose());
-  if (diff.p.norm() > config_.kf_dist_thresh) {
-    //  over distance threshold, add keyframe
-    return true;
-  }
+  //  const KeyFrame &kf_prev = key_frames_.back();
+  //  const Pose diff = absolute_pose().difference(kf_prev.pose());
+  //  if (diff.p.norm() > config_.kf_dist_thresh) {
+  //    //  over distance threshold, add keyframe
+  //    return true;
+  //  }
 
-  const kr::vec3<scalar_t> &angles = kr::getRPY(diff.q.matrix());
-  if (std::abs(angles[2] * 180 / M_PI) > config_.kf_yaw_thresh) {
-    //  over yaw angle threshold, add keyframe
-    return true;
-  }
+  //  const kr::vec3<scalar_t> &angles = kr::getRPY(diff.q.matrix());
+  //  if (std::abs(angles[2] * 180 / M_PI) > config_.kf_yaw_thresh) {
+  //    //  over yaw angle threshold, add keyframe
+  //    return true;
+  //  }
 
   const size_t min_corners =
       std::ceil(config_.kf_min_filled * config_.shi_max_corners);
@@ -204,7 +202,6 @@ void StereoVo::AddKeyFrame(const Pose &pose, const CvStereoImage &stereo_image,
   // Mark current corners as old corners
   std::vector<Corner> new_corners;
   detector_.AddCorners(stereo_image.first, corners, new_corners);
-  ROS_INFO("new corners: %d", int(new_corners.size()));
   // Track new corners from left image to right image and return corresponding
   // points on the right image. Corners will be removed from new corners if they
   // are lost during tracking
@@ -268,7 +265,7 @@ void StereoVo::TrackSpatial(const CvStereoImage &stereo_image,
   PruneByStatus(status, corners);
   status.clear();
   // Find fundamental matrix
-  cv::findFundamentalMat(l_points, r_points, cv::FM_RANSAC, 1.5, 0.99, status);
+  FindFundamentalMat(l_points, r_points, status);
   PruneByStatus(status, r_points);
   PruneByStatus(status, corners);
   // Verify that outputs have the same size
@@ -283,10 +280,16 @@ void StereoVo::OpticalFlow(const cv::Mat &image1, const cv::Mat &image2,
   int win_size = config_.klt_win_size;
   int max_level = config_.klt_max_level;
   static cv::TermCriteria term_criteria(
-      cv::TermCriteria::COUNT + cv::TermCriteria::EPS, 25, 0.01);
+      cv::TermCriteria::COUNT + cv::TermCriteria::EPS, 25, 0.005);
   cv::calcOpticalFlowPyrLK(image1, image2, points1, points2, status,
                            cv::noArray(), cv::Size(win_size, win_size),
                            max_level, term_criteria);
+}
+
+void StereoVo::FindFundamentalMat(const std::vector<CvPoint2> &points1,
+                                  const std::vector<CvPoint2> &points2,
+                                  std::vector<uchar> &status) {
+  cv::findFundamentalMat(points1, points2, cv::FM_RANSAC, 1, 0.99, status);
 }
 
 bool StereoVo::TriangulatePoint(const Pose &pose, const CvPoint2 &left,

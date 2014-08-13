@@ -58,8 +58,6 @@ void GridDetectorBase::AddCorners(const cv::Mat &image,
   const Grid grid = CreateGrid(corners);
   // Initialize a mask
   const cv::Mat mask = CreateMask(image, grid);
-  cv::imshow("mask", mask);
-  cv::waitKey(1);
   // Detect corners only in mask
   std::vector<CvPoint2> points;
   DetectPoints(image, mask, corners.size(), points);
@@ -85,8 +83,9 @@ void GlobalCornerDetector::AddCorners(const cv::Mat &image,
   for (Corner &corner : corners) corner.set_init(false);
 
   std::vector<CvPoint2> points;
-  cv::goodFeaturesToTrack(image, points, max_corners_ - corners.size(),
-                          quality_level_, min_distance_);
+  auto num_corners = max_corners_ - corners.size();
+  cv::goodFeaturesToTrack(image, points, num_corners, quality_level_,
+                          min_distance_);
 
   for (const CvPoint2 &point : points) {
     new_corners.emplace_back(cnt_++, point, true);

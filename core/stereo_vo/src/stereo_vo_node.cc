@@ -112,17 +112,18 @@ void StereoVoNode::StereoCallback(const ImageConstPtr& l_image_msg,
   }
 
   stereo_vo_.Iterate(stereo_image);
-  auto current_pose = KrPoseToRosPose(stereo_vo_.absolute_pose());
+  auto camera_pose = KrPoseToRosPose(stereo_vo_.absolute_pose());
 
   // Publish PointCloud from keyframe pose and features
-  PublishPointCloud(stereo_vo_.key_frames(), l_image_msg->header.stamp, "0");
-  PublishPoseStamped(current_pose, l_image_msg->header.stamp, "0");
-  PublishTrajectory(current_pose, l_image_msg->header.stamp, "0");
+  PublishPointCloud(stereo_vo_.features(), l_image_msg->header.stamp, "0");
+  PublishPoseStamped(camera_pose, l_image_msg->header.stamp, "0");
+  PublishTrajectory(camera_pose, l_image_msg->header.stamp, "0");
 }
 
-void StereoVoNode::PublishPointCloud(const std::deque<KeyFrame>& key_frames,
-                                     const ros::Time& time,
-                                     const std::string& frame_id) const {
+void StereoVoNode::PublishPointCloud(
+    const std::map<Feature::Id, Feature>& features, const ros::Time& time,
+    const std::string& frame_id) const {
+  /*
   sensor_msgs::PointCloud cloud;
   sensor_msgs::ChannelFloat32 channel;
   channel.name = "rgb";
@@ -162,6 +163,7 @@ void StereoVoNode::PublishPointCloud(const std::deque<KeyFrame>& key_frames,
   cloud.header.stamp = time;
   cloud.header.frame_id = frame_id;
   points_pub_.publish(cloud);
+  */
 }
 
 void StereoVoNode::PublishPoseStamped(const geometry_msgs::Pose& pose,

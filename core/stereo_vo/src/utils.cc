@@ -11,6 +11,8 @@ namespace stereo_vo {
 
 void Display(const CvStereoImage &stereo_image,
              const std::vector<Corner> &corners, const KeyFrame &key_frame) {
+  /// @todo: change this as well
+  /*
   auto &l_image = stereo_image.first;
   auto &r_image = stereo_image.second;
   auto &l_image_prev = key_frame.l_image();
@@ -83,6 +85,7 @@ void Display(const CvStereoImage &stereo_image,
   // Display image
   cv::imshow("display", display);
   cv::waitKey(1);
+  */
 }
 
 }  // namespace stereo_vo

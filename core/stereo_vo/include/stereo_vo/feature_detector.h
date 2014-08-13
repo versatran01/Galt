@@ -67,6 +67,7 @@ class GlobalFeatureDetector : public FeatureDetectorBase {
   void AddFeatures(const cv::Mat& image, std::vector<Corner>& corners);
 
  private:
+  cv::Mat CreateMask(const cv::Mat& image, const std::vector<Corner>& corners);
   int max_corners_;
   double quality_level_;
   double min_distance_;

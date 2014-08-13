@@ -33,14 +33,14 @@ void StereoVo::Initialize(const CvStereoImage &stereo_image,
   // estimated depth to reinitialize current_pose. Later will be replaced with
   // estimates of other sensors.
   std::vector<Corner> tracked_corners;
-  AddKeyFrame(relative_pose(), stereo_image, tracked_corners);
+  AddKeyFrame(absolute_pose(), stereo_image, tracked_corners);
 
   // Save stereo image and tracked corners for next iteration
   stereo_image_prev_ = stereo_image;
   corners_ = tracked_corners;
 
   // Create a window for display
-  // TODO: replace this with published topic later
+  /// @todo: replace this with published topic later
   cv::namedWindow("display",
                   CV_WINDOW_NORMAL | CV_WINDOW_KEEPRATIO | CV_GUI_EXPANDED);
   init_ = true;
@@ -58,15 +58,14 @@ void StereoVo::Iterate(const CvStereoImage &stereo_image) {
   // Estimate pose using 2D-to-3D correspondences
   // 2D - currently tracked corners
   // 3D - features in last key frame
-  relative_pose_ = EstimatePose();
-  absolute_pose_ = key_frame_prev().pose().compose(relative_pose_);
+  absolute_pose_ = EstimatePose();
 
   // Check whether to add key frame based on the following criteria
   // 1. Camera has moved some distance away from the last key frame pose
   // 2. The percentage of cells with corners is below some threshold
   // After this step, tracked_corners will contain both old corners and newly
   // added corners
-  AddKeyFrame(absolute_pose_, stereo_image, tracked_corners);
+  AddKeyFrame(absolute_pose(), stereo_image, tracked_corners);
 
   // Do a windowed optimization if window size is reached
   if (key_frames_.size() > static_cast<unsigned>(config_.kf_size)) {
@@ -88,6 +87,7 @@ void StereoVo::TrackTemporal(const cv::Mat &image_prev, const cv::Mat &image,
                              const std::vector<Corner> &corners1,
                              std::vector<Corner> &corners2,
                              KeyFrame &key_frame) {
+  /// @todo: change this so that it only remove corners from key frame
   std::vector<CvPoint2> points1, points2;
   std::vector<uchar> status;
   std::vector<Feature::Id> ids, ids_to_remove;
@@ -109,7 +109,7 @@ void StereoVo::TrackTemporal(const cv::Mat &image_prev, const cv::Mat &image,
   PruneByStatus(status, points2);
   ROS_ASSERT_MSG(ids.size() == points2.size(), "Dimension mismatch");
   // Prune features in last key frame
-  key_frame.PruneById(ids_to_remove);
+//  key_frame.PruneById(ids_to_remove);
   // Reconstruct corners for later use
   auto it_id = ids.cbegin(), it_id_e = ids.cend();
   auto it_pts = points2.cbegin();
@@ -121,7 +121,7 @@ void StereoVo::TrackTemporal(const cv::Mat &image_prev, const cv::Mat &image,
 }
 
 Pose StereoVo::EstimatePose() {
-  const size_t N = key_frame_prev().features().size();
+  const size_t N = key_frame_prev().corners().size();
 
   std::vector<CvPoint2> imagePoints;
   std::vector<CvPoint3> worldPoints;
@@ -162,42 +162,44 @@ Pose StereoVo::EstimatePose() {
 
 void StereoVo::AddKeyFrame(const Pose &pose, const CvStereoImage &stereo_image,
                            std::vector<Corner> &corners) {
-  const auto dist = relative_pose().p.norm();
-  const auto angles = kr::getRPY(relative_pose().q.matrix());
+  // TODO: Calculate relative pose
+  auto relative_pose = absolute_pose();
+  const auto dist = relative_pose.p.norm();
+  const auto angles = kr::getRPY(relative_pose.q.matrix());
   const auto yaw = angles[2];
   // const auto filled = detector_.GridFilled(stereo_image.first, corners);
   // Check distance and feature distribution metric
   if ((dist > config_.kf_dist) ||
       (corners.size() < config_.kf_min_filled * config_.shi_max_corners) ||
       (std::abs(yaw) > 45.0 / 180 * M_PI)) {
-    std::map<Feature::Id, Feature> features;
+    /// @todo: create observations and add to key frame
     // Add new corners to current corners
     // After this, we will have two types of corner in corners
     // One is tracked from previous key frame, the other is newly added
     detector_.AddFeatures(stereo_image.first, corners);
     // Track corners from left image to right image and triangulate them
     // We will remove corners that are lost during tracking and have bad
-    // triangulation score. Features will be created based on the corners left
-    TrackSpatial(stereo_image, corners, features);
+    // triangulation score. Observations will be created based on the corners left
+    TrackSpatial(stereo_image, corners);
 
     if (key_frames_.empty()) {
-      //  some hacky initializing code just for better visualization
-      double depth = 0;
-      for (const std::pair<Feature::Id, Feature> &feat : features) {
-        depth += feat.second.p_cam_left().z;
-      }
-      depth /= features.size();
-      relative_pose_.q = kr::quat<scalar_t>(0, 1, 0, 0);
-      relative_pose_.p = kr::vec3<scalar_t>(0, 0, depth);
+      /// @todo: fix hacky initialization
+      double depth = 10;
+      // for (const std::pair<Feature::Id, Feature> &feat : features()) {
+      //   depth += feat.second.p_world().z;
+      // }
+      //      depth /= features.size();
+      absolute_pose_.q = kr::quat<scalar_t>(0, 1, 0, 0);
+      absolute_pose_.p = kr::vec3<scalar_t>(0, 0, depth);
     }
     // Add key frame to queue with current_pose, features and stereo_image
-    key_frames_.emplace_back(pose, features, stereo_image);
+    key_frames_.emplace_back(pose, corners, stereo_image);
   }
 }
 
 void StereoVo::TrackSpatial(const CvStereoImage &stereo_image,
-                            std::vector<Corner> &corners,
-                            std::map<Corner::Id, Feature> &features) {
+                            std::vector<Corner> &corners) {
+  /// @todo: this also needs to be changed
   std::vector<CvPoint2> points1, points2;
   std::vector<uchar> status;
   for (const auto &c : corners) points1.push_back(c.p_pixel());
@@ -216,13 +218,13 @@ void StereoVo::TrackSpatial(const CvStereoImage &stereo_image,
   // Now we use corners and points2 to create new features
   auto it_crn = corners.cbegin(), it_crn_e = corners.cend();
   auto it_pts = points2.cbegin();
-  for (; it_crn != it_crn_e; ++it_crn, ++it_pts) {
+//  for (; it_crn != it_crn_e; ++it_crn, ++it_pts) {
     // Create a feature using corner and pixel_right
-    Feature feature(*it_crn, *it_pts);
+//    Feature feature(*it_crn, *it_pts);
     //    if (feature.triangulate(model_, config_.tri_max_eigenratio)) {
     //      features[it_crn->id()] = feature;
     //    }
-  }
+//  }
 }
 
 void StereoVo::OpticalFlow(const cv::Mat &image1, const cv::Mat &image2,
@@ -238,9 +240,8 @@ void StereoVo::OpticalFlow(const cv::Mat &image1, const cv::Mat &image2,
                            max_level, term_criteria);
 }
 
-bool StereoVo::TriangulatePoint(const CvPoint2& left,
-                                const CvPoint2& right,
-                                CvPoint3& output) {
+bool StereoVo::TriangulatePoint(const CvPoint2 &left, const CvPoint2 &right,
+                                CvPoint3 &output) {
   //  camera model
   const scalar_t lfx = model_.left().fx(), lfy = model_.left().fy();
   const scalar_t lcx = model_.left().cx(), lcy = model_.left().cy();
@@ -252,10 +253,8 @@ bool StereoVo::TriangulatePoint(const CvPoint2& left,
   poseRight.p[0] = model_.baseline();
 
   //  normalized coordinates
-  kr::vec2<scalar_t> lPt((left.x - lcx) / lfx, 
-                         (left.y - lcy) / lfy);
-  kr::vec2<scalar_t> rPt((right.x - rcx) / rfx,
-                         (right.y - rcy) / rfy);
+  kr::vec2<scalar_t> lPt((left.x - lcx) / lfx, (left.y - lcy) / lfy);
+  kr::vec2<scalar_t> rPt((right.x - rcx) / rfx, (right.y - rcy) / rfy);
 
   kr::vec3<scalar_t> p3D;
   scalar_t ratio;
@@ -278,7 +277,6 @@ bool StereoVo::TriangulatePoint(const CvPoint2& left,
   output.y = p3D[1];
   output.z = p3D[2];
   return true;
-  
 }
 
 }  // namespace stereo_vo

@@ -125,8 +125,8 @@ void CeresBundler::NukeEverything(bool from_orbit) {
 
 void CeresBundler::SplitFeatureIds(
     const std::deque<KeyFrame> &key_frames,
-    const std::map<Feature::Id, Feature> &features) {
-
+    const std::map<Feature::Id,Feature>& features) {
+  
   //  iterate over key frames and sort all features into one of two groups
   size_t kf_count = 0;
   for (auto kfi = key_frames.rbegin(); kfi != key_frames.rend(); kfi++) {
@@ -136,21 +136,19 @@ void CeresBundler::SplitFeatureIds(
     const KeyFrame &kf = *kfi;
 
     bool features_found = false;
-    for (const std::pair<Feature::Id, Feature> &feat : kf.features()) {
-      const Feature::Id id = feat.second.id();
-
+    for (const Corner& corner : kf.corners()) {
       if (in_window) {
         //  assume this is a mutable point, since it is in the window
-        mutables_.insert(id);
+        mutables_.insert(corner.id());
       } else {
         //  this point is also in past keyframes, move it to immutables
-        const auto ite = mutables_.find(id);
+        const auto ite = mutables_.find(corner.id());
         if (ite != mutables_.end()) {
           mutables_.erase(ite);
-          immutables_.insert(id);
+          immutables_.insert(corner.id());
           features_found = true;
         } else {
-          //  nothing to be done, this point is irrelevant to us
+          //  do nothing, this corner is not useful to us 
         }
       }
     }
@@ -201,21 +199,50 @@ void CeresBundler::SolveProblem() {
   options_.num_threads = 1;
   options_.max_solver_time_in_seconds = 10;
   options_.gradient_tolerance = 1e-16;
-  options_.gradient_tolerance = 1e-12;
+  options_.function_tolerance = 1e-12;
   options_.use_inner_iterations = true;
   options_.linear_solver_type = ceres::SPARSE_SCHUR;
   options_.preconditioner_type = ceres::JACOBI;
   options_.visibility_clustering_type = ceres::CANONICAL_VIEWS;
   options_.sparse_linear_algebra_library_type = ceres::EIGEN_SPARSE;
-
+  
   ceres::Solver::Summary summary;
-  ceres::Solve(options_, &problem_, &summary);
-
+  ceres::Solve(options_,&problem_,&summary);
+  
   ROS_INFO_STREAM("Summary " << summary.BriefReport());
 }
 
 void CeresBundler::UpdateMap(std::deque<KeyFrame> &key_frames,
-                             std::map<Feature::Id, Feature> &features) {}
+                             std::map<Feature::Id,Feature>& features) {
+      
+  //  iterate forwards over keyframes, consider only those in window
+  size_t kf_count=0;
+  for (auto kf_ite = key_frames.begin(); kf_ite != key_frames.end(); 
+       kf_ite++, kf_count++) {
+    
+    if (key_frames.size() - kf_count > win_size_) {
+      continue;
+    }
+    
+    /// @todo: fetch updated keyframe pose here and write back to map
+    Pose kf_pose;
+    
+    for (const Corner& corner : kf_ite->corners()) {
+      //  pull corrected point from results
+      auto p3_ite = point3s_.find(corner.id());
+      ROS_ASSERT_MSG(p3_ite != point3s_.end(), "Point in window that was not optimized!");
+      
+      const Point3Node& p3 = p3_ite->second;
+      kr::vec3<scalar_t> point(p3.ptr()[0],p3.ptr()[1],p3.ptr()[2]);
+      
+      //  back to local pose
+      point = kf_pose.transform(point);
+      
+      Feature& feat = features[corner.id()];
+      feat.set_p_cam(CvPoint3(point[0],point[1],point[2]));
+    }
+  }
+}
 
 }  // namespace stereo_vo
 

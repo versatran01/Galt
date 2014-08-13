@@ -147,26 +147,25 @@ void StereoVoNode::PublishPointCloud(
   for (const Corner& corner : corners) {
     
     const auto& id = corner.id();
-    
-    
-  }
+    const auto& feat_ite = features.find(id);
+    if (feat_ite != features.end()) {
+      const Feature& feat = feat_ite->second;
+      
+      geometry_msgs::Point32 p32;
+      kr::vec3<scalar_t> p(feat.p_cam().x, 
+                           feat.p_cam().y,
+                           feat.p_cam().z);
   
-  for (const auto& feat : features) {
-    const Feature& feature = feat.second;
-
-    geometry_msgs::Point32 p32;
-    kr::vec3<scalar_t> p(feature.p_cam().x, 
-                         feature.p_cam().y,
-                         feature.p_cam().z);
-
-    p = pose.q.conjugate().matrix() * p + pose.p;
-    
-    p32.x = p[0];
-    p32.y = p[1];
-    p32.z = p[2];
-
-    cloud.points.push_back(p32);
-    channel.values.push_back(color.val);
+      p = pose.q.conjugate().matrix() * p + pose.p;
+      
+      p32.x = p[0];
+      p32.y = p[1];
+      p32.z = p[2];
+  
+      cloud.points.push_back(p32);
+      channel.values.push_back(color.val);
+      
+    }
   }
 
   cloud.channels.push_back(channel);

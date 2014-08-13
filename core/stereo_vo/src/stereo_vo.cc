@@ -223,7 +223,7 @@ void StereoVo::AddKeyFrame(const CvStereoImage &stereo_image,
   Triangulate(corners, right_points);
 
   // Add key frame to queue with current_pose, features and stereo_image
-  key_frames_.emplace_back(relative_pose(), corners, stereo_image);
+  key_frames_.emplace_back(absolute_pose(), corners, stereo_image);
 }
 
 void StereoVo::Triangulate(std::vector<Corner> &corners,

@@ -16,8 +16,8 @@ using Grid = std::set<std::pair<int, int>>;
 class CornerDetectorBase {
  public:
   virtual ~CornerDetectorBase() {}
-  virtual void AddCorners(const cv::Mat& image, std::vector<Corner>& corners,
-                          std::vector<Corner>& new_corners) const = 0;
+  virtual void AddCorners(const cv::Mat& image,
+                          std::vector<Corner>& corners) const = 0;
 
  protected:
   mutable Corner::Id cnt_{0};
@@ -27,8 +27,7 @@ class GridDetectorBase : public CornerDetectorBase {
  public:
   GridDetectorBase(int cell_size) : cell_size_{cell_size} {}
 
-  void AddCorners(const cv::Mat& image, std::vector<Corner>& corners,
-                  std::vector<Corner>& new_corners) const;
+  void AddCorners(const cv::Mat& image, std::vector<Corner>& corners) const;
   double GridFilled(const cv::Mat& image,
                     const std::vector<Corner>& corners) const;
   virtual void DetectPoints(const cv::Mat& image, const cv::Mat& mask,
@@ -67,8 +66,8 @@ class GlobalCornerDetector : public CornerDetectorBase {
         quality_level_{quality_level},
         min_distance_{min_distance} {}
 
-  void AddCorners(const cv::Mat& image, std::vector<Corner>& corners,
-                  std::vector<Corner>& new_corners) const override;
+  void AddCorners(const cv::Mat& image,
+                  std::vector<Corner>& corners) const override;
 
  private:
   int max_corners_;

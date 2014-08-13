@@ -50,8 +50,7 @@ const cv::Mat GridDetectorBase::CreateMask(const cv::Mat &image,
 }
 
 void GridDetectorBase::AddCorners(const cv::Mat &image,
-                                  std::vector<Corner> &corners,
-                                  std::vector<Corner> &new_corners) const {
+                                  std::vector<Corner> &corners) const {
   // Mark all tracked corners as old
   for (Corner &corner : corners) corner.set_init(false);
   // Create a new grid
@@ -63,7 +62,7 @@ void GridDetectorBase::AddCorners(const cv::Mat &image,
   DetectPoints(image, mask, corners.size(), points);
   // Add newly detected points to corners with a unique id
   for (const CvPoint2 &point : points) {
-    new_corners.emplace_back(cnt_++, point, true);
+    corners.emplace_back(cnt_++, point, true);
   }
 }
 
@@ -77,8 +76,7 @@ void GoodFeatureDetector::DetectPoints(const cv::Mat &image,
 }
 
 void GlobalCornerDetector::AddCorners(const cv::Mat &image,
-                                      std::vector<Corner> &corners,
-                                      std::vector<Corner> &new_corners) const {
+                                      std::vector<Corner> &corners) const {
   //  mark old features as old
   for (Corner &corner : corners) corner.set_init(false);
 
@@ -89,7 +87,7 @@ void GlobalCornerDetector::AddCorners(const cv::Mat &image,
                           min_distance_);
 
   for (const CvPoint2 &point : points) {
-    new_corners.emplace_back(cnt_++, point, true);
+    corners.emplace_back(cnt_++, point, true);
   }
 }
 

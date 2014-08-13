@@ -343,6 +343,9 @@ bool StereoVo::TriangulatePoint(const CvPoint2 &left,
   if (!kr::refinePoint(poses, obvs, p3D)) {
     return false;
   }
+  
+  //  convert to world coordinates
+  p3D = absolute_pose().q.conjugate().matrix()*p3D + absolute_pose().p;
 
   output.x = p3D[0];
   output.y = p3D[1];

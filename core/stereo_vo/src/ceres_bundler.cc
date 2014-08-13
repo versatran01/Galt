@@ -231,13 +231,8 @@ void CeresBundler::UpdateMap(std::deque<KeyFrame> &key_frames,
       ROS_ASSERT_MSG(p3_ite != point3s_.end(), "Point in window that was not optimized!");
       
       const Point3Node& p3 = p3_ite->second;
-      kr::vec3<scalar_t> point(p3.ptr()[0],p3.ptr()[1],p3.ptr()[2]);
-      
-      //  back to local pose
-      point = kf_pose.transform(point);
-      
       Feature& feat = features[corner.id()];
-      feat.set_p_cam(CvPoint3(point[0],point[1],point[2]));
+      feat.set_p_world(CvPoint3(p3.ptr()[0],p3.ptr()[1],p3.ptr()[2]));
     }
   }
 }

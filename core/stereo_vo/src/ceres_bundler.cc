@@ -164,7 +164,7 @@ void CeresBundler::AddResidualBlock(const Edge &edge,
     ROS_ASSERT_MSG(feat_ite != temp_.end(), "Derp!");
             
     ROS_ASSERT_MSG(cam.ptr() != NULL, "Pointer is missing");
-    problem_.AddResidualBlock(func, NULL, cam.ptr());
+    problem_.AddResidualBlock(func, new ceres::HuberLoss(1.0), cam.ptr());
   } else {
     //ROS_INFO("point (unlocked): %f, %f, %f", point.ptr()[0],point.ptr()[1],point.ptr()[2]);
     
@@ -173,7 +173,7 @@ void CeresBundler::AddResidualBlock(const Edge &edge,
     func = ReprojectionError::Create(edge.x(), edge.y(), model);
     ROS_ASSERT_MSG(cam.ptr() != NULL, "Pointer is missing");
     ROS_ASSERT_MSG(point.ptr() != NULL, "Pointer is missing");
-    problem_.AddResidualBlock(func, NULL, cam.ptr(), point.ptr());
+    problem_.AddResidualBlock(func, new ceres::HuberLoss(1.0), cam.ptr(), point.ptr());
   }
 }
 
@@ -181,11 +181,11 @@ void CeresBundler::SolveProblem() {
 
   //  configure ceres options, hardcode most of these for now
   options_ = ceres::Solver::Options();
-  options_.max_num_iterations = 20;
+  options_.max_num_iterations = 40;
   options_.num_threads = 2;
   options_.max_solver_time_in_seconds = 10;
-  //options_.gradient_tolerance = 1e-16;
-  //options_.function_tolerance = 1e-12;
+  options_.gradient_tolerance = 1e-6;
+  options_.function_tolerance = 1e-6;
   //options_.use_inner_iterations = false;
   options_.linear_solver_type = ceres::DENSE_SCHUR;
   //options_.preconditioner_type = ceres::JACOBI;
@@ -195,7 +195,7 @@ void CeresBundler::SolveProblem() {
   ceres::Solver::Summary summary;
   ceres::Solve(options_, &problem_, &summary);
 
-  ROS_INFO_STREAM("Summary " << summary.BriefReport());
+  ROS_INFO_STREAM("Summary " << summary.FullReport());
 }
 
 void CeresBundler::UpdateMap(std::deque<KeyFrame> &key_frames,

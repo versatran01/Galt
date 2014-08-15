@@ -58,8 +58,23 @@ class StereoVo {
   void UpdateConfig(const StereoVoConfig &config) { config_ = config; }
 
  private:
+  /**
+   * @brief ShouldAddKeyFrame Determines whether to add a key frame or not
+   * @param frame Current frame
+   * @return True if we should add a key frame
+   */
   bool ShouldAddKeyFrame(const FramePtr &frame) const;
+  /**
+   * @brief AddKeyFrame Add current frame to key frame
+   * @param frame Current frame
+   */
   void AddKeyFrame(FramePtr &frame);
+  /**
+   * @brief TrackSpatial Track features across stereo images
+   * @param stereo_image Left and right images
+   * @param features Features currently being tracked on left image
+   * @param r_corners Tracked corners on right image
+   */
   void TrackSpatial(const CvStereoImage &stereo_image,
                     std::vector<Feature> &features,
                     std::vector<CvPoint2> &r_corners);

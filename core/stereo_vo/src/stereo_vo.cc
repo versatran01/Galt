@@ -272,7 +272,7 @@ void StereoVo::OpticalFlow(const cv::Mat &image1, const cv::Mat &image2,
                            const std::vector<CvPoint2> &points1,
                            std::vector<CvPoint2> &points2,
                            std::vector<uchar> &status) {
-  if (points1.empty() || points2.empty()) {
+  if (points1.empty()) {
     //  don't let calc optical flow assert
     ROS_WARN("OpticalFlow() called with no points");
     return;
@@ -289,7 +289,7 @@ void StereoVo::OpticalFlow(const cv::Mat &image1, const cv::Mat &image2,
 void StereoVo::FindFundamentalMat(const std::vector<CvPoint2> &points1,
                                   const std::vector<CvPoint2> &points2,
                                   std::vector<uchar> &status) {
-  cv::findFundamentalMat(points1, points2, cv::FM_RANSAC, 1.5, 0.99, status);
+  cv::findFundamentalMat(points1, points2, cv::FM_RANSAC, 1, 0.99, status);
 }
 
 bool StereoVo::TriangulatePoint(const CvPoint2 &left, const CvPoint2 &right,

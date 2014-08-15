@@ -11,12 +11,12 @@
     <arg name="bagfile_start" default="0"/>
 
     <arg name="shi_cell_size" default="50"/>
-    <arg name="shi_max_corners" default="100"/>
+    <arg name="shi_max_corners" default="150"/>
     <arg name="shi_quality_level" default="0.0001"/>
     <arg name="shi_min_distance" default="22"/>
 
     <arg name="klt_max_level" default="3"/>
-    <arg name="klt_win_size" default="13"/>
+    <arg name="klt_win_size" default="21"/>
 
     <arg name="kf_dist_thresh" value="3"/>
     <arg name="kf_yaw_thresh" value="45"/>
@@ -24,7 +24,7 @@
     <arg name="kf_min_filled" value="0.7"/>
 
     <arg name="pnp_ransac_error" value="4.0"/>
-    <arg name="pnp_ransac_inliers" value="0.6"/>
+    <arg name="pnp_ransac_inliers" value="0.90"/>
 
     <arg name="tri_max_eigenratio" value="100000"/>
 

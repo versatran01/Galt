@@ -144,12 +144,12 @@ void StereoVo::EstimatePose(const FramePtr &frame,
   static cv::Mat rvec = cv::Mat::zeros(3, 3, CV_64FC1);
   static cv::Mat tvec = cv::Mat::zeros(3, 3, CV_64FC1);
 
-  const size_t minInliers =
+  const size_t min_inliers =
       std::ceil(world_points.size() * config_.pnp_ransac_inliers);
   cv::solvePnPRansac(world_points, image_points,
                      model_.left().fullIntrinsicMatrix(), std::vector<double>(),
                      rvec, tvec, false, 100, config_.pnp_ransac_error,
-                     minInliers, inliers, cv::ITERATIVE);
+                     min_inliers, inliers, cv::ITERATIVE);
 
   kr::vec3<scalar_t> r(rvec.at<double>(0, 0), rvec.at<double>(1, 0),
                        rvec.at<double>(2, 0));
@@ -324,12 +324,6 @@ bool StereoVo::TriangulatePoint(const CvPoint2 &left, const CvPoint2 &right,
   }
 
   /// @note: I moved convert to world coordinates to Triangulate
-  //  convert to world coordinates
-  //  p3D = pose.q.conjugate().matrix() * p3D + pose.p;
-
-  //  point3d.x = p3D[0];
-  //  point3d.y = p3D[1];
-  //  point3d.z = p3D[2];
   return true;
 }
 

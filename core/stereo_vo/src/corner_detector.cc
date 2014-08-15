@@ -12,20 +12,20 @@ namespace galt {
 namespace stereo_vo {
 
 const Grid GridDetectorBase::CreateGrid(
-    const std::vector<Corner> &corners) const {
+    const std::vector<Feature> &features) const {
   Grid grid;
   // Marked filled grid
-  for (const Corner &corner : corners) {
-    const int x = static_cast<int>(corner.p_pixel().x / cell_size_);
-    const int y = static_cast<int>(corner.p_pixel().y / cell_size_);
+  for (const Feature &feature : features) {
+    const int x = static_cast<int>(feature.p_pixel().x / cell_size_);
+    const int y = static_cast<int>(feature.p_pixel().y / cell_size_);
     grid.emplace(x, y);
   }
   return grid;
 }
 
-double GridDetectorBase::GridFilled(const cv::Mat &image,
-                                    const std::vector<Corner> &corners) const {
-  const Grid grid = CreateGrid(corners);
+double GridDetectorBase::GridFilled(
+    const cv::Mat &image, const std::vector<Feature> &features) const {
+  const Grid grid = CreateGrid(features);
   auto grid_cols = static_cast<int>(image.cols / cell_size_);
   auto grid_rows = static_cast<int>(image.rows / cell_size_);
   return static_cast<double>(grid.size()) / (grid_cols * grid_rows);
@@ -49,46 +49,44 @@ const cv::Mat GridDetectorBase::CreateMask(const cv::Mat &image,
   return mask;
 }
 
-void GridDetectorBase::AddCorners(const cv::Mat &image,
-                                  std::vector<Corner> &corners) const {
+size_t GridDetectorBase::AddFeatures(const cv::Mat &image,
+                                     std::vector<Feature> &features) const {
   // Mark all tracked corners as old
-  for (Corner &corner : corners) corner.set_init(false);
+  MakeFeatureOld(features);
   // Create a new grid
-  const Grid grid = CreateGrid(corners);
+  const Grid grid = CreateGrid(features);
   // Initialize a mask
   const cv::Mat mask = CreateMask(image, grid);
   // Detect corners only in mask
-  std::vector<CvPoint2> points;
-  DetectPoints(image, mask, corners.size(), points);
-  // Add newly detected points to corners with a unique id
-  for (const CvPoint2 &point : points) {
-    corners.emplace_back(cnt_++, point, true);
-  }
+  std::vector<CvPoint2> corners;
+  DetectCorners(image, mask, features.size(), corners);
+  // Add newly detected corners to features
+  for (const CvPoint2 &corner : corners) features.emplace_back(corner);
+  return corners.size();
 }
 
-void GoodFeatureDetector::DetectPoints(const cv::Mat &image,
-                                       const cv::Mat &mask,
-                                       const int num_corners,
-                                       std::vector<CvPoint2> &points) const {
+void GoodFeatureDetector::DetectCorners(const cv::Mat &image,
+                                        const cv::Mat &mask, int num_corners,
+                                        std::vector<CvPoint2> &corners) const {
+  // Return if we have enough
   if (max_corners_ < num_corners) return;
-  cv::goodFeaturesToTrack(image, points, max_corners_ - num_corners,
+  cv::goodFeaturesToTrack(image, corners, max_corners_ - num_corners,
                           quality_level_, min_distance_, mask);
 }
 
-void GlobalCornerDetector::AddCorners(const cv::Mat &image,
-                                      std::vector<Corner> &corners) const {
+size_t GlobalCornerDetector::AddFeatures(const cv::Mat &image,
+                                         std::vector<Feature> &features) const {
   //  mark old features as old
-  for (Corner &corner : corners) corner.set_init(false);
-
-  std::vector<CvPoint2> points;
-  auto num_corners = max_corners_ - corners.size();
-  if (num_corners < 1) return;
-  cv::goodFeaturesToTrack(image, points, num_corners, quality_level_,
+  MakeFeatureOld(features);
+  // Detect corners in entire image
+  std::vector<CvPoint2> corners;
+  auto num_corners = max_corners_ - features.size();
+  if (num_corners < 1) return 0;
+  cv::goodFeaturesToTrack(image, corners, num_corners, quality_level_,
                           min_distance_);
-
-  for (const CvPoint2 &point : points) {
-    corners.emplace_back(cnt_++, point, true);
-  }
+  // Add newly detected corners to features
+  for (const CvPoint2 &corner : corners) features.emplace_back(corner);
+  return corners.size();
 }
 
 }  // namespace stereo_vo

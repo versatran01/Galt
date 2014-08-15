@@ -112,21 +112,21 @@ void StereoVoNode::StereoCallback(const ImageConstPtr& l_image_msg,
   }
 
   stereo_vo_.Iterate(stereo_image);
-  auto camera_pose = KrPoseToRosPose(stereo_vo_.absolute_pose());
+  auto camera_pose = KrPoseToRosPose(stereo_vo_.pose_world());
 
   // Publish PointCloud from keyframe pose and features
-  PublishPointCloud(stereo_vo_.features(), stereo_vo_.corners(),
-                    l_image_msg->header.stamp, "0");
+//  PublishPointCloud(stereo_vo_.point3ds(), stereo_vo_.corners(),
+//                    l_image_msg->header.stamp, "0");
   PublishPoseStamped(camera_pose, l_image_msg->header.stamp, "0");
   PublishTrajectory(camera_pose, l_image_msg->header.stamp, "0");
 }
 
+/*
 void StereoVoNode::PublishPointCloud(
-    const std::map<Feature::Id, Feature>& features, 
-    const std::vector<Corner> &corners, 
-    const ros::Time& time,
+    const std::map<Feature::Id, Feature>& features,
+    const std::vector<Corner>& corners, const ros::Time& time,
     const std::string& frame_id) const {
-  
+
   sensor_msgs::PointCloud cloud;
   sensor_msgs::ChannelFloat32 channel;
   channel.name = "rgb";
@@ -142,23 +142,21 @@ void StereoVoNode::PublishPointCloud(
   color.rgb[3] = 0;
 
   for (const Corner& corner : corners) {
-    
+
     const auto& id = corner.id();
     const auto& feat_ite = features.find(id);
     if (feat_ite != features.end()) {
       const Feature& feat = feat_ite->second;
-      
+
       geometry_msgs::Point32 p32;
-      kr::vec3<scalar_t> p(feat.p_world().x, 
-                           feat.p_world().y,
-                           feat.p_world().z);      
+      kr::vec3<scalar_t> p(feat.p_world().x, feat.p_world().y,
+                           feat.p_world().z);
       p32.x = p[0];
       p32.y = p[1];
       p32.z = p[2];
-  
+
       cloud.points.push_back(p32);
       channel.values.push_back(color.val);
-      
     }
   }
 
@@ -167,6 +165,7 @@ void StereoVoNode::PublishPointCloud(
   cloud.header.frame_id = frame_id;
   points_pub_.publish(cloud);
 }
+*/
 
 void StereoVoNode::PublishPoseStamped(const geometry_msgs::Pose& pose,
                                       const ros::Time& time,

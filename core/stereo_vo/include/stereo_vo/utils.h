@@ -3,7 +3,7 @@
 
 #include "stereo_vo/common.h"
 #include "stereo_vo/feature.h"
-#include "stereo_vo/key_frame.h"
+#include "stereo_vo/frame.h"
 
 #include <algorithm>
 #include <deque>
@@ -24,7 +24,7 @@ const cv::Scalar CYAN = cv::Scalar(255, 255, 0);
 
 template <typename T, typename U>
 void PruneByStatus(const std::vector<U> &status, std::vector<T> &objects,
-                   std::vector<T> &removed) {
+                   std::set<T> &removed) {
   ROS_ASSERT_MSG(status.size() == objects.size(),
                  "status and object size mismatch");
   auto it_obj = objects.begin();
@@ -32,7 +32,7 @@ void PruneByStatus(const std::vector<U> &status, std::vector<T> &objects,
     if (s) {
       it_obj++;
     } else {
-      removed.push_back(*it_obj);
+      removed.insert(*it_obj);
       it_obj = objects.erase(it_obj);
     }
   }
@@ -52,9 +52,10 @@ void PruneByStatus(const std::vector<U> &status, std::vector<T> &objects) {
   }
 }
 
+void Display(const FramePtr& frame, const FramePtr& key_frame);
 void Display(const CvStereoImage &stereo_image,
-             const std::vector<Corner> &tracked_corners,
-             const KeyFrame &key_frame);
+             const std::vector<Feature> &tracked_features,
+             const FramePtr &key_frame);
 
 }  // namespace stereo_vo
 

@@ -12,44 +12,60 @@ namespace galt {
 
 namespace stereo_vo {
 
-class Corner {
+/**
+ * @brief The Feature class
+ * A feature is just a pixel on the image picked out by corner detector
+ */
+class Feature {
  public:
-  using Id = uint64_t;
+  static Id feature_count;
 
-  Corner() = default;
-  Corner(const Id& id, const CvPoint2& p_pixel, const bool& init)
+  Feature() = default;
+  /**
+   * @brief Feature Constructor Create a feature
+   * @param id Unique id of this feature
+   * @param p_pixel Pixel position of this feature
+   * @param init If this feature is newly detected
+   */
+  Feature(const Id& id, const CvPoint2& p_pixel, const bool& init = true)
       : id_(id), p_pixel_(p_pixel), init_(init) {}
-
-  const CvPoint2& p_pixel() const { return p_pixel_; }
-  void set_p_pixel(const CvPoint2& p_pixel) { p_pixel_ = p_pixel; }
+  /**
+   * @brief Feature Constructor Create a newly detected feautre
+   * @param p_pixel Pixel position of this feature
+   */
+  Feature(const CvPoint2& p_pixel)
+      : Feature(feature_count++, p_pixel, true) {}
 
   const Id& id() const { return id_; }
   void set_id(const Id& id) { id_ = id; }
-
+  const CvPoint2& p_pixel() const { return p_pixel_; }
+  void set_p_pixel(const CvPoint2& p_pixel) { p_pixel_ = p_pixel; }
   const bool& init() const { return init_; }
   void set_init(const bool& init) { init_ = init; }
 
- protected:
-  Id id_;
-  CvPoint2 p_pixel_;
-  bool init_;
-};
-
-class Feature {
- public:
-  using Id = uint64_t;
-
-  Feature() = default;
-  Feature(Feature::Id id, const CvPoint3& p_world)
-      : id_(id), p_world_(p_world) {}
-
-  const CvPoint3& p_world() const { return p_world_; }
-  void set_p_world(const CvPoint3& p_world) { p_world_ = p_world; }
-
  private:
-  Id id_;
-  CvPoint3 p_world_;
+  Id id_;             ///< id of this feature
+  CvPoint2 p_pixel_;  ///< pixel position
+  bool init_;         ///< true if this feature was newly added
+
+  /// @note: not sure if we need frame_id_, because we can only access
+  /// feature through frame, so delete this if you also think the same
+  Id frame_id_;  ///< id of the frame this feature was detected
 };
+
+/**
+ * @brief ExtractCorners Extract corners from a vector of features
+ * @param features A vector of features
+ * @return A vector of corners
+ */
+std::vector<CvPoint2> ExtractCorners(const std::vector<Feature>& features);
+
+/**
+ * @brief ExtractIds Extract ids from a vector of features
+ * @param features A vector of features
+ * @return A vector of ids
+ */
+std::vector<Id> ExtractIds(const std::vector<Feature>& features);
 
 }  // namespace stereo_vo
 

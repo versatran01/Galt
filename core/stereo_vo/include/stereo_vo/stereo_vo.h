@@ -2,10 +2,10 @@
 #define GALT_STEREO_VO_H_
 
 #include "stereo_vo/common.h"
-#include "stereo_vo/key_frame.h"
+#include "stereo_vo/frame.h"
 #include "stereo_vo/feature.h"
+#include "stereo_vo/point3d.h"
 #include "stereo_vo/corner_detector.h"
-#include "stereo_vo/ceres_bundler.h"
 
 #include <vector>
 #include <memory>
@@ -25,39 +25,59 @@ using image_geometry::StereoCameraModel;
 
 class StereoVo {
  public:
+  /**
+   * @brief StereoVo Constructor
+   * @param config Dynamic reconfigure config of stereo_vo
+   */
   StereoVo(const StereoVoConfig &config)
       : config_(config),
         detector_(config.shi_max_corners, config.shi_quality_level,
                   config.shi_min_distance) {}
 
   const bool init() const { return init_; }
-  const std::map<Feature::Id, Feature> features() const { return features_; }
-  
-  /**
-   * @brief Pose with respect to the world frame.
-   * @return kr::Pose
-   */
-  const Pose &absolute_pose() const { return absolute_pose_; }
-  const std::vector<Corner> &corners() const { return corners_; }
-  const std::deque<KeyFrame> &key_frames() const { return key_frames_; }
+  const Pose &pose_world() const { return prev_frame_->pose(); }
+  const std::deque<FramePtr> &key_frames() const { return key_frames_; }
+  const std::map<Id, Point3d> &point3ds() const { return point3ds_; }
 
+  /**
+   * @brief Initialize Initialize stereo visual odometry
+   * @param stereo_image Incoming stereo image
+   * @param model Stereo camera model
+   */
   void Initialize(const CvStereoImage &stereo_image,
                   const StereoCameraModel &model);
+  /**
+   * @brief Iterate Do one iteration of stereo visual odometry
+   * @param stereo_image Incoming stereo image
+   */
   void Iterate(const CvStereoImage &stereo_image);
+  /**
+   * @brief UpdateConfig
+   * @param config Dynamic reconfigure config of stereo_vo
+   */
   void UpdateConfig(const StereoVoConfig &config) { config_ = config; }
 
  private:
-  bool ShouldAddKeyFrame(size_t num_corners) const;
-  void AddKeyFrame(const CvStereoImage &stereo_image,
-                   std::vector<Corner> &corners);
+  bool ShouldAddKeyFrame(const FramePtr &frame) const;
+  void AddKeyFrame(FramePtr &frame);
   void TrackSpatial(const CvStereoImage &stereo_image,
-                    std::vector<Corner> &corners,
-                    std::vector<CvPoint2> &r_points);
-  void Triangulate(std::vector<Corner> &corners, std::vector<CvPoint2> &points);
-  void TrackTemporal(const cv::Mat &image_prev, const cv::Mat &image,
-                     const std::vector<Corner> &corners_input,
-                     std::vector<Corner> &corners_output, KeyFrame &key_frame);
-  Pose EstimatePose();
+                    std::vector<Feature> &features,
+                    std::vector<CvPoint2> &r_corners);
+  void Triangulate(const Pose &pose, std::vector<Feature> &features,
+                   std::vector<CvPoint2> &corners);
+  void TrackTemporal(const FramePtr &frame1, const FramePtr &frame2,
+                     const FramePtr &key_frame);
+  void TrackTemporal(const cv::Mat &image1, const cv::Mat &image2,
+                     const std::vector<Feature> &features1,
+                     std::vector<Feature> &features2,
+                     const FramePtr &key_frame);
+  /**
+   * @brief EstimatePose Estimate pose of current frame based on its 2d features
+   * @param frame Current frame
+   * @param point3ds Triangulated 3d points in world frame
+   */
+  void EstimatePose(const FramePtr &frame,
+                    const std::map<Id, Point3d> point3ds) const;
   void OpticalFlow(const cv::Mat &image1, const cv::Mat &image2,
                    const std::vector<CvPoint2> &points1,
                    std::vector<CvPoint2> &points2, std::vector<uchar> &status);
@@ -69,28 +89,23 @@ class StereoVo {
    * @brief TriangulatePoint
    * @param left Left observation in pixels.
    * @param right Right observation in pixels.
-   * @param output Resulting 3D point.
+   * @param point3d Resulting 3d point in camera frame.
    * @return False if the triangulation is poor and the feature should be
    * rejected.
    */
   bool TriangulatePoint(const CvPoint2 &left, const CvPoint2 &right,
-                        CvPoint3 &output);
+                        kr::vec3<scalar_t> &p_cam);
 
-  KeyFrame &key_frame_prev() { return key_frames_.back(); }
-  const KeyFrame& key_frame_prev() const { return key_frames_.back(); }
-  
-  bool init_{false};
-  StereoCameraModel model_;
-  StereoVoConfig config_;
+  FramePtr &prev_key_frame() { return key_frames_.back(); }
+  const FramePtr &prev_key_frame() const { return key_frames_.back(); }
 
-  Pose absolute_pose_;  /// Absolute pose, for display
-  GlobalCornerDetector detector_;
-  std::vector<Corner> corners_;
-  std::deque<KeyFrame> key_frames_;
-  std::map<Feature::Id, Feature> features_;
-  CvStereoImage stereo_image_prev_;
-  
-  CeresBundler bundler_;
+  bool init_{false};               ///< True if stereo_vo is initialized
+  StereoCameraModel model_;        ///< Stereo camera model
+  StereoVoConfig config_;          ///< Dynamic reconfigure config of stereo_vo
+  GlobalCornerDetector detector_;  ///< Corner detector
+  FramePtr prev_frame_;            ///< Previous frame
+  std::deque<FramePtr> key_frames_;  ///< A deque of key frames in window
+  std::map<Id, Point3d> point3ds_;   ///< Triangulated 3d points in world frame
 };
 
 }  // namespace stereo_vo

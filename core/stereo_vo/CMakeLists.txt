@@ -15,13 +15,6 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 find_package(OpenCV)
-find_package(Glog)
-IF (GLOG_FOUND)
-  MESSAGE("Found Google Log header in: ${GLOG_INCLUDE_DIRS}")
-  MESSAGE("Google Log library: ${GLOG_LIBRARY}")
-ELSE (GLOG_FOUND)
-  MESSAGE(FATAL_ERROR "Can't find Google Log.")
-ENDIF (GLOG_FOUND)
 
 generate_dynamic_reconfigure_options(
     cfg/StereoVoDyn.cfg
@@ -45,12 +38,12 @@ add_library(${PROJECT_NAME}
     src/stereo_vo.cc
     src/corner_detector.cc
     src/utils.cc
-    src/ceres_bundler.cc
+    src/frame.cc
+    src/feature.cc
 )
 target_link_libraries(${PROJECT_NAME}
     ${catkin_LIBRARIES}
     ${OpenCV_LIBRARIES}
-    ceres
     ${GLOG_LIBRARIES}
 )
 

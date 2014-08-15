@@ -14,12 +14,16 @@ namespace stereo_vo {
 
 /**
  * @brief The Feature class
- * A feature is just a pixel on the image picked out by corner detector
+ * A feature is just a pixel on the image picked out by corner detector. Each
+ * feature will have its unique id.
  */
 class Feature {
  public:
   static Id feature_count;
 
+  /**
+   * @brief Feature Default constructor
+   */
   Feature() = default;
   /**
    * @brief Feature Constructor Create a feature
@@ -33,13 +37,14 @@ class Feature {
    * @brief Feature Constructor Create a newly detected feautre
    * @param p_pixel Pixel position of this feature
    */
-  Feature(const CvPoint2& p_pixel)
-      : Feature(feature_count++, p_pixel, true) {}
+  Feature(const CvPoint2& p_pixel) : Feature(feature_count++, p_pixel, true) {}
 
   const Id& id() const { return id_; }
   void set_id(const Id& id) { id_ = id; }
+
   const CvPoint2& p_pixel() const { return p_pixel_; }
   void set_p_pixel(const CvPoint2& p_pixel) { p_pixel_ = p_pixel; }
+
   const bool& init() const { return init_; }
   void set_init(const bool& init) { init_ = init; }
 

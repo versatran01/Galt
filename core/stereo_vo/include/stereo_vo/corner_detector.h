@@ -13,6 +13,10 @@ namespace stereo_vo {
 
 using Grid = std::set<std::pair<int, int>>;
 
+/**
+ * @brief MakeFeatureOld Set all features init field as false
+ * @param features Input vecotr of features
+ */
 static inline void MakeFeatureOld(std::vector<Feature>& features) {
   for (Feature& feature : features) feature.set_init(false);
 }
@@ -28,10 +32,6 @@ class CornerDetectorBase {
    */
   virtual size_t AddFeatures(const cv::Mat& image,
                              std::vector<Feature>& features) const = 0;
-  /**
-   * @brief MakeFeatureOld Mark all features as old
-   * @param features A vector of features
-   */
 };
 
 class GridDetectorBase : public CornerDetectorBase {
@@ -73,7 +73,7 @@ class GridDetectorBase : public CornerDetectorBase {
    * @return A grid
    */
   const Grid CreateGrid(const std::vector<Feature>& features) const;
-  int cell_size_;
+  int cell_size_;  ///< Size of each cell in pixel
 };
 
 class GoodFeatureDetector : public GridDetectorBase {

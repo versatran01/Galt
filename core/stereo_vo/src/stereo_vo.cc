@@ -191,7 +191,7 @@ bool StereoVo::ShouldAddKeyFrame(const FramePtr &frame) const {
   return false;
 }
 
-void StereoVo::AddKeyFrame(FramePtr &frame) {
+void StereoVo::AddKeyFrame(const FramePtr &frame) {
   // Detect new corners and add to features in current frame
   std::vector<Feature> &features = frame->features();
   size_t num_new_features = detector_.AddFeatures(frame->l_image(), features);

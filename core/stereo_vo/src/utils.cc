@@ -14,7 +14,6 @@ namespace stereo_vo {
 void Display(const CvStereoImage &stereo_image,
              const std::vector<Feature> &features,
              const FramePtr &key_frame) {
-
    auto &l_image = stereo_image.first;
    auto &r_image = stereo_image.second;
    auto &l_image_prev = key_frame->l_image();

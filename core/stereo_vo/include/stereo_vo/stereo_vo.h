@@ -68,7 +68,7 @@ class StereoVo {
    * @brief AddKeyFrame Add current frame to key frame
    * @param frame Current frame
    */
-  void AddKeyFrame(FramePtr &frame);
+  void AddKeyFrame(const FramePtr &frame);
   /**
    * @brief TrackSpatial Track features across stereo images
    * @param stereo_image Left and right images

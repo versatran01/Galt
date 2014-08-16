@@ -18,12 +18,6 @@ namespace stereo_vo {
  */
 class Frame {
  public:
-  /// @note: Instead of statically allocate a frame, I switched to shared_ptr
-  /// Please check all usage of them since I'm not very familiar with that.
-  /// Especially function input and output parameters, should I pass shared_ptr
-  /// by reference or value? eg. const shared_ptr<const T>& ? or
-  /// const shared_ptr<T>&? or simply pass by value since that's the intended
-  /// usage of shared_ptr
   using Ptr = std::shared_ptr<Frame>;
   using ConstPtr = std::shared_ptr<const Frame>;
 
@@ -40,7 +34,7 @@ class Frame {
   void set_pose(const Pose &pose) { pose_ = pose; }
   const bool &is_keyframe() const { return is_keyframe_; }
 
-  const size_t num_feautres() const { return features_.size(); }
+  const size_t num_features() const { return features_.size(); }
   std::vector<Feature> &features() { return features_; }
   const std::vector<Feature> &features() const { return features_; }
   void set_features(const std::vector<Feature> &features) {
@@ -57,7 +51,6 @@ class Frame {
   /**
    * @brief RemoveById Remove only new features which id is in ids_to_remove
    * @param ids_to_remove A set of ids to remove
-   * @note I rewrote this part with std::remove_if
    */
   void RemoveById(const std::set<Id> &ids_to_remove);
 

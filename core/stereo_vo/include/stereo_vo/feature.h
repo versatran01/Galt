@@ -52,10 +52,6 @@ class Feature {
   Id id_;             ///< id of this feature
   CvPoint2 p_pixel_;  ///< pixel position
   bool init_;         ///< true if this feature was newly added
-
-  /// @note: not sure if we need frame_id_, because we can only access
-  /// feature through frame, so delete this if you also think the same
-  Id frame_id_;  ///< id of the frame this feature was detected
 };
 
 /**

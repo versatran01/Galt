@@ -119,7 +119,7 @@ void StereoVo::TrackTemporal(const cv::Mat &image1, const cv::Mat &image2,
 
 void StereoVo::EstimatePose(const FramePtr &frame,
                             const std::map<Id, Point3d> point3ds) const {
-  const size_t n_features = frame->num_feautres();
+  const size_t n_features = frame->num_features();
 
   std::vector<CvPoint2> image_points;
   std::vector<CvPoint3> world_points;
@@ -182,8 +182,8 @@ bool StereoVo::ShouldAddKeyFrame(const FramePtr &frame) const {
 
   const size_t min_features =
       std::ceil(config_.kf_min_filled * config_.shi_max_corners);
-  if (frame->num_feautres() < min_features) {
-    ROS_INFO("Corners: %i", (int)frame->num_feautres());
+  if (frame->num_features() < min_features) {
+    ROS_INFO("Corners: %i", (int)frame->num_features());
     //  insufficent features, add keyframe with new ones
     return true;
   }
@@ -269,9 +269,8 @@ void StereoVo::Triangulate(const Pose &pose, std::vector<Feature> &features,
     }
     // Convert to world frame
     p3 = pose.q.conjugate().matrix() * p3 + pose.p;
-    /// @note: I feel like since we are using a map, it's not necessary to check
-    /// if that point is in the map or not. Merely index into the map would
-    /// either create or update that point, right?
+    
+    /// @note: Add a check here if you don't want to overwrite past triangulations 
     const Id &id = it_feature->id();
     point3ds_[id] = Point3d(id, CvPoint3(p3[0], p3[1], p3[2]));
   }
@@ -332,7 +331,6 @@ bool StereoVo::TriangulatePoint(const CvPoint2 &left, const CvPoint2 &right,
     return false;
   }
 
-  /// @note: I moved convert to world coordinates to Triangulate
   return true;
 }
 

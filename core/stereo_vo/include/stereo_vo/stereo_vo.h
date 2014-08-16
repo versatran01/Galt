@@ -116,7 +116,7 @@ class StereoVo {
                         kr::vec3<scalar_t> &p_cam);
 
   FramePtr &prev_key_frame() { return key_frames_.back(); }
-  const FramePtr &prev_key_frame() const { return key_frames_.back(); }
+  const FrameConstPtr prev_key_frame() const { return key_frames_.back(); }
 
   bool init_{false};              ///< True if stereo_vo is initialized
   StereoCameraModel model_;       ///< Stereo camera model

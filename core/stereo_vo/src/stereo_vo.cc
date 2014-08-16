@@ -239,6 +239,15 @@ void StereoVo::TrackSpatial(const CvStereoImage &stereo_image,
   PruneByStatus(status, r_corners);
   PruneByStatus(status, features);
 
+  /// @note: for some reason, some tracked corner are outside of the image, I'm
+  /// not sure if this will cause and problem. Maybe this has something to do
+  /// with win_size
+//  for (const CvPoint2 &corner : r_corners) {
+//    if ((corner.x > 752) || (corner.y > 480)) {
+//      ROS_WARN("Pixel outside of image");
+//    }
+//  }
+
   // Verify that outputs have the same size
   ROS_ASSERT_MSG(features.size() == r_corners.size(),
                  "TrackSpatial Dimension mismatch");

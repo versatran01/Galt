@@ -31,13 +31,17 @@ class StereoVo {
    */
   StereoVo(const StereoVoConfig &config)
       : config_(config),
-        detector_(config.shi_max_corners, config.shi_quality_level,
-                  config.shi_min_distance) {}
+        detector_(config.cell_size, config.shi_max_corners,
+                  config.shi_quality_level, config.shi_quality_level) {}
 
   const bool init() const { return init_; }
+  const FramePtr &prev_frame() const { return prev_frame_; }
   const Pose &pose_world() const { return prev_frame_->pose(); }
   const std::deque<FramePtr> &key_frames() const { return key_frames_; }
   const std::map<Id, Point3d> &point3ds() const { return point3ds_; }
+  const std::vector<Feature> &features() const {
+    return prev_frame_->features();
+  }
 
   /**
    * @brief Initialize Initialize stereo visual odometry
@@ -114,11 +118,11 @@ class StereoVo {
   FramePtr &prev_key_frame() { return key_frames_.back(); }
   const FramePtr &prev_key_frame() const { return key_frames_.back(); }
 
-  bool init_{false};               ///< True if stereo_vo is initialized
-  StereoCameraModel model_;        ///< Stereo camera model
-  StereoVoConfig config_;          ///< Dynamic reconfigure config of stereo_vo
-  GlobalCornerDetector detector_;  ///< Corner detector
-  FramePtr prev_frame_;            ///< Previous frame
+  bool init_{false};              ///< True if stereo_vo is initialized
+  StereoCameraModel model_;       ///< Stereo camera model
+  StereoVoConfig config_;         ///< Dynamic reconfigure config of stereo_vo
+  GoodFeatureDetector detector_;  ///< Corner detector
+  FramePtr prev_frame_;           ///< Previous frame
   std::deque<FramePtr> key_frames_;  ///< A deque of key frames in window
   std::map<Id, Point3d> point3ds_;   ///< Triangulated 3d points in world frame
 };

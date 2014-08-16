@@ -57,7 +57,7 @@ void Display(const CvStereoImage &stereo_image,
      auto p = feature.p_pixel() + CvPoint2(0, n_rows);
      auto color = cv_color::RED;
      if (feature.init()) color = cv_color::MAGENTA;
-     cv::circle(display, p, 2, color, 2);
+     cv::circle(display, p, 1, color, 2);
      cv::circle(display, feature.p_pixel(), 1, color, 2);
    }
 

@@ -15,6 +15,7 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 find_package(OpenCV)
+find_package(gtsam)
 
 generate_dynamic_reconfigure_options(
     cfg/StereoVoDyn.cfg
@@ -31,7 +32,7 @@ include_directories(include)
 include_directories(
     ${catkin_INCLUDE_DIRS}
     ${OpenCV_INCLUDE_DIRS}
-    ${GLOG_INCLUDE_DIRS}
+    ${GTSAM_INCLUDE_DIRS}
 )
 
 add_library(${PROJECT_NAME}
@@ -40,11 +41,12 @@ add_library(${PROJECT_NAME}
     src/utils.cc
     src/frame.cc
     src/feature.cc
+    src/optimizer.cc
 )
 target_link_libraries(${PROJECT_NAME}
     ${catkin_LIBRARIES}
     ${OpenCV_LIBRARIES}
-    ${GLOG_LIBRARIES}
+    ${GTSAM_LIBRARIES}
 )
 
 add_executable(${PROJECT_NAME}_node

@@ -151,6 +151,15 @@ void StereoVo::EstimatePose(const FramePtr &frame,
                      rvec, tvec, false, 100, config_.pnp_ransac_error,
                      min_inliers, inliers, cv::ITERATIVE);
 
+  const double tx = tvec.at<double>(0,0);
+  const double ty = tvec.at<double>(1,0);
+  const double tz = tvec.at<double>(2,0);
+  if (tx==0.0 && ty==0.0 && tz==0.0) {
+    ROS_WARN("PnP Ransac returned zeros - trying regular PnP");
+    cv::solvePnP(world_points,image_points,model_.left().fullIntrinsicMatrix(),
+                 std::vector<double>(),rvec,tvec,false);
+  }
+  
   kr::vec3<scalar_t> r(rvec.at<double>(0, 0), rvec.at<double>(1, 0),
                        rvec.at<double>(2, 0));
   kr::vec3<scalar_t> t(tvec.at<double>(0, 0), tvec.at<double>(1, 0),

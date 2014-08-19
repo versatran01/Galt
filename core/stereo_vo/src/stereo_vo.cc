@@ -29,6 +29,7 @@ void StereoVo::Initialize(const CvStereoImage &stereo_image,
   // Add the first stereo image as first keyframe
   FramePtr curr_frame = std::make_shared<Frame>(stereo_image);
   AddKeyFrame(curr_frame);
+  optimizer_.Initialize(*curr_frame, model_);
 
   // Save frame for next iteration
   prev_frame_ = curr_frame;
@@ -65,6 +66,10 @@ void StereoVo::Iterate(const CvStereoImage &stereo_image) {
   }
 
   // Do a windowed optimization with gtsam if window size is reached
+  if (key_frames_.size() == static_cast<unsigned>(config_.kf_size)) {
+    optimizer_.Optimize(key_frames_);
+    key_frames_.pop_front();
+  }
 
   // Visualization (optional)
   Display(curr_frame, prev_key_frame());
@@ -201,8 +206,7 @@ bool StereoVo::ShouldAddKeyFrame(const FramePtr &frame) const {
 void StereoVo::AddKeyFrame(const FramePtr &frame) {
   // Detect new corners and add to features in current frame
   std::vector<Feature> &features = frame->features();
-  size_t num_new_features = detector_.AddFeatures(frame->l_image(), features);
-  ROS_INFO("new corners detected: %d", static_cast<int>(num_new_features));
+  detector_.AddFeatures(frame->l_image(), features);
   // Track features into right image
   std::vector<CvPoint2> right_corners;
   TrackSpatial(frame->stereo_image(), features, right_corners);

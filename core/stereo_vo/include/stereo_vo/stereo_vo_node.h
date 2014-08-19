@@ -115,7 +115,6 @@ const StereoVoDynConfig ReadConfig(const ros::NodeHandle& nh);
 geometry_msgs::Pose KrPoseToRosPose(const KrPose& kr_pose);
 
 }  // namespace stereo_vo
-
 }  // namespace galt
 
 #endif  // GALT_STEREO_VO_NODE_H_

@@ -12,6 +12,11 @@
 #include <gtsam/nonlinear/NonlinearEquality.h>
 #include <gtsam/inference/Symbol.h>
 
+#include <image_geometry/stereo_camera_model.h>
+#include "stereo_vo/common.h"
+#include "stereo_vo/pose.h"
+#include "stereo_vo/frame.h"
+
 namespace galt {
 namespace stereo_vo {
 /// @note: There are two things to try here.
@@ -24,22 +29,30 @@ namespace stereo_vo {
 /// This will be implemented in the WindowedOptimizer class.
 /// 2 is following VisualISAM2Example.cpp. Which will maintain one global graph
 /// and use iSAM2 to do incremental smoothinga and mapping
+using image_geometry::StereoCameraModel;
 /**
  * @brief The OptimizerBase class
  */
 class OptimizerBase {
  public:
-  OptimizerBase() = default;
   virtual ~OptimizerBase() {}
 
   /**
    * @brief Initialize Initialize gtsam
    * This will be called when the first key frame is added
-   * @param frame
+   * @param frame First key frame
    */
-//  virtual void Initialize(const Frame &frame) = 0;
+  virtual void Initialize(const Frame &frame,
+                          const StereoCameraModel &model) = 0;
+  /**
+   * @brief Optimize Optimize currently stored key frames
+   * @param key_frames
+   */
+  virtual void Optimize(std::deque<FramePtr> &key_frames) = 0;
 
  protected:
+  gtsam::NonlinearFactorGraph graph_;
+  gtsam::noiseModel::Isotropic::shared_ptr noise_model_;
 };
 
 /**
@@ -47,18 +60,21 @@ class OptimizerBase {
  */
 class WindowedOptimizer : public OptimizerBase {
  public:
-  WindowedOptimizer() = default;
-
-//  virtual void Initialize(const Frame &frame);
+  using super = OptimizerBase;
+  virtual void Initialize(const Frame &frame,
+                          const StereoCameraModel &model) override;
+  virtual void Optimize(std::deque<FramePtr> &key_frames) override;
 
  private:
+  gtsam::Cal3_S2Stereo::shared_ptr stereo_model_;
 };
 
 class IncrementalOptimizer : public OptimizerBase {
  public:
-  IncrementalOptimizer();
-
+  virtual void Initialize(const Frame &frame,
+                          const StereoCameraModel &model) override;
  private:
+  gtsam::Cal3_S2::shared_ptr camera_model_;
 };
 
 }  // namespace stereo_vo

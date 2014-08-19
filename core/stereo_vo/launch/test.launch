@@ -11,7 +11,7 @@
     <arg name="bagfile_start" default="0"/>
 
     <arg name="cell_size" default="80"/>
-    <arg name="shi_max_corners" default="300"/>
+    <arg name="shi_max_corners" default="100"/>
     <arg name="shi_quality_level" default="0.0001"/>
     <arg name="shi_min_distance" default="40"/>
 

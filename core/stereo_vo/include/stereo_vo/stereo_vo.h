@@ -103,7 +103,6 @@ class StereoVo {
   void FindFundamentalMat(const std::vector<CvPoint2> &points1,
                           const std::vector<CvPoint2> &points2,
                           std::vector<uchar> &status);
-
   /**
    * @brief TriangulatePoint
    * @param left Left observation in pixels.
@@ -122,10 +121,10 @@ class StereoVo {
   StereoCameraModel model_;       ///< Stereo camera model
   StereoVoConfig config_;         ///< Dynamic reconfigure config of stereo_vo
   GoodFeatureDetector detector_;  ///< Corner detector
+  WindowedOptimizer optimizer_;  ///< Windowed optimizer
   FramePtr prev_frame_;           ///< Previous frame
   std::deque<FramePtr> key_frames_;  ///< A deque of key frames in window
   std::map<Id, Point3d> point3ds_;   ///< Triangulated 3d points in world frame
-  std::shared_ptr<WindowedOptimizer> optimizer_;  ///< Windowed optimizer
 };
 
 }  // namespace stereo_vo

@@ -47,7 +47,6 @@ target_link_libraries(${PROJECT_NAME}
     ${catkin_LIBRARIES}
     ${OpenCV_LIBRARIES}
     ${GTSAM_LIBRARIES}
-    tbb
 )
 
 add_executable(${PROJECT_NAME}_node

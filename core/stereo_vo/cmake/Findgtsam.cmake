@@ -121,7 +121,7 @@ endif()
 # Set standard CMake FindPackage variables if found.
 if(GTSAM_FOUND)
     set(GTSAM_INCLUDE_DIRS ${GTSAM_INCLUDE_DIR})
-    set(GTSAM_LIBRARIES ${GTSAM_LIBRARY})
+    list(APPEND GTSAM_LIBRARIES ${GTSAM_LIBRARY} tbb)
 endif()
 
 # Handle REQUIRED / QUIET optional arguments.

@@ -28,7 +28,6 @@
 #include "stereo_vo/common.h"
 
 namespace galt {
-
 namespace stereo_vo {
 
 using namespace sensor_msgs;
@@ -113,7 +112,7 @@ const StereoVoDynConfig ReadConfig(const ros::NodeHandle& nh);
  * @param kr_pose A kr::Pose
  * @return geometry_msgs::Pose
  */
-geometry_msgs::Pose KrPoseToRosPose(const Pose& kr_pose);
+geometry_msgs::Pose KrPoseToRosPose(const KrPose& kr_pose);
 
 }  // namespace stereo_vo
 

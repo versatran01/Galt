@@ -17,8 +17,6 @@
 #include <kr_math/pose.hpp>
 #include <kr_math/SO3.hpp>
 
-#include <Eigen/Geometry>
-
 namespace galt {
 
 namespace stereo_vo {
@@ -166,7 +164,7 @@ void StereoVo::EstimatePose(const FramePtr &frame,
                        tvec.at<double>(2, 0));
 
   // This is now absolute pose
-  frame->set_pose(Pose::fromVectors(r, t));
+  frame->set_pose(KrPose::fromVectors(r, t));
 }
 
 bool StereoVo::ShouldAddKeyFrame(const FramePtr &frame) const {
@@ -175,7 +173,7 @@ bool StereoVo::ShouldAddKeyFrame(const FramePtr &frame) const {
     return true;
   }
 
-  const Pose &diff = frame->pose().difference(prev_key_frame()->pose());
+  const KrPose &diff = frame->pose().difference(prev_key_frame()->pose());
   if (diff.p.norm() > config_.kf_dist_thresh) {
     ROS_INFO("Distance: %f", diff.p.norm());
     //  over distance threshold, add keyframe
@@ -211,7 +209,7 @@ void StereoVo::AddKeyFrame(const FramePtr &frame) {
 
   if (!init_) {
     //  make up a pose that looks pretty
-    Pose init_pose(kr::quat<scalar_t>(0, 1, 0, 0),
+    KrPose init_pose(kr::quat<scalar_t>(0, 1, 0, 0),
                    kr::vec3<scalar_t>(0, 0, 10));
     frame->set_pose(init_pose);
   }
@@ -262,7 +260,7 @@ void StereoVo::TrackSpatial(const CvStereoImage &stereo_image,
                  "TrackSpatial Dimension mismatch");
 }
 
-void StereoVo::Triangulate(const Pose &pose, std::vector<Feature> &features,
+void StereoVo::Triangulate(const KrPose &pose, std::vector<Feature> &features,
                            std::vector<CvPoint2> &corners) {
   auto it_corner = corners.begin();
   for (auto it_feature = features.begin(); it_feature != features.end();
@@ -317,8 +315,8 @@ bool StereoVo::TriangulatePoint(const CvPoint2 &left, const CvPoint2 &right,
   const scalar_t rfx = model_.right().fx(), rfy = model_.right().fy();
   const scalar_t rcx = model_.right().cx(), rcy = model_.right().cy();
 
-  Pose poseLeft;   //  identity
-  Pose poseRight;  //  shifted right along x
+  KrPose poseLeft;   //  identity
+  KrPose poseRight;  //  shifted right along x
   poseRight.p[0] = model_.baseline();
 
   //  normalized coordinates
@@ -333,7 +331,7 @@ bool StereoVo::TriangulatePoint(const CvPoint2 &left, const CvPoint2 &right,
   }
 
   //  point is valid, refine it some more
-  std::vector<Pose> poses({poseLeft, poseRight});
+  std::vector<KrPose> poses({poseLeft, poseRight});
   std::vector<kr::vec2<scalar_t>> obvs({lPt, rPt});
 
   if (!kr::refinePoint(poses, obvs, p_cam)) {

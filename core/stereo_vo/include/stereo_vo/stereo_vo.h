@@ -2,10 +2,11 @@
 #define GALT_STEREO_VO_H_
 
 #include "stereo_vo/common.h"
-#include "stereo_vo/frame.h"
+#include "stereo_vo/optimizer.h"
 #include "stereo_vo/feature.h"
 #include "stereo_vo/point3d.h"
 #include "stereo_vo/corner_detector.h"
+#include "stereo_vo/frame.h"
 
 #include <vector>
 #include <memory>
@@ -13,12 +14,11 @@
 
 #include <cv_bridge/cv_bridge.h>
 #include <image_geometry/stereo_camera_model.h>
-#include <kr_math/pose.hpp>
+#include "stereo_vo/pose.h"
 
 #include "opencv2/core/core.hpp"
 
 namespace galt {
-
 namespace stereo_vo {
 
 using image_geometry::StereoCameraModel;
@@ -36,7 +36,7 @@ class StereoVo {
 
   const bool init() const { return init_; }
   const FramePtr &prev_frame() const { return prev_frame_; }
-  const Pose &pose_world() const { return prev_frame_->pose(); }
+  const KrPose &pose_world() const { return prev_frame_->pose(); }
   const std::deque<FramePtr> &key_frames() const { return key_frames_; }
   const std::map<Id, Point3d> &point3ds() const { return point3ds_; }
   const std::vector<Feature> &features() const {
@@ -82,7 +82,7 @@ class StereoVo {
   void TrackSpatial(const CvStereoImage &stereo_image,
                     std::vector<Feature> &features,
                     std::vector<CvPoint2> &r_corners);
-  void Triangulate(const Pose &pose, std::vector<Feature> &features,
+  void Triangulate(const KrPose &pose, std::vector<Feature> &features,
                    std::vector<CvPoint2> &corners);
   void TrackTemporal(const FramePtr &frame1, const FramePtr &frame2,
                      const FramePtr &key_frame);
@@ -125,10 +125,10 @@ class StereoVo {
   FramePtr prev_frame_;           ///< Previous frame
   std::deque<FramePtr> key_frames_;  ///< A deque of key frames in window
   std::map<Id, Point3d> point3ds_;   ///< Triangulated 3d points in world frame
+  std::shared_ptr<WindowedOptimizer> optimizer_;  ///< Windowed optimizer
 };
 
 }  // namespace stereo_vo
-
 }  // namespace galt
 
 #endif  // GALT_STEREO_VO_H_

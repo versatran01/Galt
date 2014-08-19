@@ -3,12 +3,12 @@
 
 #include "stereo_vo/common.h"
 #include "stereo_vo/feature.h"
+#include "stereo_vo/pose.h"
 
 #include <map>
 #include <memory>
 
 namespace galt {
-
 namespace stereo_vo {
 
 /**
@@ -30,8 +30,8 @@ class Frame {
         stereo_image_(stereo_image) {}
 
   const Id &id() const { return id_; }
-  const Pose &pose() const { return pose_; }
-  void set_pose(const Pose &pose) { pose_ = pose; }
+  const KrPose &pose() const { return pose_; }
+  void set_pose(const KrPose &pose) { pose_ = pose; }
   const bool &is_keyframe() const { return is_keyframe_; }
 
   const size_t num_features() const { return features_.size(); }
@@ -56,7 +56,7 @@ class Frame {
 
  private:
   Id id_;                          ///< id of this frame
-  Pose pose_;                      ///< pose of the frame in world frame
+  KrPose pose_;                      ///< pose of the frame in world frame
   bool is_keyframe_;               ///< if this frame is a keyframe
   CvStereoImage stereo_image_;     ///< stereo images of this frame
   std::vector<Feature> features_;  ///< all features observed in this frame
@@ -69,7 +69,6 @@ using FramePtr = Frame::Ptr;
 using FrameConstPtr = Frame::ConstPtr;
 
 }  // namespace stereo_vo
-
 }  // namespace galt
 
 #endif  // GALT_STEREO_VO_KEY_FRAME_H_

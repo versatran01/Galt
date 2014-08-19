@@ -210,7 +210,7 @@ const StereoVoConfig ReadConfig(const ros::NodeHandle& nh) {
   return config;
 }
 
-geometry_msgs::Pose KrPoseToRosPose(const Pose& kr_pose) {
+geometry_msgs::Pose KrPoseToRosPose(const KrPose& kr_pose) {
   geometry_msgs::Pose ros_pose;
   ros_pose.orientation.w = kr_pose.q.w();
   ros_pose.orientation.x = -kr_pose.q.x();

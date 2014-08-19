@@ -9,7 +9,6 @@
 #include <image_geometry/stereo_camera_model.h>
 
 namespace galt {
-
 namespace stereo_vo {
 
 /**
@@ -69,7 +68,6 @@ std::vector<CvPoint2> ExtractCorners(const std::vector<Feature>& features);
 std::vector<Id> ExtractIds(const std::vector<Feature>& features);
 
 }  // namespace stereo_vo
-
 }  // namespace galt
 
 #endif  // GALT_STEREO_VO_FEATURE_H_

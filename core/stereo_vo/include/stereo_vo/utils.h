@@ -9,7 +9,6 @@
 #include <deque>
 
 namespace galt {
-
 namespace stereo_vo {
 
 namespace cv_color {
@@ -22,6 +21,8 @@ const cv::Scalar MAGENTA = cv::Scalar(255, 0, 255);
 const cv::Scalar CYAN = cv::Scalar(255, 255, 0);
 }
 
+/// @note: these two could possibly be rewrote using erase and remove_if for
+/// better performance and readability
 template <typename T, typename U>
 void PruneByStatus(const std::vector<U> &status, std::vector<T> &objects,
                    std::set<T> &removed) {
@@ -58,7 +59,6 @@ void Display(const CvStereoImage &stereo_image,
              const FramePtr &key_frame);
 
 }  // namespace stereo_vo
-
 }  // namespace galt
 
 #endif  // GALT_STEREO_VO_UTILS_H_

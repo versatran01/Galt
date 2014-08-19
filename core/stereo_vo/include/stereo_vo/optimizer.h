@@ -2,20 +2,17 @@
 #define GALT_STEREO_VO_OPTIMIZER_H_
 
 #include <gtsam/geometry/Pose3.h>
-#include <gtsam/geometry/Cal3_S2Stereo.h>
-#include <gtsam/slam/StereoFactor.h>
-
 #include <gtsam/inference/Key.h>
-#include <gtsam/inference/Symbol.h>
-
 #include <gtsam/nonlinear/NonlinearFactorGraph.h>
 #include <gtsam/nonlinear/LevenbergMarquardtOptimizer.h>
 #include <gtsam/nonlinear/Marginals.h>
 #include <gtsam/nonlinear/Values.h>
+#include <gtsam/geometry/Cal3_S2Stereo.h>
+#include <gtsam/slam/StereoFactor.h>
 #include <gtsam/nonlinear/NonlinearEquality.h>
+#include <gtsam/inference/Symbol.h>
 
 namespace galt {
-
 namespace stereo_vo {
 /// @note: There are two things to try here.
 /// 1 is following StereoVOExample.cpp. Do a windowed optimization with
@@ -35,19 +32,36 @@ class OptimizerBase {
   OptimizerBase() = default;
   virtual ~OptimizerBase() {}
 
+  /**
+   * @brief Initialize Initialize gtsam
+   * This will be called when the first key frame is added
+   * @param frame
+   */
+//  virtual void Initialize(const Frame &frame) = 0;
+
  protected:
-  gtsam::NonlinearFactorGraph graph_;
 };
 
 /**
  * @brief The WindowedOptimizer class
  */
-class WindowedOptimizer : public OptimizerBase {};
+class WindowedOptimizer : public OptimizerBase {
+ public:
+  WindowedOptimizer() = default;
 
-class IncrementalOptimizer : public OptimizerBase {};
+//  virtual void Initialize(const Frame &frame);
+
+ private:
+};
+
+class IncrementalOptimizer : public OptimizerBase {
+ public:
+  IncrementalOptimizer();
+
+ private:
+};
 
 }  // namespace stereo_vo
-
 }  // namespace galt
 
 #endif  // GALT_STEREO_VO_OPTIMIZER_H_

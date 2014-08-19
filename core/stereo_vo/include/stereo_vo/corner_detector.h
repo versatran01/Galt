@@ -8,7 +8,6 @@
 #include <utility>
 
 namespace galt {
-
 namespace stereo_vo {
 
 using Grid = std::set<std::pair<int, int>>;
@@ -111,7 +110,6 @@ class GlobalCornerDetector : public CornerDetectorBase {
 };
 
 }  // namespace stereo_vo
-
 }  // namespace galt
 
 #endif  // GALT_STEREO_VO_CORNER_DETECTOR_H_

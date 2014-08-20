@@ -59,7 +59,18 @@ void WindowedOptimizer::Optimize(std::deque<FramePtr> &key_frames,
   // during optimization
   // NOTE: NonlinearEquality forces the optimizer to use QR rather than Cholesky
   // QR is much slower than Cholesky, but numerically more stable
-  graph.push_back(NonlinearEquality<Pose3>(Symbol('x', x_init), first_pose));
+  //graph.push_back(NonlinearEquality<Pose3>(Symbol('x', x_init), first_pose));
+  
+  gtsam::Vector6 pose_noise_std;
+  for (int i=0; i < 3; i++) {
+    pose_noise_std[i] = 0.3;  
+    pose_noise_std[i+3] = 0.2;
+  }
+  gtsam::noiseModel::Diagonal::shared_ptr pose_noise;
+  pose_noise = gtsam::noiseModel::Diagonal::Sigmas(pose_noise_std);
+  gtsam::PriorFactor<gtsam::Pose3> pose_prior(Symbol('x', x_init),first_pose,pose_noise);
+  graph.push_back(pose_prior);
+  
   LevenbergMarquardtOptimizer optimizer =
       LevenbergMarquardtOptimizer(graph, initial_estimates);
   Values result = optimizer.optimize();
@@ -100,10 +111,12 @@ void WindowedOptimizer::Optimize(std::deque<FramePtr> &key_frames,
 
 void IncrementalOptimizer::Initialize(const StereoCameraModel &model) {
   // Define the camera observation noise model, 1 pixel in u and v
-  noise_model_ = noiseModel::Isotropic::Sigma(2, 1.0);
+  noise_model_ = noiseModel::Isotropic::Sigma(3, 1.0);
   const image_geometry::PinholeCameraModel &left = model.left();
   camera_model_.reset(
       new Cal3_S2(left.fx(), left.fy(), 0, left.cx(), left.cy()));
+  stereo_model_.reset(new Cal3_S2Stereo(left.fx(), left.fy(), 0, left.cx(),
+                                        left.cy(), model.baseline()));
 
   ROS_INFO("Initializing incremental optimizer");
 }
@@ -137,9 +150,17 @@ void IncrementalOptimizer::Optimize(std::deque<FramePtr> &key_frames,
     
     //  create a projection residual
     gtsam::Symbol point_sym('p', feature.id());
-    ProjectionFactor factor(p2,noise_model_,frame_sym,
-                            point_sym,camera_model_);
-    graph_.push_back(factor);
+//    ProjectionFactor factor(p2,noise_model_,frame_sym,
+//                            point_sym,camera_model_);
+//    graph_.push_back(factor);
+    
+    const double u_l = feature.p_pixel().x;
+    const double u_r = feature.p_right().x;
+    const double v = feature.p_pixel().y;
+    graph_.push_back(StereoProjectionFactor(StereoPoint2(u_l, u_r, v), 
+                                            noise_model_,
+                                  frame_sym, point_sym,
+                                  stereo_model_));
     
     if (prevIds_.find(feature.id()) != prevIds_.end()) {
       count++;
@@ -156,9 +177,9 @@ void IncrementalOptimizer::Optimize(std::deque<FramePtr> &key_frames,
       estimate_->insert(point_sym,guess);
 
       //if (first_run) {
-        gtsam::noiseModel::Isotropic::shared_ptr pointNoise = 
-            gtsam::noiseModel::Isotropic::Sigma(3, 1);
-        graph_.push_back(gtsam::PriorFactor<gtsam::Point3>(point_sym,guess,pointNoise));
+        //gtsam::noiseModel::Isotropic::shared_ptr pointNoise = 
+        //    gtsam::noiseModel::Isotropic::Sigma(3, 0.5);
+        //graph_.push_back(gtsam::PriorFactor<gtsam::Point3>(point_sym,guess,pointNoise));
       //}
     } else {
       //ROS_INFO("Not init!");
@@ -178,7 +199,7 @@ void IncrementalOptimizer::Optimize(std::deque<FramePtr> &key_frames,
     gtsam::Vector6 pose_noise_std;
     for (int i=0; i < 3; i++) {
       pose_noise_std[i] = 0.3;
-      pose_noise_std[i+3] = 0.2;
+      pose_noise_std[i+3] = 0.1;
     }
     gtsam::noiseModel::Diagonal::shared_ptr pose_noise;
     pose_noise = gtsam::noiseModel::Diagonal::Sigmas(pose_noise_std);
@@ -232,6 +253,15 @@ void IncrementalOptimizer::Optimize(std::deque<FramePtr> &key_frames,
     graph_.resize(0);
     estimate_->clear();
   }
+}
+
+void G2OOptimizer::Initialize(const StereoCameraModel &model) {
+  
+}
+
+void G2OOptimizer::Optimize(std::deque<FramePtr> &key_frames,
+                            std::map<Id, Point3d>& point3s) {
+  
 }
 
 }  // namespace stereo_vo

@@ -220,6 +220,10 @@ void StereoVo::AddKeyFrame(const FramePtr &frame) {
   key_frames_.push_back(frame);
   // Optimize
   optimizer_.Optimize(key_frames_, point3ds_);
+  
+  if (key_frames_.size() > 4) {
+    key_frames_.pop_front();
+  }
 }
 
 void StereoVo::TrackSpatial(const CvStereoImage &stereo_image,

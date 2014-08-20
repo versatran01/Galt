@@ -82,6 +82,7 @@ class IncrementalOptimizer : public OptimizerBase {
                         std::map<Id, Point3d>& point3s) override;
  private:
   gtsam::Cal3_S2::shared_ptr camera_model_;
+  gtsam::Cal3_S2Stereo::shared_ptr stereo_model_;
   
   gtsam::Values::shared_ptr estimate_;
   std::shared_ptr<gtsam::NonlinearISAM> isam_;
@@ -90,6 +91,18 @@ class IncrementalOptimizer : public OptimizerBase {
   
   typedef gtsam::GenericProjectionFactor<gtsam::Pose3, 
     gtsam::Point3, gtsam::Cal3_S2> ProjectionFactor;
+  
+  typedef gtsam::GenericStereoFactor<gtsam::Pose3, gtsam::Point3>
+    StereoProjectionFactor;
+};
+
+class G2OOptimizer : public OptimizerBase {
+public:
+  virtual void Initialize(const StereoCameraModel &model) override;
+
+  virtual void Optimize(std::deque<FramePtr> &key_frames,
+                        std::map<Id, Point3d>& point3s) override;
+private:
 };
 
 }  // namespace stereo_vo

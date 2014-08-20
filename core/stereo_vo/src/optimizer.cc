@@ -27,8 +27,8 @@ void WindowedOptimizer::Optimize(std::deque<FramePtr> &key_frames,
     // Add camera initial pose estimate
     const Frame &frame = *frame_ptr;
     const size_t x = frame.id();
-    KrPose pose(frame.pose().q, frame.pose().p);
-//    KrPose pose(frame.pose().q.conjugate(), frame.pose().p);
+    //KrPose pose(frame.pose().q, frame.pose().p);
+    KrPose pose(frame.pose().q.conjugate(), frame.pose().p);
     initial_estimates.insert(Symbol('x', x),
                              Pose3(pose.matrix().cast<double>()));
     const std::vector<Feature> &features = frame_ptr->features();

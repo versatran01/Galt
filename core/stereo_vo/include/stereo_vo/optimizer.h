@@ -9,13 +9,18 @@
 #include <gtsam/nonlinear/Values.h>
 #include <gtsam/geometry/Cal3_S2Stereo.h>
 #include <gtsam/slam/StereoFactor.h>
+#include <gtsam/slam/ProjectionFactor.h>
+#include <gtsam/slam/PriorFactor.h>
 #include <gtsam/nonlinear/NonlinearEquality.h>
+#include <gtsam/nonlinear/NonlinearISAM.h>
+#include <gtsam/nonlinear/NonlinearFactorGraph.h>
 #include <gtsam/inference/Symbol.h>
 
 #include <image_geometry/stereo_camera_model.h>
 #include "stereo_vo/common.h"
 #include "stereo_vo/pose.h"
 #include "stereo_vo/frame.h"
+#include "stereo_vo/point3d.h"
 
 namespace galt {
 namespace stereo_vo {
@@ -73,8 +78,15 @@ class IncrementalOptimizer : public OptimizerBase {
  public:
   virtual void Initialize(const Frame &frame,
                           const StereoCameraModel &model) override;
+  
+  virtual void Optimize(std::deque<FramePtr> &key_frames,
+                        std::map<Id, Point3d>& point3s) override;
  private:
   gtsam::Cal3_S2::shared_ptr camera_model_;
+  std::shared_ptr<gtsam::NonlinearISAM> isam_;
+  
+  typedef gtsam::GenericProjectionFactor<gtsam::Pose3, 
+    gtsam::Point3, gtsam::Cal3_S2> ProjectionFactor;
 };
 
 }  // namespace stereo_vo

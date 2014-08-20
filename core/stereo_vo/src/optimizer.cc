@@ -27,10 +27,11 @@ void WindowedOptimizer::Optimize(std::deque<FramePtr> &key_frames,
     // Add camera initial pose estimate
     const Frame &frame = *frame_ptr;
     const size_t x = frame.id();
-    //KrPose pose(frame.pose().q, frame.pose().p);
-    KrPose pose(frame.pose().q.conjugate(), frame.pose().p);
-    initial_estimates.insert(Symbol('x', x),
-                             Pose3(pose.matrix().cast<double>()));
+    const Matrix3 mat3 = frame.pose().q.conjugate().matrix().cast<double>();
+    const Rot3 rot3(mat3);
+    const Point3 trans(frame.pose().p[0], frame.pose().p[1], frame.pose().p[2]);
+    Pose3 pose3(rot3, trans);
+    initial_estimates.insert(Symbol('x', x), pose3);
     const std::vector<Feature> &features = frame_ptr->features();
     for (const Feature &feature : features) {
       // Add stereo factors to graph
@@ -75,8 +76,7 @@ void WindowedOptimizer::Optimize(std::deque<FramePtr> &key_frames,
         pose.rotation().quaternion()(2), pose.rotation().quaternion()(3));
     kr::vec3<scalar_t> translation(
         pose.translation().x(), pose.translation().y(), pose.translation().z());
-//    KrPose kr_pose(quat.conjugate(), translation);
-    KrPose kr_pose(quat, translation);
+    KrPose kr_pose(quat.conjugate(), translation);
 //    std::cout << kr_pose.q.matrix() << std::endl;
 //    std::cout << frame.pose().q.matrix() << std::endl;
 //    std::cout << "-----" << std::endl;

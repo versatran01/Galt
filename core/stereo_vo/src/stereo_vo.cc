@@ -115,12 +115,14 @@ void StereoVo::TrackTemporal(const cv::Mat &image1, const cv::Mat &image2,
 }
 
 void StereoVo::EstimatePose(const FramePtr &frame,
-                            const std::map<Id, Point3d> point3ds) const {
+                            const std::map<Id, Point3d> point3ds) {
   const size_t n_features = frame->num_features();
 
   std::vector<CvPoint2> image_points;
   std::vector<CvPoint3> world_points;
-  std::vector<uchar> inliers;
+  std::vector<int> inliers;
+  std::vector<Id> ids;
+  std::set<Id> ids_to_remove;
 
   image_points.reserve(n_features);
   world_points.reserve(n_features);
@@ -131,6 +133,7 @@ void StereoVo::EstimatePose(const FramePtr &frame,
       const Point3d &point3d = it->second;
       image_points.push_back(feature.p_pixel());
       world_points.push_back(point3d.p_world());
+      ids.push_back(feature.id());
     }
   }
 
@@ -147,16 +150,31 @@ void StereoVo::EstimatePose(const FramePtr &frame,
                      model_.left().fullIntrinsicMatrix(), std::vector<double>(),
                      rvec, tvec, false, 100, config_.pnp_ransac_error,
                      min_inliers, inliers, cv::ITERATIVE);
-
-  const double tx = tvec.at<double>(0,0);
-  const double ty = tvec.at<double>(1,0);
-  const double tz = tvec.at<double>(2,0);
-  if (tx==0.0 && ty==0.0 && tz==0.0) {
-    ROS_WARN("PnP Ransac returned zeros - trying regular PnP");
-    cv::solvePnP(world_points,image_points,model_.left().fullIntrinsicMatrix(),
-                 std::vector<double>(),rvec,tvec,false);
+  // Remove outliers
+  // For now, only remove those in features, this is quite naive, improve later
+  std::vector<uchar> status(ids.size(), 0);
+  for (const int index : inliers) {
+    status[index] = 1;
   }
-  
+  PruneByStatus(status, ids, ids_to_remove);
+  ROS_INFO("%i points removed", (int)ids_to_remove.size());
+  frame->RemoveById(ids_to_remove);
+  // Remove corresponding 3d points as well
+  for (const Id id: ids_to_remove) {
+    auto it = point3ds_.find(id);
+    point3ds_.erase(it);
+  }
+
+  const double tx = tvec.at<double>(0, 0);
+  const double ty = tvec.at<double>(1, 0);
+  const double tz = tvec.at<double>(2, 0);
+  if (tx == 0.0 && ty == 0.0 && tz == 0.0) {
+    ROS_WARN("PnP Ransac returned zeros - trying regular PnP");
+    cv::solvePnP(world_points, image_points,
+                 model_.left().fullIntrinsicMatrix(), std::vector<double>(),
+                 rvec, tvec, false);
+  }
+
   kr::vec3<scalar_t> r(rvec.at<double>(0, 0), rvec.at<double>(1, 0),
                        rvec.at<double>(2, 0));
   kr::vec3<scalar_t> t(tvec.at<double>(0, 0), tvec.at<double>(1, 0),
@@ -208,7 +226,7 @@ void StereoVo::AddKeyFrame(const FramePtr &frame) {
   if (!init_) {
     //  make up a pose that looks pretty
     KrPose init_pose(kr::quat<scalar_t>(0, 1, 0, 0),
-                   kr::vec3<scalar_t>(0, 0, 10));
+                     kr::vec3<scalar_t>(0, 0, 10));
     frame->set_pose(init_pose);
   }
 
@@ -269,14 +287,15 @@ void StereoVo::Triangulate(const KrPose &pose, std::vector<Feature> &features,
     } else {
       // Convert to world frame
       p3 = pose.q.conjugate().matrix() * p3 + pose.p;
-      
-      /// @note: Add a check here if you don't want to overwrite past triangulations 
+
+      /// @note: Add a check here if you don't want to overwrite past
+      /// triangulations
       const Id &id = it_feature->id();
-      if (point3ds_.find(id) == point3ds_.end()) {
+//      if (point3ds_.find(id) == point3ds_.end()) {
         point3ds_[id] = Point3d(id, CvPoint3(p3[0], p3[1], p3[2]));
-      }
-      
-      ++it_feature; 
+//      }
+
+      ++it_feature;
       ++it_corner;
     }
   }
@@ -303,7 +322,7 @@ void StereoVo::OpticalFlow(const cv::Mat &image1, const cv::Mat &image2,
 void StereoVo::FindFundamentalMat(const std::vector<CvPoint2> &points1,
                                   const std::vector<CvPoint2> &points2,
                                   std::vector<uchar> &status) {
-  cv::findFundamentalMat(points1, points2, cv::FM_RANSAC, 1, 0.99, status);
+  cv::findFundamentalMat(points1, points2, cv::FM_RANSAC, 1, 0.999, status);
 }
 
 bool StereoVo::TriangulatePoint(const CvPoint2 &left, const CvPoint2 &right,

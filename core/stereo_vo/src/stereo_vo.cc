@@ -28,8 +28,8 @@ void StereoVo::Initialize(const CvStereoImage &stereo_image,
   model_ = model;
   // Add the first stereo image as first keyframe
   FramePtr curr_frame = std::make_shared<Frame>(stereo_image);
-  AddKeyFrame(curr_frame);
   optimizer_.Initialize(*curr_frame, model_);
+  AddKeyFrame(curr_frame);
 
   // Save frame for next iteration
   prev_frame_ = curr_frame;
@@ -61,18 +61,9 @@ void StereoVo::Iterate(const CvStereoImage &stereo_image) {
   // 3. Number of features falls below threshold (see ShouldAddKeyFrame)
   // After this step, tracked_corners will contain both old corners and newly
   // added corners
-  if (ShouldAddKeyFrame(curr_frame)) {
+  const bool shouldAdd = ShouldAddKeyFrame(curr_frame);
+  if (shouldAdd) {
     AddKeyFrame(curr_frame);
-  }
-
-  // Do a windowed optimization with gtsam if window size is reached
-  //if (key_frames_.size() == static_cast<unsigned>(config_.kf_size)) {
-    //  temp: do this every time for ISAM
-  if (!key_frames_.empty()) {
-    optimizer_.Optimize(key_frames_, point3ds_);
-    if (key_frames_.size() > 1) {
-      key_frames_.pop_front();
-    }
   }
 
   // Visualization (optional)
@@ -228,6 +219,9 @@ void StereoVo::AddKeyFrame(const FramePtr &frame) {
   frame->SetKeyFrame();
   // Add key frame to queue with current_pose, features and stereo_image
   key_frames_.push_back(frame);
+  
+  //  optimize!
+  optimizer_.Optimize(key_frames_, point3ds_);
 }
 
 void StereoVo::TrackSpatial(const CvStereoImage &stereo_image,
@@ -283,9 +277,10 @@ void StereoVo::Triangulate(const KrPose &pose, std::vector<Feature> &features,
       // Convert to world frame
       p3 = pose.q.conjugate().matrix() * p3 + pose.p;
       
-      /// @note: Add a check here if you don't want to overwrite past triangulations 
       const Id &id = it_feature->id();
-      point3ds_[id] = Point3d(id, CvPoint3(p3[0], p3[1], p3[2]));
+      if (point3ds_.find(id) == point3ds_.end()) {
+        point3ds_[id] = Point3d(id, CvPoint3(p3[0], p3[1], p3[2]));
+      }
       
       ++it_feature; 
       ++it_corner;

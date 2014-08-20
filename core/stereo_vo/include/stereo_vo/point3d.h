@@ -1,5 +1,5 @@
 #ifndef GALT_STEREO_VO_POINT_H_
-#define GATL_STEREO_VO_POINT_H_
+#define GALT_STEREO_VO_POINT_H_
 
 #include "stereo_vo/common.h"
 

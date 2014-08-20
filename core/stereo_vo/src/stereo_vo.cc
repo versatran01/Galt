@@ -66,9 +66,13 @@ void StereoVo::Iterate(const CvStereoImage &stereo_image) {
   }
 
   // Do a windowed optimization with gtsam if window size is reached
-  if (key_frames_.size() == static_cast<unsigned>(config_.kf_size)) {
-    optimizer_.Optimize(key_frames_);
-    key_frames_.pop_front();
+  //if (key_frames_.size() == static_cast<unsigned>(config_.kf_size)) {
+    //  temp: do this every time for ISAM
+  if (!key_frames_.empty()) {
+    optimizer_.Optimize(key_frames_, point3ds_);
+    if (key_frames_.size() > 1) {
+      key_frames_.pop_front();
+    }
   }
 
   // Visualization (optional)
@@ -267,8 +271,7 @@ void StereoVo::TrackSpatial(const CvStereoImage &stereo_image,
 void StereoVo::Triangulate(const KrPose &pose, std::vector<Feature> &features,
                            std::vector<CvPoint2> &corners) {
   auto it_corner = corners.begin();
-  for (auto it_feature = features.begin(); it_feature != features.end();
-       ++it_feature, ++it_corner) {
+  for (auto it_feature = features.begin(); it_feature != features.end();) {
     // Re-triangulate
     kr::vec3<scalar_t> p3;
     Feature &feature = *it_feature;
@@ -276,14 +279,17 @@ void StereoVo::Triangulate(const KrPose &pose, std::vector<Feature> &features,
       // Failed erase from corners
       it_feature = features.erase(it_feature);
       it_corner = corners.erase(it_corner);
-      continue;
+    } else {
+      // Convert to world frame
+      p3 = pose.q.conjugate().matrix() * p3 + pose.p;
+      
+      /// @note: Add a check here if you don't want to overwrite past triangulations 
+      const Id &id = it_feature->id();
+      point3ds_[id] = Point3d(id, CvPoint3(p3[0], p3[1], p3[2]));
+      
+      ++it_feature; 
+      ++it_corner;
     }
-    // Convert to world frame
-    p3 = pose.q.conjugate().matrix() * p3 + pose.p;
-    
-    /// @note: Add a check here if you don't want to overwrite past triangulations 
-    const Id &id = it_feature->id();
-    point3ds_[id] = Point3d(id, CvPoint3(p3[0], p3[1], p3[2]));
   }
 }
 

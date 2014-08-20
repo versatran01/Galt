@@ -47,13 +47,13 @@ class OptimizerBase {
    * This will be called when the first key frame is added
    * @param frame First key frame
    */
-  virtual void Initialize(const Frame &frame,
-                          const StereoCameraModel &model) = 0;
+  virtual void Initialize(const StereoCameraModel &model) = 0;
   /**
    * @brief Optimize Optimize currently stored key frames
    * @param key_frames
    */
-  virtual void Optimize(std::deque<FramePtr> &key_frames) = 0;
+  virtual void Optimize(std::deque<FramePtr> &key_frames,
+                        std::map<Id, Point3d>& point3s) = 0;
 
  protected:
   gtsam::NonlinearFactorGraph graph_;
@@ -65,10 +65,10 @@ class OptimizerBase {
  */
 class WindowedOptimizer : public OptimizerBase {
  public:
-  using super = OptimizerBase;
-  virtual void Initialize(const Frame &frame,
-                          const StereoCameraModel &model) override;
-  virtual void Optimize(std::deque<FramePtr> &key_frames) override;
+  using StereoFactor = gtsam::GenericStereoFactor<gtsam::Pose3, gtsam::Point3>;
+  virtual void Initialize(const StereoCameraModel &model) override;
+  virtual void Optimize(std::deque<FramePtr> &key_frames,\
+                        std::map<Id, Point3d>& point3s) override;
 
  private:
   gtsam::Cal3_S2Stereo::shared_ptr stereo_model_;
@@ -76,8 +76,7 @@ class WindowedOptimizer : public OptimizerBase {
 
 class IncrementalOptimizer : public OptimizerBase {
  public:
-  virtual void Initialize(const Frame &frame,
-                          const StereoCameraModel &model) override;
+  virtual void Initialize(const StereoCameraModel &model) override;
   
   virtual void Optimize(std::deque<FramePtr> &key_frames,
                         std::map<Id, Point3d>& point3s) override;

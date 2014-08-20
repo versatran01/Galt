@@ -46,8 +46,16 @@ class Frame {
   const cv::Mat &r_image() const { return stereo_image_.second; }
   /**
    * @brief SetKeyFrame Mark this frame as key frame
+   * @param right_corners
    */
-  void SetKeyFrame() { is_keyframe_ = true; }
+  void SetKeyFrame(const std::vector<CvPoint2> &right_corners) {
+    auto it_feat = features_.begin(), ite_feat = features_.end();
+    auto it_right = right_corners.begin();
+    for (; it_feat != ite_feat; ++it_feat, ++it_right) {
+      it_feat->set_p_right(*it_right);
+    }
+    is_keyframe_ = true;
+  }
   /**
    * @brief RemoveById Remove only new features which id is in ids_to_remove
    * @param ids_to_remove A set of ids to remove
@@ -56,7 +64,7 @@ class Frame {
 
  private:
   Id id_;                          ///< id of this frame
-  KrPose pose_;                      ///< pose of the frame in world frame
+  KrPose pose_;                    ///< pose of the frame in world frame
   bool is_keyframe_;               ///< if this frame is a keyframe
   CvStereoImage stereo_image_;     ///< stereo images of this frame
   std::vector<Feature> features_;  ///< all features observed in this frame

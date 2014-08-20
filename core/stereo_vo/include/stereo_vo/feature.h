@@ -44,12 +44,16 @@ class Feature {
   const CvPoint2& p_pixel() const { return p_pixel_; }
   void set_p_pixel(const CvPoint2& p_pixel) { p_pixel_ = p_pixel; }
 
+  const CvPoint2& p_right() const { return p_right_; }
+  void set_p_right(const CvPoint2& p_right) { p_right_ = p_right; }
+
   const bool& init() const { return init_; }
   void set_init(const bool& init) { init_ = init; }
 
  private:
   Id id_;             ///< id of this feature
   CvPoint2 p_pixel_;  ///< pixel position
+  CvPoint2 p_right_;  ///< pixel position in right image
   bool init_;         ///< true if this feature was newly added
 };
 

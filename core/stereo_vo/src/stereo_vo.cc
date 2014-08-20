@@ -29,7 +29,7 @@ void StereoVo::Initialize(const CvStereoImage &stereo_image,
   // Add the first stereo image as first keyframe
   FramePtr curr_frame = std::make_shared<Frame>(stereo_image);
   AddKeyFrame(curr_frame);
-  optimizer_.Initialize(*curr_frame, model_);
+  optimizer_.Initialize(model_);
 
   // Save frame for next iteration
   prev_frame_ = curr_frame;
@@ -66,13 +66,13 @@ void StereoVo::Iterate(const CvStereoImage &stereo_image) {
   }
 
   // Do a windowed optimization with gtsam if window size is reached
-  //if (key_frames_.size() == static_cast<unsigned>(config_.kf_size)) {
-    //  temp: do this every time for ISAM
-  if (!key_frames_.empty()) {
+  if (key_frames_.size() == static_cast<unsigned>(config_.kf_size)) {
+//      temp: do this every time for ISAM
+//  if (!key_frames_.empty()) {
     optimizer_.Optimize(key_frames_, point3ds_);
-    if (key_frames_.size() > 1) {
+//    if (key_frames_.size() > 1) {
       key_frames_.pop_front();
-    }
+//    }
   }
 
   // Visualization (optional)
@@ -225,7 +225,7 @@ void StereoVo::AddKeyFrame(const FramePtr &frame) {
   // Retriangulate in current pose
   Triangulate(frame->pose(), features, right_corners);
 
-  frame->SetKeyFrame();
+  frame->SetKeyFrame(right_corners);
   // Add key frame to queue with current_pose, features and stereo_image
   key_frames_.push_back(frame);
 }
@@ -254,14 +254,6 @@ void StereoVo::TrackSpatial(const CvStereoImage &stereo_image,
   PruneByStatus(status, r_corners);
   PruneByStatus(status, features);
 
-  /// @note: for some reason, some tracked corner are outside of the image, I'm
-  /// not sure if this will cause and problem. Maybe this has something to do
-  /// with win_size
-//  for (const CvPoint2 &corner : r_corners) {
-//    if ((corner.x > 752) || (corner.y > 480)) {
-//      ROS_WARN("Pixel outside of image");
-//    }
-//  }
 
   // Verify that outputs have the same size
   ROS_ASSERT_MSG(features.size() == r_corners.size(),

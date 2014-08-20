@@ -67,7 +67,7 @@ class WindowedOptimizer : public OptimizerBase {
  public:
   using StereoFactor = gtsam::GenericStereoFactor<gtsam::Pose3, gtsam::Point3>;
   virtual void Initialize(const StereoCameraModel &model) override;
-  virtual void Optimize(std::deque<FramePtr> &key_frames,\
+  virtual void Optimize(std::deque<FramePtr> &key_frames,
                         std::map<Id, Point3d>& point3s) override;
 
  private:
@@ -82,7 +82,11 @@ class IncrementalOptimizer : public OptimizerBase {
                         std::map<Id, Point3d>& point3s) override;
  private:
   gtsam::Cal3_S2::shared_ptr camera_model_;
+  
+  gtsam::Values::shared_ptr estimate_;
   std::shared_ptr<gtsam::NonlinearISAM> isam_;
+  
+  std::set<Id> prevIds_;
   
   typedef gtsam::GenericProjectionFactor<gtsam::Pose3, 
     gtsam::Point3, gtsam::Cal3_S2> ProjectionFactor;

@@ -94,7 +94,7 @@ class StereoVoNode {
                           const ros::Time& time,
                           const std::string& frame_id) const;
   void PublishPointCloud(const std::map<Id, Point3d> &point3ds,
-                         const std::vector<Feature> &features,
+                         const std::deque<FramePtr> &key_frames,
                          const ros::Time& time,
                          const std::string& frame_id) const;
   void PublishTrajectory(const geometry_msgs::Pose& pose, const ros::Time& time,

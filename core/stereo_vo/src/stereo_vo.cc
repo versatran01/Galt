@@ -28,8 +28,8 @@ void StereoVo::Initialize(const CvStereoImage &stereo_image,
   model_ = model;
   // Add the first stereo image as first keyframe
   FramePtr curr_frame = std::make_shared<Frame>(stereo_image);
-  AddKeyFrame(curr_frame);
   optimizer_.Initialize(model_);
+  AddKeyFrame(curr_frame);
 
   // Save frame for next iteration
   prev_frame_ = curr_frame;
@@ -63,16 +63,6 @@ void StereoVo::Iterate(const CvStereoImage &stereo_image) {
   // added corners
   if (ShouldAddKeyFrame(curr_frame)) {
     AddKeyFrame(curr_frame);
-  }
-
-  // Do a windowed optimization with gtsam if window size is reached
-  if (key_frames_.size() == static_cast<unsigned>(config_.kf_size)) {
-//      temp: do this every time for ISAM
-//  if (!key_frames_.empty()) {
-    optimizer_.Optimize(key_frames_, point3ds_);
-//    if (key_frames_.size() > 1) {
-      key_frames_.pop_front();
-//    }
   }
 
   // Visualization (optional)
@@ -254,7 +244,6 @@ void StereoVo::TrackSpatial(const CvStereoImage &stereo_image,
   PruneByStatus(status, r_corners);
   PruneByStatus(status, features);
 
-
   // Verify that outputs have the same size
   ROS_ASSERT_MSG(features.size() == r_corners.size(),
                  "TrackSpatial Dimension mismatch");
@@ -277,7 +266,9 @@ void StereoVo::Triangulate(const KrPose &pose, std::vector<Feature> &features,
       
       /// @note: Add a check here if you don't want to overwrite past triangulations 
       const Id &id = it_feature->id();
-      point3ds_[id] = Point3d(id, CvPoint3(p3[0], p3[1], p3[2]));
+      if (point3ds_.find(id) == point3ds_.end()) {
+        point3ds_[id] = Point3d(id, CvPoint3(p3[0], p3[1], p3[2]));
+      }
       
       ++it_feature; 
       ++it_corner;

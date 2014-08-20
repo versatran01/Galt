@@ -115,14 +115,14 @@ void StereoVoNode::StereoCallback(const ImageConstPtr& l_image_msg,
   auto camera_pose = KrPoseToRosPose(stereo_vo_.pose_world());
 
   // Publish PointCloud from keyframe pose and features
-  PublishPointCloud(stereo_vo_.point3ds(), stereo_vo_.features(),
+  PublishPointCloud(stereo_vo_.point3ds(), stereo_vo_.key_frames(),
                     l_image_msg->header.stamp, "0");
   PublishPoseStamped(camera_pose, l_image_msg->header.stamp, "0");
   PublishTrajectory(camera_pose, l_image_msg->header.stamp, "0");
 }
 
 void StereoVoNode::PublishPointCloud(const std::map<Id, Point3d>& point3ds,
-                                     const std::vector<Feature>& features,
+                                     const std::deque<FramePtr>& key_frames,
                                      const ros::Time& time,
                                      const std::string& frame_id) const {
   sensor_msgs::PointCloud cloud;
@@ -134,13 +134,23 @@ void StereoVoNode::PublishPointCloud(const std::map<Id, Point3d>& point3ds,
     float val;
   } color;
 
-  color.rgb[0] = 255;
-  color.rgb[1] = 255;
-  color.rgb[2] = 0;
-  color.rgb[3] = 0;
-
+  const Frame& cur_frame = *key_frames.back();
+  const auto features = cur_frame.features();
+  
   for (const Feature& feature : features) {
-
+    
+    if (feature.init()) {
+      color.rgb[0] = 255;
+      color.rgb[1] = 255;
+      color.rgb[2] = 0;
+      color.rgb[3] = 0;
+    } else {
+      color.rgb[0] = 0;
+      color.rgb[1] = 255;
+      color.rgb[2] = 0;
+      color.rgb[3] = 0;
+    }
+    
     const auto& id = feature.id();
     const auto& it_point3d = point3ds.find(id);
     if (it_point3d != point3ds.end()) {

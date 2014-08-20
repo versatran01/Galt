@@ -178,7 +178,7 @@ void IncrementalOptimizer::Optimize(std::deque<FramePtr> &key_frames,
     gtsam::Vector6 pose_noise_std;
     for (int i=0; i < 3; i++) {
       pose_noise_std[i] = 0.3;
-      pose_noise_std[i+3] = 0.1;
+      pose_noise_std[i+3] = 0.2;
     }
     gtsam::noiseModel::Diagonal::shared_ptr pose_noise;
     pose_noise = gtsam::noiseModel::Diagonal::Sigmas(pose_noise_std);

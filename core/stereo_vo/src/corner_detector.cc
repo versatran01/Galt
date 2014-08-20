@@ -71,7 +71,7 @@ void GoodFeatureDetector::DetectCorners(const cv::Mat &image,
                                         const cv::Mat &mask, int num_corners,
                                         std::vector<CvPoint2> &corners) const {
   // Return if we have enough
-  if (max_corners_ < num_corners) return;
+  if (max_corners_ <= num_corners) return;
   cv::goodFeaturesToTrack(image, corners, max_corners_ - num_corners,
                           quality_level_, min_distance_, mask);
 }

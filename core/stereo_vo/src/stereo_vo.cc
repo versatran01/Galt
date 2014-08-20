@@ -218,6 +218,8 @@ void StereoVo::AddKeyFrame(const FramePtr &frame) {
   frame->SetKeyFrame(right_corners);
   // Add key frame to queue with current_pose, features and stereo_image
   key_frames_.push_back(frame);
+  // Optimize
+  optimizer_.Optimize(key_frames_, point3ds_);
 }
 
 void StereoVo::TrackSpatial(const CvStereoImage &stereo_image,

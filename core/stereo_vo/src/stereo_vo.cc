@@ -34,6 +34,8 @@ void StereoVo::Initialize(const CvStereoImage &stereo_image,
   // Save frame for next iteration
   prev_frame_ = curr_frame;
 
+  CheckEverything();
+  ROS_WARN("Passed check everything for initializing");
   // Create a window for display
   /// @todo: replace this with published topic later
   cv::namedWindow("display",
@@ -74,21 +76,21 @@ void StereoVo::Iterate(const CvStereoImage &stereo_image) {
 
 void StereoVo::CheckEverything() {
   std::set<Id> kf_ids;
-  for (const FramePtr& kf_ptr : key_frames_) {
-    const Frame& frame = *kf_ptr;
+  for (const FramePtr &kf_ptr : key_frames_) {
+    const Frame &frame = *kf_ptr;
     //  make sure there are no duplicate frame ids
     ROS_ASSERT_MSG(kf_ids.find(frame.id()) == kf_ids.end(),
                    "Duplicate frame IDs found");
     kf_ids.insert(frame.id());
-    
+
     std::set<Id> point_ids;
-    for (const Feature& feature : frame.features()) {
+    for (const Feature &feature : frame.features()) {
       //  make sure there are no duplicate features in this frame
       ROS_ASSERT_MSG(point_ids.find(feature.id()) == point_ids.end(),
-                     "Duplicate feature (%lu) found in frame %lu",
-                     feature.id(), frame.id());
+                     "Duplicate feature (%lu) found in frame %lu", feature.id(),
+                     frame.id());
       point_ids.insert(feature.id());
-      
+
       //  features must be triangulated
       ROS_ASSERT_MSG(point3ds_.find(feature.id()) != point3ds_.end(),
                      "Missing triangulation for feature %lu", feature.id());
@@ -177,15 +179,15 @@ void StereoVo::EstimatePose(const FramePtr &frame,
                      min_inliers, inliers, cv::ITERATIVE);
   // Remove outliers
   // For now, only remove those in features, this is quite naive, improve later
-  std::vector<uchar> status(ids.size(), 0);
-  for (const int index : inliers) {
-    status[index] = 1;
-  }
-  PruneByStatus(status, ids, ids_to_remove);
-  //ROS_INFO("%i points removed", (int)ids_to_remove.size());
-  frame->RemoveById(ids_to_remove);
+//  std::vector<uchar> status(ids.size(), 0);
+//  for (const int index : inliers) {
+//    status[index] = 1;
+//  }
+//  PruneByStatus(status, ids, ids_to_remove);
+  // ROS_INFO("%i points removed", (int)ids_to_remove.size());
+//  frame->RemoveById(ids_to_remove);
   // Remove corresponding 3d points as well
-  for (const Id id: ids_to_remove) {
+  for (const Id id : ids_to_remove) {
     auto it = point3ds_.find(id);
     point3ds_.erase(it);
   }
@@ -292,6 +294,7 @@ void StereoVo::TrackSpatial(const CvStereoImage &stereo_image,
   PruneByStatus(status, r_corners);
   PruneByStatus(status, features);
 
+//  CornerSubPix(stereo_image.second, r_corners);
   // Verify that outputs have the same size
   ROS_ASSERT_MSG(features.size() == r_corners.size(),
                  "TrackSpatial Dimension mismatch");

@@ -53,7 +53,9 @@ void PruneByStatus(const std::vector<U> &status, std::vector<T> &objects) {
   }
 }
 
-void Display(const FramePtr& frame, const FramePtr& key_frame);
+void CornerSubPix(const cv::Mat &image, std::vector<CvPoint2> &corners);
+
+void Display(const FramePtr &frame, const FramePtr &key_frame);
 void Display(const CvStereoImage &stereo_image,
              const std::vector<Feature> &tracked_features,
              const FramePtr &key_frame);

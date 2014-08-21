@@ -1,11 +1,12 @@
 #include "stereo_vo/corner_detector.h"
 #include "stereo_vo/feature.h"
+#include "stereo_vo/utils.h"
 
 #include <utility>
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/video/video.hpp>
-#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 
 namespace galt {
 
@@ -62,6 +63,8 @@ size_t GridDetectorBase::AddFeatures(const cv::Mat &image,
   // Detect corners only in mask
   std::vector<CvPoint2> corners;
   DetectCorners(image, mask, features.size(), corners);
+  CornerSubPix(image, corners);
+
   // Add newly detected corners to features
   for (const CvPoint2 &corner : corners) features.emplace_back(corner);
   return corners.size();

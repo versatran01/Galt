@@ -92,23 +92,6 @@ class GoodFeatureDetector : public GridDetectorBase {
   double min_distance_;
 };
 
-class GlobalCornerDetector : public CornerDetectorBase {
- public:
-  GlobalCornerDetector(int max_corners, double quality_level,
-                       double min_distance)
-      : max_corners_{max_corners},
-        quality_level_{quality_level},
-        min_distance_{min_distance} {}
-
-  size_t AddFeatures(const cv::Mat& image,
-                     std::vector<Feature>& features) const override;
-
- private:
-  int max_corners_;
-  double quality_level_;
-  double min_distance_;
-};
-
 }  // namespace stereo_vo
 }  // namespace galt
 

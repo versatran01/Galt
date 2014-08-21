@@ -315,9 +315,9 @@ void StereoVo::Triangulate(const KrPose &pose, std::vector<Feature> &features,
       /// @note: Add a check here if you don't want to overwrite past
       /// triangulations
       const Id &id = it_feature->id();
-//      if (point3ds_.find(id) == point3ds_.end()) {
+      if (point3ds_.find(id) == point3ds_.end()) {
         point3ds_[id] = Point3d(id, CvPoint3(p3[0], p3[1], p3[2]));
-//      }
+      }
 
       ++it_feature;
       ++it_corner;

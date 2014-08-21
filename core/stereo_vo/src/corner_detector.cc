@@ -76,21 +76,6 @@ void GoodFeatureDetector::DetectCorners(const cv::Mat &image,
                           quality_level_, min_distance_, mask);
 }
 
-size_t GlobalCornerDetector::AddFeatures(const cv::Mat &image,
-                                         std::vector<Feature> &features) const {
-  //  mark old features as old
-  MakeFeatureOld(features);
-  // Detect corners in entire image
-  std::vector<CvPoint2> corners;
-  auto num_corners = max_corners_ - features.size();
-  if (num_corners < 1) return 0;
-  cv::goodFeaturesToTrack(image, corners, num_corners, quality_level_,
-                          min_distance_);
-  // Add newly detected corners to features
-  for (const CvPoint2 &corner : corners) features.emplace_back(corner);
-  return corners.size();
-}
-
 }  // namespace stereo_vo
 
 }  // namespace galt

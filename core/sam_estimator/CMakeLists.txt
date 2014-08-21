@@ -19,7 +19,6 @@ find_package(catkin REQUIRED COMPONENTS
 find_package(gtsam)
 
 catkin_package(
-  INCLUDE_DIRS include
 )
 
 include_directories(

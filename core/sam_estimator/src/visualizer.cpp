@@ -18,5 +18,5 @@
 namespace galt {
 namespace sam_estimator {
 
-}
-}
+} // namespace sam_estimator
+}// namespace galt

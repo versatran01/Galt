@@ -20,12 +20,10 @@ namespace galt {
 namespace sam_estimator {
 
 class Visualizer {
-public:
-  
-private:
+ public:
+ private:
 };
+}  // namespace sam_estimator
+}  // namespace galt
 
-}
-}
-
-#endif // GALT_SAM_ESTIMATOR_VISUALIZER_HPP
+#endif  // GALT_SAM_ESTIMATOR_VISUALIZER_HPP

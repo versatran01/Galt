@@ -26,12 +26,10 @@ namespace galt {
 namespace sam_estimator {
 
 class SamEstimatorNode {
-public:
-  
+ public:
   SamEstimatorNode(const ros::NodeHandle& nh);
-  
-private:
-  
+
+ private:
   ros::NodeHandle nh_;
   ros::Subscriber sub_gps_;
   ros::Subscriber sub_imu_;
@@ -39,21 +37,18 @@ private:
   ros::Subscriber sub_laser_;
   ros::Publisher pub_pose_;
   ros::Publisher pub_marker_;
-  
+
   //  callbacks for sam_estimator, imu, stereo pose callback, lidar callback
-  
-  void GpsOdomCallback(const nav_msgs::OdometryConstPtr& odometry_msg);
-  
+
+  void GpsCallback(const nav_msgs::OdometryConstPtr& odometry_msg);
+
   void ImuCallback(const sensor_msgs::ImuConstPtr& imu_msg);
-  
+
   void StereoCallback(const geometry_msgs::PoseStampedConstPtr& pose_msg);
-  
-  void LaserScanCallback(const sensor_msgs::LaserScanConstPtr& laser_msg);
-  
+
+  void LaserCallback(const sensor_msgs::LaserScanConstPtr& laser_msg);
 };
-
 }
 }
-
 
 #endif

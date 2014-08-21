@@ -34,4 +34,4 @@
 #include <kr_math/base_types.hpp>
 #include <kr_math/pose.hpp>
 
-#endif // GALT_SAM_ESTIMATOR_GTSAM_HPP_
+#endif  // GALT_SAM_ESTIMATOR_GTSAM_HPP_

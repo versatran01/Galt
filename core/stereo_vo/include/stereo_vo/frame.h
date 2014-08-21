@@ -55,7 +55,7 @@ class Frame {
    * @brief RemoveById Remove only new features which id is in ids_to_remove
    * @param ids_to_remove A set of ids to remove
    */
-  void RemoveById(const std::set<Id> &ids_to_remove);
+  size_t RemoveById(const std::set<Id> &ids_to_remove, bool force = false);
 
  private:
   Id id_;                          ///< id of this frame

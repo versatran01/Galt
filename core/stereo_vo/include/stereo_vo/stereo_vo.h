@@ -121,6 +121,11 @@ class StereoVo {
   bool TriangulatePoint(const CvPoint2 &left, const CvPoint2 &right,
                         kr::vec3<scalar_t> &p_cam);
 
+  /**
+   * @brief NukeOutliers
+   */
+  void NukeOutliers();
+  
   FramePtr &prev_key_frame() { return key_frames_.back(); }
   const FrameConstPtr prev_key_frame() const { return key_frames_.back(); }
 

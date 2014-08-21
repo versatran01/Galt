@@ -29,7 +29,7 @@
     <arg name="tri_max_eigenratio" value="100000"/>
 
     <node pkg="rosbag" type="play" name="player"
-        args="-s $(arg bagfile_start) $(arg bagfile_home)/$(arg bagfile)">
+        args="-s $(arg bagfile_start) -r 1 $(arg bagfile_home)/$(arg bagfile)">
     </node>
 
     <node pkg="stereo_image_proc" type="stereo_image_proc"

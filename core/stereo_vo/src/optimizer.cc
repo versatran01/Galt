@@ -320,11 +320,6 @@ void G2OOptimizer::Optimize(std::deque<FramePtr> &key_frames,
       auto ite = added_features.find(feat.id());
       bool added = (ite != added_features.end());
       
-      if (test.find(feat.id()) != test.end()) {
-        assert(false);
-      }
-      test.insert(feat.id());
-      
       g2o::VertexSBAPointXYZ * gpoint=0;
       if (!added && in_window) {
         //  we have not created a point yet, add one

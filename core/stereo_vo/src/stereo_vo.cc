@@ -177,18 +177,18 @@ void StereoVo::EstimatePose(const FramePtr &frame,
                      min_inliers, inliers, cv::ITERATIVE);
   // Remove outliers
   // For now, only remove those in features, this is quite naive, improve later
-  std::vector<uchar> status(ids.size(), 0);
-  for (const int index : inliers) {
-    status[index] = 1;
-  }
-  PruneByStatus(status, ids, ids_to_remove);
-  //ROS_INFO("%i points removed", (int)ids_to_remove.size());
-  frame->RemoveById(ids_to_remove);
-  // Remove corresponding 3d points as well
-  for (const Id id: ids_to_remove) {
-    auto it = point3ds_.find(id);
-    point3ds_.erase(it);
-  }
+//  std::vector<uchar> status(ids.size(), 0);
+//  for (const int index : inliers) {
+//    status[index] = 1;
+//  }
+//  PruneByStatus(status, ids, ids_to_remove);
+//  //ROS_INFO("%i points removed", (int)ids_to_remove.size());
+//  frame->RemoveById(ids_to_remove);
+//  // Remove corresponding 3d points as well
+//  for (const Id id: ids_to_remove) {
+//    auto it = point3ds_.find(id);
+//    point3ds_.erase(it);
+//  }
 
   const double tx = tvec.at<double>(0, 0);
   const double ty = tvec.at<double>(1, 0);
@@ -263,7 +263,7 @@ void StereoVo::AddKeyFrame(const FramePtr &frame) {
   key_frames_.push_back(frame);
   // Optimize
   if (key_frames_.size() == 4) {
-    optimizer_.Optimize(key_frames_, point3ds_);
+    //optimizer_.Optimize(key_frames_, point3ds_);
     key_frames_.pop_front();
   }
 }

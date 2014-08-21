@@ -14,3 +14,11 @@
  */
 
 #include <sam_estimator/sam_estimator_node.hpp>
+
+namespace galt {
+namespace sam_estimator {
+
+void SamEstimatorNode::StereoCallback(
+    const geometry_msgs::PoseStampedConstPtr &pose_msg) {}
+}
+}

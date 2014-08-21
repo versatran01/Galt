@@ -14,3 +14,10 @@
  */
 
 #include <sam_estimator/sam_estimator_node.hpp>
+
+namespace galt {
+namespace sam_estimator {
+
+void SamEstimatorNode::ImuCallback(const sensor_msgs::ImuConstPtr &imu_msg) {}
+}
+}

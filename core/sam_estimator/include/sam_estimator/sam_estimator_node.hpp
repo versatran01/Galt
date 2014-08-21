@@ -3,7 +3,7 @@
  *
  *  Copyright (c) 2014 Nouka Technologies. All rights reserved.
  *
- *  This file is part of gps_odom.
+ *  This file is part of sam_estimator.
  *
  *	Created on: 21/08/2014
  */
@@ -35,7 +35,7 @@ private:
   ros::Publisher pub_pose_;
   ros::Publisher pub_marker_;
   
-  //  callbacks for gps_odom, imu, stereo pose callback, lidar callback
+  //  callbacks for sam_estimator, imu, stereo pose callback, lidar callback
   
   void GpsOdomCallback(const nav_msgs::OdometryConstPtr& odometry_msg);
   

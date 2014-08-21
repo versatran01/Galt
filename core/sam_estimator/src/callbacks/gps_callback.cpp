@@ -14,3 +14,11 @@
  */
 
 #include <sam_estimator/sam_estimator_node.hpp>
+
+namespace galt {
+namespace sam_estimator {
+
+void SamEstimatorNode::GpsOdomCallback(
+    const nav_msgs::OdometryConstPtr &odometry_msg) {}
+}
+}

@@ -76,21 +76,21 @@ void StereoVo::Iterate(const CvStereoImage &stereo_image) {
 }
 
 void StereoVo::CheckEverything() {
-  std::map<Id,int> feat_counts;
+  std::map<Id, int> feat_counts;
   std::set<Id> kf_ids;
-  for (const FramePtr& kf_ptr : key_frames_) {
-    const Frame& frame = *kf_ptr;
+  for (const FramePtr &kf_ptr : key_frames_) {
+    const Frame &frame = *kf_ptr;
     //  make sure there are no duplicate frame ids
     ROS_ASSERT_MSG(kf_ids.find(frame.id()) == kf_ids.end(),
                    "Duplicate frame IDs found");
     kf_ids.insert(frame.id());
 
     std::set<Id> point_ids;
-    for (const Feature& feature : frame.features()) {
+    for (const Feature &feature : frame.features()) {
       //  make sure there are no duplicate features in this frame
       ROS_ASSERT_MSG(point_ids.find(feature.id()) == point_ids.end(),
-                     "Duplicate feature (%lu) found in frame %lu",
-                     feature.id(), frame.id());
+                     "Duplicate feature (%lu) found in frame %lu", feature.id(),
+                     frame.id());
       point_ids.insert(feature.id());
 
       //  features must be triangulated
@@ -185,20 +185,6 @@ void StereoVo::EstimatePose(const FramePtr &frame,
                      model_.left().fullIntrinsicMatrix(), std::vector<double>(),
                      rvec, tvec, false, 100, config_.pnp_ransac_error,
                      min_inliers, inliers, cv::ITERATIVE);
-  // Remove outliers
-  // For now, only remove those in features, this is quite naive, improve later
-//  std::vector<uchar> status(ids.size(), 0);
-//  for (const int index : inliers) {
-//    status[index] = 1;
-//  }
-//  PruneByStatus(status, ids, ids_to_remove);
-//  //ROS_INFO("%i points removed", (int)ids_to_remove.size());
-//  frame->RemoveById(ids_to_remove);
-//  // Remove corresponding 3d points as well
-//  for (const Id id: ids_to_remove) {
-//    auto it = point3ds_.find(id);
-//    point3ds_.erase(it);
-//  }
 
   const double tx = tvec.at<double>(0, 0);
   const double ty = tvec.at<double>(1, 0);
@@ -273,11 +259,11 @@ void StereoVo::AddKeyFrame(const FramePtr &frame) {
   key_frames_.push_back(frame);
 
   //  do more outlier rejection
-  NukeOutliers();
+//  NukeOutliers();
 
   // Optimize
   if (key_frames_.size() == 4) {
-    //optimizer_.Optimize(key_frames_, point3ds_);
+    // optimizer_.Optimize(key_frames_, point3ds_);
     key_frames_.pop_front();
   }
 }
@@ -329,9 +315,9 @@ void StereoVo::Triangulate(const KrPose &pose, std::vector<Feature> &features,
       /// @note: Add a check here if you don't want to overwrite past
       /// triangulations
       const Id &id = it_feature->id();
-//      if (point3ds_.find(id) == point3ds_.end()) {
-        point3ds_[id] = Point3d(id, CvPoint3(p3[0], p3[1], p3[2]));
-//      }
+      // if (point3ds_.find(id) == point3ds_.end()) {
+      point3ds_[id] = Point3d(id, CvPoint3(p3[0], p3[1], p3[2]));
+      // }
 
       ++it_feature;
       ++it_corner;
@@ -403,11 +389,9 @@ void StereoVo::NukeOutliers() {
     scalar_t err_left_2;
     int count;
 
-    scalar_t norm_err_left_2() const {
-      return err_left_2 / count;
-    }
+    scalar_t norm_err_left_2() const { return err_left_2 / count; }
   };
-  std::map<Id,PointMetric> metrics;
+  std::map<Id, PointMetric> metrics;
 
   const auto fx = model_.left().fx();
   const auto fy = model_.left().fy();
@@ -415,25 +399,26 @@ void StereoVo::NukeOutliers() {
   const auto cy = model_.left().cy();
 
   //  consider all key frames
-  for (const FramePtr& ptr : key_frames_) {
-    const Frame& frame = *ptr;
-    const KrPose& pose = frame.pose();
+  for (const FramePtr &ptr : key_frames_) {
+    const Frame &frame = *ptr;
+    const KrPose &pose = frame.pose();
 
-    for (const Feature& feat : frame.features()) {
-      const Point3d& p3d = point3ds_[feat.id()];
-      const CvPoint2& p2d = feat.p_pixel();
+    for (const Feature &feat : frame.features()) {
+      const Point3d &p3d = point3ds_[feat.id()];
+      const CvPoint2 &p2d = feat.p_pixel();
 
       //  project point
-      kr::vec3<scalar_t> p_cam(p3d.p_world().x,p3d.p_world().y,p3d.p_world().z);
+      kr::vec3<scalar_t> p_cam(p3d.p_world().x, p3d.p_world().y,
+                               p3d.p_world().z);
       p_cam = pose.transform(p_cam);
       p_cam /= p_cam[2];
       //  apply camera model
-      p_cam[0] = fx*p_cam[0] + cx;
-      p_cam[1] = fy*p_cam[1] + cy;
+      p_cam[0] = fx * p_cam[0] + cx;
+      p_cam[1] = fy * p_cam[1] + cy;
 
       //  reprojection error squared
-      auto err2 = (p_cam[0]-p2d.x)*(p_cam[0]-p2d.x) +
-          (p_cam[1]-p2d.y)*(p_cam[1]-p2d.y);
+      auto err2 = (p_cam[0] - p2d.x) * (p_cam[0] - p2d.x) +
+                  (p_cam[1] - p2d.y) * (p_cam[1] - p2d.y);
 
       auto ite = metrics.find(feat.id());
       if (ite == metrics.end()) {
@@ -442,7 +427,7 @@ void StereoVo::NukeOutliers() {
         pm.count = 1;
         metrics[feat.id()] = pm;
       } else {
-        PointMetric& pm = ite->second;
+        PointMetric &pm = ite->second;
         pm.err_left_2 += err2;
         pm.count++;
       }
@@ -459,32 +444,31 @@ void StereoVo::NukeOutliers() {
       count = 0;
     }
     void add(scalar_t x) {
-      mean = (mean * count + x) / (count+1);
-      mean_squared = (mean_squared * count + x*x) / (count+1);
+      mean = (mean * count + x) / (count + 1);
+      mean_squared = (mean_squared * count + x * x) / (count + 1);
       count++;
     }
-    scalar_t variance() const {
-      return mean_squared - mean*mean;
-    }
+    scalar_t variance() const { return mean_squared - mean * mean; }
   };
-  std::map<int,Stats> sorted_stats;
+  std::map<int, Stats> sorted_stats;
 
   //  calculate mean squared error
-  for (const std::pair<Id,PointMetric>& pair : metrics) {
+  for (const std::pair<Id, PointMetric> &pair : metrics) {
 
-    Stats& stats = sorted_stats[pair.second.count]; //  organize by count
+    Stats &stats = sorted_stats[pair.second.count];  //  organize by count
 
-    const auto err2 =  pair.second.norm_err_left_2();
+    const auto err2 = pair.second.norm_err_left_2();
     stats.add(err2);
   }
 
-  for (const std::pair<int,Stats>& pair : sorted_stats) {
-    ROS_INFO("MSPE,STD (count = %i): %f, %f", pair.first, pair.second.mean, std::sqrt(pair.second.variance()));
+  for (const std::pair<int, Stats> &pair : sorted_stats) {
+    ROS_INFO("MSPE,STD (count = %i): %f, %f", pair.first, pair.second.mean,
+             std::sqrt(pair.second.variance()));
   }
 
   //  build a set of features to eliminate
   std::set<Id> removables;
-  for (const std::pair<Id,PointMetric>& pair : metrics) {
+  for (const std::pair<Id, PointMetric> &pair : metrics) {
     if (pair.second.norm_err_left_2() > 100) {
       removables.insert(pair.first);
     }

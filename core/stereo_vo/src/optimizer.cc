@@ -111,7 +111,7 @@ void WindowedOptimizer::Optimize(std::deque<FramePtr> &key_frames,
 
 void IncrementalOptimizer::Initialize(const StereoCameraModel &model) {
   // Define the camera observation noise model, 1 pixel in u and v
-  noise_model_ = noiseModel::Isotropic::Sigma(3, 1.0);
+  noise_model_ = noiseModel::Isotropic::Sigma(2, 1.0);
   const image_geometry::PinholeCameraModel &left = model.left();
   camera_model_.reset(
       new Cal3_S2(left.fx(), left.fy(), 0, left.cx(), left.cy()));
@@ -150,17 +150,17 @@ void IncrementalOptimizer::Optimize(std::deque<FramePtr> &key_frames,
     
     //  create a projection residual
     gtsam::Symbol point_sym('p', feature.id());
-//    ProjectionFactor factor(p2,noise_model_,frame_sym,
-//                            point_sym,camera_model_);
-//    graph_.push_back(factor);
+    ProjectionFactor factor(p2,noise_model_,frame_sym,
+                            point_sym,camera_model_);
+    graph_.push_back(factor);
     
-    const double u_l = feature.p_pixel().x;
-    const double u_r = feature.p_right().x;
-    const double v = feature.p_pixel().y;
-    graph_.push_back(StereoProjectionFactor(StereoPoint2(u_l, u_r, v), 
-                                            noise_model_,
-                                  frame_sym, point_sym,
-                                  stereo_model_));
+//    const double u_l = feature.p_pixel().x;
+//    const double u_r = feature.p_right().x;
+//    const double v = feature.p_pixel().y;
+//    graph_.push_back(StereoProjectionFactor(StereoPoint2(u_l, u_r, v), 
+//                                            noise_model_,
+//                                  frame_sym, point_sym,
+//                                  stereo_model_));
     
     if (prevIds_.find(feature.id()) != prevIds_.end()) {
       count++;
@@ -177,9 +177,9 @@ void IncrementalOptimizer::Optimize(std::deque<FramePtr> &key_frames,
       estimate_->insert(point_sym,guess);
 
       //if (first_run) {
-        //gtsam::noiseModel::Isotropic::shared_ptr pointNoise = 
-        //    gtsam::noiseModel::Isotropic::Sigma(3, 0.5);
-        //graph_.push_back(gtsam::PriorFactor<gtsam::Point3>(point_sym,guess,pointNoise));
+        gtsam::noiseModel::Isotropic::shared_ptr pointNoise = 
+            gtsam::noiseModel::Isotropic::Sigma(3, 0.5);
+        graph_.push_back(gtsam::PriorFactor<gtsam::Point3>(point_sym,guess,pointNoise));
       //}
     } else {
       //ROS_INFO("Not init!");
@@ -275,6 +275,8 @@ void G2OOptimizer::Optimize(std::deque<FramePtr> &key_frames,
   algo->setMaxTrialsAfterFailure(5);  //  copied from SVO
   optimizer.setAlgorithm(algo); /// @todo: figure out how memory is managed here
   
+  int g2o_ids=0;
+  
   Eigen::Vector2d center(left_camera_.cx(), left_camera_.cy());
   g2o::CameraParameters * cam_params = 
       new g2o::CameraParameters(left_camera_.fx(), center, 0);
@@ -299,7 +301,7 @@ void G2OOptimizer::Optimize(std::deque<FramePtr> &key_frames,
     
     //  automatically make a frame for this pose
     g2o::VertexSE3Expmap * frame_vert = new g2o::VertexSE3Expmap();
-    frame_vert->setId(1e7 + frame.id()); //  temp solution
+    frame_vert->setId(++g2o_ids); //  temp solution
     frame_vert->setFixed(!in_window);
     
     g2o::SE3Quat se3quat(pose.q.cast<double>(),
@@ -311,10 +313,7 @@ void G2OOptimizer::Optimize(std::deque<FramePtr> &key_frames,
       throw std::runtime_error("failed to add frame vertex");
     }
     added_frames[frame.id()] = frame_vert;
-    ROS_INFO("Adding features for frame");
-    
-    std::set<Id> test;
-    
+        
     //  consider all observations in key frame
     for (const Feature& feat : frame.features()) {
       auto ite = added_features.find(feat.id());
@@ -326,7 +325,7 @@ void G2OOptimizer::Optimize(std::deque<FramePtr> &key_frames,
         const Point3d& p3 = point3s[feat.id()];
         
         gpoint = new g2o::VertexSBAPointXYZ();
-        gpoint->setId(feat.id());
+        gpoint->setId(++g2o_ids);
         gpoint->setFixed(false); //  get from map of all features
         gpoint->setEstimate(kr::vec3d(p3.p_world().x,
                                       p3.p_world().y,
@@ -335,7 +334,7 @@ void G2OOptimizer::Optimize(std::deque<FramePtr> &key_frames,
           throw std::runtime_error("failed to add vertex");
         }
         added_features[feat.id()] = gpoint;
-      } else {
+      } else if (added) {
         gpoint = ite->second;
       }
       
@@ -360,7 +359,7 @@ void G2OOptimizer::Optimize(std::deque<FramePtr> &key_frames,
   
   //  do structure only bundle adjustment (todo : why?)
   //  copied from svo
-  /*g2o::StructureOnlySolver<3> structure_only_ba;
+  g2o::StructureOnlySolver<3> structure_only_ba;
   g2o::OptimizableGraph::VertexContainer points;
   for (g2o::OptimizableGraph::VertexIDMap::const_iterator it = optimizer.vertices().begin(); it != optimizer.vertices().end(); ++it)
   {
@@ -368,16 +367,16 @@ void G2OOptimizer::Optimize(std::deque<FramePtr> &key_frames,
       if (v->dimension() == 3 && v->edges().size() >= 2)
         points.push_back(v);
   }
-  structure_only_ba.calc(points, 10);*/
+  structure_only_ba.calc(points, 10);
   
-  /*optimizer.initializeOptimization();
+  optimizer.initializeOptimization();
   optimizer.computeActiveErrors();
   ROS_INFO("Error before: %f", optimizer.activeChi2());
   optimizer.optimize(10);
-  ROS_INFO("Error after: %f", optimizer.activeChi2());*/
+  ROS_INFO("Error after: %f", optimizer.activeChi2());
   
   //  update keyframes
-  /*for (const std::pair<Id,g2o::VertexSE3Expmap*>& pair : added_frames) {
+  for (const std::pair<Id,g2o::VertexSE3Expmap*>& pair : added_frames) {
     g2o::SE3Quat estimate = pair.second->estimate();
     
     //  find appropriate key-frame
@@ -394,7 +393,7 @@ void G2OOptimizer::Optimize(std::deque<FramePtr> &key_frames,
     kr::vec3d estimate = pair.second->estimate();
     point3s[pair.first] = Point3d(pair.first, CvPoint3(estimate[0],
                                   estimate[1],estimate[2]));
-  }*/
+  }
 }
 
 }  // namespace stereo_vo

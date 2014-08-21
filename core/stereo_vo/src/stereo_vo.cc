@@ -262,10 +262,10 @@ void StereoVo::AddKeyFrame(const FramePtr &frame) {
   // Add key frame to queue with current_pose, features and stereo_image
   key_frames_.push_back(frame);
   // Optimize
-  if (key_frames_.size() == 4) {
-    //optimizer_.Optimize(key_frames_, point3ds_);
-    key_frames_.pop_front();
-  }
+ // if (key_frames_.size() == 4) {
+    optimizer_.Optimize(key_frames_, point3ds_);
+   // key_frames_.pop_front();
+  //}
 }
 
 void StereoVo::TrackSpatial(const CvStereoImage &stereo_image,

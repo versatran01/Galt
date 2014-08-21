@@ -1,14 +1,6 @@
 <launch>
 
-    <arg name="manager" default="stereo_vo"/>
     <arg name="stereo_ns" default="/mv_stereo"/>
-    <arg name="disparity" default="false"/>
-    <arg name="rviz" default="false"/>
-
-    <arg name="bagfile_home" value="$(env GALT_BAGFILES)"/>
-    <!-- <arg name="bagfile" default="day1/noon/2014-07-24-20-29-15.bag"/> -->
-    <arg name="bagfile" default="day2/fly/2014-07-25-18-14-12.bag"/>
-    <arg name="bagfile_start" default="0"/>
 
     <arg name="cell_size" default="80"/>
     <arg name="shi_max_corners" default="200"/>
@@ -27,10 +19,6 @@
     <arg name="pnp_ransac_inliers" value="0.9"/>
 
     <arg name="tri_max_eigenratio" value="100000"/>
-
-    <node pkg="rosbag" type="play" name="player"
-        args="-s $(arg bagfile_start) -r 1 $(arg bagfile_home)/$(arg bagfile)">
-    </node>
 
     <node pkg="stereo_image_proc" type="stereo_image_proc"
         name="stereo_image_proc" ns="$(arg stereo_ns)">
@@ -55,16 +43,6 @@
         <param name="pnp_ransac_inliers" value="$(arg pnp_ransac_inliers)"/>
 
         <param name="tri_max_eigenratio" value="$(arg tri_max_eigenratio)"/>
-    </node>
-
-    <node if="$(arg disparity)"
-        pkg="image_view" type="stereo_view" name="stereo_view"
-        args="stereo:=$(arg stereo_ns) image:=image_rect">
-    </node>
-
-    <node if="$(arg rviz)"
-      name="rviz_stereo" pkg="rviz" type="rviz"
-      args="--display-config $(find stereo_vo)/rviz/config.rviz">
     </node>
 
 </launch>

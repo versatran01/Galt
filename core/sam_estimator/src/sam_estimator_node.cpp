@@ -18,7 +18,20 @@
 namespace galt {
 namespace sam_estimator {
 
-SamEstimatorNode::SamEstimatorNode(const ros::NodeHandle& nh) : nh_(nh) {}
+SamEstimatorNode::SamEstimatorNode(const ros::NodeHandle &nh) : nh_(nh) {
+  //  subscribe to all relevant topics
+  sub_gps_ = nh_.subscribe("gps_odom", kROSQueueSize,
+                           &SamEstimatorNode::GpsOdomCallback, this);
+  sub_imu_ =
+      nh_.subscribe("imu", kROSQueueSize, &SamEstimatorNode::ImuCallback, this);
+  sub_stereo_ = nh_.subscribe("vo_pose", kROSQueueSize,
+                              &SamEstimatorNode::StereoCallback, this);
+  sub_laser_ = nh_.subscribe("laser_scan", kROSQueueSize,
+                             &SamEstimatorNode::LaserScanCallback, this);
 
+  pub_pose_ =
+      nh_.advertise<geometry_msgs::PoseWithCovarianceStamped>("pose", 1);
 }
-}
+
+} //  sam_estimator
+} //  galt

@@ -21,6 +21,7 @@
 #include <sensor_msgs/LaserScan.h>
 #include <nav_msgs/Odometry.h>
 #include <geometry_msgs/PoseStamped.h>
+#include <geometry_msgs/PoseWithCovarianceStamped.h>
 
 namespace galt {
 namespace sam_estimator {
@@ -31,6 +32,8 @@ public:
   SamEstimatorNode(const ros::NodeHandle& nh);
   
 private:
+  
+  constexpr static int kROSQueueSize = 1;
   
   ros::NodeHandle nh_;
   ros::Subscriber sub_gps_;

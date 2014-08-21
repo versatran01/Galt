@@ -9,75 +9,69 @@
 #include <image_geometry/stereo_camera_model.h>
 
 namespace galt {
-
 namespace stereo_vo {
 
-class Corner {
+/**
+ * @brief The Feature class
+ * A feature is just a pixel on the image picked out by corner detector. Each
+ * feature will have its unique id.
+ */
+class Feature {
  public:
-  using Id = uint64_t;
+  static Id feature_count;
 
-  Corner() = default;
-  Corner(const Id& id, const CvPoint2& p_pixel, const bool& init)
+  /**
+   * @brief Feature Default constructor
+   */
+  Feature() = default;
+  /**
+   * @brief Feature Constructor Create a feature
+   * @param id Unique id of this feature
+   * @param p_pixel Pixel position of this feature
+   * @param init If this feature is newly detected
+   */
+  Feature(const Id& id, const CvPoint2& p_pixel, const bool& init = true)
       : id_(id), p_pixel_(p_pixel), init_(init) {}
-
-  const CvPoint2& p_pixel() const { return p_pixel_; }
-  void set_p_pixel(const CvPoint2& p_pixel) { p_pixel_ = p_pixel; }
+  /**
+   * @brief Feature Constructor Create a newly detected feautre
+   * @param p_pixel Pixel position of this feature
+   */
+  Feature(const CvPoint2& p_pixel) : Feature(feature_count++, p_pixel, true) {}
 
   const Id& id() const { return id_; }
   void set_id(const Id& id) { id_ = id; }
 
+  const CvPoint2& p_pixel() const { return p_pixel_; }
+  void set_p_pixel(const CvPoint2& p_pixel) { p_pixel_ = p_pixel; }
+
+  const CvPoint2& p_right() const { return p_right_; }
+  void set_p_right(const CvPoint2& p_right) { p_right_ = p_right; }
+
   const bool& init() const { return init_; }
   void set_init(const bool& init) { init_ = init; }
 
- protected:
-  Id id_;
-  CvPoint2 p_pixel_;
-  bool init_;
-};
-
-class Feature : public Corner {
- public:
-  //  Feature(const Corner::Id& id, const CvPoint2& p_pixel_left,
-  //          const CvPoint2& p_pixel_right, const CvPoint3& p_cam_left,
-  //          const bool& init)
-  //      : Corner(id, p_pixel_left, init),
-  //        p_pixel_right_(p_pixel_right),
-  //        p_cam_left_(p_cam_left) {}
-
-  Feature() = default;
-  Feature(const Corner& corner, const CvPoint2& p_pixel_right)
-      : Corner(corner), p_pixel_right_(p_pixel_right) {}
-
-  const CvPoint3& p_cam_left() const { return p_cam_left_; }
-  void set_p_cam_left(const CvPoint3& p_cam_left) { p_cam_left_ = p_cam_left; }
-
-  const CvPoint2& p_pixel_right() const { return p_pixel_right_; }
-  void set_p_pixel_right(const CvPoint2& p_pixel) { p_pixel_right_ = p_pixel; }
-
-  const CvPoint2& p_pixel_left() const { return p_pixel(); }
-  void set_p_pixel_left(const CvPoint2& p_pixel) { set_p_pixel(p_pixel); }
-
-  /**
-   * @brief Triangulate a feature in the current camera frame.
-   *
-   * @param model ROS Stereo Camera model
-   * @param eigen_threshold Maximum ratio of largest to smallest eigenvalues.
-   * Those features exceeding this ratio are discarded.
-   *
-   * @return True on success, false if the feature is rejected as an outlier.
-   * @note Those features which are rejected should be removed from the
-   * feature list.
-   */
-  bool triangulate(const image_geometry::StereoCameraModel& model,
-                   scalar_t eigen_threshold);
-
  private:
-  CvPoint2 p_pixel_right_;
-  CvPoint3 p_cam_left_;
+  Id id_;             ///< id of this feature
+  CvPoint2 p_pixel_;  ///< pixel position
+  CvPoint2 p_right_;  ///< pixel position in right image
+  bool init_;         ///< true if this feature was newly added
 };
+
+/**
+ * @brief ExtractCorners Extract corners from a vector of features
+ * @param features A vector of features
+ * @return A vector of corners
+ */
+std::vector<CvPoint2> ExtractCorners(const std::vector<Feature>& features);
+
+/**
+ * @brief ExtractIds Extract ids from a vector of features
+ * @param features A vector of features
+ * @return A vector of ids
+ */
+std::vector<Id> ExtractIds(const std::vector<Feature>& features);
 
 }  // namespace stereo_vo
-
 }  // namespace galt
 
 #endif  // GALT_STEREO_VO_FEATURE_H_

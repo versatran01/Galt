@@ -1,20 +1,22 @@
 #include "stereo_vo/utils.h"
 
 #include <deque>
+
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
+#include <opencv2/video/video.hpp>
 
 namespace galt {
 
 namespace stereo_vo {
 
 void Display(const CvStereoImage &stereo_image,
-             const std::vector<Corner> &corners, const KeyFrame &key_frame) {
+             const std::vector<Feature> &features, const FramePtr &key_frame) {
   auto &l_image = stereo_image.first;
   auto &r_image = stereo_image.second;
-  auto &l_image_prev = key_frame.l_image();
-  auto &r_image_prev = key_frame.r_image();
+  auto &l_image_prev = key_frame->l_image();
+  auto &r_image_prev = key_frame->r_image();
   int n_rows = l_image.rows;
   int n_cols = l_image.cols;
   static cv::Mat display_gray(2 * n_rows, 2 * n_cols, CV_8UC1);
@@ -41,7 +43,7 @@ void Display(const CvStereoImage &stereo_image,
               font, scale, text_color, thickness);
   // How many matching features?
   std::ostringstream ss;
-  ss << "C/F: " << corners.size() << "/" << key_frame.features().size();
+  ss << "C/F: " << features.size() << "/" << key_frame->features().size();
   cv::putText(display, ss.str(), CvPoint2(offset_x, n_rows * 2 - offset_y / 2),
               font, scale, text_color, thickness);
   //  ss.str(std::string());
@@ -49,32 +51,31 @@ void Display(const CvStereoImage &stereo_image,
   //  cv::putText(display, ss.str(), CvPoint2(offset_x, n_rows - offset_y / 2),
   //              font, scale, cv_color::YELLOW, thickness);
 
-  // Draw currently tracked corners on current frame and key frame
-  for (const Corner &corner : corners) {
-    auto p = corner.p_pixel() + CvPoint2(0, n_rows);
+  // Draw currently tracked features on current frame and key frame
+  for (const Feature &feature : features) {
+    auto p = feature.p_pixel() + CvPoint2(0, n_rows);
     auto color = cv_color::RED;
-    if (corner.init()) color = cv_color::MAGENTA;
-    cv::circle(display, p, 2, color, 2);
-    cv::circle(display, corner.p_pixel(), 1, color, 2);
+    if (feature.init()) color = cv_color::MAGENTA;
+    cv::circle(display, p, 1, color, 2);
+    cv::circle(display, feature.p_pixel(), 1, color, 2);
   }
 
-  // Draw key frame features
-  const auto &feature_map = key_frame.features();
-  for (const auto &feature_pair : feature_map) {
-    const Feature &feature = feature_pair.second;
+  // Draw key frame features on key frame left
+  const auto &kf_features = key_frame->features();
+  for (const Feature &feature : kf_features) {
     auto color = cv_color::GREEN;
     if (feature.init()) color = cv_color::ORANGE;
     cv::circle(display, feature.p_pixel(), 1, color, 2);
-    cv::circle(display, feature.p_pixel_right() + CvPoint2(n_cols, 0), 2, color,
-               2);
   }
 
-  // Draw lines between corresponding corners
-  for (const Corner &corner : corners) {
-    auto it = feature_map.find(corner.id());
-    if (it != feature_map.end()) {
-      const Feature& feature = it->second;
-      const CvPoint2 &p1 = corner.p_pixel();
+  // Draw lines between corresponding features
+  for (const Feature &feature : features) {
+    auto id = feature.id();
+    const auto it =
+        std::find_if(kf_features.cbegin(), kf_features.cend(),
+                     [id](const Feature &f) { return id == f.id(); });
+    if (it != kf_features.end()) {
+      const CvPoint2 &p1 = it->p_pixel();
       const CvPoint2 &p2 = feature.p_pixel();
       cv::line(display, p1, p2, cv_color::YELLOW);
     }
@@ -83,6 +84,17 @@ void Display(const CvStereoImage &stereo_image,
   // Display image
   cv::imshow("display", display);
   cv::waitKey(1);
+}
+
+void Display(const FramePtr &frame, const FramePtr &key_frame) {
+  Display(frame->stereo_image(), frame->features(), key_frame);
+}
+
+void CornerSubPix(const cv::Mat &image, std::vector<CvPoint2> &corners) {
+  cv::TermCriteria criteria =
+      cv::TermCriteria(CV_TERMCRIT_EPS + CV_TERMCRIT_ITER, 40, 0.001);
+  /// Calculate the refined corner locations
+  cv::cornerSubPix(image, corners, cv::Size(5, 5), cv::Size(-1, -1), criteria);
 }
 
 }  // namespace stereo_vo

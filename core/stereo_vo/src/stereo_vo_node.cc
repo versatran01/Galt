@@ -87,7 +87,8 @@ void StereoVoNode::StereoCallback(const ImageConstPtr& l_image_msg,
                                   const CameraInfoConstPtr& r_cinfo_msg) {
   // Get stereo camera infos
   static image_geometry::StereoCameraModel stereo_model;
-  if (!stereo_model.initialized() && (!l_cinfo_msg->K[0] || !r_cinfo_msg->K[0])) {
+  if (!stereo_model.initialized() &&
+      (!l_cinfo_msg->K[0] || !r_cinfo_msg->K[0])) {
     ROS_WARN_THROTTLE(1, "Uncalibrated camera.");
     return;
   }
@@ -111,15 +112,17 @@ void StereoVoNode::StereoCallback(const ImageConstPtr& l_image_msg,
   }
 
   stereo_vo_.Iterate(stereo_image);
-  auto current_pose = KrPoseToRosPose(stereo_vo_.absolute_pose());
+  auto camera_pose = KrPoseToRosPose(stereo_vo_.pose_world());
 
   // Publish PointCloud from keyframe pose and features
-  PublishPointCloud(stereo_vo_.key_frames(), l_image_msg->header.stamp, "0");
-  PublishPoseStamped(current_pose, l_image_msg->header.stamp, "0");
-  PublishTrajectory(current_pose, l_image_msg->header.stamp, "0");
+  PublishPointCloud(stereo_vo_.point3ds(), stereo_vo_.key_frames(),
+                    l_image_msg->header.stamp, "0");
+  PublishPoseStamped(camera_pose, l_image_msg->header.stamp, "0");
+  PublishTrajectory(camera_pose, l_image_msg->header.stamp, "0");
 }
 
-void StereoVoNode::PublishPointCloud(const std::deque<KeyFrame>& key_frames,
+void StereoVoNode::PublishPointCloud(const std::map<Id, Point3d>& point3ds,
+                                     const std::deque<FramePtr>& key_frames,
                                      const ros::Time& time,
                                      const std::string& frame_id) const {
   sensor_msgs::PointCloud cloud;
@@ -131,28 +134,35 @@ void StereoVoNode::PublishPointCloud(const std::deque<KeyFrame>& key_frames,
     float val;
   } color;
 
-  for (const KeyFrame& key_frame : key_frames) {
-    const Pose& pose = key_frame.pose();
+  const Frame& cur_frame = *key_frames.back();
+  const auto features = cur_frame.features();
+  
+  for (const Feature& feature : features) {
     
-    color.rgb[0] = 255;
-    color.rgb[1] = 255;
-    color.rgb[2] = 0;
-    color.rgb[3] = 0;
+    if (feature.init()) {
+      color.rgb[0] = 255;
+      color.rgb[1] = 255;
+      color.rgb[2] = 0;
+      color.rgb[3] = 0;
+    } else {
+      color.rgb[0] = 0;
+      color.rgb[1] = 255;
+      color.rgb[2] = 0;
+      color.rgb[3] = 0;
+    }
     
-    for (const auto& feat : key_frame.features()) {
-      const Feature& feature = feat.second;
-      
+    const auto& id = feature.id();
+    const auto& it_point3d = point3ds.find(id);
+    if (it_point3d != point3ds.end()) {
+      const Point3d& point3d = it_point3d->second;
+
       geometry_msgs::Point32 p32;
-      kr::vec3<scalar_t> p(feature.p_cam_left().x,
-                           feature.p_cam_left().y,
-                           feature.p_cam_left().z);
-      
-      p = pose.q.conjugate().matrix() * p + pose.p;
-      
+      kr::vec3<scalar_t> p(point3d.p_world().x, point3d.p_world().y,
+                           point3d.p_world().z);
       p32.x = p[0];
       p32.y = p[1];
       p32.z = p[2];
-      
+
       cloud.points.push_back(p32);
       channel.values.push_back(color.val);
     }
@@ -190,10 +200,11 @@ void StereoVoNode::PublishTrajectory(const geometry_msgs::Pose& pose,
 const StereoVoConfig ReadConfig(const ros::NodeHandle& nh) {
   StereoVoConfig config;
   nh.param<int>("cell_size", config.cell_size, 50);
+
   nh.param<int>("shi_max_corners", config.shi_max_corners, 200);
   nh.param<double>("shi_quality_level", config.shi_quality_level, 0.01);
   nh.param<double>("shi_min_distance", config.shi_min_distance, 12);
-  
+
   nh.param<int>("klt_max_level", config.klt_max_level, 3);
   nh.param<int>("klt_win_size", config.klt_win_size, 13);
 
@@ -201,14 +212,15 @@ const StereoVoConfig ReadConfig(const ros::NodeHandle& nh) {
   nh.param<double>("pnp_ransac_error", config.pnp_ransac_error, 4.0);
 
   nh.param<int>("kf_size", config.kf_size, 4);
-  nh.param<double>("kf_dist", config.kf_dist, 1.5);
+  nh.param<double>("kf_dist_thresh", config.kf_dist_thresh, 1.5);
+  nh.param<double>("kf_yaw_thresh", config.kf_yaw_thresh, 45);
   nh.param<double>("kf_min_filled", config.kf_min_filled, 0.7);
-  
+
   nh.param<double>("tri_max_eigenratio", config.tri_max_eigenratio, 1.0e5);
   return config;
 }
 
-geometry_msgs::Pose KrPoseToRosPose(const Pose& kr_pose) {
+geometry_msgs::Pose KrPoseToRosPose(const KrPose& kr_pose) {
   geometry_msgs::Pose ros_pose;
   ros_pose.orientation.w = kr_pose.q.w();
   ros_pose.orientation.x = -kr_pose.q.x();

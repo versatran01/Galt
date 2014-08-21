@@ -10,25 +10,26 @@
     <arg name="bagfile" default="day2/fly/2014-07-25-18-14-12.bag"/>
     <arg name="bagfile_start" default="0"/>
 
-    <arg name="shi_cell_size" default="50"/>
-    <arg name="shi_max_corners" default="300"/>
-    <arg name="shi_quality_level" default="0.01"/>
-    <arg name="shi_min_distance" default="15"/>
+    <arg name="cell_size" default="80"/>
+    <arg name="shi_max_corners" default="200"/>
+    <arg name="shi_quality_level" default="0.0001"/>
+    <arg name="shi_min_distance" default="40"/>
 
     <arg name="klt_max_level" default="3"/>
-    <arg name="klt_win_size" default="13"/>
+    <arg name="klt_win_size" default="15"/>
 
-    <arg name="kf_dist" value="3"/>
-    <arg name="kf_size" value="4"/>
-    <arg name="kf_min_filled" value="0.5"/>
+    <arg name="kf_dist_thresh" value="3"/>
+    <arg name="kf_yaw_thresh" value="45"/>
+    <arg name="kf_size" value="3"/>
+    <arg name="kf_min_filled" value="0.7"/>
 
-    <arg name="pnp_ransac_error" value="4.0"/>
-    <arg name="pnp_ransac_inliers" value="0.6"/>
+    <arg name="pnp_ransac_error" value="3.0"/>
+    <arg name="pnp_ransac_inliers" value="0.9"/>
 
     <arg name="tri_max_eigenratio" value="100000"/>
 
     <node pkg="rosbag" type="play" name="player"
-        args="-s $(arg bagfile_start) $(arg bagfile_home)/$(arg bagfile)">
+        args="-s $(arg bagfile_start) -r 1 $(arg bagfile_home)/$(arg bagfile)">
     </node>
 
     <node pkg="stereo_image_proc" type="stereo_image_proc"
@@ -37,7 +38,7 @@
 
     <node pkg="stereo_vo" type="stereo_vo_node" name="stereo_vo"
         output="screen" ns="$(arg stereo_ns)">
-        <param name="shi_cell_size" value="$(arg shi_cell_size)"/>
+        <param name="cell_size" value="$(arg cell_size)"/>
         <param name="shi_max_corners" value="$(arg shi_max_corners)"/>
         <param name="shi_quality_level" value="$(arg shi_quality_level)"/>
         <param name="shi_min_distance" value="$(arg shi_min_distance)"/>
@@ -45,7 +46,8 @@
         <param name="klt_max_level" value="$(arg klt_max_level)"/>
         <param name="klt_win_size" value="$(arg klt_win_size)"/>
 
-        <param name="kf_dist" value="$(arg kf_dist)"/>
+        <param name="kf_dist_thresh" value="$(arg kf_dist_thresh)"/>
+        <param name="kf_yaw_thresh" value="$(arg kf_yaw_thresh)"/>
         <param name="kf_size" value="$(arg kf_size)"/>
         <param name="kf_min_filled" value="$(arg kf_min_filled)"/>
 

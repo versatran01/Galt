@@ -3,12 +3,12 @@
 
 #include "stereo_vo/common.h"
 #include "stereo_vo/feature.h"
-#include "stereo_vo/key_frame.h"
+#include "stereo_vo/frame.h"
 
+#include <algorithm>
 #include <deque>
 
 namespace galt {
-
 namespace stereo_vo {
 
 namespace cv_color {
@@ -21,9 +21,11 @@ const cv::Scalar MAGENTA = cv::Scalar(255, 0, 255);
 const cv::Scalar CYAN = cv::Scalar(255, 255, 0);
 }
 
+/// @note: these two could possibly be rewrote using erase and remove_if for
+/// better performance and readability
 template <typename T, typename U>
 void PruneByStatus(const std::vector<U> &status, std::vector<T> &objects,
-                   std::vector<T> &removed) {
+                   std::set<T> &removed) {
   ROS_ASSERT_MSG(status.size() == objects.size(),
                  "status and object size mismatch");
   auto it_obj = objects.begin();
@@ -31,7 +33,7 @@ void PruneByStatus(const std::vector<U> &status, std::vector<T> &objects,
     if (s) {
       it_obj++;
     } else {
-      removed.push_back(*it_obj);
+      removed.insert(*it_obj);
       it_obj = objects.erase(it_obj);
     }
   }
@@ -51,11 +53,14 @@ void PruneByStatus(const std::vector<U> &status, std::vector<T> &objects) {
   }
 }
 
+void CornerSubPix(const cv::Mat &image, std::vector<CvPoint2> &corners);
+
+void Display(const FramePtr &frame, const FramePtr &key_frame);
 void Display(const CvStereoImage &stereo_image,
-             const std::vector<Corner> &corners, const KeyFrame &key_frame);
+             const std::vector<Feature> &tracked_features,
+             const FramePtr &key_frame);
 
 }  // namespace stereo_vo
-
 }  // namespace galt
 
 #endif  // GALT_STEREO_VO_UTILS_H_

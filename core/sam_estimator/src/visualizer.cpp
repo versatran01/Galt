@@ -1,5 +1,5 @@
 /*
- * gps_callback.cpp
+ * visualizer.cpp
  *
  *  Copyright (c) 2014 Nouka Technologies. All rights reserved.
  *
@@ -8,4 +8,10 @@
  *	Created on: 21/08/2014
  */
 
-#include <sam_estimator/sam_estimator_node.hpp>
+#include <sam_estimator/visualizer.hpp>
+
+namespace galt {
+namespace sam_estimator {
+
+}
+}

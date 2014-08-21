@@ -277,9 +277,12 @@ void G2OOptimizer::Optimize(std::deque<FramePtr> &key_frames,
   
   int g2o_ids=0;
   
-  Eigen::Vector2d center(left_camera_.cx(), left_camera_.cy());
+//  Eigen::Vector2d center(left_camera_.cx(), left_camera_.cy());
+//  g2o::CameraParameters * cam_params = 
+//      new g2o::CameraParameters(left_camera_.fx(), center, 0);
+  Eigen::Vector2d center(0,0);
   g2o::CameraParameters * cam_params = 
-      new g2o::CameraParameters(left_camera_.fx(), center, 0);
+      new g2o::CameraParameters(1, center, 0);
   cam_params->setId(0); /// @todo: what is this id for?
   
   if (!optimizer.addParameter(cam_params)) {
@@ -289,6 +292,26 @@ void G2OOptimizer::Optimize(std::deque<FramePtr> &key_frames,
   const int window_size = 3;
   std::map<Id, g2o::VertexSBAPointXYZ*> added_features;
   std::map<Id, g2o::VertexSE3Expmap*> added_frames;
+  
+  //  identify any singleton features
+  /// @todo: move this elsewhere
+  std::map<Id,bool> point_singleton;
+  for (const FramePtr& ptr : key_frames) {
+    const Frame& frame = *ptr;
+    for (const Feature& feat : frame.features()) {
+      auto ite = point_singleton.find(feat.id());
+      if (ite == point_singleton.end()) {
+        //  first observation, set to true
+        point_singleton[feat.id()] = true;
+      } else {
+        //  seen again, not a singleton
+        ite->second = false;
+      }
+    }
+  }
+  const size_t cnt = std::count_if(point_singleton.begin(), point_singleton.end(),
+                                   [](const std::pair<Id,bool>& p) { return p.second; });
+  ROS_INFO("Will ignore %lu singleton features", cnt);
   
   //  iterate over all key frames and create g2o graph
   size_t kf_count=0;
@@ -304,6 +327,8 @@ void G2OOptimizer::Optimize(std::deque<FramePtr> &key_frames,
     frame_vert->setId(++g2o_ids); //  temp solution
     frame_vert->setFixed(!in_window);
     
+    ROS_INFO("Added frame %lu, fixed: %s", frame.id(), (in_window) ? "false" : "true");
+    
     g2o::SE3Quat se3quat(pose.q.cast<double>(),
                          pose.translation().cast<double>());
     frame_vert->setEstimate(se3quat);
@@ -317,7 +342,11 @@ void G2OOptimizer::Optimize(std::deque<FramePtr> &key_frames,
     //  consider all observations in key frame
     for (const Feature& feat : frame.features()) {
       auto ite = added_features.find(feat.id());
-      bool added = (ite != added_features.end());
+      const bool added = (ite != added_features.end());
+      
+      if (point_singleton[feat.id()]) {
+        continue; //  ignore all singletons
+      }
       
       g2o::VertexSBAPointXYZ * gpoint=0;
       if (!added && in_window) {
@@ -336,14 +365,22 @@ void G2OOptimizer::Optimize(std::deque<FramePtr> &key_frames,
         added_features[feat.id()] = gpoint;
       } else if (added) {
         gpoint = ite->second;
+        if (!in_window) {
+          gpoint->setFixed(true);
+        }
       }
       
       if (gpoint != 0) {
+        //  convert from pixel to image coordinates
+        kr::vec2d p_image(feat.p_pixel().x, feat.p_pixel().y);
+        p_image[0] = (p_image[0] - left_camera_.cx()) / left_camera_.fx();
+        p_image[1] = (p_image[1] - left_camera_.cy()) / left_camera_.fy();
+        
         //  this point is part of the optimization, add an edge
         g2o::EdgeProjectXYZ2UV * edge = new g2o::EdgeProjectXYZ2UV();
         edge->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(gpoint));
         edge->setVertex(1, dynamic_cast<g2o::OptimizableGraph::Vertex*>(frame_vert));
-        edge->setMeasurement(kr::vec2d(feat.p_pixel().x,feat.p_pixel().y));
+        edge->setMeasurement(p_image);
         edge->information() = kr::mat2d::Identity(2,2);
         g2o::RobustKernelHuber* rk = new g2o::RobustKernelHuber();      // TODO: memory leak
         rk->setDelta(2);

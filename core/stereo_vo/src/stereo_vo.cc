@@ -54,7 +54,7 @@ void StereoVo::Iterate(const CvStereoImage &stereo_image) {
   // 2D - currently tracked corners
   // 3D - points triangulated in world frame
   EstimatePose(curr_frame, point3ds_);
-
+  
   // Check whether to add key frame based on the following criteria
   // 1. Movement exceeds config_.kf_dist_thresh
   // 2. Yaw angle exceeds config_.kf_yaw_thresh
@@ -64,15 +64,17 @@ void StereoVo::Iterate(const CvStereoImage &stereo_image) {
   if (ShouldAddKeyFrame(curr_frame)) {
     AddKeyFrame(curr_frame);
   }
-
+  
   // Visualization (optional)
   Display(curr_frame, prev_key_frame());
 
+  //  perform graph check
   CheckEverything();
   prev_frame_ = curr_frame;
 }
 
 void StereoVo::CheckEverything() {
+  std::map<Id,int> feat_counts;
   std::set<Id> kf_ids;
   for (const FramePtr& kf_ptr : key_frames_) {
     const Frame& frame = *kf_ptr;
@@ -92,6 +94,12 @@ void StereoVo::CheckEverything() {
       //  features must be triangulated
       ROS_ASSERT_MSG(point3ds_.find(feature.id()) != point3ds_.end(),
                      "Missing triangulation for feature %lu", feature.id());
+      
+      if (feat_counts.find(feature.id()) == feat_counts.end()) {
+        feat_counts[feature.id()] = 1;
+      } else {
+        feat_counts[feature.id()]++;
+      }
     }
   }
 }
@@ -261,11 +269,15 @@ void StereoVo::AddKeyFrame(const FramePtr &frame) {
   frame->SetKeyFrame(right_corners);
   // Add key frame to queue with current_pose, features and stereo_image
   key_frames_.push_back(frame);
+  
+  //  do more outlier rejection
+  NukeOutliers();
+  
   // Optimize
- // if (key_frames_.size() == 4) {
-    optimizer_.Optimize(key_frames_, point3ds_);
-   // key_frames_.pop_front();
-  //}
+  if (key_frames_.size() == 4) {
+    //optimizer_.Optimize(key_frames_, point3ds_);
+    key_frames_.pop_front();
+  }
 }
 
 void StereoVo::TrackSpatial(const CvStereoImage &stereo_image,
@@ -315,9 +327,9 @@ void StereoVo::Triangulate(const KrPose &pose, std::vector<Feature> &features,
       /// @note: Add a check here if you don't want to overwrite past
       /// triangulations
       const Id &id = it_feature->id();
-      if (point3ds_.find(id) == point3ds_.end()) {
+     // if (point3ds_.find(id) == point3ds_.end()) {
         point3ds_[id] = Point3d(id, CvPoint3(p3[0], p3[1], p3[2]));
-      }
+     // }
 
       ++it_feature;
       ++it_corner;
@@ -381,6 +393,113 @@ bool StereoVo::TriangulatePoint(const CvPoint2 &left, const CvPoint2 &right,
   }
 
   return true;
+}
+
+void StereoVo::NukeOutliers() {
+  
+  struct PointMetric {
+    scalar_t err_left_2;
+    int count;
+    
+    scalar_t norm_err_left_2() const {
+      return err_left_2 / count;
+    }
+  };
+  std::map<Id,PointMetric> metrics;
+  
+  const auto fx = model_.left().fx();
+  const auto fy = model_.left().fy();
+  const auto cx = model_.left().cx();
+  const auto cy = model_.left().cy();
+  
+  //  consider all key frames
+  for (const FramePtr& ptr : key_frames_) {
+    const Frame& frame = *ptr;
+    const KrPose& pose = frame.pose();
+    
+    for (const Feature& feat : frame.features()) {
+      const Point3d& p3d = point3ds_[feat.id()];
+      const CvPoint2& p2d = feat.p_pixel();
+      
+      //  project point
+      kr::vec3<scalar_t> p_cam(p3d.p_world().x,p3d.p_world().y,p3d.p_world().z);
+      p_cam = pose.transform(p_cam);
+      p_cam /= p_cam[2];
+      //  apply camera model
+      p_cam[0] = fx*p_cam[0] + cx;
+      p_cam[1] = fy*p_cam[1] + cy;
+      
+      //  reprojection error squared
+      auto err2 = (p_cam[0]-p2d.x)*(p_cam[0]-p2d.x) + 
+          (p_cam[1]-p2d.y)*(p_cam[1]-p2d.y);
+      
+      auto ite = metrics.find(feat.id());
+      if (ite == metrics.end()) {
+        PointMetric pm;
+        pm.err_left_2 = err2;
+        pm.count = 1;
+        metrics[feat.id()] = pm;
+      } else {
+        PointMetric& pm = ite->second;
+        pm.err_left_2 += err2;
+        pm.count++;
+      }
+    }
+  }
+  
+  struct Stats {
+    scalar_t mean;
+    scalar_t mean_squared;
+    int count;
+    Stats() {
+      mean = 0;
+      mean_squared = 0;
+      count = 0;
+    }
+    void add(scalar_t x) {
+      mean = (mean * count + x) / (count+1);
+      mean_squared = (mean_squared * count + x*x) / (count+1);
+      count++;
+    }
+    scalar_t variance() const {
+      return mean_squared - mean*mean;
+    }
+  };
+  std::map<int,Stats> sorted_stats;
+  
+  //  calculate mean squared error
+  for (const std::pair<Id,PointMetric>& pair : metrics) {
+    
+    Stats& stats = sorted_stats[pair.second.count]; //  organize by count
+    
+    const auto err2 =  pair.second.norm_err_left_2();
+    stats.add(err2);
+  }
+ 
+  for (const std::pair<int,Stats>& pair : sorted_stats) {
+    ROS_INFO("MSPE,STD (count = %i): %f, %f", pair.first, pair.second.mean, std::sqrt(pair.second.variance())); 
+  }
+  
+  //  build a set of features to eliminate
+  std::set<Id> removables;
+  for (const std::pair<Id,PointMetric>& pair : metrics) {
+    if (pair.second.norm_err_left_2() > 100) {
+      removables.insert(pair.first);
+    }
+  }
+  
+  /*if (!removables.empty()) {
+    ROS_INFO("Nuking %lu outliers", removables.size());
+  }
+  
+  //  remove them
+  size_t erased=0;
+  for (FramePtr ptr : key_frames_) {
+    erased += ptr->RemoveById(removables, true);
+  }
+  if (erased) {
+   ROS_INFO("Erased %lu observations", erased);
+  }*/
 }
 
 }  // namespace stereo_vo

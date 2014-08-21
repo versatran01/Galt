@@ -1,0 +1,19 @@
+<launch>
+
+    <arg name="manager" default="stereo_vo"/>
+    <arg name="stereo_ns" default="/mv_stereo"/>
+    <arg name="bagfile" default="day2/fly/2014-07-25-18-14-12.bag"/>
+
+    <node pkg="rosbag" type="play" name="player"
+        args="-l /home/chao/Workspace/bagfiles/$(arg bagfile)">
+    </node>
+
+    <node pkg="stereo_image_proc" type="stereo_image_proc"
+        name="stereo_image_proc" ns="$(arg stereo_ns)">
+    </node>
+
+    <node pkg="image_view" type="stereo_view" name="stereo_view"
+        args="stereo:=$(arg stereo_ns) image:=image_rect">
+    </node>
+
+</launch>

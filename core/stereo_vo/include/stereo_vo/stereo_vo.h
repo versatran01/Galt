@@ -2,7 +2,6 @@
 #define GALT_STEREO_VO_H_
 
 #include "stereo_vo/common.h"
-#include "stereo_vo/optimizer.h"
 #include "stereo_vo/feature.h"
 #include "stereo_vo/point3d.h"
 #include "stereo_vo/corner_detector.h"
@@ -133,7 +132,7 @@ class StereoVo {
   StereoCameraModel model_;       ///< Stereo camera model
   StereoVoConfig config_;         ///< Dynamic reconfigure config of stereo_vo
   GoodFeatureDetector detector_;  ///< Corner detector
-  G2OOptimizer optimizer_;  ///< Windowed optimizer
+  //G2OOptimizer optimizer_;  ///< Windowed optimizer
   FramePtr prev_frame_;           ///< Previous frame
   std::deque<FramePtr> key_frames_;  ///< A deque of key frames in window
   std::map<Id, Point3d> point3ds_;   ///< Triangulated 3d points in world frame

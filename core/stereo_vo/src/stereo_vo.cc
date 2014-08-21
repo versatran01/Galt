@@ -28,7 +28,7 @@ void StereoVo::Initialize(const CvStereoImage &stereo_image,
   model_ = model;
   // Add the first stereo image as first keyframe
   FramePtr curr_frame = std::make_shared<Frame>(stereo_image);
-  optimizer_.Initialize(model_);
+  //optimizer_.Initialize(model_);
   AddKeyFrame(curr_frame);
 
   // Save frame for next iteration

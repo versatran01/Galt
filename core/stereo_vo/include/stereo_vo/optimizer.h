@@ -1,6 +1,8 @@
 #ifndef GALT_STEREO_VO_OPTIMIZER_H_
 #define GALT_STEREO_VO_OPTIMIZER_H_
 
+#error This file has been disabled deliberately. Check CMakeLists.txt before including it.
+
 #include <gtsam/geometry/Pose3.h>
 #include <gtsam/inference/Key.h>
 #include <gtsam/nonlinear/NonlinearFactorGraph.h>

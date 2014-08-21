@@ -15,8 +15,8 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 find_package(OpenCV)
-find_package(gtsam)
-find_package(G2O REQUIRED)
+#find_package(gtsam)
+#find_package(G2O REQUIRED)
 
 generate_dynamic_reconfigure_options(
     cfg/StereoVoDyn.cfg
@@ -33,9 +33,9 @@ include_directories(include)
 include_directories(
     ${catkin_INCLUDE_DIRS}
     ${OpenCV_INCLUDE_DIRS}
-    ${GTSAM_INCLUDE_DIRS}
-    ${G2O_INCLUDE_DIR}
-    /usr/include/suitesparse # g2o may require this
+    #${GTSAM_INCLUDE_DIRS}
+    #${G2O_INCLUDE_DIR}
+    #/usr/include/suitesparse # g2o may require this
 )
 
 add_library(${PROJECT_NAME}
@@ -44,21 +44,21 @@ add_library(${PROJECT_NAME}
     src/utils.cc
     src/frame.cc
     src/feature.cc
-    src/optimizer.cc
+    #src/optimizer.cc
 )
 target_link_libraries(${PROJECT_NAME}
     ${catkin_LIBRARIES}
     ${OpenCV_LIBRARIES}
-    ${GTSAM_LIBRARIES}
-    ${G2O_CORE_LIBRARY}
-    ${G2O_STUFF_LIBRARY}
-    ${G2O_SOLVER_CHOLMOD}
-    ${G2O_SOLVER_CSPARSE}
-    ${G2O_SOLVER_DENSE}
-    ${G2O_SOLVER_PCG}
-    ${G2O_TYPES_SBA}
-    cxsparse
-    cholmod
+    #${GTSAM_LIBRARIES}
+    #${G2O_CORE_LIBRARY}
+    #${G2O_STUFF_LIBRARY}
+    #${G2O_SOLVER_CHOLMOD}
+    #${G2O_SOLVER_CSPARSE}
+    #${G2O_SOLVER_DENSE}
+    #${G2O_SOLVER_PCG}
+    #${G2O_TYPES_SBA}
+    #cxsparse
+    #cholmod
 )
 
 add_executable(${PROJECT_NAME}_node

@@ -11,6 +11,8 @@ find_package(catkin REQUIRED COMPONENTS
   message_filters
   roscpp
   sensor_msgs
+  geometry_msgs
+  nav_msgs
   visualization_msgs
 )
 

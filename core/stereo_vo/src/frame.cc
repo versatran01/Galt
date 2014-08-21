@@ -6,7 +6,12 @@ namespace galt {
 
 namespace stereo_vo {
 
-Id Frame::frame_counter = 0;
+Frame::Frame(const CvStereoImage &stereo_image)
+    : is_keyframe_(false),
+      stereo_image_(stereo_image) {
+  static Id frame_counter = 0;
+  id_ = frame_counter++;
+}
 
 void Frame::RemoveById(const std::set<Id> &ids_to_remove) {
   std::remove_if(features_.begin(), features_.end(), [&](const Feature &f) {

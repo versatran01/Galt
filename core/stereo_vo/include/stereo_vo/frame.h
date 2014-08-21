@@ -21,13 +21,8 @@ class Frame {
   using Ptr = std::shared_ptr<Frame>;
   using ConstPtr = std::shared_ptr<const Frame>;
 
-  static Id frame_counter;
-
   Frame() = default;
-  Frame(const CvStereoImage &stereo_image)
-      : id_(frame_counter++),
-        is_keyframe_(false),
-        stereo_image_(stereo_image) {}
+  Frame(const CvStereoImage &stereo_image);
 
   const Id &id() const { return id_; }
   const KrPose &pose() const { return pose_; }

@@ -68,7 +68,32 @@ void StereoVo::Iterate(const CvStereoImage &stereo_image) {
   // Visualization (optional)
   Display(curr_frame, prev_key_frame());
 
+  CheckEverything();
   prev_frame_ = curr_frame;
+}
+
+void StereoVo::CheckEverything() {
+  std::set<Id> kf_ids;
+  for (const FramePtr& kf_ptr : key_frames_) {
+    const Frame& frame = *kf_ptr;
+    //  make sure there are no duplicate frame ids
+    ROS_ASSERT_MSG(kf_ids.find(frame.id()) == kf_ids.end(),
+                   "Duplicate frame IDs found");
+    kf_ids.insert(frame.id());
+    
+    std::set<Id> point_ids;
+    for (const Feature& feature : frame.features()) {
+      //  make sure there are no duplicate features in this frame
+      ROS_ASSERT_MSG(point_ids.find(feature.id()) == point_ids.end(),
+                     "Duplicate feature (%lu) found in frame %lu",
+                     feature.id(), frame.id());
+      point_ids.insert(feature.id());
+      
+      //  features must be triangulated
+      ROS_ASSERT_MSG(point3ds_.find(feature.id()) != point3ds_.end(),
+                     "Missing triangulation for feature %lu", feature.id());
+    }
+  }
 }
 
 void StereoVo::TrackTemporal(const FramePtr &frame1, const FramePtr &frame2,
@@ -157,7 +182,7 @@ void StereoVo::EstimatePose(const FramePtr &frame,
     status[index] = 1;
   }
   PruneByStatus(status, ids, ids_to_remove);
-  ROS_INFO("%i points removed", (int)ids_to_remove.size());
+  //ROS_INFO("%i points removed", (int)ids_to_remove.size());
   frame->RemoveById(ids_to_remove);
   // Remove corresponding 3d points as well
   for (const Id id: ids_to_remove) {
@@ -237,9 +262,8 @@ void StereoVo::AddKeyFrame(const FramePtr &frame) {
   // Add key frame to queue with current_pose, features and stereo_image
   key_frames_.push_back(frame);
   // Optimize
-  optimizer_.Optimize(key_frames_, point3ds_);
-  
-  if (key_frames_.size() > 4) {
+  if (key_frames_.size() == 4) {
+    optimizer_.Optimize(key_frames_, point3ds_);
     key_frames_.pop_front();
   }
 }

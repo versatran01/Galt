@@ -256,12 +256,150 @@ void IncrementalOptimizer::Optimize(std::deque<FramePtr> &key_frames,
 }
 
 void G2OOptimizer::Initialize(const StereoCameraModel &model) {
-  
+  left_camera_ = model.left();
 }
 
 void G2OOptimizer::Optimize(std::deque<FramePtr> &key_frames,
                             std::map<Id, Point3d>& point3s) {
   
+  //  set up a solver
+  g2o::SparseOptimizer optimizer;
+  optimizer.setVerbose(true);
+  
+  g2o::BlockSolverX::LinearSolverType * linearSolver = 
+      new g2o::LinearSolverCholmod<g2o::BlockSolverX::PoseMatrixType>();
+  g2o::BlockSolverX * solver = new g2o::BlockSolverX(linearSolver);
+  g2o::OptimizationAlgorithmLevenberg * algo =
+      new g2o::OptimizationAlgorithmLevenberg(solver);
+  
+  algo->setMaxTrialsAfterFailure(5);  //  copied from SVO
+  optimizer.setAlgorithm(algo); /// @todo: figure out how memory is managed here
+  
+  Eigen::Vector2d center(left_camera_.cx(), left_camera_.cy());
+  g2o::CameraParameters * cam_params = 
+      new g2o::CameraParameters(left_camera_.fx(), center, 0);
+  cam_params->setId(0); /// @todo: what is this id for?
+  
+  if (!optimizer.addParameter(cam_params)) {
+    throw std::runtime_error("failed to add camera params");
+  }
+  
+  const int window_size = 3;
+  std::map<Id, g2o::VertexSBAPointXYZ*> added_features;
+  std::map<Id, g2o::VertexSE3Expmap*> added_frames;
+  
+  //  iterate over all key frames and create g2o graph
+  size_t kf_count=0;
+  for (auto kf_ite = key_frames.rbegin();
+       kf_ite != key_frames.rend(); kf_ite++, kf_count++) {
+    
+    const Frame& frame = *(*kf_ite);
+    const KrPose& pose = frame.pose();
+    const bool in_window = (kf_count < window_size);
+    
+    //  automatically make a frame for this pose
+    g2o::VertexSE3Expmap * frame_vert = new g2o::VertexSE3Expmap();
+    frame_vert->setId(1e7 + frame.id()); //  temp solution
+    frame_vert->setFixed(!in_window);
+    
+    g2o::SE3Quat se3quat(pose.q.cast<double>(),
+                         pose.translation().cast<double>());
+    frame_vert->setEstimate(se3quat);
+    
+    ROS_INFO("Adding frame vertex %lu", frame.id());
+    if (!optimizer.addVertex(frame_vert)) {
+      throw std::runtime_error("failed to add frame vertex");
+    }
+    added_frames[frame.id()] = frame_vert;
+    ROS_INFO("Adding features for frame");
+    
+    std::set<Id> test;
+    
+    //  consider all observations in key frame
+    for (const Feature& feat : frame.features()) {
+      auto ite = added_features.find(feat.id());
+      bool added = (ite != added_features.end());
+      
+      if (test.find(feat.id()) != test.end()) {
+        assert(false);
+      }
+      test.insert(feat.id());
+      
+      g2o::VertexSBAPointXYZ * gpoint=0;
+      if (!added && in_window) {
+        //  we have not created a point yet, add one
+        const Point3d& p3 = point3s[feat.id()];
+        
+        gpoint = new g2o::VertexSBAPointXYZ();
+        gpoint->setId(feat.id());
+        gpoint->setFixed(false); //  get from map of all features
+        gpoint->setEstimate(kr::vec3d(p3.p_world().x,
+                                      p3.p_world().y,
+                                      p3.p_world().z));
+        if (!optimizer.addVertex(gpoint)) {
+          throw std::runtime_error("failed to add vertex");
+        }
+        added_features[feat.id()] = gpoint;
+      } else {
+        gpoint = ite->second;
+      }
+      
+      if (gpoint != 0) {
+        //  this point is part of the optimization, add an edge
+        g2o::EdgeProjectXYZ2UV * edge = new g2o::EdgeProjectXYZ2UV();
+        edge->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(gpoint));
+        edge->setVertex(1, dynamic_cast<g2o::OptimizableGraph::Vertex*>(frame_vert));
+        edge->setMeasurement(kr::vec2d(feat.p_pixel().x,feat.p_pixel().y));
+        edge->information() = kr::mat2d::Identity(2,2);
+        g2o::RobustKernelHuber* rk = new g2o::RobustKernelHuber();      // TODO: memory leak
+        rk->setDelta(2);
+        edge->setRobustKernel(rk);
+        edge->setParameterId(0,0);
+        
+        if (!optimizer.addEdge(edge)) {
+          throw std::runtime_error("failed to add edge");
+        }
+      }
+    }
+  }
+  
+  //  do structure only bundle adjustment (todo : why?)
+  //  copied from svo
+  /*g2o::StructureOnlySolver<3> structure_only_ba;
+  g2o::OptimizableGraph::VertexContainer points;
+  for (g2o::OptimizableGraph::VertexIDMap::const_iterator it = optimizer.vertices().begin(); it != optimizer.vertices().end(); ++it)
+  {
+    g2o::OptimizableGraph::Vertex* v = static_cast<g2o::OptimizableGraph::Vertex*>(it->second);
+      if (v->dimension() == 3 && v->edges().size() >= 2)
+        points.push_back(v);
+  }
+  structure_only_ba.calc(points, 10);*/
+  
+  /*optimizer.initializeOptimization();
+  optimizer.computeActiveErrors();
+  ROS_INFO("Error before: %f", optimizer.activeChi2());
+  optimizer.optimize(10);
+  ROS_INFO("Error after: %f", optimizer.activeChi2());*/
+  
+  //  update keyframes
+  /*for (const std::pair<Id,g2o::VertexSE3Expmap*>& pair : added_frames) {
+    g2o::SE3Quat estimate = pair.second->estimate();
+    
+    //  find appropriate key-frame
+    for (FramePtr ptr : key_frames) {
+      if (ptr->id() == pair.first) {
+        ptr->set_pose(KrPose(estimate.to_homogeneous_matrix().cast<scalar_t>()));
+        break;
+      }
+    }
+  }
+  
+  //  update points
+  for (const std::pair<Id,g2o::VertexSBAPointXYZ*>& pair : added_features) {
+    kr::vec3d estimate = pair.second->estimate();
+    point3s[pair.first] = Point3d(pair.first, CvPoint3(estimate[0],
+                                  estimate[1],estimate[2]));
+  }*/
 }
 
 }  // namespace stereo_vo

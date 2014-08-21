@@ -114,6 +114,7 @@ public:
   virtual void Optimize(std::deque<FramePtr> &key_frames,
                         std::map<Id, Point3d>& point3s) override;
 private:
+  image_geometry::PinholeCameraModel left_camera_;
 };
 
 }  // namespace stereo_vo

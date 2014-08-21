@@ -61,6 +61,13 @@ class StereoVo {
    */
   void UpdateConfig(const StereoVoConfig &config) { config_ = config; }
 
+  /**
+   * @brief CheckEverything
+   * @note Check the graph integrity and self-destruct everything if something
+   * is bad.
+   */
+  void CheckEverything();
+  
  private:
   /**
    * @brief ShouldAddKeyFrame Determines whether to add a key frame or not
@@ -121,7 +128,7 @@ class StereoVo {
   StereoCameraModel model_;       ///< Stereo camera model
   StereoVoConfig config_;         ///< Dynamic reconfigure config of stereo_vo
   GoodFeatureDetector detector_;  ///< Corner detector
-  IncrementalOptimizer optimizer_;  ///< Windowed optimizer
+  G2OOptimizer optimizer_;  ///< Windowed optimizer
   FramePtr prev_frame_;           ///< Previous frame
   std::deque<FramePtr> key_frames_;  ///< A deque of key frames in window
   std::map<Id, Point3d> point3ds_;   ///< Triangulated 3d points in world frame

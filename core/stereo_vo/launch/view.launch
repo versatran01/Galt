@@ -4,14 +4,16 @@
     <arg name="disparity" default="false"/>
     <arg name="rviz" default="false"/>
 
+    <!-- launch the stereo vo node -->
     <include file="$(find stereo_vo)/launch/stereo_vo.launch">
       <arg name="stereo_ns" value="$(arg stereo_ns)"/>
     </include>
 
     <arg name="bagfile_home" value="$(env GALT_BAGFILES)"/>
-    <arg name="bagfile" default="day2/fly/2014-07-25-18-14-12.bag"/>
+    <arg name="bagfile" default="day2/fly/2014-07-24-15-48-44.bag"/>
     <arg name="bagfile_start" default="0"/>
 
+    <!-- play selected bag file -->
     <node pkg="rosbag" type="play" name="player"
         args="-s $(arg bagfile_start) -r 1 $(arg bagfile_home)/$(arg bagfile)">
     </node>
@@ -21,6 +23,7 @@
         args="stereo:=$(arg stereo_ns) image:=image_rect">
     </node>
 
+    <!-- rviz for path visualization -->
     <node if="$(arg rviz)"
       name="rviz_stereo" pkg="rviz" type="rviz"
       args="--display-config $(find stereo_vo)/rviz/config.rviz">

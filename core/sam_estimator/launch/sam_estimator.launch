@@ -2,6 +2,7 @@
 
   <!-- Launch attitude_eskf and gps_odom:
     * creates /gps_odom/odometry
+    * creates /gps_odom/corrected_imu
     * creates /post/attitude_eskf/filtered_imu
   -->
   <include file="$(find gps_odom)/launch/gps_odom.launch"/>

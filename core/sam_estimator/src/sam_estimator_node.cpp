@@ -28,7 +28,6 @@ SamEstimatorNode::SamEstimatorNode(const ros::NodeHandle &nh) : nh_(nh) {
                               &SamEstimatorNode::StereoCallback, this);
   sub_laser_ = nh_.subscribe("laser_scan", kROSQueueSize,
                              &SamEstimatorNode::LaserScanCallback, this);
-
   pub_pose_ =
       nh_.advertise<geometry_msgs::PoseWithCovarianceStamped>("pose", 1);
 }

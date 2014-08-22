@@ -21,29 +21,35 @@ namespace sam_estimator {
 SamEstimatorNode::SamEstimatorNode(const ros::NodeHandle &nh) : nh_(nh) {
   //  subscribe to all relevant topics
   sub_gps_ = nh_.subscribe("gps_odom", kROSQueueSize,
-                           &SamEstimatorNode::GpsOdomCallback, this);
+                           &SamEstimatorNode::GpsCallback, this);
   sub_imu_ =
       nh_.subscribe("imu", kROSQueueSize, &SamEstimatorNode::ImuCallback, this);
   sub_stereo_ = nh_.subscribe("vo_pose", kROSQueueSize,
                               &SamEstimatorNode::StereoCallback, this);
   sub_laser_ = nh_.subscribe("laser_scan", kROSQueueSize,
-                             &SamEstimatorNode::LaserScanCallback, this);
+                             &SamEstimatorNode::LaserCallback, this);
   pub_pose_ =
       nh_.advertise<geometry_msgs::PoseWithCovarianceStamped>("pose", 1);
 }
 
-SamEstimatorNode::SamEstimatorNode(const ros::NodeHandle &nh) : nh_(nh) {}
-
 void SamEstimatorNode::GpsCallback(
-    const nav_msgs::OdometryConstPtr &odometry_msg) {}
+    const nav_msgs::OdometryConstPtr &odometry_msg) {
+  ROS_INFO("gps callback!"); 
+}
 
-void SamEstimatorNode::ImuCallback(const sensor_msgs::ImuConstPtr &imu_msg) {}
+void SamEstimatorNode::ImuCallback(const sensor_msgs::ImuConstPtr &imu_msg) {
+  ROS_INFO("imu callback!");
+}
 
 void SamEstimatorNode::LaserCallback(
-    const sensor_msgs::LaserScanConstPtr &laser_msg) {}
+    const sensor_msgs::LaserScanConstPtr &laser_msg) {
+  ROS_INFO("laser callback!");
+}
 
 void SamEstimatorNode::StereoCallback(
-    const geometry_msgs::PoseStampedConstPtr &pose_msg) {}
+    const geometry_msgs::PoseStampedConstPtr &pose_msg) {
+  ROS_INFO("stereo callback!");
+}
 
 }  // namespace sam_estimator
 }  // namespace galt

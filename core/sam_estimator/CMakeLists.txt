@@ -32,10 +32,6 @@ add_executable(${PROJECT_NAME}
   src/sam_estimator.cpp
   src/sam_estimator_node.cpp
   src/visualizer.cpp
-  src/callbacks/gps_callback.cpp
-  src/callbacks/imu_callback.cpp
-  src/callbacks/laser_callback.cpp
-  src/callbacks/stereo_callback.cpp
 )
 
 target_link_libraries(${PROJECT_NAME}

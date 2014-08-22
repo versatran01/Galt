@@ -6,6 +6,7 @@
  *  Created on: 12/7/2014
  *      Author: Chao Qu
  */
+
 #ifndef FLIR_GIGE_GIGE_CAMERA_H_
 #define FLIR_GIGE_GIGE_CAMERA_H_
 

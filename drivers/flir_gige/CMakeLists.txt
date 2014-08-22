@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(flir_gige)
 
-add_definitions("-Wall -std=c++11")
+set(CMAKE_CXX_FLAGS "-std=c++11 -Wall -Wno-unknown-pragmas")
 
 # Set library paths for pleora ebus sdk on 64-bit linux
 # For more information, see cmake/Findebus.cmake
@@ -76,14 +76,14 @@ target_link_libraries(${PROJECT_NAME}_nodelet
     )
 
 # calibrator
-add_executable(flir_calibrator_node
-    src/calibrator.cpp
-    src/flir_calibrator_node.cpp
-    )
-target_link_libraries(flir_calibrator_node
-    ${catkin_LIBRARIES}
-    ${OpenCV_LIBRARIES}
-    )
+#add_executable(flir_calibrator_node
+    #src/calibrator.cpp
+    #src/flir_calibrator_node.cpp
+    #)
+#target_link_libraries(flir_calibrator_node
+    #${catkin_LIBRARIES}
+    #${OpenCV_LIBRARIES}
+    #)
 
 ## Add cmake target dependencies of the executable/library
 add_dependencies(${PROJECT_NAME}_node

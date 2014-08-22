@@ -22,22 +22,25 @@ namespace galt {
 namespace sam_estimator {
 
 class SamEstimator {
-public:
-  
+ public:
   SamEstimator();
-  
-  void addImu();
-  
-  void addOdometry();
-  
-  void addGps();
-  
-  void addLidar();
-  
-private:
+
+  void AddImu();
+
+  void AddStereo();
+
+  void AddGps();
+
+  void Initialize();
+
+  void Optimize();
+
+ private:
+  gtsam::NonlinearFactorGraph graph_;
+  gtsam::Values initial_estimates_;
 };
 
-}
-}
+}  // namespace sam_estimator
+}  // namespace galt
 
-#endif
+#endif  // GALT_SAM_ESTIMATOR_HPP_

@@ -32,5 +32,18 @@ SamEstimatorNode::SamEstimatorNode(const ros::NodeHandle &nh) : nh_(nh) {
       nh_.advertise<geometry_msgs::PoseWithCovarianceStamped>("pose", 1);
 }
 
-} //  sam_estimator
-} //  galt
+SamEstimatorNode::SamEstimatorNode(const ros::NodeHandle &nh) : nh_(nh) {}
+
+void SamEstimatorNode::GpsCallback(
+    const nav_msgs::OdometryConstPtr &odometry_msg) {}
+
+void SamEstimatorNode::ImuCallback(const sensor_msgs::ImuConstPtr &imu_msg) {}
+
+void SamEstimatorNode::LaserCallback(
+    const sensor_msgs::LaserScanConstPtr &laser_msg) {}
+
+void SamEstimatorNode::StereoCallback(
+    const geometry_msgs::PoseStampedConstPtr &pose_msg) {}
+
+}  // namespace sam_estimator
+}  // namespace galt

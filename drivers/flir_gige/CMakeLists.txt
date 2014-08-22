@@ -24,7 +24,7 @@ find_package(OpenCV)
 generate_dynamic_reconfigure_options(
     cfg/Flir.cfg
     cfg/ProcDyn.cfg
-    cfg/CalibDyn.cfg
+    cfg/CalibProcDyn.cfg
     )
 
 catkin_package(
@@ -104,22 +104,9 @@ target_link_libraries(calib_proc_node
 
 
 ## Add cmake target dependencies of the executable/library
-add_dependencies(${PROJECT_NAME}_node
+add_dependencies(${PROJECT_NAME}
     ${catkin_EXPORTED_TARGETS}
+    ${PROJECT_NAME}_gencfg
+    ${PROJECT_NAME}_gencpp
     ${${PROJECT_NAME}_EXPORTED_TARGETS}
     )
-add_dependencies(${PROJECT_NAME}_nodelet
-  ${${PROJECT_NAME}_EXPORTED_TARGETS}
-)
-add_dependencies(thermal_proc_node
-    ${${PROJECT_NAME}_EXPORTED_TARGETS}
-    )
-
-## Add gtest based cpp test }target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_flir.cpp)
-# if(TARGET ${PROJECT_NAME}-test)
-#   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
-# endif()
-
-## Add folders to be run by python nosetests
-# catkin_add_nosetests(test)

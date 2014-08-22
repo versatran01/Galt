@@ -14,6 +14,8 @@ CalibProc::CalibProc(const ros::NodeHandle &nh, const ros::NodeHandle &pnh)
   image_sub_ = it_.subscribe(ros::names::resolve("image_raw"), 1,
                              &CalibProc::ImageCallback, this, hints);
   image_pub_ = it_.advertise("image_calib", 1);
+  server_.setCallback(
+      boost::bind(&CalibProc::ReconfigureCallback, this, _1, _2));
   cv::namedWindow("raw");
 }
 
@@ -22,6 +24,13 @@ void CalibProc::ImageCallback(const sensor_msgs::ImageConstPtr &image_msg) {
                       image_msg, sensor_msgs::image_encodings::MONO8)->image;
   cv::imshow("raw", image);
   cv::waitKey(1);
+}
+
+void CalibProc::ReconfigureCallback(const CalibProcDynConfig &config,
+                                    int level) {
+  if (level < 0) {
+    return;
+  }
 }
 
 }  // namespace flir_gige

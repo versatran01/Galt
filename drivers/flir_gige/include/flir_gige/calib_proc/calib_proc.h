@@ -21,6 +21,7 @@
 #include <sensor_msgs/Image.h>
 #include <cv_bridge/cv_bridge.h>
 #include <dynamic_reconfigure/server.h>
+#include <flir_gige/CalibProcDynConfig.h>
 
 namespace flir_gige {
 
@@ -35,11 +36,14 @@ class CalibProc {
 
  private:
   void ImageCallback(const sensor_msgs::ImageConstPtr &image_msg);
+  void ReconfigureCallback(const flir_gige::CalibProcDynConfig &config,
+                           int level);
 
   ros::NodeHandle nh_, pnh_;
   image_transport::ImageTransport it_;
   image_transport::Subscriber image_sub_;
   image_transport::Publisher image_pub_;
+  dynamic_reconfigure::Server<flir_gige::CalibProcDynConfig> server_;
 };
 }  // namespace flir_gig
 #endif  // FLIR_GIGE_CALIB_PROC_H_

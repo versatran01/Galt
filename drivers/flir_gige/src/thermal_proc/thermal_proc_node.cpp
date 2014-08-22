@@ -19,7 +19,6 @@
 
 int main(int argc, char **argv) {
   ros::init(argc, argv, "thermal_proc");
-
   ros::NodeHandle nh("~");
 
   try {

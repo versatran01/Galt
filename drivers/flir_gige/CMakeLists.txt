@@ -24,6 +24,7 @@ find_package(OpenCV)
 generate_dynamic_reconfigure_options(
     cfg/Flir.cfg
     cfg/ProcDyn.cfg
+    cfg/CalibDyn.cfg
     )
 
 catkin_package(
@@ -90,6 +91,17 @@ add_executable(thermal_proc_node
 target_link_libraries(thermal_proc_node
     thermal_proc
     )
+
+# calib proc
+add_executable(calib_proc_node
+    src/calib_proc/calib_proc.cpp
+    src/calib_proc/calib_proc_node.cpp
+    )
+target_link_libraries(calib_proc_node
+    ${catkin_LIBRARIES}
+    ${OpenCV_LIBRARIES}
+    )
+
 
 ## Add cmake target dependencies of the executable/library
 add_dependencies(${PROJECT_NAME}_node

@@ -221,12 +221,7 @@ const StereoVoConfig ReadConfig(const ros::NodeHandle& nh) {
 }
 
 geometry_msgs::Pose KrPoseToRosPose(const KrPose& kr_pose) {
-  geometry_msgs::Pose ros_pose;
-  ros_pose.orientation.w = kr_pose.q.w();
-  ros_pose.orientation.x = -kr_pose.q.x();
-  ros_pose.orientation.y = -kr_pose.q.y();
-  ros_pose.orientation.z = -kr_pose.q.z();
-  tf::pointEigenToMsg(kr_pose.p.cast<double>(), ros_pose.position);
+  geometry_msgs::Pose ros_pose = static_cast<geometry_msgs::Pose>(kr_pose);
   return ros_pose;
 }
 

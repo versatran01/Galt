@@ -218,7 +218,7 @@ bool StereoVo::ShouldAddKeyFrame(const FramePtr &frame) const {
     return true;
   }
 
-  const kr::vec3<scalar_t> &angles = kr::getRPY(diff.q.matrix());
+  const kr::vec3<scalar_t> &angles = kr::getRPY(diff.bRw());
   if (std::abs(angles[2] * 180 / M_PI) > config_.kf_yaw_thresh) {
     ROS_INFO("Angle: %f", angles[2]);
     //  over yaw angle threshold, add keyframe
@@ -310,7 +310,7 @@ void StereoVo::Triangulate(const KrPose &pose, std::vector<Feature> &features,
       it_corner = corners.erase(it_corner);
     } else {
       // Convert to world frame
-      p3 = pose.q.conjugate().matrix() * p3 + pose.p;
+      p3 = pose.wRb() * p3 + pose.p;
 
       /// @note: Add a check here if you don't want to overwrite past
       /// triangulations
@@ -410,7 +410,7 @@ void StereoVo::NukeOutliers() {
       //  project point
       kr::vec3<scalar_t> p_cam(p3d.p_world().x, p3d.p_world().y,
                                p3d.p_world().z);
-      p_cam = pose.transform(p_cam);
+      p_cam = pose.transformToBody(p_cam);
       p_cam /= p_cam[2];
       //  apply camera model
       p_cam[0] = fx * p_cam[0] + cx;

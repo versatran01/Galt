@@ -10,7 +10,7 @@
     </include>
 
     <arg name="bagfile_home" value="$(env GALT_BAGFILES)"/>
-    <arg name="bagfile" default="day2/fly/2014-07-24-15-48-44.bag"/>
+    <arg name="bagfile" default="day2/fly/2014-07-25-18-14-12.bag"/>
     <arg name="bagfile_start" default="0"/>
 
     <!-- play selected bag file -->

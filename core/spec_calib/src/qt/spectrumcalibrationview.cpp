@@ -237,7 +237,7 @@ void SpectrumCalibrationView::calibratorUpdateState(void) {
   //  update incident angle reading
   kr::Pose<double> pose = specCalib_->getPose();  //  tags in camera frame
   
-  kr::vec3d tagZ = pose.q.matrix() * kr::vec3d(0,0,1);
+  kr::vec3d tagZ = pose.bRw() * kr::vec3d(0,0,1);
   
   const double dot = -tagZ[2];
   const double ang = std::acos(dot);

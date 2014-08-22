@@ -39,11 +39,36 @@ SamEstimatorNode::SamEstimatorNode(const ros::NodeHandle &nh) : nh_(nh) {
 
 void SamEstimatorNode::GpsCallback(
     const nav_msgs::OdometryConstPtr &odometry_msg) {
-  //ROS_INFO("gps callback!"); 
+  const double time = odometry_msg->header.stamp.toSec();
+  
+  SamEstimator::GpsMeasurement meas;
+  meas.time = time;
+  //meas.pose();
+  
+  estimator_->AddGps(meas);
+  
+  /// @todo: send to visualizer here
 }
 
-void SamEstimatorNode::ImuCallback(const sensor_msgs::ImuConstPtr &imu_msg) {
-  //ROS_INFO("imu callback!");
+void SamEstimatorNode::ImuCallback(const sensor_msgs::ImuConstPtr &imu_msg) {  
+  const double time = imu_msg->header.stamp.toSec();
+  static double prevTime = time;  //  temporary
+  
+  SamEstimator::ImuMeasurement meas;
+  meas.time = time;
+  meas.dt = time - prevTime;
+  meas.z[0] = imu_msg->linear_acceleration.x;
+  meas.z[1] = imu_msg->linear_acceleration.y;
+  meas.z[2] = imu_msg->linear_acceleration.z;
+  meas.z[3] = imu_msg->angular_velocity.x;
+  meas.z[4] = imu_msg->angular_velocity.y;
+  meas.z[5] = imu_msg->angular_velocity.z;
+  
+  if ( estimator_->IsInitialized() ) {
+    estimator_->AddImu(meas);
+  }
+  
+  prevTime = time;
 }
 
 void SamEstimatorNode::LaserCallback(

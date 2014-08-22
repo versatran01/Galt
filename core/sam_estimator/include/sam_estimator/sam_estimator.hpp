@@ -98,20 +98,33 @@ class SamEstimator {
   
   bool IsInitialized() const { return initialized_; }
 
+  const std::vector<gtsam::Pose3>& AllPoses() const { return allPoses_; }
+  
   Configuration& Config() { return config_; }
   const Configuration& Config() const { return config_; }
   
  private:
   
-  bool CreateImuFactor(Timestamp time, gtsam::ImuFactor &factor);
+  bool CreateImuFactor(Timestamp time, gtsam::ImuFactor &factor, int &count);
   
-  gtsam::Symbol PoseKey(int rel=0) const;
-  gtsam::Symbol VelocityKey(int rel=0) const;
-  gtsam::Symbol BiasKey(int rel=0) const;
+  gtsam::Symbol PoseKey(int index) const;
+  gtsam::Symbol VelKey(int index) const;
+  gtsam::Symbol BiasKey(int index) const;
+  gtsam::Symbol CurPoseKey() const { return PoseKey(meas_index_); }
+  gtsam::Symbol CurVelKey() const { return VelKey(meas_index_); }
+  gtsam::Symbol CurBiasKey() const { return BiasKey(meas_index_); }
+  gtsam::Symbol PrevPoseKey() const { return PoseKey(meas_index_-1); }
+  gtsam::Symbol PrevVelKey() const { return VelKey(meas_index_-1); }
+  gtsam::Symbol PrevBiasKey() const { return BiasKey(meas_index_-1); }
   
   gtsam::NonlinearFactorGraph graph_;
   gtsam::Values estimates_;
-  gtsam::imuBias::ConstantBias constantBias_;
+  gtsam::ISAM2 isam_;
+  
+  gtsam::Pose3 currentPose_;
+  gtsam::LieVector currentVelocity_;
+  gtsam::imuBias::ConstantBias currentBias_;
+  std::vector<gtsam::Pose3> allPoses_;
   
   std::deque<ImuMeasurement> imu_buffer_;
   

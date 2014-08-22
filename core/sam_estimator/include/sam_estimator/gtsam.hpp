@@ -29,8 +29,9 @@
 #include <gtsam/navigation/ImuFactor.h>
 #include <gtsam/nonlinear/Marginals.h>
 #include <gtsam/nonlinear/Values.h>
-#include <gtsam/nonlinear/NonlinearISAM.h>
+#include <gtsam/nonlinear/ISAM2.h>
 #include <gtsam/nonlinear/NonlinearFactorGraph.h>
 #include <gtsam/slam/PriorFactor.h>
+#include <gtsam/slam/BetweenFactor.h>
 
 #endif  // GALT_SAM_ESTIMATOR_GTSAM_HPP_

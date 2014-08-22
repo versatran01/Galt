@@ -112,7 +112,7 @@ void FlirGige::PublishTemperature(const std::pair<double, double> &spot) {
   temperature_pub_.publish(temperature);
 }
 
-std::string FlirGige::GetImageEncoding(const cv::Mat &image) {
+std::string FlirGige::GetImageEncoding(const cv::Mat &image) const {
   std::string encoding;
   switch (image.type()) {
     case CV_8UC1:

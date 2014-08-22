@@ -1,6 +1,6 @@
 <launch>
-    <arg name="square" default="8x6"/>
-    <arg name="size" default="0.024"/>
+    <arg name="square" default="0.024"/>
+    <arg name="size" default="8x6"/>
     <arg name="camera" default="/flir_gige"/>
     <arg name="image" default="$(arg camera)/image_raw"/>
 

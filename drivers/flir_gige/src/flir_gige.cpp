@@ -43,7 +43,7 @@ FlirGige::FlirGige(const ros::NodeHandle &nh) : nh_{nh}, it_{nh} {
   double fps;
   nh_.param<double>("fps", fps, 20.0);
   ROS_ASSERT_MSG(fps > 0, "FlirGige: fps must be greater than 0");
-  nh_.param<std::string>("frame_id", frame_id_, std::string("flir_a5"));
+nh_.param<std::string>("frame_id", frame_id_, std::string("flir_a5"));
   rate_.reset(new ros::Rate(fps));
 
   // Create a camera

@@ -15,10 +15,15 @@
 
 #include <sam_estimator/sam_estimator_node.hpp>
 
+using std::make_shared;
+
 namespace galt {
 namespace sam_estimator {
 
 SamEstimatorNode::SamEstimatorNode(const ros::NodeHandle &nh) : nh_(nh) {
+  //  create an estimator
+  estimator_ = make_shared<SamEstimator>();
+  
   //  subscribe to all relevant topics
   sub_gps_ = nh_.subscribe("gps_odom", kROSQueueSize,
                            &SamEstimatorNode::GpsCallback, this);
@@ -34,21 +39,21 @@ SamEstimatorNode::SamEstimatorNode(const ros::NodeHandle &nh) : nh_(nh) {
 
 void SamEstimatorNode::GpsCallback(
     const nav_msgs::OdometryConstPtr &odometry_msg) {
-  ROS_INFO("gps callback!"); 
+  //ROS_INFO("gps callback!"); 
 }
 
 void SamEstimatorNode::ImuCallback(const sensor_msgs::ImuConstPtr &imu_msg) {
-  ROS_INFO("imu callback!");
+  //ROS_INFO("imu callback!");
 }
 
 void SamEstimatorNode::LaserCallback(
     const sensor_msgs::LaserScanConstPtr &laser_msg) {
-  ROS_INFO("laser callback!");
+  //ROS_INFO("laser callback!");
 }
 
 void SamEstimatorNode::StereoCallback(
     const geometry_msgs::PoseStampedConstPtr &pose_msg) {
-  ROS_INFO("stereo callback!");
+  //ROS_INFO("stereo callback!");
 }
 
 }  // namespace sam_estimator

@@ -18,8 +18,9 @@ find_package(catkin REQUIRED COMPONENTS
 
 find_package(gtsam)
 
-catkin_package(
-)
+catkin_package()
+
+add_definitions("-DKR_MATH_GTSAM_CONVERSIONS")
 
 include_directories(
   ${catkin_INCLUDE_DIRS}
@@ -37,6 +38,7 @@ add_executable(${PROJECT_NAME}
 target_link_libraries(${PROJECT_NAME}
   ${catkin_LIBRARIES}
   ${GTSAM_LIBRARIES}
+  tbbmalloc
 )
 
 #add_dependencies(${PROJECT_NAME}

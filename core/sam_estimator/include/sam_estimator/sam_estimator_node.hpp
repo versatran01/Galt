@@ -23,6 +23,8 @@
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 
+#include <sam_estimator/sam_estimator.hpp>
+
 namespace galt {
 namespace sam_estimator {
 
@@ -34,6 +36,9 @@ private:
   
   constexpr static int kROSQueueSize = 1;
 
+  SamEstimator::Ptr estimator_;
+  
+  //  ROS objects
   ros::NodeHandle nh_;
   ros::Subscriber sub_gps_;
   ros::Subscriber sub_imu_;
@@ -42,8 +47,7 @@ private:
   ros::Publisher pub_pose_;
   ros::Publisher pub_marker_;
 
-  //  callbacks for sam_estimator, imu, stereo pose callback, lidar callback
-
+  //  ROS callbacks
   void GpsCallback(const nav_msgs::OdometryConstPtr& odometry_msg);
 
   void ImuCallback(const sensor_msgs::ImuConstPtr& imu_msg);

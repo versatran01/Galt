@@ -90,10 +90,10 @@ class GigeCamera {
   void SetAoi(int width, int height);
   void SetPixelFormat(BitSize bit);
 
-  typedef std::unique_ptr<PvDevice, FreeDevice> PvDevicePtr;
-  typedef std::unique_ptr<PvStream, FreeStream> PvStreamPtr;
-  typedef std::unique_ptr<PvPipeline> PvPipelinePtr;
-  typedef std::unique_ptr<std::thread> ThreadPtr;
+  using PvDevicePtr = std::unique_ptr<PvDevice, FreeDevice>;
+  using PvStreamPtr = std::unique_ptr<PvStream, FreeStream>;
+  using PvPipelinePtr = std::unique_ptr<PvPipeline>;
+  using ThreadPtr = std::unique_ptr<std::thread>;
 
   bool raw_{false};
   bool acquire_{false};

@@ -1,12 +1,24 @@
+/*
+ * thermal_proc.cpp
+ *  _   _             _           _____         _
+ * | \ | | ___  _   _| | ____ _  |_   _|__  ___| |__
+ * |  \| |/ _ \| | | | |/ / _` |   | |/ _ \/ __| '_ \
+ * | |\  | (_) | |_| |   < (_| |   | |  __/ (__| | | |
+ * |_| \_|\___/ \__,_|_|\_\__,_|   |_|\___|\___|_| |_|
+ *
+ *  Copyright (c) 2014 Nouka Technologies. All rights reserved.
+ *
+ *  This file is part of flir_gige.
+ *
+ *	Created on: 21/08/2014
+ */
+
 #include "flir_gige/thermal_proc/thermal_proc.h"
 
 #include <stdint.h>
 #include <algorithm>
 #include <cmath>
 #include <iterator>
-
-#include <std_msgs/MultiArrayLayout.h>
-#include <std_msgs/MultiArrayDimension.h>
 
 #include <opencv2/contrib/contrib.hpp>
 
@@ -65,8 +77,7 @@ void ThermalProc::CameraCallback(const sensor_msgs::ImageConstPtr &image,
     auto *pheat = heat.ptr<float>(i);
     auto *praw = raw_ptr->image.ptr<uint16_t>(i);
     for (int j = 0; j < width; ++j) {
-      //      pheat[j] = B / std::log(R / (praw[j] - O) + F) - kT0;
-      pheat[j] = Raw2Celsius(praw[j], B, F, O, R, kT0);
+      pheat[j] = RawToCelsius(praw[j], B, F, O, R, kT0);
     }
   }
 
@@ -79,8 +90,8 @@ void ThermalProc::CameraCallback(const sensor_msgs::ImageConstPtr &image,
   if (color_pub_.getNumSubscribers() > 0) {
     cv::Mat image_jet;
     // Calculate corresponding raw value from temperature
-    uint16_t raw_min = Celsius2Raw(celsius_min_, B, F, O, R, kT0);
-    uint16_t raw_max = Celsius2Raw(celsius_max_, B, F, O, R, kT0);
+    uint16_t raw_min = CelsiusToRaw(celsius_min_, B, F, O, R, kT0);
+    uint16_t raw_max = CelsiusToRaw(celsius_max_, B, F, O, R, kT0);
     auto alpha = 255.0 / (raw_max - raw_min);
     auto beta = -alpha * raw_min;
     raw_ptr->image.convertTo(image_jet, CV_8UC1, alpha, beta);
@@ -92,16 +103,16 @@ void ThermalProc::CameraCallback(const sensor_msgs::ImageConstPtr &image,
   }
 
   // Display image for now
-//  cv::imshow("raw", raw_ptr->image);
-//  cv::waitKey(3);
+  //  cv::imshow("raw", raw_ptr->image);
+  //  cv::waitKey(3);
 }
 
-uint16_t ThermalProc::Celsius2Raw(double t, double B, double F, double O,
+uint16_t ThermalProc::CelsiusToRaw(double t, double B, double F, double O,
                                   double R, double T0) {
   return static_cast<uint16_t>(R / (std::exp(B / (t + T0)) - F) + O);
 }
 
-double ThermalProc::Raw2Celsius(uint16_t S, double B, double F, double O,
+double ThermalProc::RawToCelsius(uint16_t S, double B, double F, double O,
                                 double R, double T0) {
   return (B / std::log(R / (S - O) + F) - kT0);
 }

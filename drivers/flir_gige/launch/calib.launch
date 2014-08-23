@@ -1,8 +1,6 @@
 <launch>
     <arg name="test" default="true"/>
-    <arg
-        if="$(arg test)"
-        name="bag" default="$(find flir_gige)/bag/calib.bag"/>
+
     <arg name="square"/>
     <arg name="size"/>
     <arg name="pattern"/>
@@ -14,20 +12,9 @@
         file="$(find flir_gige)/launch/node.launch">
     </include>
 
-    <node
-        if="$(arg test)"
-        pkg="rosbag" name="player" type="play" args="-l $(arg bag)">
-    </node>
-
-    <node pkg="flir_gige" type="calib_proc_node" name="calib_proc_node"
-        ns="flir_gige" output="screen">
-    </node>
-
-    <!--
     <node pkg="camera_calibration" type="cameracalibrator.py" name="calibrator"
         args="-p $(arg pattern) -s $(arg size) -q $(arg square)
-        image:=$(arg image) camera:=$(arg camera)">
+        image:=$(arg image) camera:=$(arg camera)" output="screen">
     </node>
-    -->
 
 </launch>

@@ -43,15 +43,16 @@ FlirGige::FlirGige(const ros::NodeHandle &nh) : nh_{nh}, it_{nh} {
   double fps;
   nh_.param<double>("fps", fps, 20.0);
   ROS_ASSERT_MSG(fps > 0, "FlirGige: fps must be greater than 0");
-nh_.param<std::string>("frame_id", frame_id_, std::string("flir_a5"));
+  nh_.param<std::string>("frame_id", frame_id_, std::string("flir_a5"));
   rate_.reset(new ros::Rate(fps));
 
   // Create a camera
   std::string ip_address;
   nh_.param<std::string>("ip_address", ip_address, std::string(""));
   gige_camera_.reset(new GigeCamera(ip_address));
-  gige_camera_->use_image = std::bind(&FlirGige::PublishImage, this,
-                                 std::placeholders::_1, std::placeholders::_2);
+  gige_camera_->use_image =
+      std::bind(&FlirGige::PublishImage, this, std::placeholders::_1,
+                std::placeholders::_2);
   gige_camera_->use_temperature =
       std::bind(&FlirGige::PublishTemperature, this, std::placeholders::_1);
 

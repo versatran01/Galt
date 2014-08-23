@@ -35,6 +35,8 @@ class CalibProc {
   CalibProc(const ros::NodeHandle &nh, const ros::NodeHandle &pnh);
 
  private:
+  void InitializeConfig(const ros::NodeHandle &nh,
+                        flir_gige::CalibProcDynConfig *config);
   void ImageCallback(const sensor_msgs::ImageConstPtr &image_msg);
   void ReconfigureCallback(const flir_gige::CalibProcDynConfig &config,
                            int level);
@@ -44,6 +46,7 @@ class CalibProc {
   image_transport::Subscriber image_sub_;
   image_transport::Publisher image_pub_;
   dynamic_reconfigure::Server<flir_gige::CalibProcDynConfig> server_;
+  flir_gige::CalibProcDynConfig config_;
 };
 }  // namespace flir_gig
 #endif  // FLIR_GIGE_CALIB_PROC_H_

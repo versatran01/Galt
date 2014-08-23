@@ -41,8 +41,8 @@ Node::Node() : nh_("~"), pkgPath_(ros::package::getPath("gps_odom")) {
   nh_.param("body_frame_id", bodyFrameId_, std::string("/body"));
   nh_.param("world_frame_id", worldFrameId_, std::string("/world"));
   
-  nh_.param("horz_accuracy", hAcc_, 2.0);
-  nh_.param("vert_accuracy", vAcc_, 2.0);
+  nh_.param("horz_accuracy", hAcc_, 3.0);
+  nh_.param("vert_accuracy", vAcc_, 3.0);
   nh_.param("speed_accuracy", sAcc_, 1.0);
   
   refSet_ = false;

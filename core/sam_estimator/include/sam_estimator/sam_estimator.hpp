@@ -17,6 +17,8 @@
 #define GALT_SAM_ESTIMATOR_HPP_
 
 #include <sam_estimator/gtsam.hpp>
+#define KR_MATH_GTSAM_CONVERSIONS
+
 #include <sam_estimator/common.hpp> //  must include after gstam
 
 #include <memory>
@@ -98,7 +100,7 @@ class SamEstimator {
   
   bool IsInitialized() const { return initialized_; }
 
-  const std::vector<gtsam::Pose3>& AllPoses() const { return allPoses_; }
+  const std::vector<kr::Posed>& AllPoses() const { return allPoses_; }
   
   Configuration& Config() { return config_; }
   const Configuration& Config() const { return config_; }
@@ -124,7 +126,7 @@ class SamEstimator {
   gtsam::Pose3 currentPose_;
   gtsam::LieVector currentVelocity_;
   gtsam::imuBias::ConstantBias currentBias_;
-  std::vector<gtsam::Pose3> allPoses_;
+  std::vector<kr::Posed> allPoses_;
   
   std::deque<ImuMeasurement> imu_buffer_;
   

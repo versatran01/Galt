@@ -14,9 +14,28 @@
  */
 
 #include <sam_estimator/visualizer.hpp>
+#include <nav_msgs/Path.h>
 
 namespace galt {
 namespace sam_estimator {
+
+Visualizer::Visualizer(const ros::NodeHandle& nh) : nh_(nh) {
+  pub_path_ = nh_.advertise<nav_msgs::Path>("path", 1);
+}
+
+void Visualizer::SetTrajectory(const std::vector<kr::Posed>& poses) {
+  nav_msgs::Path path;
+  
+  auto time = ros::Time::now();
+  for (const kr::Posed& pose : poses) {
+    geometry_msgs::PoseStamped poseStamped;
+    poseStamped.header.stamp = time;
+    poseStamped.pose = static_cast<geometry_msgs::Pose>(pose);
+    path.poses.push_back(poseStamped);
+  }
+  path.header.stamp = time;
+  pub_path_.publish(path);
+}
 
 } // namespace sam_estimator
 }// namespace galt

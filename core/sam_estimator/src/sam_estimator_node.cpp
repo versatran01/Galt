@@ -23,6 +23,7 @@ namespace sam_estimator {
 SamEstimatorNode::SamEstimatorNode(const ros::NodeHandle &nh) : nh_(nh) {
   //  create an estimator
   estimator_ = make_shared<SamEstimator>();
+  visualizer_ = make_shared<Visualizer>(nh_);
   
   //  subscribe to all relevant topics
   sub_gps_ = nh_.subscribe("gps_odom", kROSQueueSize,
@@ -33,8 +34,8 @@ SamEstimatorNode::SamEstimatorNode(const ros::NodeHandle &nh) : nh_(nh) {
                               &SamEstimatorNode::StereoCallback, this);
   sub_laser_ = nh_.subscribe("laser_scan", kROSQueueSize,
                              &SamEstimatorNode::LaserCallback, this);
-  pub_pose_ =
-      nh_.advertise<geometry_msgs::PoseWithCovarianceStamped>("pose", 1);
+  //pub_pose_ =
+  //    nh_.advertise<geometry_msgs::PoseWithCovarianceStamped>("pose", 1);
 }
 
 void SamEstimatorNode::GpsCallback(
@@ -43,11 +44,29 @@ void SamEstimatorNode::GpsCallback(
   
   SamEstimator::GpsMeasurement meas;
   meas.time = time;
-  //meas.pose();
+  meas.pose = kr::Posed(odometry_msg->pose.pose);
+  meas.vel[0] = odometry_msg->twist.twist.linear.x;
+  meas.vel[1] = odometry_msg->twist.twist.linear.y;
+  meas.vel[2] = odometry_msg->twist.twist.linear.z;
+  
+  meas.cov.setZero();
+  //  copy pose covariance
+  for (int i=0; i < 6; i++) {
+    for (int j=0; j < 6; j++) {
+      meas.cov(i,j) = odometry_msg->pose.covariance[(i*6) + j];
+    }
+  }
+  //  copy velocity covariance
+  for (int i=0; i < 3; i++) {
+    for (int j=0; j < 3; j++) {
+      meas.cov(i+6,j+6) = odometry_msg->twist.covariance[(i*6) + j];
+    }
+  }
+  //ROS_INFO_STREAM("Covariance: " << meas.cov);
   
   estimator_->AddGps(meas);
   
-  /// @todo: send to visualizer here
+  visualizer_->SetTrajectory(estimator_->AllPoses());
 }
 
 void SamEstimatorNode::ImuCallback(const sensor_msgs::ImuConstPtr &imu_msg) {  

@@ -138,7 +138,7 @@ void SamEstimator::AddGps(const GpsMeasurement &measurement) {
     }
   }
  
-  allPoses_.push_back(currentPose_);
+  allPoses_.push_back(kr::Posed(currentPose_));
   
   //  only at the very end do we increment the pose key
   meas_index_++;

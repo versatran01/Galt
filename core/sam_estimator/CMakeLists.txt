@@ -20,8 +20,6 @@ find_package(gtsam)
 
 catkin_package()
 
-add_definitions("-DKR_MATH_GTSAM_CONVERSIONS")
-
 include_directories(
   ${catkin_INCLUDE_DIRS}
   ${GTSAM_INCLUDE_DIRS}

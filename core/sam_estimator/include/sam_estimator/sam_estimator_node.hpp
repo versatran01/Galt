@@ -16,14 +16,15 @@
 #ifndef GALT_SAM_ESTIMATOR_NODE_HPP_
 #define GALT_SAM_ESTIMATOR_NODE_HPP_
 
+#include <sam_estimator/sam_estimator.hpp>
+#include <sam_estimator/visualizer.hpp>
+
 #include <ros/ros.h>
 #include <sensor_msgs/Imu.h>
 #include <sensor_msgs/LaserScan.h>
 #include <nav_msgs/Odometry.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
-
-#include <sam_estimator/sam_estimator.hpp>
 
 namespace galt {
 namespace sam_estimator {
@@ -37,6 +38,7 @@ private:
   constexpr static int kROSQueueSize = 1;
 
   SamEstimator::Ptr estimator_;
+  Visualizer::Ptr visualizer_;
   
   //  ROS objects
   ros::NodeHandle nh_;

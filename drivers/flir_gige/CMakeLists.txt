@@ -93,14 +93,14 @@ target_link_libraries(thermal_proc_node
     )
 
 # calib proc
-add_executable(calib_proc_node
-    src/calib_proc/calib_proc.cpp
-    src/calib_proc/calib_proc_node.cpp
-    )
-target_link_libraries(calib_proc_node
-    ${catkin_LIBRARIES}
-    ${OpenCV_LIBRARIES}
-    )
+#add_executable(calib_proc_node
+    #src/calib_proc/calib_proc.cpp
+    #src/calib_proc/calib_proc_node.cpp
+    #)
+#target_link_libraries(calib_proc_node
+    #${catkin_LIBRARIES}
+    #${OpenCV_LIBRARIES}
+    #)
 
 
 ## Add cmake target dependencies of the executable/library

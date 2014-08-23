@@ -28,7 +28,7 @@ class FlirNodelet : public nodelet::Nodelet {
 
   virtual void onInit() {
     try {
-      flir_gige_.reset(new FlirGige(getNodeHandle(), getPrivateNodeHandle()));
+      flir_gige_.reset(new FlirGige(getPrivateNodeHandle()));
       flir_gige_->Run();
     }
     catch (const std::exception &e) {

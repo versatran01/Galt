@@ -40,7 +40,7 @@ class FlirGige {
       std::shared_ptr<camera_info_manager::CameraInfoManager>;
   using DynConfig = ::flir_gige::FlirDynConfig;
 
-  FlirGige(const ros::NodeHandle &nh, const ros::NodeHandle &pnh);
+  FlirGige(const ros::NodeHandle &nh);
 
   /**
    * @brief Run Start camera
@@ -58,7 +58,6 @@ class FlirGige {
   void ConfigCb(DynConfig &config, int level);
 
   ros::NodeHandle nh_;
-  ros::NodeHandle pnh_;
   std::string frame_id_;
   std::unique_ptr<ros::Rate> rate_;
   image_transport::ImageTransport it_;

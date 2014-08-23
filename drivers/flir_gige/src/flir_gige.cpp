@@ -38,18 +38,18 @@ using sensor_msgs::CameraInfo;
 using sensor_msgs::CameraInfoPtr;
 using camera_info_manager::CameraInfoManager;
 
-FlirGige::FlirGige(const ros::NodeHandle &nh, const ros::NodeHandle &pnh)
-    : nh_{nh}, pnh_{pnh}, it_{pnh} {
+FlirGige::FlirGige(const ros::NodeHandle &nh)
+    : nh_{nh}, it_{nh} {
   // Get ros parameteres
   double fps;
-  pnh_.param<double>("fps", fps, 20.0);
+  nh_.param<double>("fps", fps, 20.0);
   ROS_ASSERT_MSG(fps > 0, "FlirGige: fps must be greater than 0");
-  pnh_.param<std::string>("frame_id", frame_id_, std::string("flir_a5"));
+  nh_.param<std::string>("frame_id", frame_id_, std::string("flir_a5"));
   rate_.reset(new ros::Rate(fps));
 
   // Create a camera
   std::string ip_address;
-  pnh_.param<std::string>("ip_address", ip_address, std::string(""));
+  nh_.param<std::string>("ip_address", ip_address, std::string(""));
   gige_camera_.reset(new GigeCamera(ip_address));
   gige_camera_->use_image =
       std::bind(&FlirGige::PublishImage, this, std::placeholders::_1,
@@ -59,15 +59,15 @@ FlirGige::FlirGige(const ros::NodeHandle &nh, const ros::NodeHandle &pnh)
 
   // Setup camera publisher and dynamic reconfigure callback
   std::string calib_url;
-  pnh_.param<std::string>("calib_url", calib_url, "");
-  cinfo_manager_.reset(new CameraInfoManager(pnh_, frame_id_, calib_url));
+  nh_.param<std::string>("calib_url", calib_url, "");
+  cinfo_manager_.reset(new CameraInfoManager(nh_, frame_id_, calib_url));
   if (!cinfo_manager_->isCalibrated()) {
     ROS_WARN_STREAM("FlirGige: " << frame_id_ << " not calibrated");
   }
   cinfo_ = CameraInfoPtr(new CameraInfo(cinfo_manager_->getCameraInfo()));
 
   pub_camera_ = it_.advertiseCamera("image_raw", 1);
-  pub_temperature_ = pnh_.advertise<sensor_msgs::Temperature>("spot", 1);
+  pub_temperature_ = nh_.advertise<sensor_msgs::Temperature>("spot", 1);
   server_.setCallback(boost::bind(&FlirGige::ConfigCb, this, _1, _2));
 }
 

@@ -68,14 +68,6 @@ target_link_libraries(${PROJECT_NAME}_node
     ${PROJECT_NAME}
     )
 
-# nodelet
-add_library(${PROJECT_NAME}_nodelet
-    src/flir_gige_nodelet.cpp
-    )
-target_link_libraries(${PROJECT_NAME}_nodelet
-    ${PROJECT_NAME}
-    )
-
 # thermal proc
 add_library(thermal_proc
     src/thermal_proc/thermal_proc.cpp
@@ -89,6 +81,15 @@ add_executable(thermal_proc_node
     )
 target_link_libraries(thermal_proc_node
     thermal_proc
+    )
+
+# nodelet
+add_library(${PROJECT_NAME}_nodelet
+    src/flir_gige_nodelet.cpp
+    src/thermal_proc/thermal_proc_nodelet.cpp
+    )
+target_link_libraries(${PROJECT_NAME}_nodelet
+    ${PROJECT_NAME}
     )
 
 ## Add cmake target dependencies of the executable/library

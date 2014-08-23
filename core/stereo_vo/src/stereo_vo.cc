@@ -55,7 +55,7 @@ void StereoVo::Iterate(const CvStereoImage &stereo_image) {
   // Estimate pose using 2D-to-3D correspondences
   // 2D - currently tracked corners
   // 3D - points triangulated in world frame
-  EstimatePose(curr_frame, point3ds_);
+  EstimatePose(curr_frame, point3ds_, prev_frame_->pose());
 
   // Check whether to add key frame based on the following criteria
   // 1. Movement exceeds config_.kf_dist_thresh
@@ -108,8 +108,12 @@ void StereoVo::CheckEverything() {
 
 void StereoVo::TrackTemporal(const FramePtr &frame1, const FramePtr &frame2,
                              const FramePtr &key_frame) {
-  TrackTemporal(frame1->l_image(), frame2->l_image(), frame1->features(),
-                frame2->features(), key_frame);
+  if (frame1->features().empty()) {
+    ROS_WARN("No features to track temporally, skipping");
+  } else {
+    TrackTemporal(frame1->l_image(), frame2->l_image(), frame1->features(),
+                  frame2->features(), key_frame);
+  }
 }
 
 void StereoVo::TrackTemporal(const cv::Mat &image1, const cv::Mat &image2,
@@ -125,6 +129,8 @@ void StereoVo::TrackTemporal(const cv::Mat &image1, const cv::Mat &image2,
 
   // Track and remove mismatches
   OpticalFlow(image1, image2, corners1, corners2, status);
+  const size_t num_in = corners1.size();
+  const size_t num_out = std::count(status.begin(), status.end(), uchar(1));
   PruneByStatus(status, ids, ids_to_remove);
   PruneByStatus(status, corners1);
   PruneByStatus(status, corners2);
@@ -132,8 +138,19 @@ void StereoVo::TrackTemporal(const cv::Mat &image1, const cv::Mat &image2,
 
   // Find fundamental matrix to reject outliers in tracking
   FindFundamentalMat(corners1, corners2, status);
-  PruneByStatus(status, ids, ids_to_remove);
-  PruneByStatus(status, corners2);
+  const size_t num_in2 = corners1.size();
+  const size_t num_out2 = std::count(status.begin(), status.end(), uchar(1));
+  if (num_out2 == 0) {
+    ROS_WARN("Fundamental mat found no inliers, ignoring it.");
+  } else {
+    PruneByStatus(status, ids, ids_to_remove);
+    PruneByStatus(status, corners2);
+  }
+  
+  if (corners2.empty()) {
+    ROS_WARN("Corners2 is empty! (%lu, %lu) and (%lu, %lu)", 
+             num_in, num_out, num_in2, num_out2);
+  }
 
   // Verify that ids is of the same dimension as points_tracked
   ROS_ASSERT_MSG(ids.size() == corners2.size(),
@@ -141,7 +158,7 @@ void StereoVo::TrackTemporal(const cv::Mat &image1, const cv::Mat &image2,
 
   // Remove singlet observations from previous keyframe as required
   key_frame->RemoveById(ids_to_remove);
-
+  
   auto it_pts = corners2.cbegin();
   for (auto it_id = ids.cbegin(), ite_id = ids.cend(); it_id != ite_id;
        ++it_id, ++it_pts) {
@@ -150,14 +167,15 @@ void StereoVo::TrackTemporal(const cv::Mat &image1, const cv::Mat &image2,
 }
 
 void StereoVo::EstimatePose(const FramePtr &frame,
-                            const std::map<Id, Point3d> point3ds) {
+                            const std::map<Id, Point3d> point3ds,
+                            const KrPose& old_pose) {
   const size_t n_features = frame->num_features();
 
   std::vector<CvPoint2> image_points;
   std::vector<CvPoint3> world_points;
   std::vector<int> inliers;
   std::vector<Id> ids;
-  std::set<Id> ids_to_remove;
+  //std::set<Id> ids_to_remove;
 
   image_points.reserve(n_features);
   world_points.reserve(n_features);
@@ -173,7 +191,9 @@ void StereoVo::EstimatePose(const FramePtr &frame,
   }
 
   if (image_points.empty()) {
-    throw std::runtime_error("EstimatePose called with empty features");
+    ROS_WARN("No viable features for PnP, skipping");
+    frame->set_pose(old_pose);
+    return;
   }
 
   static cv::Mat rvec = cv::Mat::zeros(3, 3, CV_64FC1);
@@ -183,26 +203,31 @@ void StereoVo::EstimatePose(const FramePtr &frame,
       std::ceil(world_points.size() * config_.pnp_ransac_inliers);
   cv::solvePnPRansac(world_points, image_points,
                      model_.left().fullIntrinsicMatrix(), std::vector<double>(),
-                     rvec, tvec, false, 150, config_.pnp_ransac_error,
+                     rvec, tvec, false, 200, config_.pnp_ransac_error,
                      min_inliers, inliers, cv::ITERATIVE);
-
-  const double tx = tvec.at<double>(0, 0);
-  const double ty = tvec.at<double>(1, 0);
-  const double tz = tvec.at<double>(2, 0);
-  if (tx == 0.0 && ty == 0.0 && tz == 0.0) {
-    ROS_WARN("PnP Ransac returned zeros - trying regular PnP");
-    cv::solvePnP(world_points, image_points,
-                 model_.left().fullIntrinsicMatrix(), std::vector<double>(),
-                 rvec, tvec, false);
-  }
 
   kr::vec3<scalar_t> r(rvec.at<double>(0, 0), rvec.at<double>(1, 0),
                        rvec.at<double>(2, 0));
   kr::vec3<scalar_t> t(tvec.at<double>(0, 0), tvec.at<double>(1, 0),
                        tvec.at<double>(2, 0));
-
+  KrPose new_pose = KrPose::fromVectors(r,t);
+  
+  const bool shenanigans = new_pose.difference(old_pose).p().norm() > 0.5;
+  if ((t[0] == 0 && t[1] == 0 && t[2] == 0) || shenanigans) {
+    ROS_WARN("Probable shenanigans in ransac PnP - trying regular PnP");
+    cv::solvePnP(world_points, image_points,
+                 model_.left().fullIntrinsicMatrix(), std::vector<double>(),
+                 rvec, tvec, false);
+    
+    r = kr::vec3<scalar_t>(rvec.at<double>(0, 0), rvec.at<double>(1, 0),
+                         rvec.at<double>(2, 0));
+    t =  kr::vec3<scalar_t>(tvec.at<double>(0, 0), tvec.at<double>(1, 0),
+                         tvec.at<double>(2, 0));
+    new_pose = KrPose::fromVectors(r,t);
+  }
+  
   // This is now absolute pose
-  frame->set_pose(KrPose::fromVectors(r, t));
+  frame->set_pose(new_pose);
 }
 
 bool StereoVo::ShouldAddKeyFrame(const FramePtr &frame) const {
@@ -228,7 +253,7 @@ bool StereoVo::ShouldAddKeyFrame(const FramePtr &frame) const {
   const size_t min_features =
       std::ceil(config_.kf_min_filled * config_.shi_max_corners);
   if (frame->num_features() < min_features) {
-    ROS_INFO("Corners: %i", (int)frame->num_features());
+    ROS_INFO("Corners: %lu", frame->num_features());
     //  insufficent features, add keyframe with new ones
     return true;
   }
@@ -246,7 +271,7 @@ void StereoVo::AddKeyFrame(const FramePtr &frame) {
 
   if (!init_) {
     //  make up a pose that looks pretty
-    KrPose init_pose(kr::quat<scalar_t>(0, 1, 0, 0),
+    KrPose init_pose(kr::quat<scalar_t>(0, 0, 1, 0),
                      kr::vec3<scalar_t>(0, 0, 10));
     frame->set_pose(init_pose);
   }

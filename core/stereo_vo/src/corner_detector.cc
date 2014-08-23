@@ -66,6 +66,7 @@ size_t GridDetectorBase::AddFeatures(const cv::Mat &image,
   CornerSubPix(image, corners);
 
   // Add newly detected corners to features
+  ROS_INFO("Adding %lu corners", corners.size());
   for (const CvPoint2 &corner : corners) features.emplace_back(corner);
   return corners.size();
 }

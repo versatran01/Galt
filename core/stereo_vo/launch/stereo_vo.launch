@@ -13,7 +13,7 @@
     <arg name="kf_dist_thresh" value="3"/>
     <arg name="kf_yaw_thresh" value="45"/>
     <arg name="kf_size" value="3"/>
-    <arg name="kf_min_filled" value="0.7"/>
+    <arg name="kf_min_filled" value="0.85"/>
 
     <arg name="pnp_ransac_error" value="4.0"/>
     <arg name="pnp_ransac_inliers" value="0.9"/>

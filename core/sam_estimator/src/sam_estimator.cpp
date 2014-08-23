@@ -191,6 +191,19 @@ void SamEstimator::AddVo(const VoMeasurement& measurement) {
                                    inc_rot_pose,
                                    gaussianNoiseModel(rot_cov)));
     
+//    //  come up with a motion estimate
+//    Pose3 estimate = previous_pose_;
+//    if (all_poses_.size() >= 2) {
+//      kr::Posed p0 = all_poses_[all_poses_.size() - 2];
+//      kr::Posed p1 = all_poses_[all_poses_.size() - 1];
+      
+//      kr::Posed diff = p1.expressedIn(p0);
+      
+//      kr::Posed new_pose = kr::Posed(previous_pose_);
+//      new_pose = new_pose.composeInBody(diff);
+//      estimate = static_cast<Pose3>(new_pose);
+//    }
+    
     estimates_.insert(CurPoseKey(), previous_pose_);
     
     isam_.update(graph_, estimates_);
@@ -205,7 +218,7 @@ void SamEstimator::AddVo(const VoMeasurement& measurement) {
   }
   last_vo_rotation_ = last_rotation_;  
   
-  allPoses_.push_back(kr::Posed(current_pose_));
+  all_poses_.push_back(kr::Posed(current_pose_));
   
   //  only increase index after all optimization complete
   meas_index_++;

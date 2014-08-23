@@ -102,7 +102,7 @@ class StereoVo {
    * @param point3ds Triangulated 3d points in world frame
    */
   void EstimatePose(const FramePtr &frame,
-                    const std::map<Id, Point3d> point3ds);
+                    const std::map<Id, Point3d> point3ds, const KrPose &old_pose);
   void OpticalFlow(const cv::Mat &image1, const cv::Mat &image2,
                    const std::vector<CvPoint2> &points1,
                    std::vector<CvPoint2> &points2, std::vector<uchar> &status);

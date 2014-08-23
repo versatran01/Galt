@@ -118,7 +118,7 @@ class SamEstimator {
   
   bool IsInitialized() const { return initialized_; }
 
-  const std::vector<kr::Posed>& AllPoses() const { return allPoses_; }
+  const std::vector<kr::Posed>& AllPoses() const { return all_poses_; }
   
   Configuration& Config() { return config_; }
   const Configuration& Config() const { return config_; }
@@ -144,7 +144,7 @@ class SamEstimator {
   gtsam::Pose3 current_pose_;
   //gtsam::LieVector currentVelocity_;
   //gtsam::imuBias::ConstantBias currentBias_;
-  std::vector<kr::Posed> allPoses_;
+  std::vector<kr::Posed> all_poses_;
   
   kr::Posed last_vo_pose_;
   RotMeasurement last_rotation_;

@@ -17,6 +17,7 @@
 
     <arg name="pnp_ransac_error" value="4.0"/>
     <arg name="pnp_ransac_inliers" value="0.9"/>
+    <arg name="pnp_motion_thresh" value="0.5"/>
 
     <arg name="tri_max_eigenratio" value="100000"/>
 
@@ -41,6 +42,7 @@
 
         <param name="pnp_ransac_error" value="$(arg pnp_ransac_error)"/>
         <param name="pnp_ransac_inliers" value="$(arg pnp_ransac_inliers)"/>
+        <param name="pnp_motion_thresh" value="$(arg pnp_motion_thresh)"/>
 
         <param name="tri_max_eigenratio" value="$(arg tri_max_eigenratio)"/>
     </node>

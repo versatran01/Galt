@@ -212,7 +212,7 @@ void StereoVo::EstimatePose(const FramePtr &frame,
                        tvec.at<double>(2, 0));
   KrPose new_pose = KrPose::fromVectors(r,t);
   
-  const bool shenanigans = new_pose.difference(old_pose).p().norm() > 0.5;
+  const bool shenanigans = new_pose.difference(old_pose).p().norm() > config_.pnp_motion_thresh;
   if ((t[0] == 0 && t[1] == 0 && t[2] == 0) || shenanigans) {
     ROS_WARN("Probable shenanigans in ransac PnP - trying regular PnP");
     cv::solvePnP(world_points, image_points,

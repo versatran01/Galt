@@ -86,13 +86,31 @@ class SamEstimator {
     Timestamp time;           /// Timestamp in seconds
   };
   
+  /**
+   * @brief Visual odometry measurement: relative position and orientation
+   * @note Order: [x,y,z,rot_x,rot_y,rot_z]
+   */
+  struct VoMeasurement {
+    kr::Posed pose;
+    kr::mat<double,6,6> cov;
+    Timestamp time;
+  };
+  
+  struct RotMeasurement {
+    kr::quatd wQb;
+    kr::mat<double,3,3> cov;
+    Timestamp time;
+  };
+  
   SamEstimator();
 
   void AddImu(const ImuMeasurement& measurement);
 
   void AddGps(const GpsMeasurement& measurement);
 
-  void AddStereo();
+  void AddVo(const VoMeasurement& measurement);
+  
+  void AddRot(const RotMeasurement& measurement);
   
   void Initialize();
 
@@ -123,11 +141,15 @@ class SamEstimator {
   gtsam::Values estimates_;
   gtsam::ISAM2 isam_;
   
-  gtsam::Pose3 currentPose_;
-  gtsam::LieVector currentVelocity_;
-  gtsam::imuBias::ConstantBias currentBias_;
+  gtsam::Pose3 current_pose_;
+  //gtsam::LieVector currentVelocity_;
+  //gtsam::imuBias::ConstantBias currentBias_;
   std::vector<kr::Posed> allPoses_;
   
+  kr::Posed last_vo_pose_;
+  RotMeasurement last_rotation_;
+  RotMeasurement last_vo_rotation_;
+  bool has_rotation_;
   std::deque<ImuMeasurement> imu_buffer_;
   
   Configuration config_;

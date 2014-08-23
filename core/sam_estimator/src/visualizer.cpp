@@ -30,10 +30,12 @@ void Visualizer::SetTrajectory(const std::vector<kr::Posed>& poses) {
   for (const kr::Posed& pose : poses) {
     geometry_msgs::PoseStamped poseStamped;
     poseStamped.header.stamp = time;
+    poseStamped.header.frame_id = "/world";
     poseStamped.pose = static_cast<geometry_msgs::Pose>(pose);
     path.poses.push_back(poseStamped);
   }
   path.header.stamp = time;
+  path.header.frame_id = "/world";
   pub_path_.publish(path);
 }
 

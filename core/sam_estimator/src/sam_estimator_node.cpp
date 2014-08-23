@@ -62,11 +62,8 @@ void SamEstimatorNode::GpsCallback(
       meas.cov(i+6,j+6) = odometry_msg->twist.covariance[(i*6) + j];
     }
   }
-  //ROS_INFO_STREAM("Covariance: " << meas.cov);
   
   estimator_->AddGps(meas);
-  
-  visualizer_->SetTrajectory(estimator_->AllPoses());
 }
 
 void SamEstimatorNode::ImuCallback(const sensor_msgs::ImuConstPtr &imu_msg) {  
@@ -83,9 +80,23 @@ void SamEstimatorNode::ImuCallback(const sensor_msgs::ImuConstPtr &imu_msg) {
   meas.z[4] = imu_msg->angular_velocity.y;
   meas.z[5] = imu_msg->angular_velocity.z;
   
-  if ( estimator_->IsInitialized() ) {
-    estimator_->AddImu(meas);
+//  if ( estimator_->IsInitialized() ) {
+//    estimator_->AddImu(meas);
+//  }
+
+  SamEstimator::RotMeasurement rot;
+  rot.time = time;
+  for (int i=0; i < 3; i++) {
+    for (int j=0; j < 3; j++) {
+      rot.cov(i,j) = imu_msg->orientation_covariance[i*3 + j];
+    }
   }
+  rot.wQb = kr::quatd(imu_msg->orientation.w,
+                      imu_msg->orientation.x,
+                      imu_msg->orientation.y,
+                      imu_msg->orientation.z);
+  
+  estimator_->AddRot(rot);
   
   prevTime = time;
 }
@@ -97,7 +108,13 @@ void SamEstimatorNode::LaserCallback(
 
 void SamEstimatorNode::StereoCallback(
     const geometry_msgs::PoseStampedConstPtr &pose_msg) {
-  //ROS_INFO("stereo callback!");
+  
+  SamEstimator::VoMeasurement vo;
+  vo.pose = kr::Posed(pose_msg->pose);
+  vo.time = pose_msg->header.stamp.toSec();
+  estimator_->AddVo(vo);
+  
+  visualizer_->SetTrajectory(estimator_->AllPoses());
 }
 
 }  // namespace sam_estimator

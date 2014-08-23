@@ -16,7 +16,7 @@
   <node name="sam_estimator" pkg="sam_estimator" type="sam_estimator"
     output="screen">
     <remap from="~gps_odom" to="/gps_odom/odometry"/>
-    <remap from="~imu" to="/post/attitude_eskf/filtered_imu"/>
+    <remap from="~imu" to="/gps_odom/corrected_imu"/>
     <remap from="~vo_pose" to="/mv_stereo/stereo_vo/pose"/>
     <remap from="~laser_scan" to="/hokuyo/scan"/>
   </node>

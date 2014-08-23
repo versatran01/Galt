@@ -1,3 +1,18 @@
+/*
+ * thermal_proc.h
+ *  _   _             _           _____         _
+ * | \ | | ___  _   _| | ____ _  |_   _|__  ___| |__
+ * |  \| |/ _ \| | | | |/ / _` |   | |/ _ \/ __| '_ \
+ * | |\  | (_) | |_| |   < (_| |   | |  __/ (__| | | |
+ * |_| \_|\___/ \__,_|_|\_\__,_|   |_|\___|\___|_| |_|
+ *
+ *  Copyright (c) 2014 Nouka Technologies. All rights reserved.
+ *
+ *  This file is part of flir_gige.
+ *
+ *	Created on: 21/08/2014
+ */
+
 #ifndef FLIR_GIGE_THERMAL_PROC_H_
 #define FLIR_GIGE_THERMAL_PROC_H_
 
@@ -37,8 +52,10 @@ class ThermalProc {
   double celsius_max_{40.0};
   const double kT0{273.15};
 
-  uint16_t Celsius2Raw(double t, double B, double F, double O, double R, double T0);
-  double Raw2Celsius(uint16_t S, double B, double F, double O, double R, double T0);
+  uint16_t CelsiusToRaw(double t, double B, double F, double O, double R,
+                        double T0);
+  double RawToCelsius(uint16_t S, double B, double F, double O, double R,
+                      double T0);
   void ReconfigureCallback(const ProcDynConfig &config, int level);
 
 #ifdef NO_TIMESTAMP

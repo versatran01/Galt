@@ -28,8 +28,9 @@
 #include <cv_bridge/cv_bridge.h>
 #include <opencv2/core/core.hpp>
 
+#include "flir_gige/planck.h"
 #include "flir_gige/gige_camera.h"
-#include "flir_gige/FlirConfig.h"
+#include "flir_gige/FlirDynConfig.h"
 
 namespace flir_gige {
 
@@ -37,26 +38,36 @@ class FlirGige {
  public:
   using CameraInfoManagerPtr =
       std::shared_ptr<camera_info_manager::CameraInfoManager>;
-  FlirGige(const ros::NodeHandle &nh);
+  using DynConfig = ::flir_gige::FlirDynConfig;
 
+  FlirGige(const ros::NodeHandle &nh, const ros::NodeHandle &pnh);
+
+  /**
+   * @brief Run Start camera
+   */
   void Run();
+  /**
+   * @brief End Stop camera
+   */
   void End();
-  void PublishImage(const cv::Mat &image, const std::vector<double> &planck);
-  void PublishTemperature(const std::pair<double, double> &spot);
-  std::string GetImageEncoding(const cv::Mat &image) const;
-  void ReconfigureCallback(FlirConfig &config, int level);
 
  private:
+  void PublishImage(const cv::Mat &image, const Planck &planck);
+  void PublishTemperature(const std::pair<double, double> &spot);
+  std::string GetImageEncoding(const cv::Mat &image) const;
+  void ConfigCb(DynConfig &config, int level);
+
   ros::NodeHandle nh_;
+  ros::NodeHandle pnh_;
   std::string frame_id_;
   std::unique_ptr<ros::Rate> rate_;
   image_transport::ImageTransport it_;
-  image_transport::CameraPublisher camera_pub_;
+  image_transport::CameraPublisher pub_camera_;
   sensor_msgs::ImagePtr image_;
   sensor_msgs::CameraInfoPtr cinfo_;
   CameraInfoManagerPtr cinfo_manager_;
-  ros::Publisher temperature_pub_;
-  dynamic_reconfigure::Server<FlirConfig> server_;
+  ros::Publisher pub_temperature_;
+  dynamic_reconfigure::Server<DynConfig> server_;
   std::unique_ptr<GigeCamera> gige_camera_;
 };
 

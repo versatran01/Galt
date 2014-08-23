@@ -32,32 +32,21 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
+#include "flir_gige/planck.h"
 #include "flir_gige/ThermalProcDynConfig.h"
 
 namespace flir_gige {
 
-/**
- * @brief The Planck constants from flir thermal camera
- */
-struct Planck {
-  double B;
-  double F;
-  double O;
-  double R;
-  const double kT0;
-  Planck() : kT0{273.15} {}
-};
-
 class ThermalProc {
  public:
-  using Config = ::flir_gige::ThermalProcDynConfig;
+  using DynConfig = ::flir_gige::ThermalProcDynConfig;
 
   ThermalProc(const ros::NodeHandle &nh, const ros::NodeHandle &pnh);
 
  private:
   void CameraCb(const sensor_msgs::ImageConstPtr &image_msg,
                 const sensor_msgs::CameraInfoConstPtr &cinfo_msg);
-  void ConfigCb(const Config &config, int level);
+  void ConfigCb(DynConfig &config, int level);
   void ConnectCb();
 
   void RawToHeat(const cv::Mat &raw, const Planck &planck, cv::Mat *heat) const;
@@ -68,14 +57,12 @@ class ThermalProc {
   image_transport::CameraSubscriber sub_camera_;
   image_transport::Publisher pub_heat_;
   image_transport::Publisher pub_color_;
-  dynamic_reconfigure::Server<Config> server_;
+  dynamic_reconfigure::Server<DynConfig> server_;
   std::mutex connect_mutex_;
-  Config config_;
+  DynConfig config_;
 };
 
 Planck GetPlanck(const sensor_msgs::CameraInfo &cinfo_msg);
-int CelsiusToRaw(const double t, const Planck &planck);
-double RawToCelsius(const int S, const Planck &planck);
 
 }  // namespace flir_gige
 

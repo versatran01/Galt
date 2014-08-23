@@ -11,9 +11,6 @@
     <arg name="color" default="false"/>
     <arg name="calib_file" default="$(arg frame_id).yml"/>
     <arg name="calib_url" default="package://flir_gige/calib/$(arg calib_file)"/>
-    <!--Notice that camera will be uncalibrated if you change dimension-->
-    <arg name="width" default="320"/>
-    <arg name="height" default="256"/>
 
     <node pkg="flir_gige" type="flir_gige_node" name="flir_gige"
         output="$(arg disp)">
@@ -21,8 +18,6 @@
         <param name="frame_id" type="string" value="$(arg frame_id)"/>
         <param name="fps" type="double" value="$(arg fps)"/>
         <param name="bit" type="int" value="$(arg bit)"/>
-        <param name="height" type="int" value="$(arg height)"/>
-        <param name="width" type="int" value="$(arg width)"/>
         <param name="color" type="bool" value="$(arg color)"/>
         <param name="calib_url" type="string" value="$(arg calib_url)"/>
     </node>

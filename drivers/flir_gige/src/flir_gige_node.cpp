@@ -19,10 +19,11 @@
 
 int main(int argc, char **argv) {
   ros::init(argc, argv, "flir_node");
-  ros::NodeHandle nh("~");
+  ros::NodeHandle nh;
+  ros::NodeHandle pnh("~");
 
   try {
-    flir_gige::FlirGige flir_gige(nh);
+    flir_gige::FlirGige flir_gige(nh, pnh);
     flir_gige.Run();
     ros::spin();
     flir_gige.End();

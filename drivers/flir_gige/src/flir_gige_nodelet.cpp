@@ -28,7 +28,7 @@ class FlirNodelet : public nodelet::Nodelet {
 
   virtual void onInit() {
     try {
-      flir_gige_.reset(new FlirGige(getPrivateNodeHandle()));
+      flir_gige_.reset(new FlirGige(getNodeHandle(), getPrivateNodeHandle()));
       flir_gige_->Run();
     }
     catch (const std::exception &e) {
@@ -38,7 +38,6 @@ class FlirNodelet : public nodelet::Nodelet {
 
  private:
   std::unique_ptr<FlirGige> flir_gige_;
-
 };
 
 PLUGINLIB_DECLARE_CLASS(flir_gige, FlirNodelet, flir_gige::FlirNodelet,

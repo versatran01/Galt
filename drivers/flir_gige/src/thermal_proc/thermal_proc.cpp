@@ -17,7 +17,6 @@
 
 #include <algorithm>
 #include <cmath>
-#include <iterator>
 
 #include <opencv2/contrib/contrib.hpp>
 
@@ -79,20 +78,16 @@ void ThermalProc::CameraCb(const sensor_msgs::ImageConstPtr &image_msg,
     cv_bridge::CvImage color_cvimg(image_msg->header,
                                    sensor_msgs::image_encodings::BGR8, color);
     pub_color_.publish(color_cvimg.toImageMsg());
-    cv::imshow("color", color);
-    cv::waitKey(3);
   }
 }
 
 void ThermalProc::RawToJet(const cv::Mat &raw, const Planck &planck,
                            cv::Mat *color) const {
-  const int raw_min = CelsiusToRaw(config_.celcius_min, planck);
-  const int raw_max = CelsiusToRaw(config_.celcius_max, planck);
-  ROS_INFO_STREAM("spot: " << raw.at<uint16_t>(128, 160));
+  const int raw_min = planck.CelsiusToRaw(config_.celcius_min);
+  const int raw_max = planck.CelsiusToRaw(config_.celcius_max);
   ROS_ASSERT_MSG(raw_max > raw_min, "max is less than min");
   const double alpha = 255.0 / (raw_max - raw_min);
   const double beta = -alpha * raw_min;
-  ROS_INFO_STREAM("alpha: " << alpha << " beta: " << beta);
   raw.convertTo(*color, CV_8UC1, alpha, beta);
   cv::applyColorMap(*color, *color, cv::COLORMAP_JET);
 }
@@ -103,34 +98,25 @@ void ThermalProc::RawToHeat(const cv::Mat &raw, const Planck &planck,
     float *pheat = heat->ptr<float>(i);
     const uint16_t *praw = raw.ptr<uint16_t>(i);
     for (int j = 0; j < raw.cols; ++j) {
-      pheat[j] = static_cast<uint16_t>(RawToCelsius(praw[j], planck));
+      pheat[j] = static_cast<uint16_t>(planck.RawToCelsius(praw[j]));
     }
   }
 }
 
-void ThermalProc::ConfigCb(const Config &config, int level) {
+void ThermalProc::ConfigCb(DynConfig &config, int level) {
   if (level < 0) {
     ROS_INFO(
         "flir_gige: thermal_proc: Initializiting dynamic reconfigure server");
   }
+  // Make sure that max is greater than min
+  config.celcius_max = (config.celcius_max > config.celcius_min)
+                           ? config.celcius_max
+                           : (config.celcius_min + 5);
   config_ = config;
 }
 
 Planck GetPlanck(const sensor_msgs::CameraInfo &cinfo_msg) {
-  Planck planck;
-  planck.B = cinfo_msg.R[0];
-  planck.F = cinfo_msg.R[1];
-  planck.O = cinfo_msg.R[2];
-  planck.R = cinfo_msg.R[3];
-  return planck;
-}
-
-int CelsiusToRaw(const double t, const Planck &plk) {
-  return plk.R / (std::exp(plk.B / (t + plk.kT0)) - plk.F) + plk.O;
-}
-
-double RawToCelsius(const int S, const Planck &plk) {
-  return (plk.B / std::log(plk.R / (S - plk.O) + plk.F) - plk.kT0);
+  return Planck(cinfo_msg.R[0], cinfo_msg.R[1], cinfo_msg.R[2], cinfo_msg.R[3]);
 }
 
 }  // namespace flir_gige

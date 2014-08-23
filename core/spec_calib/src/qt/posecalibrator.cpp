@@ -128,7 +128,7 @@ PoseCalibrator::Circle PoseCalibrator::projectWithPose(const kr::Pose<double>& p
   }
   
   //  determine plane position
-  kr::vec3d o = pose.p;
+  kr::vec3d o = pose.p();
   kr::vec3d n = pose.bRw() * kr::vec3d(0,0,1);
   
   const double d = pose_.distanceToPlane(o,n);
@@ -254,7 +254,7 @@ bool PoseCalibrator::addObservation(const kr::Pose<double> &pose, const Circle& 
   v /= v.norm();
   
   //  plane values, in camera frame
-  kr::vec3<double> o = pose.p;
+  kr::vec3<double> o = pose.p();
   kr::vec3<double> n = pose.bRw() * kr::vec3<double>(0,0,1);
    
   //  intersect for depth

@@ -183,7 +183,7 @@ void StereoVo::EstimatePose(const FramePtr &frame,
       std::ceil(world_points.size() * config_.pnp_ransac_inliers);
   cv::solvePnPRansac(world_points, image_points,
                      model_.left().fullIntrinsicMatrix(), std::vector<double>(),
-                     rvec, tvec, false, 100, config_.pnp_ransac_error,
+                     rvec, tvec, false, 150, config_.pnp_ransac_error,
                      min_inliers, inliers, cv::ITERATIVE);
 
   const double tx = tvec.at<double>(0, 0);
@@ -212,8 +212,8 @@ bool StereoVo::ShouldAddKeyFrame(const FramePtr &frame) const {
   }
 
   const KrPose &diff = frame->pose().difference(prev_key_frame()->pose());
-  if (diff.p.norm() > config_.kf_dist_thresh) {
-    ROS_INFO("Distance: %f", diff.p.norm());
+  if (diff.p().norm() > config_.kf_dist_thresh) {
+    ROS_INFO("Distance: %f", diff.p().norm());
     //  over distance threshold, add keyframe
     return true;
   }
@@ -310,7 +310,7 @@ void StereoVo::Triangulate(const KrPose &pose, std::vector<Feature> &features,
       it_corner = corners.erase(it_corner);
     } else {
       // Convert to world frame
-      p3 = pose.wRb() * p3 + pose.p;
+      p3 = pose.wRb() * p3 + pose.p();
 
       /// @note: Add a check here if you don't want to overwrite past
       /// triangulations
@@ -359,7 +359,7 @@ bool StereoVo::TriangulatePoint(const CvPoint2 &left, const CvPoint2 &right,
 
   KrPose poseLeft;   //  identity
   KrPose poseRight;  //  shifted right along x
-  poseRight.p[0] = model_.baseline();
+  poseRight.p()[0] = model_.baseline();
 
   //  normalized coordinates
   kr::vec2<scalar_t> lPt((left.x - lcx) / lfx, (left.y - lcy) / lfy);

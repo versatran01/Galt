@@ -16,8 +16,8 @@
 #ifndef FLIR_GIGE_THERMAL_PROC_H_
 #define FLIR_GIGE_THERMAL_PROC_H_
 
-// In case flir_gige/camera_info has no timestamp
-#define NO_TIMESTAMP
+#include <cstdint>
+#include <mutex>
 
 #include <ros/ros.h>
 #include <std_msgs/Float32MultiArray.h>
@@ -32,42 +32,50 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
-#include "flir_gige/ProcDynConfig.h"
+#include "flir_gige/ThermalProcDynConfig.h"
 
 namespace flir_gige {
 
+/**
+ * @brief The Planck constants from flir thermal camera
+ */
+struct Planck {
+  double B;
+  double F;
+  double O;
+  double R;
+  const double kT0;
+  Planck() : kT0{273.15} {}
+};
+
 class ThermalProc {
  public:
-  ThermalProc(const ros::NodeHandle &nh);
+  using Config = ::flir_gige::ThermalProcDynConfig;
+
+  ThermalProc(const ros::NodeHandle &nh, const ros::NodeHandle &pnh);
 
  private:
-  ros::NodeHandle nh_;
+  void CameraCb(const sensor_msgs::ImageConstPtr &image_msg,
+                const sensor_msgs::CameraInfoConstPtr &cinfo_msg);
+  void ConfigCb(const Config &config, int level);
+  void ConnectCb();
+
+  void RawToHeat(const cv::Mat &raw, const Planck &planck, cv::Mat *heat) const;
+  void RawToJet(const cv::Mat &raw, const Planck &planck, cv::Mat *color) const;
+
+  ros::NodeHandle nh_, pnh_;
   image_transport::ImageTransport it_;
-  ros::Publisher heat_pub_;
-  sensor_msgs::ImagePtr heat_map_;
-  ros::Publisher color_pub_;
-  sensor_msgs::ImagePtr color_map_;
-  dynamic_reconfigure::Server<ProcDynConfig> server_;
-  double celsius_min_{20.0};
-  double celsius_max_{40.0};
-  const double kT0{273.15};
+  image_transport::CameraSubscriber sub_camera_;
+  image_transport::Publisher pub_heat_;
+  image_transport::Publisher pub_color_;
+  dynamic_reconfigure::Server<Config> server_;
+  std::mutex connect_mutex_;
+  Config config_;
+};
 
-  uint16_t CelsiusToRaw(double t, double B, double F, double O, double R,
-                        double T0);
-  double RawToCelsius(uint16_t S, double B, double F, double O, double R,
-                      double T0);
-  void ReconfigureCallback(const ProcDynConfig &config, int level);
-
-#ifdef NO_TIMESTAMP
-  image_transport::Subscriber image_sub_;
-  void ImageCallback(const sensor_msgs::ImageConstPtr &image);
-#else
-  image_transport::CameraSubscriber camera_sub_;
-  void CameraCallback(const sensor_msgs::ImageConstPtr &image,
-                      const sensor_msgs::CameraInfoConstPtr &cinfo);
-#endif
-
-};  // class ThermalProc
+Planck GetPlanck(const sensor_msgs::CameraInfo &cinfo_msg);
+int CelsiusToRaw(const double t, const Planck &planck);
+double RawToCelsius(const int S, const Planck &planck);
 
 }  // namespace flir_gige
 

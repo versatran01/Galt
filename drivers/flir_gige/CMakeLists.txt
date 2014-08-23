@@ -23,8 +23,7 @@ find_package(OpenCV)
 # Dynamic reconfigure option, as to be placed right before catkin_package
 generate_dynamic_reconfigure_options(
     cfg/Flir.cfg
-    cfg/ProcDyn.cfg
-    cfg/CalibProcDyn.cfg
+    cfg/ThermalProcDyn.cfg
     )
 
 catkin_package(

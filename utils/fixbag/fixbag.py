@@ -60,7 +60,7 @@ def fix_bag(input_bag, input_path, output_path):
             #         flir_cinfo = msg
             if topic == flir_cinfo_name:
                 # Write flir camera info with flir image
-                flir_cinfo.header.stamp = msg.header.stamp
+                flir_cinfo.header = msg.header
                 outbag.write(flir_cinfo_name, flir_cinfo, flir_cinfo.header.stamp)
             else:
                 outbag.write(topic, msg, msg.header.stamp if msg._has_header else t)

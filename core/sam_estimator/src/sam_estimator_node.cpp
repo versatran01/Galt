@@ -80,9 +80,9 @@ void SamEstimatorNode::ImuCallback(const sensor_msgs::ImuConstPtr &imu_msg) {
   meas.z[4] = imu_msg->angular_velocity.y;
   meas.z[5] = imu_msg->angular_velocity.z;
   
-//  if ( estimator_->IsInitialized() ) {
-//    estimator_->AddImu(meas);
-//  }
+  if ( estimator_->IsInitialized() ) {
+    estimator_->AddImu(meas);
+  }
 
   SamEstimator::RotMeasurement rot;
   rot.time = time;

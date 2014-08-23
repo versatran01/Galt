@@ -125,6 +125,8 @@ class SamEstimator {
   
  private:
   
+  void InitializeGraph(const kr::Posed& first_pose);
+  
   bool CreateImuFactor(Timestamp time, gtsam::ImuFactor &factor, int &count);
   
   gtsam::Symbol PoseKey(int index) const;
@@ -142,8 +144,8 @@ class SamEstimator {
   gtsam::ISAM2 isam_;
   
   gtsam::Pose3 current_pose_;
-  //gtsam::LieVector currentVelocity_;
-  //gtsam::imuBias::ConstantBias currentBias_;
+  gtsam::LieVector currentVelocity_;
+  gtsam::imuBias::ConstantBias currentBias_;
   std::vector<kr::Posed> all_poses_;
   
   kr::Posed last_vo_pose_;

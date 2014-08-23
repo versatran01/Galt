@@ -46,7 +46,7 @@ void SamEstimator::AddImu(const ImuMeasurement &measurement) {
 //    throw exception("AddImu may only be called after initialization");
 //  }
   
-//  imu_buffer_.push_back(measurement);
+  imu_buffer_.push_back(measurement);
 }
 
 void SamEstimator::AddGps(const GpsMeasurement &measurement) {
@@ -191,19 +191,6 @@ void SamEstimator::AddVo(const VoMeasurement& measurement) {
                                    inc_rot_pose,
                                    gaussianNoiseModel(rot_cov)));
     
-//    //  come up with a motion estimate
-//    Pose3 estimate = previous_pose_;
-//    if (all_poses_.size() >= 2) {
-//      kr::Posed p0 = all_poses_[all_poses_.size() - 2];
-//      kr::Posed p1 = all_poses_[all_poses_.size() - 1];
-      
-//      kr::Posed diff = p1.expressedIn(p0);
-      
-//      kr::Posed new_pose = kr::Posed(previous_pose_);
-//      new_pose = new_pose.composeInBody(diff);
-//      estimate = static_cast<Pose3>(new_pose);
-//    }
-    
     estimates_.insert(CurPoseKey(), previous_pose_);
     
     isam_.update(graph_, estimates_);
@@ -242,38 +229,55 @@ void SamEstimator::Optimize() {
   
 }
 
+void SamEstimator::InitializeGraph(const kr::Posed& first_pose,
+                                   const Vector6& sigmas) {
+  if (!initialized_) {
+    
+    const Pose3 initial_pose = static_cast<gtsam::Pose3>(first_pose);
+    current_pose_ = initial_pose;
+    estimates_.insert(CurPoseKey(), current_pose_);
+
+    //  prior on pose
+    auto noise_model = noiseModel::Diagonal::Sigmas(sigmas);
+    graph_.add(PriorFactor<Pose3>(CurPoseKey(), current_pose_,noise_model));
+    
+    initialized_ = true;
+  }
+}
+
 bool SamEstimator::CreateImuFactor(Timestamp time, 
                                    gtsam::ImuFactor& factor,
                                    int& count) {
-  //  consume current buffer if IMU measurements
-//  if (imu_buffer_.empty()) {
-//    return false;
-//  } else if (imu_buffer_.front().time > time) {
-//    return false;
-//  }
+  //  consume current buffer of IMU measurements
+  if (imu_buffer_.empty()) {
+    return false;
+  } else if (imu_buffer_.front().time > time) {
+    return false;
+  }
   
-//  ImuFactor::PreintegratedMeasurements meas(currentBias_,
-//                                            isotropicMat<3>(Config().accel_std),
-//                                            isotropicMat<3>(Config().gyro_std),
-//                                            isotropicMat<3>(Config().integration_std));
-  
-//  count = 0;
-//  while (!imu_buffer_.empty()) {
-//    const ImuMeasurement& imu_meas = imu_buffer_.front();
-//    if (imu_meas.time > time) {
-//      break;  //  should be integrated after this time
-//    }
+  ImuFactor::PreintegratedMeasurements meas(currentBias_,
+                                            isotropicMat<3>(Config().accel_std),
+                                            isotropicMat<3>(Config().gyro_std),
+                                            isotropicMat<3>(Config().integration_std));
+  count = 0;
+  while (!imu_buffer_.empty()) {
+    const ImuMeasurement& imu_meas = imu_buffer_.front();
+    if (imu_meas.time > time) {
+      break;  //  should be integrated after this time
+    }
     
-//    meas.integrateMeasurement(imu_meas.z.head(3), imu_meas.z.tail(3), imu_meas.dt);
-//    imu_buffer_.pop_front();
-//    count++;
-//  }
+    meas.integrateMeasurement(imu_meas.z.head(3), imu_meas.z.tail(3), imu_meas.dt);
+    imu_buffer_.pop_front();
+    count++;
+  }
   
-//  //  create factor from combined measurements
-//  //  for now set coriolis velocity to zero
-//  factor = ImuFactor(PrevPoseKey(),PrevVelKey(),
-//                     CurPoseKey(),CurVelKey(),CurBiasKey(),
-//                     meas,Vector3(0,0,-Config().gravity_mag),Vector3(0,0,0));
+  //  create factor from combined measurements
+  //  for now set coriolis velocity to zero
+  factor = ImuFactor(PrevPoseKey(),PrevVelKey(),
+                     CurPoseKey(),CurVelKey(),CurBiasKey(),
+                     meas,Vector3(0,0,-Config().gravity_mag),Vector3(0,0,0));
+  
+   
   return true;
 }
 

@@ -29,6 +29,10 @@ ThermalProc::ThermalProc(const ros::NodeHandle &nh, const ros::NodeHandle &pnh)
   pub_heat_ = it_.advertise("temperature", 1, connect_cb, connect_cb);
   pub_color_ = it_.advertise("color_map", 1, connect_cb, connect_cb);
 
+  ROS_WARN_STREAM("nh: " << nh.getNamespace()
+                         << " pnh: " << pnh.getNamespace());
+  pnh.param<double>("celsius_min", config_.celsius_min, 20);
+  pnh.param<double>("celsius_max", config_.celsius_max, 40);
   server_.setCallback(boost::bind(&ThermalProc::ConfigCb, this, _1, _2));
 }
 
@@ -93,8 +97,8 @@ void ThermalProc::CameraCb(const sensor_msgs::ImageConstPtr &image_msg,
 
 void ThermalProc::RawToJet(const cv::Mat &raw, const Planck &planck,
                            cv::Mat *color) const {
-  const int raw_min = planck.CelsiusToRaw(config_.celcius_min);
-  const int raw_max = planck.CelsiusToRaw(config_.celcius_max);
+  const int raw_min = planck.CelsiusToRaw(config_.celsius_min);
+  const int raw_max = planck.CelsiusToRaw(config_.celsius_max);
   ROS_ASSERT_MSG(raw_max > raw_min, "max is less than min");
   const double alpha = 255.0 / (raw_max - raw_min);
   const double beta = -alpha * raw_min;
@@ -115,13 +119,14 @@ void ThermalProc::RawToHeat(const cv::Mat &raw, const Planck &planck,
 
 void ThermalProc::ConfigCb(DynConfig &config, int level) {
   if (level < 0) {
+    config = config_;
     ROS_INFO(
         "flir_gige: thermal_proc: Initializiting dynamic reconfigure server");
   }
   // Make sure that max is greater than min
-  config.celcius_max = (config.celcius_max > config.celcius_min)
-                           ? config.celcius_max
-                           : (config.celcius_min + 5);
+  config.celsius_max = (config.celsius_max > config.celsius_min)
+                           ? config.celsius_max
+                           : (config.celsius_min + 5);
   config_ = config;
 }
 

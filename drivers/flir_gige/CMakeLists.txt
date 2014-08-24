@@ -90,6 +90,7 @@ add_library(${PROJECT_NAME}_nodelet
     )
 target_link_libraries(${PROJECT_NAME}_nodelet
     ${PROJECT_NAME}
+    thermal_proc
     )
 
 ## Add cmake target dependencies of the executable/library

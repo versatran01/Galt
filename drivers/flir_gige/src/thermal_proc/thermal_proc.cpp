@@ -22,8 +22,7 @@
 
 namespace flir_gige {
 
-ThermalProc::ThermalProc(const ros::NodeHandle &nh, const ros::NodeHandle &pnh)
-    : nh_{nh}, pnh_{pnh}, it_{nh} {
+ThermalProc::ThermalProc(const ros::NodeHandle &nh) : nh_{nh}, it_{nh} {
   image_transport::SubscriberStatusCallback connect_cb =
       boost::bind(&ThermalProc::ConnectCb, this);
   pub_heat_ = it_.advertise("temperature", 1, connect_cb, connect_cb);
@@ -40,6 +39,7 @@ void ThermalProc::ConnectCb() {
     image_transport::TransportHints hints("raw", ros::TransportHints(), nh_);
     sub_camera_ = it_.subscribeCamera("image_raw", 1, &ThermalProc::CameraCb,
                                       this, hints);
+    ROS_WARN_STREAM(sub_camera_.getTopic());
   }
 }
 
@@ -50,6 +50,16 @@ void ThermalProc::CameraCb(const sensor_msgs::ImageConstPtr &image_msg,
     ROS_ERROR_THROTTLE(5,
                        "Topic '%s' requested but "
                        "camera publishing '%s' is uncalibrated",
+                       pub_heat_.getTopic().c_str(),
+                       sub_camera_.getInfoTopic().c_str());
+    return;
+  }
+
+  // Verify image raw is 16-bit raw data
+  if (image_msg->encoding != sensor_msgs::image_encodings::MONO16) {
+    ROS_ERROR_THROTTLE(5,
+                       "Topic '%s' requested but "
+                       "camera publishing '%s' is not raw data",
                        pub_heat_.getTopic().c_str(),
                        sub_camera_.getInfoTopic().c_str());
     return;

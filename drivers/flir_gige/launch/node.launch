@@ -3,6 +3,7 @@
 <launch>
     <!--This controls output tag of the node-->
     <arg name="disp" default="screen"/>
+    <arg name="proc" default="false"/>
     <!--Camera settings-->
     <arg name="ip_address" default="192.168.0.11"/>
     <arg name="frame_id" default="flir_a5"/>
@@ -20,5 +21,9 @@
         <param name="bit" type="int" value="$(arg bit)"/>
         <param name="color" type="bool" value="$(arg color)"/>
         <param name="calib_url" type="string" value="$(arg calib_url)"/>
+    </node>
+
+    <node if="$(arg proc)" pkg="flir_gige" type="thermal_proc_node"
+        name="thermal_proc" ns="flir_gige" output="$(arg disp)">
     </node>
 </launch>

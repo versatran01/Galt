@@ -20,7 +20,7 @@ using std::make_shared;
 namespace galt {
 namespace sam_estimator {
 
-SamEstimatorNode::SamEstimatorNode(const ros::NodeHandle &nh) : nh_(nh) {
+SamEstimatorNode::SamEstimatorNode(const ros::NodeHandle &nh) : gps_time_delta_(0), nh_(nh) {
   //  create an estimator
   estimator_ = make_shared<SamEstimator>();
   visualizer_ = make_shared<Visualizer>(nh_);
@@ -36,13 +36,16 @@ SamEstimatorNode::SamEstimatorNode(const ros::NodeHandle &nh) : nh_(nh) {
                              &SamEstimatorNode::LaserCallback, this);
   //pub_pose_ =
   //    nh_.advertise<geometry_msgs::PoseWithCovarianceStamped>("pose", 1);
+  
+  nh_.param("gps_time_delay", gps_time_delta_, 0.0);
+  ROS_INFO("Using a GPS time delay of %.3f seconds", gps_time_delta_);
+  estimator_->Config().gps_time_delay = gps_time_delta_;
 }
 
 void SamEstimatorNode::GpsCallback(
     const nav_msgs::OdometryConstPtr &odometry_msg) {
   const double time = odometry_msg->header.stamp.toSec();
-  
-  static int gps_cb_count=0;
+  static const double first_gps = time;
   
   SamEstimator::GpsMeasurement meas;
   meas.time = time;
@@ -65,18 +68,19 @@ void SamEstimatorNode::GpsCallback(
     }
   }
   
-  if (gps_cb_count++ == 30) {
-    gtsam::Vector6 sigmas;
-    for (int i=0; i < 3; i++) {
-      sigmas[i] = meas.cov(i+3,i+3);
-      sigmas[i+3] = meas.cov(i,i);  //  swap order
+  meas.time -= gps_time_delta_; //  offset by the GPS time delta
+  if (!estimator_->IsInitialized()) {
+    if (time - first_gps > std::abs(gps_time_delta_)*2) {
+      gtsam::Vector6 sigmas;
+      for (int i=0; i < 3; i++) {
+        sigmas[i] = meas.cov(i+3,i+3);
+        sigmas[i+3] = meas.cov(i,i);  //  swap order
+      }
+      ROS_WARN("Warning: Performing garbage gps initialization");
+      estimator_->InitializeGraph(meas.pose, sigmas, meas.time);
+      return;
     }
-    ROS_WARN("Warning: Performing garbage gps initialization");
-    estimator_->InitializeGraph(meas.pose,sigmas);
-  }
-  
-  //  currently does nothing...
-  if (estimator_->IsInitialized()) {  
+  } else {
     estimator_->AddGps(meas);
   }
 }
@@ -88,9 +92,9 @@ void SamEstimatorNode::ImuCallback(const sensor_msgs::ImuConstPtr &imu_msg) {
   SamEstimator::ImuMeasurement meas;
   meas.time = time;
   meas.dt = time - prevTime;
-  meas.z[0] = imu_msg->linear_acceleration.x;
-  meas.z[1] = imu_msg->linear_acceleration.y;
-  meas.z[2] = imu_msg->linear_acceleration.z;
+  meas.z[0] = imu_msg->linear_acceleration.x * 9.80665; /// @todo: Fix IMU node
+  meas.z[1] = imu_msg->linear_acceleration.y * 9.80665;
+  meas.z[2] = imu_msg->linear_acceleration.z * 9.80665;
   meas.z[3] = imu_msg->angular_velocity.x;
   meas.z[4] = imu_msg->angular_velocity.y;
   meas.z[5] = imu_msg->angular_velocity.z;
@@ -103,11 +107,7 @@ void SamEstimatorNode::ImuCallback(const sensor_msgs::ImuConstPtr &imu_msg) {
       meas.cov(i,j) = imu_msg->orientation_covariance[i*3 + j];
     }
   }
-  
-  if ( estimator_->IsInitialized() ) {
-    estimator_->AddImu(meas);
-  }
-  
+  estimator_->AddImu(meas);
   prevTime = time;
 }
 
@@ -122,10 +122,8 @@ void SamEstimatorNode::StereoCallback(
   SamEstimator::VoMeasurement vo;
   vo.pose = kr::Posed(pose_msg->pose);
   vo.time = pose_msg->header.stamp.toSec();
-  if (estimator_->IsInitialized()) {
-    estimator_->AddVo(vo);
-  }
   
+  estimator_->AddVo(vo);
   visualizer_->SetTrajectory(estimator_->AllPoses());
 }
 

@@ -40,6 +40,8 @@ private:
   SamEstimator::Ptr estimator_;
   Visualizer::Ptr visualizer_;
   
+  double gps_time_delta_;
+  
   //  ROS objects
   ros::NodeHandle nh_;
   ros::Subscriber sub_gps_;

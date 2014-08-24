@@ -54,14 +54,17 @@ class SamEstimator {
     
     double gravity_mag;     /// Magnitude of gravitational acceleration
     
+    double gps_time_delay;  /// Seconds of delay on GPS measurements
+    
     Configuration() {
       //  initialize defaults
       accel_std = 1.0;
       gyro_std = 1e-3;
-      integration_std = 0.1;
-      accel_bias_std = 0.1;
+      integration_std = 1.0;
+      accel_bias_std = 0.01;
       gyro_bias_std = 1e-3;
       gravity_mag = 9.80665;
+      gps_time_delay = 0.0;
     }
   };
   
@@ -108,7 +111,7 @@ class SamEstimator {
     
   void Optimize();
   
-  void InitializeGraph(const kr::Posed& first_pose, const gtsam::Vector6 &sigmas);
+  void InitializeGraph(const kr::Posed& first_pose, const gtsam::Vector6 &sigmas, Timestamp start_time);
   
   bool IsInitialized() const { return initialized_; }
 
@@ -117,7 +120,9 @@ class SamEstimator {
   Configuration& Config() { return config_; }
   const Configuration& Config() const { return config_; }
   
- private:
+  double OldestTimestamp() const;
+  
+ //private:
   
   bool ProcessQueues();
   
@@ -127,7 +132,9 @@ class SamEstimator {
   
   void HandleGps(const GpsMeasurement& gps);
   
-  bool CreateImuFactor(Timestamp time, gtsam::ImuFactor &factor, int &count);
+  void AddImuFactor();
+  
+  void PerformUpdate();
   
   gtsam::noiseModel::Diagonal::shared_ptr BiasNoiseModel() const;
   
@@ -146,8 +153,10 @@ class SamEstimator {
   gtsam::ISAM2 isam_;
   
   gtsam::Pose3 current_pose_;
-  //gtsam::LieVector currentVelocity_;
-  //gtsam::imuBias::ConstantBias currentBias_;
+  gtsam::LieVector current_velocity_;
+  gtsam::imuBias::ConstantBias current_bias_;
+  
+  gtsam::ImuFactor::PreintegratedMeasurements pre_imu_;
   
   kr::Posed last_vo_pose_;
   bool has_vo_pose_;
@@ -157,6 +166,7 @@ class SamEstimator {
   kr::quatd last_vo_rotation_;
   bool rotation_set_;
   bool has_rotation_{false};
+  int imu_int_count_{0};
   
   std::deque<ImuMeasurement> imu_buffer_;
   std::deque<VoMeasurement> vo_buffer_;

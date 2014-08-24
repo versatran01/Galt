@@ -16,6 +16,8 @@
 #include <sam_estimator/sam_estimator.hpp>
 #include <iostream>
 
+#include <ros/ros.h>
+
 using namespace gtsam;
 
 namespace galt {
@@ -38,195 +40,42 @@ static kr::mat<double,N,N> isotropicMat(const double& std) {
   return mat;
 }
 
-SamEstimator::SamEstimator() : has_rotation_(false), meas_index_(0), initialized_(false) {}
+SamEstimator::SamEstimator() : has_vo_pose_(false), rotation_set_(false), meas_index_(0), initialized_(false) {}
 
 void SamEstimator::AddImu(const ImuMeasurement &measurement) {
-  
-//  if (!IsInitialized()) {
-//    throw exception("AddImu may only be called after initialization");
-//  }
-  
+  if (!IsInitialized()) {
+    throw exception("Estimator must be initialized before calling AddImu");
+  }
   imu_buffer_.push_back(measurement);
 }
 
 void SamEstimator::AddGps(const GpsMeasurement &measurement) {
-  
-  //  convert to gtsam pose
-//  const Pose3 gps_pose = static_cast<gtsam::Pose3>(measurement.pose);
-//  const LieVector gps_vel(measurement.vel.cast<double>());
-  
-//  //  noise on GPS pose
-//  const kr::mat<double,6,6> prcov = measurement.cov.block<6,6>(0,0);
-//  auto pose_noise = gaussianNoiseModel(prcov);
-  
-//  //  noise on velocity (assume diagonal)
-//  const kr::mat<double,3,3> velcov = measurement.cov.block<3,3>(6,6);
-//  auto vel_noise = noiseModel::Diagonal::Sigmas(Vector3(velcov(0,0),
-//                                                        velcov(1,1),
-//                                                        velcov(2,2)));
-  
-//  //  noise on the bias prior
-//  const auto avar = Config().accel_bias_std*Config().accel_bias_std;
-//  const auto gvar = Config().gyro_bias_std*Config().gyro_bias_std;
-//  Vector6 bias_sig;
-//  for (int i=0; i < 3; i++) {
-//    bias_sig[i] = avar;
-//    bias_sig[i+3] = gvar;
-//  }
-//  //  initial guess for imu bias
-//  const imuBias::ConstantBias zero_bias(Vector3(0,0,0),Vector3(0,0,0));
-  
-//  if (!initialized_) {
-//    std::cout << "Initializing SAM estimator from GPS pose" << std::endl;
-//    currentPose_ = gps_pose;
-//    currentVelocity_ = gps_vel;
-//    currentBias_ = zero_bias;
-    
-//    //  initialize the graph using the first GPS measurement
-//    estimates_.insert(CurPoseKey(), currentPose_);
-//    estimates_.insert(CurVelKey(), currentVelocity_);
-//    //  initial bias estimate is all zero
-//    estimates_.insert(CurBiasKey(), currentBias_);
-
-//    //  prior on pose, velocity and bias
-//    graph_.add(PriorFactor<Pose3>(CurPoseKey(),
-//                                  currentPose_, pose_noise));
-//    graph_.add(PriorFactor<LieVector>(CurVelKey(),currentVelocity_,vel_noise));
-    
-//    auto bias_noise = noiseModel::Diagonal::Sigmas(bias_sig);
-//    graph_.add(PriorFactor<imuBias::ConstantBias>(CurBiasKey(),
-//                                                  currentBias_,bias_noise));
-//    initialized_ = true;
-//  } else {
-//    //  process backlog of IMU measurements
-//    ImuFactor imu_factor;
-//    int imu_count;
-//    if (CreateImuFactor(measurement.time, imu_factor, imu_count)) {
-//      graph_.add(imu_factor);
-//      /// @todo: why is this zero bias?
-//      auto bias_noise = noiseModel::Diagonal::Sigmas(bias_sig * std::sqrt(imu_count));
-//      BetweenFactor<imuBias::ConstantBias> bias_factor(PrevBiasKey(),CurBiasKey(),
-//                                                       zero_bias,bias_noise);
-//      graph_.add(bias_factor);
-//    }
-    
-//    //  add a factor for the new GPS measurement
-//    graph_.add(PriorFactor<Pose3>(CurPoseKey(),gps_pose,pose_noise));
-//    graph_.add(PriorFactor<LieVector>(CurVelKey(),gps_vel,vel_noise));
-    
-//    //  insert initial guesses for GPS measurement
-//    estimates_.insert(CurPoseKey(), gps_pose);
-//    estimates_.insert(CurVelKey(), currentVelocity_);
-//    estimates_.insert(CurBiasKey(), currentBias_);
-    
-//    if (meas_index_ > 10) {
-//      //  perform optimizationa after the graph is built out a bit
-//      isam_.update(graph_, estimates_);
-     
-//      //  update estimates
-//      estimates_ = isam_.calculateEstimate();
-//      currentPose_ = estimates_.at<Pose3>(CurPoseKey());
-//      currentVelocity_ = estimates_.at<LieVector>(CurVelKey());
-//      currentBias_ = estimates_.at<imuBias::ConstantBias>(CurBiasKey());
-      
-//      estimates_.clear();
-//      graph_.resize(0);
-//    } else {
-//      //  until first optimization just consider these as truth
-//      currentPose_ = gps_pose;
-//      currentVelocity_ = gps_vel;
-//    }
-//  }
- 
-//  allPoses_.push_back(kr::Posed(currentPose_));
-  
-//  //  only at the very end do we increment the pose key
-//  meas_index_++;
 }
 
 void SamEstimator::AddVo(const VoMeasurement& measurement) {
   
-  if (!has_rotation_) {
-    return; //  wait until first IMU measurement arrives
+  if (!IsInitialized()) {
+    throw exception("Estimator must be initialized before calling AddVo");
   }
   
-  Vector6 noise_sigmas;
-  noise_sigmas << 0.3,0.3,0.3,0.2,0.2,0.2;
-  const auto vo_noise = noiseModel::Diagonal::Sigmas(noise_sigmas);
+  //  convert to IMU frame
+  const auto iRc = Eigen::AngleAxisd(M_PI, kr::vec3d(0,1,0));
+  const auto iTc = Eigen::Vector3d(0.09,-0.045,0);
+  const kr::Posed iPc(kr::quatd(iRc.matrix()),iTc);  
+  const kr::Posed imu_vo_pose = measurement.pose.composeInBody(iPc);
   
-  if (!initialized_) {
-    last_vo_pose_ = measurement.pose;
-    
-    kr::Posed initial_pose = last_vo_pose_;
-    initial_pose.q() = last_rotation_.wQb;  //  use geographically aligned quat
-    const Pose3 vo_pose = static_cast<gtsam::Pose3>(initial_pose);
-    current_pose_ = vo_pose;
-    estimates_.insert(CurPoseKey(), current_pose_);
-
-    //  prior on pose
-    graph_.add(PriorFactor<Pose3>(CurPoseKey(), current_pose_, vo_noise));
-    initialized_ = true;
-  } else {
-    const kr::Posed incremental_pose = measurement.pose.expressedIn(last_vo_pose_);
-    const kr::quatd incremental_rot = last_vo_rotation_.wQb.conjugate() * last_rotation_.wQb;
-    
-    const Pose3 inc_vo_pose = static_cast<gtsam::Pose3>(incremental_pose);
-    const Pose3 previous_pose_ = current_pose_; //  last pose estimate
-    
-    graph_.add(BetweenFactor<Pose3>(PrevPoseKey(),
-                                    CurPoseKey(),
-                                    inc_vo_pose,
-                                    vo_noise));
-    
-    const Pose3 inc_rot_pose(Rot3(incremental_rot),gtsam::Point3(0,0,0));
-    
-    kr::mat<double,6,6> rot_cov;
-    rot_cov.setZero();
-    rot_cov.block<3,3>(0,0) = last_rotation_.cov; //  low variance on rotation
-    for (int i=0; i < 3; i++) {
-      rot_cov(i+3,i+3) = 10000.0; //  some huge variance on wrong position
-    }
-    graph_.add(BetweenFactor<Pose3>(PrevPoseKey(),
-                                   CurPoseKey(),
-                                   inc_rot_pose,
-                                   gaussianNoiseModel(rot_cov)));
-    
-    estimates_.insert(CurPoseKey(), previous_pose_);
-    
-    isam_.update(graph_, estimates_);
-    //std::cout << "Updated!" << std::endl;
-    
-    estimates_ = isam_.calculateEstimate();
-    current_pose_ = estimates_.at<Pose3>(CurPoseKey());
-    estimates_.clear();
-    graph_.resize(0);
-    
-    last_vo_pose_ = measurement.pose;
+  if (has_vo_pose_) {
+    //  convert into a relative measurement
+    const kr::Posed inc_pose = imu_vo_pose.expressedIn(last_vo_pose_);
+    VoMeasurement rec = measurement;
+    rec.pose = inc_pose;
+    vo_buffer_.push_back(rec);
   }
-  last_vo_rotation_ = last_rotation_;  
+  last_vo_pose_ = imu_vo_pose;
+  has_vo_pose_ = true;
   
-  all_poses_.push_back(kr::Posed(current_pose_));
-  
-  //  only increase index after all optimization complete
-  meas_index_++;
-}
-
-void SamEstimator::AddRot(const RotMeasurement& measurement) {
-  last_rotation_ = measurement;  //  temporary: simply save last orientation
-  
-  Eigen::AngleAxisd aa(M_PI, kr::vec3d(0,1,0));
-  
-  //  convert to camera to world
-  last_rotation_.wQb = last_rotation_.wQb * aa;
-  has_rotation_ = true;
-}
-
-void SamEstimator::Initialize() {
-  
-}
-
-void SamEstimator::Optimize() {
-  
+  //  run through queued measurements
+  while (ProcessQueues());
 }
 
 void SamEstimator::InitializeGraph(const kr::Posed& first_pose,
@@ -239,46 +88,157 @@ void SamEstimator::InitializeGraph(const kr::Posed& first_pose,
 
     //  prior on pose
     auto noise_model = noiseModel::Diagonal::Sigmas(sigmas);
-    graph_.add(PriorFactor<Pose3>(CurPoseKey(), current_pose_,noise_model));
+    graph_.add(PriorFactor<Pose3>(CurPoseKey(), current_pose_, noise_model));
+    
+    //  set zero initial velocity and bias
+//    currentVelocity_ = LieVector(Vector3(0,0,0));
+//    estimates_.insert(CurVelKey(), currentVelocity_);
+//    currentBias_ = imuBias::ConstantBias(Vector3(0,0,0),Vector3(0,0,0));
+//    estimates_.insert(CurBiasKey(), currentBias_);
+    
+    //  corresponding priors
+//    auto vel_noise = noiseModel::Isotropic::Sigma(3, 0.3);
+//    graph_.add(PriorFactor<LieVector>(CurVelKey(),currentVelocity_,vel_noise));
+//    graph_.add(PriorFactor<imuBias::ConstantBias>(CurBiasKey(),currentBias_,
+//                                                  BiasNoiseModel()));
     
     initialized_ = true;
+    meas_index_++;
   }
+}
+
+bool SamEstimator::ProcessQueues() {
+  //  determine which measurement to process next
+  bool have_imu = !imu_buffer_.empty();
+  bool have_vo = !vo_buffer_.empty();
+  
+  if (!have_imu && !have_vo) {
+    return false;
+  }
+  
+  const Timestamp imu_time = have_imu ? imu_buffer_.front().time :
+        std::numeric_limits<double>::infinity();
+  const Timestamp vo_time = have_vo ? vo_buffer_.front().time :
+        std::numeric_limits<double>::infinity();
+  
+  if (imu_time < vo_time) {
+   // ROS_INFO("IMU");
+    HandleImu(imu_buffer_.front());
+    imu_buffer_.pop_front();
+  } else {
+   // ROS_INFO("VO");
+    HandleVo(vo_buffer_.front());
+    vo_buffer_.pop_front();
+  }
+  
+  return true;
+}
+
+void SamEstimator::HandleImu(const ImuMeasurement& imu) {
+  //  integrate IMU here
+  last_rotation_ = imu.wQb;
+  last_rotation_cov_ = imu.cov;
+  has_rotation_ = true;
+}
+
+void SamEstimator::HandleVo(const VoMeasurement& vo) {
+ 
+  if (!has_rotation_) {
+    return;
+  }
+  
+  const kr::Posed inc_pose = vo.pose;
+  const kr::quatd inc_rot = last_vo_rotation_.conjugate() * last_rotation_;
+  last_vo_rotation_ = last_rotation_;
+  
+  if (!rotation_set_) {
+    rotation_set_ = true;
+    return; //  wait until next one...
+  }
+  
+  const Pose3 inc_vo_pose = static_cast<gtsam::Pose3>(inc_pose);
+  const Pose3 previous_pose_ = current_pose_; //  last pose estimate
+  
+  //  some made up bullshit noise on the vo
+  Vector6 vo_noise_sigmas;
+  vo_noise_sigmas << 0.3,0.3,0.3,0.2,0.2,0.2;
+  const auto vo_noise = noiseModel::Diagonal::Sigmas(vo_noise_sigmas);
+  
+  graph_.add(BetweenFactor<Pose3>(PrevPoseKey(),
+                                  CurPoseKey(),
+                                  inc_vo_pose,
+                                  vo_noise));
+  //  more hacky crap
+  const Pose3 inc_rot_pose(Rot3(inc_rot),Point3(0,0,0));
+  
+  kr::mat<double,6,6> inc_rot_cov;
+  inc_rot_cov.setZero();
+  inc_rot_cov.block<3,3>(0,0) = last_rotation_cov_;
+  for (int i=0; i < 3; i++) {
+    inc_rot_cov(i+3,i+3) = 10000.0; //  some huge variance on incorrect position
+  }
+  graph_.add(BetweenFactor<Pose3>(PrevPoseKey(),
+                                 CurPoseKey(),
+                                 inc_rot_pose,
+                                 gaussianNoiseModel(inc_rot_cov)));
+
+  //std::cout << "Inc rot: " << inc_rot.toRotationMatrix() << std::endl;
+  //std::cout << "Vo rot: " << inc_pose.q().toRotationMatrix() << std::endl;
+  
+  estimates_.insert(CurPoseKey(), previous_pose_);
+  
+  isam_.update(graph_, estimates_);
+  
+  estimates_ = isam_.calculateEstimate();
+  current_pose_ = estimates_.at<Pose3>(CurPoseKey());
+  all_poses_.push_back(kr::Posed(current_pose_));
+  
+  estimates_.clear();
+  graph_.resize(0); 
+  
+  meas_index_++;
 }
 
 bool SamEstimator::CreateImuFactor(Timestamp time, 
                                    gtsam::ImuFactor& factor,
                                    int& count) {
   //  consume current buffer of IMU measurements
-  if (imu_buffer_.empty()) {
-    return false;
-  } else if (imu_buffer_.front().time > time) {
-    return false;
-  }
+//  if (imu_buffer_.empty()) {
+//    return false;
+//  } else if (imu_buffer_.front().time > time) {
+//    return false;
+//  }
   
-  ImuFactor::PreintegratedMeasurements meas(currentBias_,
-                                            isotropicMat<3>(Config().accel_std),
-                                            isotropicMat<3>(Config().gyro_std),
-                                            isotropicMat<3>(Config().integration_std));
-  count = 0;
-  while (!imu_buffer_.empty()) {
-    const ImuMeasurement& imu_meas = imu_buffer_.front();
-    if (imu_meas.time > time) {
-      break;  //  should be integrated after this time
-    }
+//  ImuFactor::PreintegratedMeasurements meas(currentBias_,
+//                                            isotropicMat<3>(Config().accel_std),
+//                                            isotropicMat<3>(Config().gyro_std),
+//                                            isotropicMat<3>(Config().integration_std));
+//  count = 0;
+//  while (!imu_buffer_.empty()) {
+//    const ImuMeasurement& imu_meas = imu_buffer_.front();
+//    if (imu_meas.time > time) {
+//      break;  //  should be integrated after this time
+//    }
     
-    meas.integrateMeasurement(imu_meas.z.head(3), imu_meas.z.tail(3), imu_meas.dt);
-    imu_buffer_.pop_front();
-    count++;
-  }
+//    meas.integrateMeasurement(imu_meas.z.head(3), imu_meas.z.tail(3), imu_meas.dt);
+//    imu_buffer_.pop_front();
+//    count++;
+//  }
   
-  //  create factor from combined measurements
-  //  for now set coriolis velocity to zero
-  factor = ImuFactor(PrevPoseKey(),PrevVelKey(),
-                     CurPoseKey(),CurVelKey(),CurBiasKey(),
-                     meas,Vector3(0,0,-Config().gravity_mag),Vector3(0,0,0));
-  
-   
+//  //  create factor from combined measurements
+//  //  for now set coriolis velocity to zero
+//  factor = ImuFactor(PrevPoseKey(),PrevVelKey(),
+//                     CurPoseKey(),CurVelKey(),CurBiasKey(),
+//                     meas,Vector3(0,0,-Config().gravity_mag),Vector3(0,0,0)); 
   return true;
+}
+
+gtsam::noiseModel::Diagonal::shared_ptr SamEstimator::BiasNoiseModel() const {
+  Vector6 noise;
+  auto accel_var = config_.accel_bias_std*config_.accel_bias_std;
+  auto gyro_var = config_.gyro_bias_std*config_.gyro_bias_std;
+  noise << accel_var,accel_var,accel_var,gyro_var,gyro_var,gyro_var;
+  return noiseModel::Diagonal::Sigmas(noise);
 }
 
 gtsam::Symbol SamEstimator::PoseKey(int index) const {

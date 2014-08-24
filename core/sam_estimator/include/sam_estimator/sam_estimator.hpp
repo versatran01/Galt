@@ -71,6 +71,8 @@ class SamEstimator {
    */
   struct ImuMeasurement {
     kr::vec<double,6> z;  /// Accel and angular rates
+    kr::quatd wQb;        /// 3DOF orientation, corrected to geo. north
+    kr::mat3d cov;        /// Covariance on IMU measurement
     Timestamp time;
     Timestamp dt;         /// Time over which measurement is valid         
   };
@@ -96,25 +98,17 @@ class SamEstimator {
     Timestamp time;
   };
   
-  struct RotMeasurement {
-    kr::quatd wQb;
-    kr::mat<double,3,3> cov;
-    Timestamp time;
-  };
-  
   SamEstimator();
 
   void AddImu(const ImuMeasurement& measurement);
 
   void AddGps(const GpsMeasurement& measurement);
 
-  void AddVo(const VoMeasurement& measurement);
-  
-  void AddRot(const RotMeasurement& measurement);
-  
-  void Initialize();
-
+  void AddVo(const VoMeasurement &measurement);
+    
   void Optimize();
+  
+  void InitializeGraph(const kr::Posed& first_pose, const gtsam::Vector6 &sigmas);
   
   bool IsInitialized() const { return initialized_; }
 
@@ -125,9 +119,15 @@ class SamEstimator {
   
  private:
   
-  void InitializeGraph(const kr::Posed& first_pose);
+  bool ProcessQueues();
+  
+  void HandleImu(const ImuMeasurement &imu);
+  
+  void HandleVo(const VoMeasurement& vo);
   
   bool CreateImuFactor(Timestamp time, gtsam::ImuFactor &factor, int &count);
+  
+  gtsam::noiseModel::Diagonal::shared_ptr BiasNoiseModel() const;
   
   gtsam::Symbol PoseKey(int index) const;
   gtsam::Symbol VelKey(int index) const;
@@ -144,20 +144,27 @@ class SamEstimator {
   gtsam::ISAM2 isam_;
   
   gtsam::Pose3 current_pose_;
-  gtsam::LieVector currentVelocity_;
-  gtsam::imuBias::ConstantBias currentBias_;
-  std::vector<kr::Posed> all_poses_;
+  //gtsam::LieVector currentVelocity_;
+  //gtsam::imuBias::ConstantBias currentBias_;
   
   kr::Posed last_vo_pose_;
-  RotMeasurement last_rotation_;
-  RotMeasurement last_vo_rotation_;
-  bool has_rotation_;
+  bool has_vo_pose_;
+  
+  kr::quatd last_rotation_;
+  kr::mat3d last_rotation_cov_;
+  kr::quatd last_vo_rotation_;
+  bool rotation_set_;
+  bool has_rotation_{false};
+  
   std::deque<ImuMeasurement> imu_buffer_;
+  std::deque<VoMeasurement> vo_buffer_;
   
   Configuration config_;
   
   int meas_index_;
   bool initialized_;
+  
+  std::vector<kr::Posed> all_poses_;
 };
 
 }  // namespace sam_estimator

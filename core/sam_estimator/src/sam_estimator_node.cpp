@@ -42,6 +42,8 @@ void SamEstimatorNode::GpsCallback(
     const nav_msgs::OdometryConstPtr &odometry_msg) {
   const double time = odometry_msg->header.stamp.toSec();
   
+  static int gps_cb_count=0;
+  
   SamEstimator::GpsMeasurement meas;
   meas.time = time;
   meas.pose = kr::Posed(odometry_msg->pose.pose);
@@ -63,6 +65,17 @@ void SamEstimatorNode::GpsCallback(
     }
   }
   
+  if (gps_cb_count++ == 30) {
+    gtsam::Vector6 sigmas;
+    for (int i=0; i < 3; i++) {
+      sigmas[i] = meas.cov(i+3,i+3);
+      sigmas[i+3] = meas.cov(i,i);  //  swap order
+    }
+    ROS_WARN("Warning: Performing garbage gps initialization");
+    estimator_->InitializeGraph(meas.pose,sigmas);
+  }
+  
+  //  currently does nothing...  
   estimator_->AddGps(meas);
 }
 
@@ -79,24 +92,19 @@ void SamEstimatorNode::ImuCallback(const sensor_msgs::ImuConstPtr &imu_msg) {
   meas.z[3] = imu_msg->angular_velocity.x;
   meas.z[4] = imu_msg->angular_velocity.y;
   meas.z[5] = imu_msg->angular_velocity.z;
+  meas.wQb = kr::quatd(imu_msg->orientation.w,
+                       imu_msg->orientation.x,
+                       imu_msg->orientation.y,
+                       imu_msg->orientation.z);
+  for (int i=0; i < 3; i++) {
+    for (int j=0; j < 3; j++) {
+      meas.cov(i,j) = imu_msg->orientation_covariance[i*3 + j];
+    }
+  }
   
   if ( estimator_->IsInitialized() ) {
     estimator_->AddImu(meas);
   }
-
-  SamEstimator::RotMeasurement rot;
-  rot.time = time;
-  for (int i=0; i < 3; i++) {
-    for (int j=0; j < 3; j++) {
-      rot.cov(i,j) = imu_msg->orientation_covariance[i*3 + j];
-    }
-  }
-  rot.wQb = kr::quatd(imu_msg->orientation.w,
-                      imu_msg->orientation.x,
-                      imu_msg->orientation.y,
-                      imu_msg->orientation.z);
-  
-  estimator_->AddRot(rot);
   
   prevTime = time;
 }
@@ -112,7 +120,9 @@ void SamEstimatorNode::StereoCallback(
   SamEstimator::VoMeasurement vo;
   vo.pose = kr::Posed(pose_msg->pose);
   vo.time = pose_msg->header.stamp.toSec();
-  estimator_->AddVo(vo);
+  if (estimator_->IsInitialized()) {
+    estimator_->AddVo(vo);
+  }
   
   visualizer_->SetTrajectory(estimator_->AllPoses());
 }

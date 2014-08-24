@@ -70,7 +70,7 @@ void SamEstimatorNode::GpsCallback(
   
   meas.time -= gps_time_delta_; //  offset by the GPS time delta
   if (!estimator_->IsInitialized()) {
-    if (time - first_gps > std::abs(gps_time_delta_)*2) {
+    if (time - first_gps > 5) {
       gtsam::Vector6 sigmas;
       for (int i=0; i < 3; i++) {
         sigmas[i] = meas.cov(i+3,i+3);
@@ -81,7 +81,7 @@ void SamEstimatorNode::GpsCallback(
       return;
     }
   } else {
-    estimator_->AddGps(meas);
+    //estimator_->AddGps(meas);
   }
 }
 
@@ -123,7 +123,9 @@ void SamEstimatorNode::StereoCallback(
   vo.pose = kr::Posed(pose_msg->pose);
   vo.time = pose_msg->header.stamp.toSec();
   
-  estimator_->AddVo(vo);
+  if (estimator_->IsInitialized()) {
+    estimator_->AddVo(vo);
+  }
   visualizer_->SetTrajectory(estimator_->AllPoses());
 }
 

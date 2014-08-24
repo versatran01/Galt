@@ -51,7 +51,7 @@ void SamEstimator::AddGps(const GpsMeasurement &measurement) {
     throw exception("Estimator must be initialized before calling AddGps");
   }
   gps_buffer_.push_back(measurement);
-  while(ProcessQueues());
+  //while(ProcessQueues());
 }
 
 void SamEstimator::AddVo(const VoMeasurement& measurement) {
@@ -73,9 +73,7 @@ void SamEstimator::AddVo(const VoMeasurement& measurement) {
   has_vo_pose_ = true;
   
   //  run through queued measurements
-  //if (IsInitialized()) {
-  //  while (ProcessQueues());
-  //}
+  while(ProcessQueues());
 }
 
 void SamEstimator::InitializeGraph(const kr::Posed& first_pose,
@@ -249,7 +247,7 @@ void SamEstimator::HandleVo(const VoMeasurement& vo) {
                                  gaussianNoiseModel(inc_rot_cov)));
   
   estimates_.insert(CurPoseKey(), previous_pose_);
-  estimates_.insert(CurVelKey(), current_velocity_);
+  //estimates_.insert(CurVelKey(), current_velocity_);
   
   //  optimize
   PerformUpdate();
@@ -316,7 +314,7 @@ void SamEstimator::AddImuFactor() {
 }
 
 void SamEstimator::PerformUpdate() {
-  AddImuFactor();
+  //AddImuFactor();
   
   //  perform ISAM2 update and reset the graph
   isam_.update(graph_, estimates_);

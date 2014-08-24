@@ -15,8 +15,10 @@ class ThermalProcNodelet : public nodelet::Nodelet {
   ~ThermalProcNodelet() {}
 
   virtual void onInit() {
+    ROS_WARN_STREAM("Starting");
     try {
-      thermal_proc_.reset(new ThermalProc(getPrivateNodeHandle()));
+      thermal_proc_.reset(
+          new ThermalProc(getPrivateNodeHandle(), getPrivateNodeHandle()));
     }
     catch (const std::exception &e) {
       ROS_ERROR_STREAM("ThermalProc: " << e.what());

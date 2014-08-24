@@ -22,7 +22,8 @@
 
 namespace flir_gige {
 
-ThermalProc::ThermalProc(const ros::NodeHandle &nh) : nh_{nh}, it_{nh} {
+ThermalProc::ThermalProc(const ros::NodeHandle &nh, const ros::NodeHandle &pnh)
+    : nh_{nh}, it_{nh}, server_{pnh} {
   image_transport::SubscriberStatusCallback connect_cb =
       boost::bind(&ThermalProc::ConnectCb, this);
   pub_heat_ = it_.advertise("temperature", 1, connect_cb, connect_cb);
@@ -39,7 +40,6 @@ void ThermalProc::ConnectCb() {
     image_transport::TransportHints hints("raw", ros::TransportHints(), nh_);
     sub_camera_ = it_.subscribeCamera("image_raw", 1, &ThermalProc::CameraCb,
                                       this, hints);
-    ROS_WARN_STREAM(sub_camera_.getTopic());
   }
 }
 

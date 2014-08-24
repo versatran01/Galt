@@ -39,7 +39,7 @@ using sensor_msgs::CameraInfoPtr;
 using camera_info_manager::CameraInfoManager;
 
 FlirGige::FlirGige(const ros::NodeHandle &nh)
-    : nh_{nh}, it_{nh} {
+    : nh_{nh}, it_{nh}, server_{nh} {
   // Get ros parameteres
   double fps;
   nh_.param<double>("fps", fps, 20.0);

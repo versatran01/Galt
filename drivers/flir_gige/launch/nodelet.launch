@@ -15,7 +15,7 @@
     <arg name="calib_url" default="package://flir_gige/calib/$(arg calib_file)"/>
 
     <!--run as standalone-->
-    <node unless="$(arg plugin)" pkg="nodelet" type="nodelet" name="flir_gige"
+<!--     <node unless="$(arg plugin)" pkg="nodelet" type="nodelet" name="flir_gige"
         args="standalone flir_gige/FlirNodelet" output="$(arg disp)">
         <param name="ip_address" type="string" value="$(arg ip_address)"/>
         <param name="frame_id" type="string" value="$(arg frame_id)"/>
@@ -24,7 +24,7 @@
         <param name="bit" type="int" value="$(arg bit)"/>
         <param name="calib_url" type="string" value="$(arg calib_url)"/>
     </node>
-
+ -->
     <!--run as plugin-->
     <group if="$(arg plugin)">
         <arg name="manager" default="flir_gige_nodelet"/>
@@ -46,10 +46,9 @@
 
         <node if="$(arg proc)" pkg="nodelet" type="nodelet" name="thermal_proc"
             args="load flir_gige/ThermalProcNodelet $(arg manager)"
-            ns="flir_gige"
             output="$(arg disp)">
-            <!-- <remap from="~image_raw" to="/flir_gige/image_raw"/> -->
-            <!-- <remap from="~camera_info" to="/flir_gige/camera_info"/> -->
+            <remap from="~image_raw" to="/flir_gige/image_raw"/>
+            <remap from="~camera_info" to="/flir_gige/camera_info"/>
         </node>
     </group>
 </launch>

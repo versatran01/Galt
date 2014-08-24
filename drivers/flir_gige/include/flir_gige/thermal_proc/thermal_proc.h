@@ -41,7 +41,7 @@ class ThermalProc {
  public:
   using DynConfig = ::flir_gige::ThermalProcDynConfig;
 
-  ThermalProc(const ros::NodeHandle &nh);
+  ThermalProc(const ros::NodeHandle &nh, const ros::NodeHandle &pnh);
 
  private:
   void CameraCb(const sensor_msgs::ImageConstPtr &image_msg,

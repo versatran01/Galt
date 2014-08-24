@@ -9,6 +9,15 @@
     <include file="$(find gps_kf)/launch/gps_kf.launch">
     </include>
 
+    <!--static tf-->
+    <node pkg="tf" type="static_transform_publisher"
+        name="imu_laser_broadcaster"
+        args="1 0 0 0 0 0 imu laser 1000">
+    </node>
+
+    <!--laser_filter-->
+
+
     <!--thermal_proc-->
     <node pkg="flir_gige" type="thermal_proc_node" name="thermal_proc"
         ns="flir_gige" output="screen">
@@ -22,7 +31,9 @@
         <remap from="~odometry" to="gps_kf/odometry"/>
         <remap from="~color_map" to="flir_gige/color_map"/>
         <remap from="~camera_info" to="flir_gige/camera_info"/>
+        <remap from="~scan" to="/hokuyo/scan"/>
     </node>
+
     <!--rviz-->
     <node if="$(arg rviz)"
         name="rviz" pkg="rviz" type="rviz"

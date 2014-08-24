@@ -13,10 +13,10 @@ namespace thermal_map {
 
 class TrajectoryVisualizer {
  public:
-  TrajectoryVisualizer();
+  TrajectoryVisualizer() = default;
   TrajectoryVisualizer(const ros::Publisher &pub,
-                       const std_msgs::ColorRGBA &color,
-                       const double scale = 0.1);
+                       const std_msgs::ColorRGBA &color, const double scale,
+                       const std::string &type);
 
   void PublishTrajectory(const geometry_msgs::Point &point,
                          const std_msgs::Header &header);

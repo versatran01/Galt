@@ -1,5 +1,5 @@
 /*
- * main.cpp
+ * thermal_mapper.cpp
  *  _   _             _           _____         _
  * | \ | | ___  _   _| | ____ _  |_   _|__  ___| |__
  * |  \| |/ _ \| | | | |/ / _` |   | |/ _ \/ __| '_ \
@@ -13,14 +13,10 @@
  *	Created on: 23/08/2014
  */
 
-#include "thermal_map/thermal_map_node.h"
+#include "thermal_map/thermal_mapper.h"
 
-#include <ros/ros.h>
+namespace galt {
+namespace thermal_map {
 
-int main(int argc, char **argv) {
-  ros::init(argc, argv, "thermal_map");
-  ros::NodeHandle nh("~");
-
-  galt::thermal_map::ThermalMapNode thermal_map_node(nh);
-  ros::spin();
-}
+}  // namespace thermal_map
+}  // namespace galt

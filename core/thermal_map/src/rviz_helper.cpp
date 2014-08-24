@@ -3,20 +3,21 @@
 namespace galt {
 namespace thermal_map {
 
-TrajectoryVisualizer::TrajectoryVisualizer() {
-  markers_.action = visualization_msgs::Marker::ADD;
-  markers_.type = visualization_msgs::Marker::LINE_STRIP;
-  markers_.lifetime = ros::Duration();
-  markers_.pose.orientation.w = 1.0;
-}
-
 TrajectoryVisualizer::TrajectoryVisualizer(const ros::Publisher &pub,
                                            const std_msgs::ColorRGBA &color,
-                                           const double scale)
-    : TrajectoryVisualizer() {
-  pub_ = pub;
+                                           const double scale,
+                                           const std::string &type)
+    : pub_{pub} {
   markers_.color = color;
   markers_.scale.x = scale;
+
+  markers_.action = visualization_msgs::Marker::ADD;
+  markers_.type = visualization_msgs::Marker::POINTS;
+  if (type == "line") {
+    markers_.type = visualization_msgs::Marker::LINE_STRIP;
+  }
+  markers_.lifetime = ros::Duration();
+  markers_.pose.orientation.w = 1.0;
 }
 
 void TrajectoryVisualizer::PublishTrajectory(const geometry_msgs::Point &point,

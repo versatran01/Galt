@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(flir_gige)
 
-add_definitions("-Wall -std=c++11")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -Wno-unknown-pragmas")
 
 # Set library paths for pleora ebus sdk on 64-bit linux
 # For more information, see cmake/Findebus.cmake
@@ -21,7 +21,11 @@ find_package(catkin REQUIRED
 find_package(OpenCV)
 
 # Dynamic reconfigure option, as to be placed right before catkin_package
-generate_dynamic_reconfigure_options(cfg/Flir.cfg)
+generate_dynamic_reconfigure_options(
+    cfg/Flir.cfg
+    cfg/ProcDyn.cfg
+    cfg/CalibProcDyn.cfg
+    )
 
 catkin_package(
     #  INCLUDE_DIRS include
@@ -55,6 +59,7 @@ target_link_libraries(${PROJECT_NAME}
     ${OpenCV_LIBRARIES}
     gige_camera
     )
+add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS})
 
 # node
 add_executable(${PROJECT_NAME}_node
@@ -72,17 +77,36 @@ target_link_libraries(${PROJECT_NAME}_nodelet
     ${PROJECT_NAME}
     )
 
-## Add cmake target dependencies of the executable/library
-add_dependencies(${PROJECT_NAME}_node
-    ${catkin_EXPORTED_TARGETS}
-    ${PROJECT_NAME}_gencfg
+# thermal proc
+add_library(thermal_proc
+    src/thermal_proc/thermal_proc.cpp
+    )
+target_link_libraries(thermal_proc
+    ${OpenCV_LIBRARIES}
+    ${catkin_LIBRARIES}
+    )
+add_executable(thermal_proc_node
+    src/thermal_proc/thermal_proc_node.cpp
+    )
+target_link_libraries(thermal_proc_node
+    thermal_proc
     )
 
-## Add gtest based cpp test }target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_flir.cpp)
-# if(TARGET ${PROJECT_NAME}-test)
-#   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
-# endif()
+# calib proc
+#add_executable(calib_proc_node
+    #src/calib_proc/calib_proc.cpp
+    #src/calib_proc/calib_proc_node.cpp
+    #)
+#target_link_libraries(calib_proc_node
+    #${catkin_LIBRARIES}
+    #${OpenCV_LIBRARIES}
+    #)
 
-## Add folders to be run by python nosetests
-# catkin_add_nosetests(test)
+
+## Add cmake target dependencies of the executable/library
+add_dependencies(${PROJECT_NAME}
+    ${catkin_EXPORTED_TARGETS}
+    ${PROJECT_NAME}_gencfg
+    ${PROJECT_NAME}_gencpp
+    ${${PROJECT_NAME}_EXPORTED_TARGETS}
+    )

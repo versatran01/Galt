@@ -6,6 +6,7 @@
  *  Created on: 12/7/2014
  *      Author: Chao Qu
  */
+
 #ifndef FLIR_GIGE_GIGE_CAMERA_H_
 #define FLIR_GIGE_GIGE_CAMERA_H_
 
@@ -89,11 +90,10 @@ class GigeCamera {
   void SetAoi(int width, int height);
   void SetPixelFormat(BitSize bit);
 
-  typedef std::unique_ptr<PvDevice, FreeDevice> PvDevicePtr;
-  typedef std::unique_ptr<PvStream, FreeStream> PvStreamPtr;
-  typedef std::unique_ptr<PvPipeline> PvPipelinePtr;
-  typedef std::unique_ptr<std::thread> ThreadPtr;
-  typedef std::unique_ptr<cv::Mat> MatPtr;
+  using PvDevicePtr = std::unique_ptr<PvDevice, FreeDevice>;
+  using PvStreamPtr = std::unique_ptr<PvStream, FreeStream>;
+  using PvPipelinePtr = std::unique_ptr<PvPipeline>;
+  using ThreadPtr = std::unique_ptr<std::thread>;
 
   bool raw_{false};
   bool acquire_{false};
@@ -106,7 +106,7 @@ class GigeCamera {
   PvStreamPtr stream_;
   PvPipelinePtr pipeline_;
   ThreadPtr image_thread_;
-  MatPtr image_raw_;
+  cv::Mat image_raw_;
 
 };  // class GigeCamera
 

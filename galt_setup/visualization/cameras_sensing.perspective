@@ -37,8 +37,7 @@
                 }, 
                 "topic": {
                   "type": "repr", 
-                  "repr": "u'/mv_29900189/image_raw/compressed
-                      '"
+                  "repr": "u'/mv_29900189/image_raw/compressed'"
                 }, 
                 "zoom1": {
                   "type": "repr", 

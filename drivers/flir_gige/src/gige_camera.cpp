@@ -1,3 +1,18 @@
+/*
+ * gige_camera.cpp
+ *  _   _             _           _____         _
+ * | \ | | ___  _   _| | ____ _  |_   _|__  ___| |__
+ * |  \| |/ _ \| | | | |/ / _` |   | |/ _ \/ __| '_ \
+ * | |\  | (_) | |_| |   < (_| |   | |  __/ (__| | | |
+ * |_| \_|\___/ \__,_|_|\_\__,_|   |_|\___|\___|_| |_|
+ *
+ *  Copyright (c) 2014 Nouka Technologies. All rights reserved.
+ *
+ *  This file is part of flir_gige.
+ *
+ *	Created on: 21/08/2014
+ */
+
 #include "flir_gige/gige_camera.h"
 
 #include <cmath>
@@ -303,22 +318,22 @@ void GigeCamera::AcquireImages() {
 
     // Get image specific buffer interface
     PvImage *image = buffer->GetImage();
-    memcpy(image_raw_->data, image->GetDataPointer(), image->GetImageSize());
+    memcpy(image_raw_.data, image->GetDataPointer(), image->GetImageSize());
     // Use the image for temperature calculation only in raw data mode
     if (raw_) {
       device_params->GetFloatValue("Spot", spot);
-      double S = GetSpotPixel(*image_raw_);
+      double S = GetSpotPixel(image_raw_);
       double t = GetSpotTemperature(S, planck_constant);
       use_temperature(std::make_pair(spot, t));
-      use_image(*image_raw_, planck_constant);
+      use_image(image_raw_, planck_constant);
     } else {
       // For display purpose in non raw data mode
       if (color_) {
         cv::Mat image_color;
-        cv::applyColorMap(*image_raw_, image_color, cv::COLORMAP_JET);
+        cv::applyColorMap(image_raw_, image_color, cv::COLORMAP_JET);
         use_image(image_color, planck_constant);
       } else {
-        use_image(*image_raw_, planck_constant);
+        use_image(image_raw_, planck_constant);
       }
     }
     // Release the buffer back to the pipeline
@@ -360,13 +375,13 @@ void GigeCamera::SetPixelFormat(BitSize bit) {
     device_params->SetEnumValue("PixelFormat", PvPixelMono8);
     device_params->SetEnumValue("DigitalOutput",
                                 static_cast<int64_t>(bit));  // 2  - bit8bit
-    image_raw_.reset(new cv::Mat(cv::Size(width, height), CV_8UC1));
+    image_raw_.create(cv::Size(width, height), CV_8UC1);
     raw_ = false;
   } else if (bit == BIT14BIT) {
     device_params->SetEnumValue("PixelFormat", PvPixelMono14);
     device_params->SetEnumValue("DigitalOutput",
                                 static_cast<int64_t>(bit));  // 3  - bit14bit
-    image_raw_.reset(new cv::Mat(cv::Size(width, height), CV_16UC1));
+    image_raw_.create(cv::Size(width, height), CV_16UC1);
     raw_ = true;
   }
   // Create a cv::Mat to pass back to ros

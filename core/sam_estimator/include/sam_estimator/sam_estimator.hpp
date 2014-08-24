@@ -125,6 +125,8 @@ class SamEstimator {
   
   void HandleVo(const VoMeasurement& vo);
   
+  void HandleGps(const GpsMeasurement& gps);
+  
   bool CreateImuFactor(Timestamp time, gtsam::ImuFactor &factor, int &count);
   
   gtsam::noiseModel::Diagonal::shared_ptr BiasNoiseModel() const;
@@ -158,6 +160,7 @@ class SamEstimator {
   
   std::deque<ImuMeasurement> imu_buffer_;
   std::deque<VoMeasurement> vo_buffer_;
+  std::deque<GpsMeasurement> gps_buffer_;
   
   Configuration config_;
   

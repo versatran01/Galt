@@ -75,8 +75,10 @@ void SamEstimatorNode::GpsCallback(
     estimator_->InitializeGraph(meas.pose,sigmas);
   }
   
-  //  currently does nothing...  
-  estimator_->AddGps(meas);
+  //  currently does nothing...
+  if (estimator_->IsInitialized()) {  
+    estimator_->AddGps(meas);
+  }
 }
 
 void SamEstimatorNode::ImuCallback(const sensor_msgs::ImuConstPtr &imu_msg) {  

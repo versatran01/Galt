@@ -50,6 +50,10 @@ void SamEstimator::AddImu(const ImuMeasurement &measurement) {
 }
 
 void SamEstimator::AddGps(const GpsMeasurement &measurement) {
+  if (!IsInitialized()) {
+    throw exception("Estimator must be initialized before calling AddGps");
+  }
+  gps_buffer_.push_back(measurement);
 }
 
 void SamEstimator::AddVo(const VoMeasurement& measurement) {
@@ -111,8 +115,9 @@ bool SamEstimator::ProcessQueues() {
   //  determine which measurement to process next
   bool have_imu = !imu_buffer_.empty();
   bool have_vo = !vo_buffer_.empty();
+  bool have_gps = !gps_buffer_.empty();
   
-  if (!have_imu && !have_vo) {
+  if (!have_imu && !have_vo && !have_gps) {
     return false;
   }
   
@@ -120,15 +125,33 @@ bool SamEstimator::ProcessQueues() {
         std::numeric_limits<double>::infinity();
   const Timestamp vo_time = have_vo ? vo_buffer_.front().time :
         std::numeric_limits<double>::infinity();
+  const Timestamp gps_time = have_gps ? gps_buffer_.front().time :
+        std::numeric_limits<double>::infinity();
   
-  if (imu_time < vo_time) {
-   // ROS_INFO("IMU");
+  struct order {
+    int type;
+    Timestamp time;
+    order(int type, Timestamp time) : type(type), time(time) {}
+    bool operator < (const order& rhs) const { return time < rhs.time; }
+  };
+  std::vector<order> meas({order(0,imu_time),order(1,vo_time),order(2,gps_time)});
+  std::sort(meas.begin(),meas.end());
+  
+  switch(meas.front().type) {
+  case 0:
     HandleImu(imu_buffer_.front());
     imu_buffer_.pop_front();
-  } else {
-   // ROS_INFO("VO");
+    break;
+  case 1:
     HandleVo(vo_buffer_.front());
     vo_buffer_.pop_front();
+    break;
+  case 2:
+    HandleGps(gps_buffer_.front());
+    gps_buffer_.pop_front();
+    break;
+  default:
+    assert(false);
   }
   
   return true;
@@ -197,6 +220,12 @@ void SamEstimator::HandleVo(const VoMeasurement& vo) {
   graph_.resize(0); 
   
   meas_index_++;
+}
+
+void SamEstimator::HandleGps(const GpsMeasurement& gps) {
+  
+  //ROS_INFO("HandleGps");
+  
 }
 
 bool SamEstimator::CreateImuFactor(Timestamp time, 

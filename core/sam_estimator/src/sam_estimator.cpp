@@ -174,6 +174,10 @@ void SamEstimator::PerformUpdate() {
   estimates_ = isam_.calculateEstimate();
   current_pose_ = estimates_.at<Pose3>(CurPoseKey());
   
+  //  get variance
+  //gtsam::Marginals marginals(graph_,estimates_);
+  //current_marginals_ = marginals.marginalCovariance(CurPoseKey());
+  
   all_poses_.clear();
   for (int i=0; i < meas_index_; i++) {
     all_poses_.push_back(kr::Posed(estimates_.at<Pose3>(PoseKey(i))));

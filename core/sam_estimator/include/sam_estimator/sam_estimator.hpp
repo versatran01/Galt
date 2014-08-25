@@ -119,6 +119,9 @@ class SamEstimator {
   Configuration& Config() { return config_; }
   const Configuration& Config() const { return config_; }
     
+  const gtsam::Pose3& CurrentPose() const { return current_pose_; }
+  const gtsam::Matrix6& CurrentMarginals() const { return current_marginals_; }
+  
 private:
   
   bool ProcessQueues();
@@ -148,6 +151,7 @@ private:
   gtsam::ISAM2 isam_;
   
   gtsam::Pose3 current_pose_;
+  gtsam::Matrix6 current_marginals_;
   
   kr::Posed last_vo_pose_;
   bool has_vo_pose_;

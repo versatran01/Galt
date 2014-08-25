@@ -114,7 +114,7 @@ Visualization Manager:
       Marker Topic: /mv_stereo/stereo_vo/traj
       Name: Marker
       Namespaces:
-        {}
+        stereo_vo: true
       Queue Size: 100
       Value: true
     - Alpha: 1
@@ -148,22 +148,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 76.0505
+      Distance: 68.7563
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -41.1339
-        Y: 13.8783
-        Z: 4.7333
+        X: 0.199595
+        Y: -7.52899
+        Z: 12.3392
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.264795
+      Pitch: 0.164796
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 6.0486
+      Yaw: 1.6036
     Saved: ~
 Window Geometry:
   Displays:

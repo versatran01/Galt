@@ -123,6 +123,26 @@ void SamEstimatorNode::VisualOdometryCallback(
     estimator_->AddVo(vo);
   }
   visualizer_->SetTrajectory(estimator_->AllPoses());
+  
+  //  publish odometery
+  nav_msgs::Odometry odo;
+  odo.header.stamp = pose_msg->header.stamp;
+  odo.header.frame_id = "/world"; /// @todo: make params later...
+  odo.child_frame_id ="/body";
+  
+  kr::Posed output_pose = kr::Posed(estimator_->CurrentPose());
+  kr::mat<double,6,6> output_cov = estimator_->CurrentMarginals();
+  
+  /// @todo: for now just use diagonal blocks, fix this later
+  odo.pose.pose = static_cast<geometry_msgs::Pose>(output_pose);
+  for (int i=0; i < 3; i++) {
+    for (int j=0; j < 3; j++) {
+      odo.pose.covariance[(i)*6 + j] = output_cov(i+3,j+3);
+      odo.pose.covariance[(i+3)*6 + j+3] = output_cov(i,j);
+    }
+  }
+  
+  pub_odometry_.publish(odo);
 }
 
 void SamEstimatorNode::LaserHeightCallback(

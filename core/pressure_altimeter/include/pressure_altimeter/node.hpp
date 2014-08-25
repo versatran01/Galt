@@ -45,21 +45,21 @@ private:
   ros::Publisher pubHeight_;
   
   //  Physical constants (refer to Wikipedia)
-  double kP0 = 101325;    //  Pressure at sea level (Pa)
-  double kL = 0.0065;     //  Temperature lapse rate (K/m)
-  double kT0 = 288.15;    //  Sea level standard temperature (K)
-  double kG = 9.80665;    //  Gravitational acceleration (m/s^2)
-  double kM = 0.0289644;  //  Molar mass of dry air (kg / mol)
-  double kR = 8.31447;    //  Universal gas constant J/(mol * K)
+//  double kP0 = 101325;    //  Pressure at sea level (Pa)
+//  double kL = 0.0065;     //  Temperature lapse rate (K/m)
+//  double kT0 = 288.15;    //  Sea level standard temperature (K)
+//  double kG = 9.80665;    //  Gravitational acceleration (m/s^2)
+//  double kM = 0.0289644;  //  Molar mass of dry air (kg / mol)
+//  double kR = 8.31447;    //  Universal gas constant J/(mol * K)
     
-    const double c = kG*kM/(kR*kL);
+//    const double c = kG*kM/(kR*kL);
     
-    //  convert from millibar to pascals
-    const double pressurePA = fluidPressure->fluid_pressure * 100;
+//    //  convert from millibar to pascals
+//    const double pressurePA = fluidPressure->fluid_pressure * 100;
     
-    //  calculate height from barometer
-    const double lhs = std::log(pressurePA / kP0) * (1 / c);
-    const double h = (1 - std::exp(lhs)) * kT0 / kL;  
+//    //  calculate height from barometer
+//    const double lhs = std::log(pressurePA / kP0) * (1 / c);
+//    const double h = (1 - std::exp(lhs)) * kT0 / kL;  
 };
 
 } //  pressure_altimeter

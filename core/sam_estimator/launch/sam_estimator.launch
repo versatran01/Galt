@@ -23,10 +23,9 @@
   <!-- launch sam_estimator -->
   <node name="sam_estimator" pkg="sam_estimator" type="sam_estimator"
     output="screen">
-    <param name="gps_time_delay" type="double" value="10.0"/>
     <remap from="~gps_odom" to="/gps_odom/odometry"/>
     <remap from="~imu" to="/gps_odom/corrected_imu"/>
     <remap from="~vo_pose" to="/mv_stereo/stereo_vo/pose"/>
-    <remap from="~laser_scan" to="/hokuyo/scan"/>
+    <remap from="~laser_height" to="/laser_altimeter/height"/>
   </node>
 </launch>

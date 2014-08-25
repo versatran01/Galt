@@ -43,6 +43,9 @@ static kr::mat<double,N,N> isotropicMat(const double& std) {
 SamEstimator::SamEstimator() : has_vo_pose_(false), rotation_set_(false), meas_index_(0), initialized_(false) {}
 
 void SamEstimator::AddImu(const ImuMeasurement &measurement) {
+  if (!IsInitialized()) {
+    throw exception("Estimator must be initialized before calling AddImu");
+  }
   imu_buffer_.push_back(measurement);
 }
 
@@ -51,7 +54,6 @@ void SamEstimator::AddGps(const GpsMeasurement &measurement) {
     throw exception("Estimator must be initialized before calling AddGps");
   }
   gps_buffer_.push_back(measurement);
-  //while(ProcessQueues());
 }
 
 void SamEstimator::AddVo(const VoMeasurement& measurement) {

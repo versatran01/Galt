@@ -30,52 +30,87 @@
 
 #include <opencv2/core/core.hpp>
 
+#include "flir_gige/planck.h"
+
 namespace flir_gige {
-// Digital output big
+
+/**
+ * @brief The BitSize enum
+ */
 enum BitSize { BIT8BIT = 2, BIT14BIT };
 
-// Config struct
+/**
+ * @brief The GigeConfig struct
+ */
 struct GigeConfig {
   bool color{false};
-  int width{320};
-  int height{256};
-  int bit{2};
+  int bit{2};  ///< 2 - 8bit, 3 - 14bit
 };
 
-// Functor for free PvDevice
+/**
+ * @brief The FreeDevice struct
+ */
 struct FreeDevice {
   void operator()(PvDevice *device) const { PvDevice::Free(device); }
 };
 
-// Functor for free PvStream
+/**
+ * @brief The FreeStream struct
+ */
 struct FreeStream {
   void operator()(PvStream *stream) const { PvStream::Free(stream); }
 };
 
+/**
+ * @brief The GigeCamera class
+ */
 class GigeCamera {
  public:
   GigeCamera(const std::string &ip_address);
   GigeCamera(const GigeCamera &) = delete;             // No copy constructor
   GigeCamera &operator=(const GigeCamera &) = delete;  // No assignment operator
 
-  // Find and connect to device, create PvDevice, PvStream and PvPipeline
+  /**
+   * @brief Connect Find and connect to device, create stream and pipeline
+   */
   void Connect();
-  // Configure the camera before image acquisition
+
+  /**
+   * @brief Configure Configure camera before image acquisition
+   * @param config
+   */
   void Configure(const GigeConfig &config);
-  // Start pipeline, enable stream and start acquisition
+
+  /**
+   * @brief Start Start pipeline, enable stream and start acquisition
+   */
   void Start();
-  // Stop acquisition, disable stream and stop pipeline
+
+  /**
+   * @brief Stop Stop acquisition, disable stream and stop pipeline
+   */
   void Stop();
-  // Release all resources we hold (PvDevice, PvStream and PvPipleline)
+
+  /**
+   * @brief Disconnect Release all resources we hold
+   */
   void Disconnect();
-  // Return Acquisition status
+
+  /**
+   * @brief IsAcquire
+   * @return true if camera is acquring image
+   */
   const bool IsAcquire() const { return acquire_; }
 
-  std::function<void(const cv::Mat &image, const std::vector<double> &planck)>
-      use_image;
+  std::function<void(const cv::Mat &image, const Planck &planck)> use_image;
   std::function<void(const std::pair<double, double> &spot)> use_temperature;
 
  private:
+  using PvDevicePtr = std::unique_ptr<PvDevice, FreeDevice>;
+  using PvStreamPtr = std::unique_ptr<PvStream, FreeStream>;
+  using PvPipelinePtr = std::unique_ptr<PvPipeline>;
+  using ThreadPtr = std::unique_ptr<std::thread>;
+
   void FindDevice(const std::string &ip);
   void ConnectDevice();
   void OpenStream();
@@ -84,16 +119,11 @@ class GigeCamera {
   void StartAcquisition();
   void StopAcquisition();
   void AcquireImages();
-  double GetSpotPixel(const cv::Mat &image);
-  double GetSpotTemperature(double S, const std::vector<double> &planck);
+  void LabeledOutput(const std::string &msg) const;
 
-  void SetAoi(int width, int height);
+  double GetSpotPixel(const cv::Mat &image) const;
+  void SetAoi(const int width, const int height);
   void SetPixelFormat(BitSize bit);
-
-  using PvDevicePtr = std::unique_ptr<PvDevice, FreeDevice>;
-  using PvStreamPtr = std::unique_ptr<PvStream, FreeStream>;
-  using PvPipelinePtr = std::unique_ptr<PvPipeline>;
-  using ThreadPtr = std::unique_ptr<std::thread>;
 
   bool raw_{false};
   bool acquire_{false};

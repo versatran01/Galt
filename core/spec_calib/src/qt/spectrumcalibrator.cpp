@@ -197,8 +197,8 @@ const galt::CameraCalibration& SpectrumCalibrator::getCameraCalibration() const 
 
 void SpectrumCalibrator::calcSampleRegion(kr::vec2d& center, double& radius) const {
  
-  const kr::vec3d o = camPose_.p;
-  const kr::vec3d n = camPose_.q.matrix() * kr::vec3d(0,0,1);
+  const kr::vec3d o = camPose_.p();
+  const kr::vec3d n = camPose_.bRw() * kr::vec3d(0,0,1);
   
   //  TODO: refactor this...
   const double d = specPose_.distanceToPlane(o,n);

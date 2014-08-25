@@ -1,0 +1,41 @@
+<launch>
+    <arg name="rviz" default="true"/>
+    <!--rosbag-->
+    <node pkg="rosbag" type="play" name="player" output="log"
+        args="/media/chao/Seagate/bag/day2/walk/2014-07-25-22-53-42.bag">
+    </node>
+
+    <!--gps_kf-->
+    <include file="$(find gps_kf)/launch/gps_kf.launch">
+    </include>
+
+    <!--laser_filter-->
+    <include file="$(find galt_setup)/launch/scan_filter.launch">
+    </include>
+
+    <!--iris_tf-->
+    <include file="$(find iris_tf)/launch/node.launch">
+    </include>
+
+    <!--thermal_proc-->
+    <node pkg="flir_gige" type="thermal_proc_node" name="thermal_proc"
+        ns="flir_gige" output="screen">
+        <param name="celsius_min" type="double" value="25"/>
+        <param name="celsius_max" type="double" value="35"/>
+    </node>
+
+    <!--thermal_map-->
+    <node pkg="thermal_map" type="thermal_map_node" name="thermal_map"
+        output="screen">
+        <remap from="~odometry" to="gps_kf/odometry"/>
+        <remap from="~color_map" to="flir_gige/color_map"/>
+        <remap from="~camera_info" to="flir_gige/camera_info"/>
+        <remap from="~scan" to="hokuyo/scan_filtered"/>
+    </node>
+
+    <!--rviz-->
+    <node if="$(arg rviz)"
+        name="rviz" pkg="rviz" type="rviz"
+        args="--display-config $(find thermal_map)/rviz/config.rviz">
+    </node>
+</launch>

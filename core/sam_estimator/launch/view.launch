@@ -1,0 +1,17 @@
+<launch>
+
+  <arg name="bagfile_home" value="$(env GALT_BAGFILES)"/>
+  <arg name="bagfile" default="day1/noon/2014-07-24-15-48-44.bag"/>
+  <arg name="bagfile_start" default="0"/>
+
+  <!-- start bagfile playback -->
+  <node pkg="rosbag" type="play" name="player"
+        args="-s $(arg bagfile_start) -r 1 $(arg bagfile_home)/$(arg bagfile)">
+  </node>
+
+  <!-- start sam estimator -->
+  <include file="$(find sam_estimator)/launch/sam_estimator.launch"/>
+
+  <!-- TODO: launch rviz and rqt -->
+
+</launch>

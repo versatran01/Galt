@@ -9,9 +9,9 @@ if(CMAKE_SIZEOF_VOID_P EQUAL 8)
     # Make CMake aware of the cmake folder for local FindXXX scripts.
     set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
     find_package(ebus REQUIRED)
-else(CMAKE_SIZEOF_VOID_P EQUAL 8)
+else()
     message(FATAL_ERROR "This package only supports 64-bit linux")
-endif(CMAKE_SIZEOF_VOID_P EQUAL 8)
+endif()
 
 find_package(catkin REQUIRED
     COMPONENTS roscpp sensor_msgs std_msgs
@@ -22,9 +22,8 @@ find_package(OpenCV)
 
 # Dynamic reconfigure option, as to be placed right before catkin_package
 generate_dynamic_reconfigure_options(
-    cfg/Flir.cfg
-    cfg/ProcDyn.cfg
-    cfg/CalibProcDyn.cfg
+    cfg/FlirDyn.cfg
+    cfg/ThermalProcDyn.cfg
     )
 
 catkin_package(
@@ -69,14 +68,6 @@ target_link_libraries(${PROJECT_NAME}_node
     ${PROJECT_NAME}
     )
 
-# nodelet
-add_library(${PROJECT_NAME}_nodelet
-    src/flir_gige_nodelet.cpp
-    )
-target_link_libraries(${PROJECT_NAME}_nodelet
-    ${PROJECT_NAME}
-    )
-
 # thermal proc
 add_library(thermal_proc
     src/thermal_proc/thermal_proc.cpp
@@ -92,16 +83,15 @@ target_link_libraries(thermal_proc_node
     thermal_proc
     )
 
-# calib proc
-#add_executable(calib_proc_node
-    #src/calib_proc/calib_proc.cpp
-    #src/calib_proc/calib_proc_node.cpp
-    #)
-#target_link_libraries(calib_proc_node
-    #${catkin_LIBRARIES}
-    #${OpenCV_LIBRARIES}
-    #)
-
+# nodelet
+add_library(${PROJECT_NAME}_nodelet
+    src/flir_gige_nodelet.cpp
+    src/thermal_proc/thermal_proc_nodelet.cpp
+    )
+target_link_libraries(${PROJECT_NAME}_nodelet
+    ${PROJECT_NAME}
+    thermal_proc
+    )
 
 ## Add cmake target dependencies of the executable/library
 add_dependencies(${PROJECT_NAME}

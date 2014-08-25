@@ -38,7 +38,6 @@ class FlirNodelet : public nodelet::Nodelet {
 
  private:
   std::unique_ptr<FlirGige> flir_gige_;
-
 };
 
 PLUGINLIB_DECLARE_CLASS(flir_gige, FlirNodelet, flir_gige::FlirNodelet,

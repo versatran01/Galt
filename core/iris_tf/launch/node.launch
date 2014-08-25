@@ -15,6 +15,10 @@
     </node>
 
     <!--imu_thermal-->
+    <node pkg="tf2_ros" type="static_transform_publisher"
+        name="imu_thermal_broadcaster"
+        args="0.13 0.06 -0.02 0.7071068 0.7071068 0 0 imu thermal">
+    </node>
 
     <!--imu_stereo_left-->
 </launch>

@@ -33,7 +33,7 @@ ThermalMapNode::ThermalMapNode(const ros::NodeHandle &nh) : nh_{nh}, it_{nh} {
   approximate_sync_.reset(new ApproximateSync(ApproximatePolicy(5), sub_image_,
                                               sub_cinfo_, sub_laser_));
   approximate_sync_->registerCallback(
-        boost::bind(&ThermalMapNode::CameraLaserCb, this, _1, _2, _3));
+      boost::bind(&ThermalMapNode::CameraLaserCb, this, _1, _2, _3));
 
   //  sub_camera_ = it_.subscribeCamera("color_map", 1,
   // &ThermalMapNode::CameraCb,
@@ -41,6 +41,7 @@ ThermalMapNode::ThermalMapNode(const ros::NodeHandle &nh) : nh_{nh}, it_{nh} {
   //  sub_odom_ = nh_.subscribe("odometry", 1, &ThermalMapNode::OdomCb, this);
   //  sub_laser_ = nh_.subscribe("scan", 1, &ThermalMapNode::LaserCb, this);
   pub_traj_ = nh_.advertise<visualization_msgs::Marker>("trajectory", 1);
+  pub_cloud_ = nh_.advertise<sensor_msgs::PointCloud2>("thermal_cloud", 1);
 
   std_msgs::ColorRGBA traj_color;
   traj_color.r = 1;
@@ -58,7 +59,13 @@ void ThermalMapNode::CameraLaserCb(
     const sensor_msgs::ImageConstPtr &image_msg,
     const sensor_msgs::CameraInfoConstPtr &cinfo_msg,
     const sensor_msgs::LaserScanConstPtr &scan_msg) {
-  ROS_INFO_THROTTLE(2, "In camera laser cb");
+  // Transfomr laser scan to point cloud
+  sensor_msgs::PointCloud2 cloud;
+  projector_.transformLaserScanToPointCloud("thermal", *scan_msg, cloud,
+                                            listener_);
+  // Project point cloud back into thermal image and change color
+  pub_cloud_.publish(cloud);
+  const cv::Mat image = cv_bridge::toCvShare(image_msg)->image;
 }
 
 // void ThermalMapNode::LaserCb(const sensor_msgs::LaserScanConstPtr &scan_msg)

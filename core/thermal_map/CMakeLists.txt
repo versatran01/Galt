@@ -3,14 +3,17 @@ project(thermal_map)
 
 add_definitions("-std=c++11 -Wall")
 
+find_package(cmake_modules)
+find_package(Eigen)
 find_package(catkin REQUIRED COMPONENTS
     roscpp image_transport sensor_msgs nav_msgs cv_bridge
-    visualization_msgs std_msgs geometry_msgs tf2 tf2_ros
-    message_filters
+    visualization_msgs std_msgs geometry_msgs tf
+    message_filters laser_geometry
     )
 
 include_directories(include
     ${catkin_INCLUDE_DIRS}
+    ${Eigen_INCLUDE_DIRS}
     )
 
 catkin_package(

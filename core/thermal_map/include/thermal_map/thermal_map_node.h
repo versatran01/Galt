@@ -23,10 +23,14 @@
 #include <sensor_msgs/CameraInfo.h>
 #include <sensor_msgs/image_encodings.h>
 #include <sensor_msgs/LaserScan.h>
+#include <sensor_msgs/PointCloud2.h>
 #include <nav_msgs/Odometry.h>
 #include <message_filters/subscriber.h>
 #include <message_filters/synchronizer.h>
 #include <message_filters/sync_policies/approximate_time.h>
+#include <laser_geometry/laser_geometry.h>
+// Use tf because laser_geometry uses tf, otherwise I would use tf2
+#include <tf/transform_listener.h>
 
 #include "thermal_map/rviz_helper.h"
 
@@ -60,7 +64,10 @@ class ThermalMapNode {
   std::unique_ptr<ApproximateSync> approximate_sync_;
   ros::Subscriber sub_odom_;
 //  ros::Subscriber sub_laser_;
+  tf::TransformListener listener_;
+  laser_geometry::LaserProjection projector_;
   ros::Publisher pub_traj_;
+  ros::Publisher pub_cloud_;
   TrajectoryVisualizer viz_traj_;
 };
 

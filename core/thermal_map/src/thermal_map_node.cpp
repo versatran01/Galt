@@ -55,6 +55,10 @@ void ThermalMapNode::CameraLaserCb(
   sensor_msgs::PointCloud laser_cloud;
   projector_.transformLaserScanToPointCloud("thermal", *laser_msg, laser_cloud,
                                             listener_);
+  if (laser_cloud.points.empty()) {
+    ROS_INFO("No cloud data");
+    return;
+  }
   // Project point cloud back into thermal image and get color
   sensor_msgs::PointCloud thermal_cloud;
   camera_model_.fromCameraInfo(cinfo_msg);

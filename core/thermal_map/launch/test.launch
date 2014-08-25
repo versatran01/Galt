@@ -9,13 +9,19 @@
     <include file="$(find gps_kf)/launch/gps_kf.launch">
     </include>
 
-    <!--laser_filter-->
-    <include file="$(find galt_setup)/launch/scan_filter.launch">
-    </include>
-
     <!--iris_tf-->
     <include file="$(find iris_tf)/launch/node.launch">
     </include>
+
+    <!--laser_filter-->
+    <include file="$(find galt_setup)/launch/laser_filter.launch">
+    </include>
+
+    <!--laser_assembler-->
+    <include file="$(find galt_setup)/launch/laser_assembler.launch">
+        <arg name="fixed_frame" value="thermal"/>
+    </include>
+
 
     <!--thermal_proc-->
     <node pkg="flir_gige" type="thermal_proc_node" name="thermal_proc"

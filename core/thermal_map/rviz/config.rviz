@@ -6,6 +6,8 @@ Panels:
       Expanded:
         - /Global Options1
         - /Marker1
+        - /TF1
+        - /PointCloud1
       Splitter Ratio: 0.4875
     Tree Height: 493
   - Class: rviz/Selection
@@ -20,6 +22,7 @@ Panels:
   - Class: rviz/Views
     Expanded:
       - /Current View1
+      - /Orbit1
     Name: Views
     Splitter Ratio: 0.5
   - Class: rviz/Time
@@ -81,8 +84,8 @@ Visualization Manager:
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
-        Max Value: 20.1393
-        Min Value: 17.7222
+        Max Value: 17.1339
+        Min Value: 16.7776
         Value: true
       Axis: Z
       Channel Name: intensity
@@ -120,7 +123,7 @@ Visualization Manager:
           Value: true
         world:
           Value: true
-      Marker Scale: 2.5
+      Marker Scale: 1
       Name: TF
       Show Arrows: true
       Show Axes: true
@@ -156,7 +159,7 @@ Visualization Manager:
       Position Transformer: XYZ
       Queue Size: 10
       Selectable: true
-      Size (Pixels): 1
+      Size (Pixels): 2
       Size (m): 0.01
       Style: Points
       Topic: /thermal_map/thermal_cloud
@@ -187,22 +190,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 112.475
+      Distance: 10
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -24.1726
-        Y: -0.419665
-        Z: -0.744265
+        X: 0
+        Y: 0
+        Z: 0
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.465398
-      Target Frame: <Fixed Frame>
+      Pitch: 0.480398
+      Target Frame: thermal
       Value: Orbit (rviz)
-      Yaw: 0.49042
+      Yaw: 4.97859
     Saved:
       - Class: rviz/Orbit
         Distance: 82.112

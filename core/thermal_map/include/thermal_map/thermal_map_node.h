@@ -63,10 +63,6 @@ class ThermalMapNode {
   void CloudToPoints(const sensor_msgs::PointCloud &cloud,
                      std::vector<cv::Point3f> &points) const;
 
-  //  void CameraCb(const sensor_msgs::ImageConstPtr &image_msg,
-  //                const sensor_msgs::CameraInfoConstPtr &cinfo_msg);
-  //  void LaserCb(const sensor_msgs::LaserScanConstPtr &scan_msg);
-
   ros::NodeHandle nh_;
   image_transport::ImageTransport it_;
   image_transport::SubscriberFilter sub_image_;
@@ -80,8 +76,6 @@ class ThermalMapNode {
   ros::Publisher pub_cloud_;
   TrajectoryVisualizer viz_traj_;
   image_geometry::PinholeCameraModel camera_model_;
-  //  image_transport::CameraSubscriber sub_camera_;
-  //  ros::Subscriber sub_laser_;
 };
 
 template <typename T>

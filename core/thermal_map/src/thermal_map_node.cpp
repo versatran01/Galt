@@ -48,11 +48,6 @@ ThermalMapNode::ThermalMapNode(const ros::NodeHandle &nh) : nh_{nh}, it_{nh} {
   traj_color.g = 1;
   traj_color.a = 1;
   viz_traj_ = TrajectoryVisualizer(pub_traj_, traj_color, 0.05, "line");
-
-  //  sub_camera_ = it_.subscribeCamera("color_map", 1,
-  // &ThermalMapNode::CameraCb,
-  //                                    this, hints);
-  //  sub_laser_ = nh_.subscribe("scan", 1, &ThermalMapNode::LaserCb, this);
 }
 
 void ThermalMapNode::OdomCb(const nav_msgs::OdometryConstPtr &odom_msg) {

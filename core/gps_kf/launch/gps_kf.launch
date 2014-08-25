@@ -12,17 +12,17 @@
 
   <!-- UKF for comparison -->
 
-  <node pkg="quadrotor_ukf" type="quadrotor_ukf" name="quadrotor_ukf"
-    output="screen">
+  <!--<node pkg="quadrotor_ukf" type="quadrotor_ukf" name="quadrotor_ukf"-->
+    <!--output="screen">-->
 
-    <rosparam file="$(find quadrotor_ukf)/config/params.yaml"/>
+    <!--<rosparam file="$(find quadrotor_ukf)/config/params.yaml"/>-->
 
-    <remap from="~imu" to="/post/attitude_eskf/filtered_imu"/>
+    <!--<remap from="~imu" to="/post/attitude_eskf/filtered_imu"/>-->
 
-    <remap from="~gps_odom" to="/gps_odom/odometry"/>
+    <!--<remap from="~gps_odom" to="/gps_odom/odometry"/>-->
 
-    <param name="world_frame_id" type="string" value="/world"/>
-    <param name="body_frame_id" type="string" value="/body"/>
-  </node>
+    <!--<param name="world_frame_id" type="string" value="/world"/>-->
+    <!--<param name="body_frame_id" type="string" value="/body"/>-->
+  <!--</node>-->
 
 </launch>

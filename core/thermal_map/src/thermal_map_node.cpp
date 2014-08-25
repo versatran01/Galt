@@ -30,7 +30,6 @@ namespace galt {
 namespace thermal_map {
 
 ThermalMapNode::ThermalMapNode(const ros::NodeHandle &nh) : nh_{nh}, it_{nh} {
-  sub_odom_ = nh_.subscribe("odometry", 1, &ThermalMapNode::OdomCb, this);
   image_transport::TransportHints hints("raw", ros::TransportHints(), nh_);
   sub_image_.subscribe(it_, "color_map", 1, hints);
   sub_cinfo_.subscribe(nh_, "camera_info", 1);
@@ -40,19 +39,12 @@ ThermalMapNode::ThermalMapNode(const ros::NodeHandle &nh) : nh_{nh}, it_{nh} {
   approximate_sync_->registerCallback(
       boost::bind(&ThermalMapNode::CameraLaserCb, this, _1, _2, _3));
 
-  pub_traj_ = nh_.advertise<visualization_msgs::Marker>("trajectory", 1);
   pub_cloud_ = nh_.advertise<sensor_msgs::PointCloud>("thermal_cloud", 1);
 
   std_msgs::ColorRGBA traj_color;
   traj_color.r = 1;
   traj_color.g = 1;
   traj_color.a = 1;
-  viz_traj_ = TrajectoryVisualizer(pub_traj_, traj_color, 0.05, "line");
-}
-
-void ThermalMapNode::OdomCb(const nav_msgs::OdometryConstPtr &odom_msg) {
-  // Publish trajectory
-  viz_traj_.PublishTrajectory(odom_msg->pose.pose.position, odom_msg->header);
 }
 
 void ThermalMapNode::CameraLaserCb(

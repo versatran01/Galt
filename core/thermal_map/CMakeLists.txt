@@ -7,7 +7,7 @@ find_package(cmake_modules)
 find_package(Eigen)
 find_package(catkin REQUIRED COMPONENTS
     roscpp image_transport sensor_msgs nav_msgs cv_bridge
-    visualization_msgs std_msgs geometry_msgs tf
+    std_msgs geometry_msgs tf
     message_filters laser_geometry image_geometry
     )
 
@@ -26,7 +26,6 @@ catkin_package(
 add_executable(${PROJECT_NAME}_node
     src/main.cpp
     src/thermal_map_node.cpp
-    src/rviz_helper.cpp
     )
 target_link_libraries(${PROJECT_NAME}_node
     ${catkin_LIBRARIES}

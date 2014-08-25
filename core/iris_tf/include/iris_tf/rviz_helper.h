@@ -1,5 +1,5 @@
-#ifndef GALT_THERMAL_MAP_VIZ_HELPER_H_
-#define GALT_THERMAL_MAP_VIZ_HELPER_H_
+#ifndef GALT_IRIS_TF_RVIZ_HELPER_H_
+#define GALT_IRIS_TF_RVIZ_HELPER_H_
 
 #include <ros/ros.h>
 #include <std_msgs/Header.h>
@@ -9,7 +9,7 @@
 #include <visualization_msgs/Marker.h>
 
 namespace galt {
-namespace thermal_map {
+namespace iris_tf {
 
 class TrajectoryVisualizer {
  public:
@@ -28,7 +28,7 @@ class TrajectoryVisualizer {
   visualization_msgs::Marker markers_;
 };
 
-}  // namespace thermal_map
+}  // namespace iris_tf
 }  // namespace galt
 
-#endif  // GALT_THERMAL_MAP_VIZ_HELPER_H_
+#endif  // GALT_IRIS_TF_RVIZ_HELPER_H_

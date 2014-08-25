@@ -1,10 +1,20 @@
+<launch>
+    <arg name="frame" default="imu"/>
+    <arg name="topic" default="gps_kf/odometry"/>
+
+    <!--iris_tf-->
+    <node pkg="iris_tf" type="iris_tf_node" name="iris_tf" output="screen">
+        <param name="frame" type="string" value="$(arg frame)"/>
+        <remap from="~topic" to="$(arg topic)"/>
+    </node>
 
     <!--imu_laser-->
-    <node pkg="tf" type="static_transform_publisher" name="imu_laser_br"
-        args="0.025 0.06 -0.02 0 0 0 0 imu laser 1000">
+    <node pkg="tf2_ros" type="static_transform_publisher"
+        name="imu_laser_broadcaster"
+        args="0.025 0.06 -0.02 -0.5 -0.5 0.5 -0.5 imu laser">
     </node>
 
+    <!--imu_thermal-->
+
     <!--imu_stereo_left-->
-    <node pkg="tf" type="static_transform_publisher" name="imu_stereo_left_br"
-        args="-0.1 0.05 0 0 0 0 0 imu stereo_left">
-    </node>
+</launch>

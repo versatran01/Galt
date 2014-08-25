@@ -11,9 +11,17 @@ namespace iris_tf {
  */
 class IrisTransform {
  public:
+  /**
+   * @brief IrisTransform Constructor
+   * @param nh Private node handle
+   */
   IrisTransform(const ros::NodeHandle &nh);
 
  private:
+  /**
+   * @brief OdomCb Odometry callback
+   * @param odom_msg nav_msgs::Odometry
+   */
   void OdomCb(const nav_msgs::OdometryConstPtr &odom_msg);
 
   ros::NodeHandle nh_;
@@ -31,6 +39,7 @@ void IrisTransform::OdomCb(const nav_msgs::OdometryConstPtr &odom_msg) {
   const geometry_msgs::Point &position = odom_msg->pose.pose.position;
   const geometry_msgs::Quaternion &quaternion = odom_msg->pose.pose.orientation;
 
+  // Don't really know what's the difference between a point and a vector3
   geometry_msgs::Vector3 translation;
   translation.x = position.x;
   translation.y = position.y;

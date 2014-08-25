@@ -5,7 +5,7 @@ add_definitions("-std=c++11 -Wall")
 
 find_package(catkin REQUIRED COMPONENTS
     roscpp image_transport sensor_msgs nav_msgs cv_bridge
-    visualization_msgs std_msgs geometry_msgs tf
+    visualization_msgs std_msgs geometry_msgs tf2 tf2_ros
     )
 
 include_directories(include

@@ -33,36 +33,24 @@ ThermalMapNode::ThermalMapNode(const ros::NodeHandle &nh) : nh_{nh}, it_{nh} {
   sub_laser_ = nh_.subscribe("scan", 1, &ThermalMapNode::LaserCb, this);
   pub_traj_ = nh_.advertise<visualization_msgs::Marker>("trajectory", 1);
   std_msgs::ColorRGBA traj_color;
-  traj_color.r = 1;
+  traj_color.g = 1;
   traj_color.a = 1;
-  viz_traj_ = TrajectoryVisualizer(pub_traj_, traj_color, 0.2, "line");
+  viz_traj_ = TrajectoryVisualizer(pub_traj_, traj_color, 0.1, "line");
 }
 
 void ThermalMapNode::OdomCb(const nav_msgs::OdometryConstPtr &odom_msg) {
-  const geometry_msgs::Point &position = odom_msg->pose.pose.position;
-  const geometry_msgs::Quaternion &quat = odom_msg->pose.pose.orientation;
-  tf::Transform transform;
-  transform.setOrigin(tf::Vector3(position.x, position.y, position.z));
-  tf::Quaternion q(quat.x, quat.y, quat.z, quat.w);
-  transform.setRotation(q);
-  broadcaster_.sendTransform(
-      tf::StampedTransform(transform, odom_msg->header.stamp,
-                           std::string("world"), std::string("imu")));
-
   // Publish trajectory
-  viz_traj_.PublishTrajectory(position, odom_msg->header);
+  viz_traj_.PublishTrajectory(odom_msg->pose.pose.position, odom_msg->header);
 }
 
 void ThermalMapNode::LaserCb(const sensor_msgs::LaserScanConstPtr &scan_msg) {
+  ROS_INFO_THROTTLE(2, "in laser");
 }
 
 void ThermalMapNode::CameraCb(
     const sensor_msgs::ImageConstPtr &image_msg,
     const sensor_msgs::CameraInfoConstPtr &cinfo_msg) {
   const cv::Mat image = cv_bridge::toCvShare(image_msg)->image;
-
-  cv::imshow("image", image);
-  cv::waitKey(1);
 }
 
 }  // namespace thermal_map

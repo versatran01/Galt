@@ -23,7 +23,6 @@
 #include <sensor_msgs/image_encodings.h>
 #include <sensor_msgs/LaserScan.h>
 #include <nav_msgs/Odometry.h>
-#include <tf/transform_broadcaster.h>
 
 #include "thermal_map/rviz_helper.h"
 
@@ -47,7 +46,6 @@ class ThermalMapNode {
   ros::Subscriber sub_odom_;
   ros::Subscriber sub_laser_;
   ros::Publisher pub_traj_;
-  tf::TransformBroadcaster broadcaster_;
   TrajectoryVisualizer viz_traj_;
 };
 

@@ -10,7 +10,12 @@
     </include>
 
     <!--laser_filter-->
+    <include file="$(find galt_setup)/launch/scan_filter.launch">
+    </include>
 
+    <!--iris_tf-->
+    <include file="$(find iris_tf)/launch/node.launch">
+    </include>
 
     <!--thermal_proc-->
     <node pkg="flir_gige" type="thermal_proc_node" name="thermal_proc"
@@ -25,7 +30,7 @@
         <remap from="~odometry" to="gps_kf/odometry"/>
         <remap from="~color_map" to="flir_gige/color_map"/>
         <remap from="~camera_info" to="flir_gige/camera_info"/>
-        <remap from="~scan" to="/hokuyo/scan"/>
+        <remap from="~scan" to="hokuyo/scan_filtered"/>
     </node>
 
     <!--rviz-->

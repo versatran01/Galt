@@ -340,7 +340,11 @@ void SamEstimator::PerformUpdate() {
                                          isotropicMat<3>(Config().gyro_std),
                                          isotropicMat<3>(Config().integration_std));
   
-  all_poses_.push_back(kr::Posed(current_pose_));
+  all_poses_.clear();
+  for (int i=0; i < meas_index_; i++) {
+    all_poses_.push_back(kr::Posed(estimates_.at<Pose3>(PoseKey(i))));
+  }
+  //all_poses_.push_back(kr::Posed(current_pose_));
   
   estimates_.clear();
   graph_.resize(0); 

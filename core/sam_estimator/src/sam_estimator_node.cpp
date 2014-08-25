@@ -68,7 +68,6 @@ void SamEstimatorNode::GpsCallback(
     }
   }
   
-  meas.time -= gps_time_delta_; //  offset by the GPS time delta
   if (!estimator_->IsInitialized()) {
     if (time - first_gps > 5) {
       gtsam::Vector6 sigmas;
@@ -80,8 +79,6 @@ void SamEstimatorNode::GpsCallback(
       estimator_->InitializeGraph(meas.pose, sigmas, meas.time);
       return;
     }
-  } else {
-    //estimator_->AddGps(meas);
   }
 }
 

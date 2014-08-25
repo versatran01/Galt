@@ -9,12 +9,6 @@
     <include file="$(find gps_kf)/launch/gps_kf.launch">
     </include>
 
-    <!--static tf-->
-    <node pkg="tf" type="static_transform_publisher"
-        name="imu_laser_broadcaster"
-        args="1 0 0 0 0 0 imu laser 1000">
-    </node>
-
     <!--laser_filter-->
 
 

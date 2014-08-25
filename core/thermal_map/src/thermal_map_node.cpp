@@ -21,6 +21,7 @@
 #include <geometry_msgs/Quaternion.h>
 #include <cv_bridge/cv_bridge.h>
 #include <visualization_msgs/Marker.h>
+#include <laser_assembler/AssembleScans.h>
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/calib3d/calib3d.hpp>
@@ -31,36 +32,42 @@ namespace thermal_map {
 
 ThermalMapNode::ThermalMapNode(const ros::NodeHandle &nh) : nh_{nh}, it_{nh} {
   image_transport::TransportHints hints("raw", ros::TransportHints(), nh_);
-  sub_image_.subscribe(it_, "color_map", 1, hints);
-  sub_cinfo_.subscribe(nh_, "camera_info", 1);
-  sub_laser_.subscribe(nh_, "scan", 1);
-  approximate_sync_.reset(new ApproximateSync(ApproximatePolicy(5), sub_image_,
-                                              sub_cinfo_, sub_laser_));
-  approximate_sync_->registerCallback(
-      boost::bind(&ThermalMapNode::CameraLaserCb, this, _1, _2, _3));
-
+  sub_camera_ = it_.subscribeCamera("color_map", 1, &ThermalMapNode::CameraCb,
+                                    this, hints);
+  client_ = nh_.serviceClient<laser_assembler::AssembleScans>("assemble_scans");
   pub_cloud_ = nh_.advertise<sensor_msgs::PointCloud>("thermal_cloud", 1);
-
-  std_msgs::ColorRGBA traj_color;
-  traj_color.r = 1;
-  traj_color.g = 1;
-  traj_color.a = 1;
 }
 
-void ThermalMapNode::CameraLaserCb(
+void ThermalMapNode::ConnectCb() {}
+
+void ThermalMapNode::CameraCb(
     const sensor_msgs::ImageConstPtr &image_msg,
-    const sensor_msgs::CameraInfoConstPtr &cinfo_msg,
-    const sensor_msgs::LaserScanConstPtr &laser_msg) {
-  // Transfomr laser scan to point cloud
-  sensor_msgs::PointCloud laser_cloud;
-  projector_.transformLaserScanToPointCloud("thermal", *laser_msg, laser_cloud,
-                                            listener_);
-  if (laser_cloud.points.empty()) {
-    ROS_INFO("No cloud data");
+    const sensor_msgs::CameraInfoConstPtr &cinfo_msg) {
+  // Get point cloud from laser assembler
+  static ros::Time prev_time(0);
+  if (prev_time == ros::Time(0)) {
+    prev_time = image_msg->header.stamp - ros::Duration(kDelay);
     return;
   }
+  laser_assembler::AssembleScans srv;
+  const ros::Time &curr_time = image_msg->header.stamp - ros::Duration(kDelay);
+  srv.request.end = curr_time;
+  srv.request.begin = prev_time;
+  prev_time = curr_time;
+
+  if (!client_.call(srv)) {
+    ROS_WARN("Sercie call failed");
+    return;
+  }
+
+  if (srv.response.cloud.points.empty()) {
+    ROS_WARN("Empty cloud");
+    return;
+  }
+
   // Project point cloud back into thermal image and get color
   sensor_msgs::PointCloud thermal_cloud;
+  const sensor_msgs::PointCloud &laser_cloud = srv.response.cloud;
   camera_model_.fromCameraInfo(cinfo_msg);
   const cv::Mat image = cv_bridge::toCvShare(image_msg)->image;
   ProjectCloud(laser_cloud, image, camera_model_, thermal_cloud);
@@ -118,17 +125,6 @@ void ThermalMapNode::CloudToPoints(const sensor_msgs::PointCloud &cloud,
     points.push_back(cv::Point3f(point.x, point.y, point.z));
   }
 }
-
-// void ThermalMapNode::LaserCb(const sensor_msgs::LaserScanConstPtr &scan_msg)
-// {
-//  ROS_INFO_THROTTLE(2, "in laser");
-//}
-
-// void ThermalMapNode::CameraCb(
-//    const sensor_msgs::ImageConstPtr &image_msg,
-//    const sensor_msgs::CameraInfoConstPtr &cinfo_msg) {
-//  const cv::Mat image = cv_bridge::toCvShare(image_msg)->image;
-//}
 
 }  // namespace thermal_map
 }  // namespace galt

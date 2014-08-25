@@ -8,7 +8,7 @@ find_package(Eigen)
 find_package(catkin REQUIRED COMPONENTS
     roscpp image_transport sensor_msgs nav_msgs cv_bridge
     visualization_msgs std_msgs geometry_msgs tf
-    message_filters laser_geometry
+    message_filters laser_geometry image_geometry
     )
 
 include_directories(include

@@ -5,8 +5,7 @@ Panels:
     Property Tree Widget:
       Expanded:
         - /Global Options1
-        - /PointCloud21/Status1
-      Splitter Ratio: 0.5
+      Splitter Ratio: 0.4875
     Tree Height: 493
   - Class: rviz/Selection
     Name: Selection
@@ -81,8 +80,8 @@ Visualization Manager:
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
-        Max Value: 21.0735
-        Min Value: 18.7576
+        Max Value: 20.1393
+        Min Value: 17.7222
         Value: true
       Axis: Z
       Channel Name: intensity
@@ -90,7 +89,7 @@ Visualization Manager:
       Color: 255; 255; 255
       Color Transformer: AxisColor
       Decay Time: 200
-      Enabled: true
+      Enabled: false
       Invert Rainbow: false
       Max Color: 255; 255; 255
       Max Intensity: 1895
@@ -106,7 +105,7 @@ Visualization Manager:
       Topic: /hokuyo/scan_filtered
       Use Fixed Frame: true
       Use rainbow: true
-      Value: true
+      Value: false
     - Class: rviz/TF
       Enabled: true
       Frame Timeout: 15
@@ -120,7 +119,7 @@ Visualization Manager:
           Value: true
         world:
           Value: true
-      Marker Scale: 5
+      Marker Scale: 2.5
       Name: TF
       Show Arrows: true
       Show Axes: true
@@ -137,22 +136,22 @@ Visualization Manager:
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
-        Max Value: 10
-        Min Value: -10
+        Max Value: 18.6925
+        Min Value: 16.6874
         Value: true
       Axis: Z
       Channel Name: intensity
-      Class: rviz/PointCloud2
+      Class: rviz/PointCloud
       Color: 255; 255; 255
-      Color Transformer: Intensity
+      Color Transformer: RGB8
       Decay Time: 1000
       Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
-      Max Intensity: 1569
+      Max Intensity: 1641
       Min Color: 0; 0; 0
-      Min Intensity: 784
-      Name: PointCloud2
+      Min Intensity: 917
+      Name: PointCloud
       Position Transformer: XYZ
       Queue Size: 10
       Selectable: true
@@ -187,22 +186,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 113.393
+      Distance: 112.475
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -37.0224
-        Y: 0.446427
-        Z: -19.1229
+        X: -24.1726
+        Y: -0.419665
+        Z: -0.744265
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.290398
-      Target Frame: imu
+      Pitch: 0.310398
+      Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 0.17542
+      Yaw: 0.0554201
     Saved:
       - Class: rviz/Orbit
         Distance: 82.112

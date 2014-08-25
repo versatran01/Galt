@@ -84,6 +84,7 @@ class SamEstimator {
    * @brief GPS/attitude measurement: orientation + cartesian position
    * @note Order: [x,y,z,rot_x,rot_y,rot_z,vx,vy,vz]
    */
+  //  NOTE: unused
   struct GpsMeasurement {
     kr::Posed pose;           /// 6 DOF pose
     kr::vec3d vel;            /// [x,y,z] velocities
@@ -105,8 +106,6 @@ class SamEstimator {
 
   void AddImu(const ImuMeasurement& measurement);
 
-  void AddGps(const GpsMeasurement& measurement);
-
   void AddVo(const VoMeasurement &measurement);
     
   void Optimize();
@@ -119,19 +118,15 @@ class SamEstimator {
   
   Configuration& Config() { return config_; }
   const Configuration& Config() const { return config_; }
-  
-  double OldestTimestamp() const;
-  
- //private:
+    
+private:
   
   bool ProcessQueues();
   
   void HandleImu(const ImuMeasurement &imu);
   
   void HandleVo(const VoMeasurement& vo);
-  
-  void HandleGps(const GpsMeasurement& gps);
-  
+    
   void AddImuFactor();
   
   void PerformUpdate();
@@ -153,10 +148,6 @@ class SamEstimator {
   gtsam::ISAM2 isam_;
   
   gtsam::Pose3 current_pose_;
-  gtsam::LieVector current_velocity_;
-  gtsam::imuBias::ConstantBias current_bias_;
-  
-  gtsam::ImuFactor::PreintegratedMeasurements pre_imu_;
   
   kr::Posed last_vo_pose_;
   bool has_vo_pose_;
@@ -166,11 +157,9 @@ class SamEstimator {
   kr::quatd last_vo_rotation_;
   bool rotation_set_;
   bool has_rotation_{false};
-  int imu_int_count_{0};
   
   std::deque<ImuMeasurement> imu_buffer_;
   std::deque<VoMeasurement> vo_buffer_;
-  std::deque<GpsMeasurement> gps_buffer_;
   
   Configuration config_;
   

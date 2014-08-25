@@ -50,7 +50,7 @@ Node::Node(const ros::NodeHandle &nh) : nh_(nh) {
     iQl_ = kr::quatd(1, 0, 0, 0);
     iPl_.setZero();
   }
-  nh.param("world_frame_id", worldFrameId_, "/world");
+  nh.param("world_frame_id", worldFrameId_, std::string("/world"));
 
   //  min/max angles to use on lidar, default to [-inf, inf]
   nh.param("angle_min", angle_min_, -std::numeric_limits<double>::infinity());

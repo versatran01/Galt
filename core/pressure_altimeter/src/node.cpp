@@ -14,43 +14,44 @@
  */
 
 #include <pressure_altimeter/node.hpp>
-#include <pressure_altimeter/Height.h>  //  published message
+#include <pressure_altimeter/Height.h> //  published message
 #include <cmath>
 
 namespace galt {
 namespace pressure_altimeter {
 
 Node::Node(const ros::NodeHandle &nh) : nh_(nh) {
-  subPressure_ = nh_.subscribe("fluid_pressure", 1, 
-                              &Node::pressureCallback, this);
+  subPressure_ =
+      nh_.subscribe("fluid_pressure", 1, &Node::pressureCallback, this);
   pubHeight_ = nh_.advertise<::pressure_altimeter::Height>("height", 1);
-  
+
   nh.param("world_frame_id", worldFrameId_, std::string("/world"));
 }
 
-void Node::pressureCallback(const sensor_msgs::FluidPressureConstPtr& pressure) {
+void
+Node::pressureCallback(const sensor_msgs::FluidPressureConstPtr &pressure) {
   ::pressure_altimeter::Height height_msg;
   height_msg.header.stamp = pressure->header.stamp;
   height_msg.header.frame_id = worldFrameId_;
-  
+
   const double pressurePA = pressure->fluid_pressure * 100; //  mb to Pa
   if (pressurePA > 0) {
     //  calculate height from barometer
-    const double c = kG*kM/(kR*kL);
-    const double lhs = std::exp( std::log(pressurePA / kP0) * (1 / c) );
+    const double c = kG * kM / (kR * kL);
+    const double lhs = std::exp(std::log(pressurePA / kP0) * (1 / c));
     const double h = (1 - lhs) * kT0 / kL;
-    
+
     //  value of jacobian to propagate variance
     const double J = -lhs * kT0 / (kL * c * pressurePA);
-    const double h_var = J*J*(pressure->variance * 100 * 100);  //  mb to Pa
-    
+    const double h_var = J * J * (pressure->variance * 100 * 100); //  mb to Pa
+
     height_msg.height = h;
     height_msg.variance = h_var;
   } else {
     height_msg.height = 0;
     height_msg.variance = -1;
   }
-  
+
   pubHeight_.publish(height_msg);
 }
 

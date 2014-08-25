@@ -16,7 +16,7 @@
 #include <pressure_altimeter/node.hpp>
 
 int main(int argc, char **argv) {
-  ros::init(argc,argv,"pressure_altimeter");
+  ros::init(argc, argv, "pressure_altimeter");
   ros::NodeHandle nh("~");
   galt::pressure_altimeter::Node node(nh);
   ros::spin();

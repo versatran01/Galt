@@ -9,9 +9,9 @@ if(CMAKE_SIZEOF_VOID_P EQUAL 8)
     # Make CMake aware of the cmake folder for local FindXXX scripts.
     set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
     find_package(ebus REQUIRED)
-else(CMAKE_SIZEOF_VOID_P EQUAL 8)
+else()
     message(FATAL_ERROR "This package only supports 64-bit linux")
-endif(CMAKE_SIZEOF_VOID_P EQUAL 8)
+endif()
 
 find_package(catkin REQUIRED
     COMPONENTS roscpp sensor_msgs std_msgs

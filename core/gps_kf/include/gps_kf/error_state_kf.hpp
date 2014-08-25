@@ -34,6 +34,15 @@ public:
    */
   void initCovariance(Scalar qStd, Scalar bgStd, Scalar vStd, Scalar baStd,
                       Scalar pStd);
+  
+  /**
+   * @brief initState
+   * @param wQb
+   * @param p
+   * @param v
+   */
+  void initState(const kr::quat<Scalar>& wQb, const kr::vec3<Scalar> p,
+                 const kr::vec3<Scalar>& v);
 
   /**
    * @brief Run the prediction step of the filter.
@@ -157,6 +166,15 @@ void ErrorStateKF<Scalar>::initCovariance(Scalar qStd, Scalar bgStd,
   P_.template block<3,3>(6,6) = I3*vStd*vStd;
   P_.template block<3,3>(9,9) = I3*baStd*baStd;
   P_.template block<3,3>(12,12) = I3*pStd*pStd;
+}
+
+template <typename Scalar>
+void ErrorStateKF<Scalar>::initState(const kr::quat<Scalar>& wQb, 
+                                     const kr::vec3<Scalar> p,
+                                     const kr::vec3<Scalar>& v) {
+  q_ = wQb;
+  p_ = p;
+  v_ = v;
 }
 
 template <typename Scalar>

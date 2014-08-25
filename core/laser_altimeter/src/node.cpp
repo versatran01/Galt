@@ -50,12 +50,13 @@ Node::Node(const ros::NodeHandle &nh) : nh_(nh) {
     iQl_ = kr::quatd(1, 0, 0, 0);
     iPl_.setZero();
   }
+  nh.param("world_frame_id", worldFrameId_, std::string("/world"));
 
   //  min/max angles to use on lidar, default to [-inf, inf]
   nh.param("angle_min", angle_min_, -std::numeric_limits<double>::infinity());
   nh.param("angle_max", angle_max_, std::numeric_limits<double>::infinity());
   ROS_INFO("Min/max angles: %f, %f", angle_min_, angle_max_);
-
+  
   subImu_.subscribe(nh_, "imu", queue_size);
   subScan_.subscribe(nh_, "laser_scan", queue_size);
   sync_ = std::make_shared<Synchronizer>(TimeSyncPolicy(queue_size), subImu_,
@@ -145,8 +146,9 @@ void Node::syncCallback(const sensor_msgs::ImuConstPtr &imuMsg,
   //  publish
   ::laser_altimeter::Height msg;
   msg.header.stamp = laserMsg->header.stamp;
-  msg.header.frame_id = "/world";
+  msg.header.frame_id = worldFrameId_;
   if (heights.empty()) {
+    msg.max = msg.mean = 0;
     msg.variance = -1; //  leave other fields zero
   } else {
     msg.max = max;

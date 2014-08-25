@@ -14,13 +14,17 @@
  */
 
 #include <sam_estimator/sam_estimator_node.hpp>
+#include <sam_estimator/sam_estimator.hpp>
+#include <nav_msgs/Odometry.h>
+#include <memory>
 
 using std::make_shared;
 
 namespace galt {
 namespace sam_estimator {
 
-SamEstimatorNode::SamEstimatorNode(const ros::NodeHandle &nh) : gps_time_delta_(0), nh_(nh) {
+SamEstimatorNode::SamEstimatorNode(const ros::NodeHandle &nh) : nh_(nh),
+ init_height_(-1), prev_imu_time_(0.0) {
   //  create an estimator
   estimator_ = make_shared<SamEstimator>();
   visualizer_ = make_shared<Visualizer>(nh_);
@@ -30,22 +34,17 @@ SamEstimatorNode::SamEstimatorNode(const ros::NodeHandle &nh) : gps_time_delta_(
                            &SamEstimatorNode::GpsCallback, this);
   sub_imu_ =
       nh_.subscribe("imu", kROSQueueSize, &SamEstimatorNode::ImuCallback, this);
-  sub_stereo_ = nh_.subscribe("vo_pose", kROSQueueSize,
-                              &SamEstimatorNode::StereoCallback, this);
-  sub_laser_ = nh_.subscribe("laser_scan", kROSQueueSize,
-                             &SamEstimatorNode::LaserCallback, this);
-  //pub_pose_ =
-  //    nh_.advertise<geometry_msgs::PoseWithCovarianceStamped>("pose", 1);
-  
-  nh_.param("gps_time_delay", gps_time_delta_, 0.0);
-  ROS_INFO("Using a GPS time delay of %.3f seconds", gps_time_delta_);
-  estimator_->Config().gps_time_delay = gps_time_delta_;
+  sub_vo_ = nh_.subscribe("vo_pose", kROSQueueSize,
+                              &SamEstimatorNode::VisualOdometryCallback, this);
+  sub_laser_height_ = nh_.subscribe("laser_height", kROSQueueSize,
+                             &SamEstimatorNode::LaserHeightCallback, this);
+  pub_odometry_ =
+      nh_.advertise<nav_msgs::Odometry>("odometry", 1);
 }
 
 void SamEstimatorNode::GpsCallback(
     const nav_msgs::OdometryConstPtr &odometry_msg) {
   const double time = odometry_msg->header.stamp.toSec();
-  static const double first_gps = time;
   
   SamEstimator::GpsMeasurement meas;
   meas.time = time;
@@ -68,27 +67,30 @@ void SamEstimatorNode::GpsCallback(
     }
   }
   
-  if (!estimator_->IsInitialized()) {
-    if (time - first_gps > 5) {
-      gtsam::Vector6 sigmas;
-      for (int i=0; i < 3; i++) {
-        sigmas[i] = meas.cov(i+3,i+3);
-        sigmas[i+3] = meas.cov(i,i);  //  swap order
-      }
-      ROS_WARN("Warning: Performing garbage gps initialization");
-      estimator_->InitializeGraph(meas.pose, sigmas, meas.time);
-      return;
+  if (!estimator_->IsInitialized() && (init_height_ > 0)) {
+    //  overwrite height with laser estimate
+    meas.pose.p()[2] = init_height_;
+    
+    gtsam::Vector6 sigmas;
+    for (int i=0; i < 3; i++) {
+      sigmas[i] = meas.cov(i+3,i+3);
+      sigmas[i+3] = meas.cov(i,i);  //  swap order
     }
+    ROS_WARN("Initializing sam_estimator from GPS + laser height");
+    estimator_->InitializeGraph(meas.pose, sigmas, meas.time);
   }
 }
 
 void SamEstimatorNode::ImuCallback(const sensor_msgs::ImuConstPtr &imu_msg) {  
   const double time = imu_msg->header.stamp.toSec();
-  static double prevTime = time;  //  temporary
+  if (prev_imu_time_ == 0) {
+    //  fudge the first IMU sample...
+    prev_imu_time_ = time;
+  }
   
   SamEstimator::ImuMeasurement meas;
   meas.time = time;
-  meas.dt = time - prevTime;
+  meas.dt = time - prev_imu_time_;
   meas.z[0] = imu_msg->linear_acceleration.x * 9.80665; /// @todo: Fix IMU node
   meas.z[1] = imu_msg->linear_acceleration.y * 9.80665;
   meas.z[2] = imu_msg->linear_acceleration.z * 9.80665;
@@ -104,16 +106,13 @@ void SamEstimatorNode::ImuCallback(const sensor_msgs::ImuConstPtr &imu_msg) {
       meas.cov(i,j) = imu_msg->orientation_covariance[i*3 + j];
     }
   }
-  estimator_->AddImu(meas);
-  prevTime = time;
+  if (estimator_->IsInitialized()) {
+    estimator_->AddImu(meas);
+  }
+  prev_imu_time_ = time;
 }
 
-void SamEstimatorNode::LaserCallback(
-    const sensor_msgs::LaserScanConstPtr &laser_msg) {
-  //ROS_INFO("laser callback!");
-}
-
-void SamEstimatorNode::StereoCallback(
+void SamEstimatorNode::VisualOdometryCallback(
     const geometry_msgs::PoseStampedConstPtr &pose_msg) {
   
   SamEstimator::VoMeasurement vo;
@@ -124,6 +123,37 @@ void SamEstimatorNode::StereoCallback(
     estimator_->AddVo(vo);
   }
   visualizer_->SetTrajectory(estimator_->AllPoses());
+  
+  //  publish odometery
+  nav_msgs::Odometry odo;
+  odo.header.stamp = pose_msg->header.stamp;
+  odo.header.frame_id = "/world"; /// @todo: make params later...
+  odo.child_frame_id ="/body";
+  
+  kr::Posed output_pose = kr::Posed(estimator_->CurrentPose());
+  kr::mat<double,6,6> output_cov = estimator_->CurrentMarginals();
+  
+  /// @todo: for now just use diagonal blocks, fix this later
+  odo.pose.pose = static_cast<geometry_msgs::Pose>(output_pose);
+  for (int i=0; i < 3; i++) {
+    for (int j=0; j < 3; j++) {
+      odo.pose.covariance[(i)*6 + j] = output_cov(i+3,j+3);
+      odo.pose.covariance[(i+3)*6 + j+3] = output_cov(i,j);
+    }
+  }
+  
+  pub_odometry_.publish(odo);
+}
+
+void SamEstimatorNode::LaserHeightCallback(
+    const laser_altimeter::HeightConstPtr& height_msg) {
+ 
+  const double height = height_msg->max;
+  if (init_height_ < 0) {
+    /// @todo: use a moving average filter here for initialization
+    init_height_ = height;
+    ROS_INFO("Laser initialization height: %.3f", height);
+  }
 }
 
 }  // namespace sam_estimator

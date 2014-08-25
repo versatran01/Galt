@@ -1,7 +1,7 @@
 <launch>
 
     <arg name="stereo_ns" default="/mv_stereo"/>
-    <arg name="disparity" default="false"/>
+    <arg name="disparity" default="true"/>
     <arg name="rviz" default="false"/>
 
     <!-- launch the stereo vo node -->

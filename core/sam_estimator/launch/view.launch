@@ -2,15 +2,24 @@
 
   <arg name="bagfile_home" value="$(env GALT_BAGFILES)"/>
   <arg name="bagfile" default="day1/noon/2014-07-24-15-48-44.bag"/>
-  <arg name="bagfile_start" default="0"/>
+  <arg name="bagfile_start" default="95"/>
 
   <!-- start bagfile playback -->
   <node pkg="rosbag" type="play" name="player"
         args="-s $(arg bagfile_start) -r 1 $(arg bagfile_home)/$(arg bagfile)">
   </node>
 
+  <!-- laser scan filter -->
+  <include file="$(find galt_setup)/launch/scan_filter.launch"/>
+
   <!-- start sam estimator -->
   <include file="$(find sam_estimator)/launch/sam_estimator.launch"/>
+
+  <!-- launch disparity -->
+  <node if="true"
+      pkg="image_view" type="stereo_view" name="stereo_view"
+      args="stereo:=/mv_stereo image:=image_rect">
+  </node>
 
   <!-- TODO: launch rviz and rqt -->
 

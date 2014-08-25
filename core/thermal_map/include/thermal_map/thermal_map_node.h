@@ -51,9 +51,12 @@ class ThermalMapNode {
   void CloudToPoints(const sensor_msgs::PointCloud &cloud,
                      std::vector<cv::Point3f> &points) const;
 
+  void ImageCb(const sensor_msgs::ImageConstPtr &image_msg);
+
   ros::NodeHandle nh_;
   image_transport::ImageTransport it_;
   image_transport::CameraSubscriber sub_camera_;
+  image_transport::Subscriber sub_image_;
   ros::Publisher pub_cloud_;
   image_geometry::PinholeCameraModel camera_model_;
   ros::ServiceClient client_;

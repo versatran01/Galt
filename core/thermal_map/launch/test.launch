@@ -2,7 +2,7 @@
     <arg name="rviz" default="true"/>
     <!--rosbag-->
     <node pkg="rosbag" type="play" name="player" output="log"
-        args="/media/chao/Seagate/bag/day2/walk/2014-07-25-22-53-42.bag">
+        args="/media/chao/Seagate/bag/day1/handheld/2014-07-24-22-24-32.bag">
     </node>
 
     <!--gps_kf-->

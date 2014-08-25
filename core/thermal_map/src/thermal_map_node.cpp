@@ -34,6 +34,8 @@ ThermalMapNode::ThermalMapNode(const ros::NodeHandle &nh) : nh_{nh}, it_{nh} {
   image_transport::TransportHints hints("raw", ros::TransportHints(), nh_);
   sub_camera_ = it_.subscribeCamera("color_map", 1, &ThermalMapNode::CameraCb,
                                     this, hints);
+  sub_image_ = it_.subscribe("/mv_stereo/left/image_raw", 1,
+                             &ThermalMapNode::ImageCb, this, hints);
   client_ = nh_.serviceClient<laser_assembler::AssembleScans>("assemble_scans");
   pub_cloud_ = nh_.advertise<sensor_msgs::PointCloud>("thermal_cloud", 1);
 }
@@ -73,6 +75,22 @@ void ThermalMapNode::CameraCb(
   ProjectCloud(laser_cloud, image, camera_model_, thermal_cloud);
   // Publish point cloud
   pub_cloud_.publish(thermal_cloud);
+
+  // Rotate the thermal image 180 degree
+  cv::Mat flipped;
+  cv::flip(image, flipped, -1);
+  cv::imshow("thermal", flipped);
+  cv::waitKey(1);
+}
+
+void ThermalMapNode::ImageCb(const sensor_msgs::ImageConstPtr &image_msg) {
+  const cv::Mat image = cv_bridge::toCvShare(image_msg)->image;
+  // Rotate stereo left 90 degree
+  cv::Mat rotated = image.t();
+  cv::flip(rotated, rotated, 1);
+
+  cv::imshow("stereo_left", rotated);
+  cv::waitKey(1);
 }
 
 void ThermalMapNode::ProjectCloud(

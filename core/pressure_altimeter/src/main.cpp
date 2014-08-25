@@ -8,18 +8,17 @@
  *
  *  Copyright (c) 2014 Nouka Technologies. All rights reserved.
  *
- *  This file is part of laser_altimeter.
+ *  This file is part of pressure_altimeter.
  *
  *	Created on: 24/08/2014
  */
 
-#include <ros/ros.h>
-#include <laser_altimeter/node.hpp>
+#include <pressure_altimeter/node.hpp>
 
 int main(int argc, char **argv) {
-  ros::init(argc, argv, "laser_altimeter");
+  ros::init(argc,argv,"pressure_altimeter");
   ros::NodeHandle nh("~");
-  galt::laser_altimeter::Node node(nh);
+  galt::pressure_altimeter::Node node(nh);
   ros::spin();
   return 0;
 }

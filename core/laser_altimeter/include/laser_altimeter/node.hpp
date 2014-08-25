@@ -34,32 +34,32 @@ public:
    * @brief Attaches required callbacks to node handle.
    * @param nh A private node handle.
    */
-  Node(const ros::NodeHandle& nh);
+  Node(const ros::NodeHandle &nh);
+
 private:
   ros::NodeHandle nh_;
   ros::Publisher pubHeight_;
-  
+
   double angle_min_;
   double angle_max_;
   kr::quatd iQl_; /// laser to IMU rotation
   kr::vec3d iPl_; /// position of laser in imu
-  
+
   message_filters::Subscriber<sensor_msgs::Imu> subImu_;
   message_filters::Subscriber<sensor_msgs::LaserScan> subScan_;
- 
+
   using TimeSyncPolicy = message_filters::sync_policies::ApproximateTime<
-    sensor_msgs::Imu,
-    sensor_msgs::LaserScan>;
+      sensor_msgs::Imu, sensor_msgs::LaserScan>;
   using Synchronizer = message_filters::Synchronizer<TimeSyncPolicy>;
-  
+
   std::shared_ptr<Synchronizer> sync_;
-  
+
   /**
-   * @brief Correct Lidar to world frame with IMU, then publish a height 
+   * @brief Correct Lidar to world frame with IMU, then publish a height
    * estimate.
    */
-  void syncCallback(const sensor_msgs::ImuConstPtr&,
-                    const sensor_msgs::LaserScanConstPtr&);
+  void syncCallback(const sensor_msgs::ImuConstPtr &,
+                    const sensor_msgs::LaserScanConstPtr &);
 };
 
 } //  laser_altimeter

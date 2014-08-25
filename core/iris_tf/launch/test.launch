@@ -1,0 +1,26 @@
+<launch>
+    <arg name="rviz" default="true"/>
+
+    <!--rosbag-->
+    <node pkg="rosbag" type="play" name="player" output="log"
+        args="/media/chao/Seagate/bag/day2/walk/2014-07-25-22-53-42.bag">
+    </node>
+
+    <!--laser_filter-->
+    <include file="$(find galt_setup)/launch/scan_filter.launch">
+    </include>
+
+    <!--gps_kf-->
+    <include file="$(find gps_kf)/launch/gps_kf.launch">
+    </include>
+
+    <!--iris_tf-->
+    <include file="$(find iris_tf)/launch/node.launch">
+    </include>
+
+    <!--rviz-->
+    <node if="$(arg rviz)"
+        name="rviz" pkg="rviz" type="rviz"
+        args="--display-config $(find iris_tf)/rviz/config.rviz">
+    </node>
+</launch>

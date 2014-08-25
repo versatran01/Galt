@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(flir_gige)
 
-add_definitions("-Wall -std=c++11 -Wno-unknown-pragmas")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -Wno-unknown-pragmas")
 
 # Set library paths for pleora ebus sdk on 64-bit linux
 # For more information, see cmake/Findebus.cmake
@@ -22,8 +22,8 @@ find_package(OpenCV)
 
 # Dynamic reconfigure option, as to be placed right before catkin_package
 generate_dynamic_reconfigure_options(
-    cfg/Flir.cfg
-    cfg/ProcDyn.cfg
+    cfg/FlirDyn.cfg
+    cfg/ThermalProcDyn.cfg
     )
 
 catkin_package(
@@ -68,14 +68,6 @@ target_link_libraries(${PROJECT_NAME}_node
     ${PROJECT_NAME}
     )
 
-# nodelet
-add_library(${PROJECT_NAME}_nodelet
-    src/flir_gige_nodelet.cpp
-    )
-target_link_libraries(${PROJECT_NAME}_nodelet
-    ${PROJECT_NAME}
-    )
-
 # thermal proc
 add_library(thermal_proc
     src/thermal_proc/thermal_proc.cpp
@@ -91,25 +83,20 @@ target_link_libraries(thermal_proc_node
     thermal_proc
     )
 
+# nodelet
+add_library(${PROJECT_NAME}_nodelet
+    src/flir_gige_nodelet.cpp
+    src/thermal_proc/thermal_proc_nodelet.cpp
+    )
+target_link_libraries(${PROJECT_NAME}_nodelet
+    ${PROJECT_NAME}
+    thermal_proc
+    )
+
 ## Add cmake target dependencies of the executable/library
-add_dependencies(${PROJECT_NAME}_node
+add_dependencies(${PROJECT_NAME}
     ${catkin_EXPORTED_TARGETS}
+    ${PROJECT_NAME}_gencfg
+    ${PROJECT_NAME}_gencpp
     ${${PROJECT_NAME}_EXPORTED_TARGETS}
     )
-add_dependencies(${PROJECT_NAME}_nodelet
-  ${${PROJECT_NAME}_EXPORTED_TARGETS}
-)
-add_dependencies(thermal_proc_node
-    ${${PROJECT_NAME}_EXPORTED_TARGETS}
-    )
-
-message(STATUS "Test: ${${PROJECT_NAME}_EXPORTED_TARGETS}")
-
-## Add gtest based cpp test }target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_flir.cpp)
-# if(TARGET ${PROJECT_NAME}-test)
-#   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
-# endif()
-
-## Add folders to be run by python nosetests
-# catkin_add_nosetests(test)

@@ -1,5 +1,5 @@
 /*
- * flir_gige_node.cpp
+ * main.cpp
  *  _   _             _           _____         _
  * | \ | | ___  _   _| | ____ _  |_   _|__  ___| |__
  * |  \| |/ _ \| | | | |/ / _` |   | |/ _ \/ __| '_ \
@@ -8,28 +8,19 @@
  *
  *  Copyright (c) 2014 Nouka Technologies. All rights reserved.
  *
- *  This file is part of flir_gige.
+ *  This file is part of thermal_map.
  *
- *	Created on: 21/08/2014
+ *	Created on: 23/08/2014
  */
+
+#include "thermal_map/thermal_map_node.h"
 
 #include <ros/ros.h>
 
-#include "flir_gige/flir_gige.h"
-
 int main(int argc, char **argv) {
-  ros::init(argc, argv, "flir_node");
+  ros::init(argc, argv, "thermal_map");
   ros::NodeHandle nh("~");
 
-  try {
-    flir_gige::FlirGige flir_gige(nh);
-    flir_gige.Run();
-    ros::spin();
-    flir_gige.End();
-  }
-  catch (const std::exception &e) {
-    ROS_ERROR_STREAM(e.what());
-  }
-
-  return 0;
+  galt::thermal_map::ThermalMapNode thermal_map_node(nh);
+  ros::spin();
 }

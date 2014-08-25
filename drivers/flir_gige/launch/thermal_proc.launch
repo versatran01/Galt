@@ -1,13 +1,12 @@
 <launch>
     <arg name="test" default="true"/>
-    <arg name="bag" default="test.bag"/>
+    <arg name="bag" default="/media/chao/Seagate/bag/day2/walk/2014-07-25-22-53-42.bag"/>
 
-    <node if="$(arg test)" pkg="rosbag" type="play" name="thermal_player"
-        output="screen" args="-l $(arg bag)">
+    <node if="$(arg test)" pkg="rosbag" type="play" name="player"
+        output="log" args="-l $(arg bag)">
     </node>
 
     <node pkg="flir_gige" type="thermal_proc_node" name="thermal_proc"
-        output="screen">
-        <remap from="~image_raw" to="/flir_gige/image_raw"/>
+        ns="flir_gige" output="screen">
     </node>
 </launch>

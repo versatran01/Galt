@@ -37,7 +37,7 @@ Node::Node() : nh_("~"), pkgPath_(ros::package::getPath("gps_odom")) {
   if (pkgPath_.empty()) {
     ROS_WARN("Failed to find path for package");
   }
-  
+
   nh_.param("body_frame_id", bodyFrameId_, std::string("/body"));
   nh_.param("world_frame_id", worldFrameId_, std::string("/world"));
   

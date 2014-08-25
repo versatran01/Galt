@@ -20,6 +20,10 @@
     <arg name="laser_scan_topic" value="/hokuyo/scan"/>
   </include>
 
+  <!-- Launch fluid altimeter:
+    * creates /pressure_altimeter/height
+  -->
+
   <!-- launch sam_estimator -->
   <node name="sam_estimator" pkg="sam_estimator" type="sam_estimator"
     output="screen">

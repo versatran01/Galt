@@ -39,7 +39,8 @@ public:
 private:
   ros::NodeHandle nh_;
   ros::Publisher pubHeight_;
-
+  std::string worldFrameId_;
+  
   double angle_min_;
   double angle_max_;
   kr::quatd iQl_; /// laser to IMU rotation

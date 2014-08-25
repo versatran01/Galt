@@ -1,7 +1,7 @@
-#include "thermal_map/rviz_helper.h"
+#include "iris_tf/rviz_helper.h"
 
 namespace galt {
-namespace thermal_map {
+namespace iris_tf {
 
 TrajectoryVisualizer::TrajectoryVisualizer(const ros::Publisher &pub,
                                            const std_msgs::ColorRGBA &color,
@@ -34,5 +34,5 @@ void TrajectoryVisualizer::PublishTrajectory(const geometry_msgs::Point &point,
   pub_.publish(markers_);
 }
 
-}  // namespace thermal_map
+}  // namespace iris_tf
 }  // namespace galt

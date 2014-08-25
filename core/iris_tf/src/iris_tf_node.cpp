@@ -4,6 +4,8 @@
 #include <tf2_ros/transform_broadcaster.h>
 #include <tf2_ros/static_transform_broadcaster.h>
 
+#include "iris_tf/rviz_helper.h"
+
 namespace galt {
 namespace iris_tf {
 /**
@@ -26,13 +28,22 @@ class IrisTransform {
 
   ros::NodeHandle nh_;
   ros::Subscriber sub_odom_;
+  ros::Publisher pub_traj_;
   std::string frame_;
   tf2_ros::TransformBroadcaster broadcaster_;
+  TrajectoryVisualizer viz_traj_;
 };
 
 IrisTransform::IrisTransform(const ros::NodeHandle &nh) : nh_{nh} {
   nh_.param<std::string>("frame", frame_, "imu");
   sub_odom_ = nh_.subscribe("topic", 1, &IrisTransform::OdomCb, this);
+
+  pub_traj_ = nh_.advertise<visualization_msgs::Marker>("trajectory", 1);
+  std_msgs::ColorRGBA traj_color;
+  traj_color.r = 1;
+  traj_color.g = 1;
+  traj_color.a = 1;
+  viz_traj_ = TrajectoryVisualizer(pub_traj_, traj_color, 0.05, "line");
 }
 
 void IrisTransform::OdomCb(const nav_msgs::OdometryConstPtr &odom_msg) {
@@ -52,6 +63,7 @@ void IrisTransform::OdomCb(const nav_msgs::OdometryConstPtr &odom_msg) {
   transform_stamped.transform.rotation = quaternion;
 
   broadcaster_.sendTransform(transform_stamped);
+  viz_traj_.PublishTrajectory(odom_msg->pose.pose.position, odom_msg->header);
 }
 
 }  // namespace iris_tf

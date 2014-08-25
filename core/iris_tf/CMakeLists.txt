@@ -7,6 +7,7 @@ find_package(catkin REQUIRED COMPONENTS
     roscpp
     tf2
     tf2_ros
+    visualization_msgs
     )
 
 catkin_package(
@@ -23,6 +24,7 @@ include_directories(
 
 add_executable(${PROJECT_NAME}_node
     src/iris_tf_node.cpp
+    src/rviz_helper.cpp
     )
 
 target_link_libraries(${PROJECT_NAME}_node

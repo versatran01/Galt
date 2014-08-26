@@ -39,26 +39,26 @@
 # unsets all public (designed to be used externally) variables and reports
 # error message at priority depending upon [REQUIRED/QUIET/<NONE>] argument.
 macro(EBUS_REPORT_NOT_FOUND REASON_MSG)
-  unset(EBUS_FOUND)
-  unset(EBUS_INCLUDE_DIRS)
-  unset(EBUS_LIBRARIES)
-  unset(EBUS_WORLD_VERSION)
-  unset(EBUS_MAJOR_VERSION)
-  unset(EBUS_MINOR_VERSION)
-  # Make results of search visible in the CMake GUI if ebus has not
-  # been found so that user does not have to toggle to advanced view.
-  mark_as_advanced(CLEAR EBUS_INCLUDE_DIR)
-  # Note <package>_FIND_[REQUIRED/QUIETLY] variables defined by FindPackage()
-  # use the camelcase library name, not uppercase.
-  if(Ebus_FIND_QUIETLY)
-    message(STATUS "Failed to find ebus - " ${REASON_MSG} ${ARGN})
-elseif(Ebus_FIND_REQUIRED)
-    message(FATAL_ERROR "Failed to find ebus - " ${REASON_MSG} ${ARGN})
-else()
-    # Neither QUIETLY nor REQUIRED, use no priority which emits a message
-    # but continues configuration and allows generation.
-    message("-- Failed to find ebus - " ${REASON_MSG} ${ARGN})
-endif()
+    unset(EBUS_FOUND)
+    unset(EBUS_INCLUDE_DIRS)
+    unset(EBUS_LIBRARIES)
+    unset(EBUS_WORLD_VERSION)
+    unset(EBUS_MAJOR_VERSION)
+    unset(EBUS_MINOR_VERSION)
+    # Make results of search visible in the CMake GUI if ebus has not
+    # been found so that user does not have to toggle to advanced view.
+    mark_as_advanced(CLEAR EBUS_INCLUDE_DIR)
+    # Note <package>_FIND_[REQUIRED/QUIETLY] variables defined by FindPackage()
+    # use the camelcase library name, not uppercase.
+    if(Ebus_FIND_QUIETLY)
+        message(STATUS "Failed to find ebus - " ${REASON_MSG} ${ARGN})
+    elseif(Ebus_FIND_REQUIRED)
+        message(FATAL_ERROR "Failed to find ebus - " ${REASON_MSG} ${ARGN})
+    else()
+        # Neither QUIETLY nor REQUIRED, use no priority which emits a message
+        # but continues configuration and allows generation.
+        message("-- Failed to find ebus - " ${REASON_MSG} ${ARGN})
+    endif()
 endmacro(EBUS_REPORT_NOT_FOUND)
 
 # Search user-installed locations first, so that we prefer user installs
@@ -72,38 +72,38 @@ list(APPEND EBUS_CHECK_LIBRARY_DIRS
 if(EBUS_HINTS AND EXISTS ${EBUS_HINTS})
     set(EBUS_INCLUDE_DIR_HINTS ${EBUS_HINTS}/include)
     set(EBUS_LIBRARY_DIR_HINTS ${EBUS_HINTS}/lib)
-endif(EBUS_HINTS AND EXISTS ${EBUS_HINTS})
+endif()
 
 # Search supplied hint directories first if supplied.
 # Find include directory for ebus
 find_path(EBUS_INCLUDE_DIR
-  NAMES PvBase.h
-  PATHS ${EBUS_INCLUDE_DIR_HINTS}
-        ${EBUS_CHECK_INCLUDE_DIRS}
-  NO_DEFAULT_PATH)
+    NAMES PvBase.h
+    PATHS ${EBUS_INCLUDE_DIR_HINTS}
+    ${EBUS_CHECK_INCLUDE_DIRS}
+    NO_DEFAULT_PATH)
 if(NOT EBUS_INCLUDE_DIR OR NOT EXISTS ${EBUS_INCLUDE_DIR})
     EBUS_REPORT_NOT_FOUND(
         "Could not find ebus include directory, set EBUS_INCLUDE_DIR to "
         "path to ebus include directory,"
         "e.g. /opt/pleora/ebus_sdk/Ubuntu-12.04-x86_64/include.")
-else(NOT EBUS_INCLUDE_DIR OR NOT EXISTS ${EBUS_INCLUDE_DIR})
+else()
     message(STATUS "ebus include dir found: " ${EBUS_INCLUDE_DIR})
-endif(NOT EBUS_INCLUDE_DIR OR NOT EXISTS ${EBUS_INCLUDE_DIR})
+endif()
 
 # Find library directory for ebus
 find_library(EBUS_LIBRARY
     NAMES PvBase
     PATHS ${EBUS_LIBRARY_DIR_HINTS}
-          ${EBUS_CHECK_LIBRARY_DIRS}
+    ${EBUS_CHECK_LIBRARY_DIRS}
     NO_DEFAULT_PATH)
 if(NOT EBUS_LIBRARY OR NOT EXISTS ${EBUS_LIBRARY})
-  EBUS_REPORT_NOT_FOUND(
-    "Could not find ebus library, set EBUS_LIBRARY "
-    "to full path to ebus library direcotory.")
-else(NOT EBUS_LIBRARY OR NOT EXISTS ${EBUS_LIBRARY})
+    EBUS_REPORT_NOT_FOUND(
+        "Could not find ebus library, set EBUS_LIBRARY "
+        "to full path to ebus library direcotory.")
+else()
     # TODO: need to fix this hacky solution for getting EBUS_LIBRARY_DIR
     string(REGEX MATCH ".*/" EBUS_LIBRARY_DIR ${EBUS_LIBRARY})
-endif(NOT EBUS_LIBRARY OR NOT EXISTS ${EBUS_LIBRARY})
+endif()
 
 # Mark internally as found, then verify. EBUS_REPORT_NOT_FOUND() unsets if
 # called.
@@ -118,7 +118,7 @@ if(EBUS_LIBRARY_DIR)
     # string(REGEX MATCH ""
     #       EBUS_WORLD_VERSION ${EBUS_PVBASE})
     # message(STATUS "ebus world version: " ${EBUS_WORLD_VERSION})
-endif(EBUS_LIBRARY_DIR)
+endif()
 
 # Catch case when caller has set EBUS_INCLUDE_DIR in the cache / GUI and
 # thus FIND_[PATH/LIBRARY] are not called, but specified locations are
@@ -127,23 +127,23 @@ if(EBUS_INCLUDE_DIR AND NOT EXISTS ${EBUS_INCLUDE_DIR}/PvBase.h)
     EBUS_REPORT_NOT_FOUND("Caller defined EBUS_INCLUDE_DIR: "
         ${EBUS_INCLUDE_DIR}
         " does not contain PvBase.h header.")
-endif(EBUS_INCLUDE_DIR AND NOT EXISTS ${EBUS_INCLUDE_DIR}/PvBase.h)
+endif()
 
 # Set standard CMake FindPackage variables if found.
 if(EBUS_FOUND)
     set(EBUS_INCLUDE_DIRS ${EBUS_INCLUDE_DIR})
     file(GLOB EBUS_LIBRARIES ${EBUS_LIBRARY_DIR}libPv*.so)
-endif(EBUS_FOUND)
+endif()
 
 # Handle REQUIRED / QUIET optional arguments.
 include(FindPackageHandleStandardArgs)
 if(EBUS_FOUND)
     FIND_PACKAGE_HANDLE_STANDARD_ARGS(Ebus DEFAULT_MSG
         EBUS_INCLUDE_DIRS EBUS_LIBRARIES)
-endif(EBUS_FOUND)
+endif()
 
 # Only mark internal variables as advanced if we found ebus, otherwise
 # leave it visible in the standard GUI for the user to set manually.
 if(EBUS_FOUND)
     mark_as_advanced(FORCE EBUS_INCLUDE_DIR EBUS_LIBRARY)
-endif(EBUS_FOUND)
+endif()

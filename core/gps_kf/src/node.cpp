@@ -52,6 +52,10 @@ void Node::initialize() {
 
 void Node::imuCallback(const sensor_msgs::ImuConstPtr& imu) {
   
+  if (!initialized_) {
+    return; //  wait for first GPS
+  }
+  
   //  TODO: change underlying node to use m/s^2
   kr::vec3d accel;
   accel[0] = imu->linear_acceleration.x * kOneG;
@@ -154,9 +158,14 @@ void Node::odoCallback(const nav_msgs::OdometryConstPtr& odometry) {
   const double f = std::min(std::max(1-magv,0.0),1.0);
   const double scale = 1.0 + 15*(3*f*f - 2*f*f*f);
   varV *= scale;
-    
-  if (!positionKF_.update(q,varQ,p,varP,v,varV)) {
-    ROS_WARN("Warning: Kalman gain was singular in update");
+  
+  if (!initialized_) {
+    initialized_ = true;
+    positionKF_.initState(q,p,v);
+  } else {
+    if (!positionKF_.update(q,varQ,p,varP,v,varV)) {
+      ROS_WARN("Warning: Kalman gain was singular in update");
+    }
   }
 }
 

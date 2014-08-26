@@ -11,6 +11,7 @@
   <node name="laser_altimeter" pkg="laser_altimeter" type="laser_altimeter"
     output="screen">
     <param name="queue_size" type="int" value="$(arg queue_size)"/>
+    <param name="world_frame_id" type="string" value="/world"/>
 
     <remap from="~imu" to="$(arg imu_topic)"/>
     <remap from="~laser_scan" to="$(arg laser_scan_topic)"/>

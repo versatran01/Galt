@@ -31,35 +31,27 @@ public:
    * @brief Load parameters from ROS param and subscribe to fluid pressure.
    * @param nh Private node handle.
    */
-  Node(const ros::NodeHandle& nh);
+  Node(const ros::NodeHandle &nh);
+
 private:
-  
   /**
    * @brief Receive pressure message and convert to height.
    * @param pressure
    */
-  void pressureCallback(const sensor_msgs::FluidPressure& pressure);
-  
+  void pressureCallback(const sensor_msgs::FluidPressureConstPtr &pressure);
+
   ros::NodeHandle nh_;
   ros::Subscriber subPressure_;
   ros::Publisher pubHeight_;
-  
-  //  Physical constants (refer to Wikipedia)
-//  double kP0 = 101325;    //  Pressure at sea level (Pa)
-//  double kL = 0.0065;     //  Temperature lapse rate (K/m)
-//  double kT0 = 288.15;    //  Sea level standard temperature (K)
-//  double kG = 9.80665;    //  Gravitational acceleration (m/s^2)
-//  double kM = 0.0289644;  //  Molar mass of dry air (kg / mol)
-//  double kR = 8.31447;    //  Universal gas constant J/(mol * K)
-    
-//    const double c = kG*kM/(kR*kL);
-    
-//    //  convert from millibar to pascals
-//    const double pressurePA = fluidPressure->fluid_pressure * 100;
-    
-//    //  calculate height from barometer
-//    const double lhs = std::log(pressurePA / kP0) * (1 / c);
-//    const double h = (1 - std::exp(lhs)) * kT0 / kL;  
+  std::string worldFrameId_;
+
+  //  Physical constants (refer to Wikipedia for significance)
+  constexpr static double kP0 = 101325;   //  Pressure at sea level (Pa)
+  constexpr static double kT0 = 288.15;   //  Temperature at sea level (K)
+  constexpr static double kL = 0.0065;    //  Temperature lapse rate (K/m)
+  constexpr static double kG = 9.80665;   //  Gravitational acceleration (m/s^2)
+  constexpr static double kM = 0.0289644; //  Molar mass of dry air (kg / mol)
+  constexpr static double kR = 8.31447;   //  Universal gas constant J/(mol * K)
 };
 
 } //  pressure_altimeter

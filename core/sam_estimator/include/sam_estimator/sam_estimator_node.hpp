@@ -24,7 +24,8 @@
 #include <sensor_msgs/LaserScan.h>
 #include <nav_msgs/Odometry.h>
 #include <geometry_msgs/PoseStamped.h>
-#include <geometry_msgs/PoseWithCovarianceStamped.h>
+
+#include <laser_altimeter/Height.h>
 
 namespace galt {
 namespace sam_estimator {
@@ -39,26 +40,27 @@ private:
 
   SamEstimator::Ptr estimator_;
   Visualizer::Ptr visualizer_;
-  
-  double gps_time_delta_;
-  
+    
   //  ROS objects
   ros::NodeHandle nh_;
   ros::Subscriber sub_gps_;
   ros::Subscriber sub_imu_;
-  ros::Subscriber sub_stereo_;
-  ros::Subscriber sub_laser_;
-  ros::Publisher pub_pose_;
-  ros::Publisher pub_marker_;
+  ros::Subscriber sub_vo_;
+  ros::Subscriber sub_laser_height_;
+  ros::Publisher pub_odometry_;
 
+  //  State
+  double init_height_;
+  double prev_imu_time_;
+  
   //  ROS callbacks
   void GpsCallback(const nav_msgs::OdometryConstPtr& odometry_msg);
 
   void ImuCallback(const sensor_msgs::ImuConstPtr& imu_msg);
 
-  void StereoCallback(const geometry_msgs::PoseStampedConstPtr& pose_msg);
+  void VisualOdometryCallback(const geometry_msgs::PoseStampedConstPtr& pose_msg);
 
-  void LaserCallback(const sensor_msgs::LaserScanConstPtr& laser_msg);
+  void LaserHeightCallback(const laser_altimeter::HeightConstPtr& height_msg);
 };
 }
 }

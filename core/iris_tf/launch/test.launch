@@ -7,7 +7,7 @@
     </node>
 
     <!--laser_filter-->
-    <include file="$(find galt_setup)/launch/scan_filter.launch">
+    <include file="$(find galt_setup)/launch/laser_filter.launch">
     </include>
 
     <!--gps_kf-->

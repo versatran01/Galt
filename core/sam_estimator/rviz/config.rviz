@@ -207,6 +207,16 @@ Visualization Manager:
       Use Fixed Frame: true
       Use rainbow: true
       Value: false
+    - Angle Tolerance: 0.1
+      Class: rviz/Odometry
+      Color: 0; 0; 255
+      Enabled: true
+      Keep: 100
+      Length: 1
+      Name: Odometry
+      Position Tolerance: 0.1
+      Topic: /gps_kf/odometry
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -230,7 +240,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 291.827
+      Distance: 55.386
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
@@ -242,10 +252,10 @@ Visualization Manager:
         Z: -11.8334
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.3848
+      Pitch: 0.9048
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 3.17361
+      Yaw: 2.56361
     Saved: ~
 Window Geometry:
   Displays:

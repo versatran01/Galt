@@ -26,7 +26,6 @@ include_directories(
 add_definitions(${GeographicLib_DEFINITIONS})
 
 add_executable(${PROJECT_NAME}
-  src/altitude_kf.cpp
   src/main.cpp
   src/node.cpp
 )

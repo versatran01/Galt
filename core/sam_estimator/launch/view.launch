@@ -28,6 +28,7 @@
     <param name="output_path" type="string" value="$(env HOME)/.ros/2014-07-24-15-48-44"/>
     <remap from="~gps_odom" to="/gps_odom/odometry"/>
     <remap from="~sam_odom" to="/sam_estimator/odometry"/>
+    <remap from="~height" to="/laser_altimeter/height"/>
   </node>
 
   <!-- TODO: launch rviz and rqt -->

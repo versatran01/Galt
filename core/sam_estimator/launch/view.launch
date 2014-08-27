@@ -1,12 +1,13 @@
 <launch>
 
-  <arg name="bagfile_home" value="$(env GALT_BAGFILES)"/>
-  <arg name="bagfile" default="day1/noon/2014-07-24-15-48-44.bag"/>
+  <arg name="bagfile_home" value="$(env GALT_BAGFILES)/day1/noon"/>
+  <arg name="bagfile" default="2014-07-24-15-48-44"/>
   <arg name="bagfile_start" default="95"/>
+  <arg name="csv_dump" default="true"/>
 
   <!-- start bagfile playback -->
   <node pkg="rosbag" type="play" name="player"
-        args="-s $(arg bagfile_start) -r 1 $(arg bagfile_home)/$(arg bagfile)">
+        args="-s $(arg bagfile_start) -r 1 $(arg bagfile_home)/$(arg bagfile).bag">
   </node>
 
   <!-- laser scan filter -->
@@ -16,9 +17,17 @@
   <include file="$(find sam_estimator)/launch/sam_estimator.launch"/>
 
   <!-- launch disparity -->
-  <node if="true"
+  <node if="false"
       pkg="image_view" type="stereo_view" name="stereo_view"
       args="stereo:=/mv_stereo image:=image_rect">
+  </node>
+
+  <!-- launch CSV output node -->
+  <node if="$(arg csv_dump)"
+    pkg="path_capture" type="path_capture" name="path_capture">
+    <param name="output_path" type="string" value="$(env HOME)/.ros/2014-07-24-15-48-44"/>
+    <remap from="~gps_odom" to="/gps_odom/odometry"/>
+    <remap from="~sam_odom" to="/sam_estimator/odometry"/>
   </node>
 
   <!-- TODO: launch rviz and rqt -->

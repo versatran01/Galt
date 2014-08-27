@@ -141,6 +141,7 @@ void Node::syncCallback(const sensor_msgs::ImuConstPtr &imuMsg,
     mean2 += h * h;
   }
   mean /= heights.size();
+  mean2 /= heights.size();
   const double var = mean2 - mean * mean;
 
   //  publish

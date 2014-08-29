@@ -39,13 +39,26 @@ using sensor_msgs::CameraInfoPtr;
 using camera_info_manager::CameraInfoManager;
 
 FlirGige::FlirGige(const ros::NodeHandle &nh)
-    : nh_{nh}, it_{nh}, server_{nh} {
+    : nh_{nh},
+      it_{nh},
+      pub_camera_{it_.advertiseCamera("image_raw", 1)},
+      pub_temperature_{nh_.advertise<sensor_msgs::Temperature>("spot", 1)},
+      server_{nh} {
   // Get ros parameteres
   double fps;
   nh_.param<double>("fps", fps, 20.0);
   ROS_ASSERT_MSG(fps > 0, "FlirGige: fps must be greater than 0");
-  nh_.param<std::string>("frame_id", frame_id_, std::string("flir_a5"));
   rate_.reset(new ros::Rate(fps));
+
+  // Setup up camera info manager
+  nh_.param<std::string>("frame_id", camera_name_, std::string("flir_a5"));
+  std::string calib_url;
+  nh_.param<std::string>("calib_url", calib_url, "");
+
+  cinfo_manager_.reset(new CameraInfoManager(nh_, camera_name_, calib_url));
+
+  // Setup camera dynamic reconfigure callback
+  server_.setCallback(boost::bind(&FlirGige::ConfigCb, this, _1, _2));
 
   // Create a camera
   std::string ip_address;
@@ -56,19 +69,6 @@ FlirGige::FlirGige(const ros::NodeHandle &nh)
                 std::placeholders::_2);
   gige_camera_->use_temperature =
       std::bind(&FlirGige::PublishTemperature, this, std::placeholders::_1);
-
-  // Setup camera publisher and dynamic reconfigure callback
-  std::string calib_url;
-  nh_.param<std::string>("calib_url", calib_url, "");
-  cinfo_manager_.reset(new CameraInfoManager(nh_, frame_id_, calib_url));
-  if (!cinfo_manager_->isCalibrated()) {
-    ROS_WARN_STREAM("FlirGige: " << frame_id_ << " not calibrated");
-  }
-  cinfo_ = CameraInfoPtr(new CameraInfo(cinfo_manager_->getCameraInfo()));
-
-  pub_camera_ = it_.advertiseCamera("image_raw", 1);
-  pub_temperature_ = nh_.advertise<sensor_msgs::Temperature>("spot", 1);
-  server_.setCallback(boost::bind(&FlirGige::ConfigCb, this, _1, _2));
 }
 
 void FlirGige::Run() {
@@ -130,7 +130,7 @@ std::string FlirGige::GetImageEncoding(const cv::Mat &image) const {
   return encoding;
 }
 
-void FlirGige::ConfigCb(DynConfig &config, int level) {
+void FlirGige::ConfigCb(FlirDynConfig &config, int level) {
   // Do nothing when first starting
   if (level < 0) {
     return;

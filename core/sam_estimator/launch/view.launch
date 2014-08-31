@@ -42,6 +42,9 @@
     <remap from="~odometry_in" to="/sam_estimator/odometry"/>
   </node>
 
-  <!-- TODO: launch rviz and rqt -->
+  <!-- Launch tf generator -->
+  <include file="$(find iris_tf)/launch/node.launch">
+    <arg name="topic" value="/path_replay/odometry"/>
+  </include>
 
 </launch>

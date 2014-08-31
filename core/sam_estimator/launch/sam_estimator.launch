@@ -28,9 +28,4 @@
     <remap from="~vo_pose" to="/mv_stereo/stereo_vo/pose"/>
     <remap from="~laser_height" to="/laser_altimeter/height"/>
   </node>
-
-  <!-- Launch tf generator -->
-  <include file="$(find iris_tf)/launch/node.launch">
-    <arg name="topic" value="/sam_estimator/odometry"/>
-  </include>
 </launch>

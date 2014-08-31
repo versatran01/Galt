@@ -27,12 +27,12 @@ namespace imu_covariance {
 
 class Node {
 public:
-  Node(const ros::NodeHandle& nh);
-  
+  Node(const ros::NodeHandle &nh);
+
 private:
   //  number of items in the input queues
   static constexpr int kROSQueueSize = 10;
-  
+
   ros::NodeHandle nh_;
   ros::Subscriber subImu_;
   ros::Subscriber subMagneticField_;
@@ -40,19 +40,20 @@ private:
   ros::Publisher pubImu_;
   ros::Publisher pubMagneticField_;
   ros::Publisher pubPressure_;
-  
+
   //  standard deviations on noise for each sensor
   kr::vec3d accelStd_;
   kr::vec3d gyroStd_;
   kr::vec3d fieldStd_;
   double pressureStd_;
-  
-  void imuCallback(const sensor_msgs::ImuConstPtr& imuMsg);
-  void magneticFieldCallback(const sensor_msgs::MagneticFieldConstPtr& magMsg);
-  void fluidPressureCallback(const sensor_msgs::FluidPressureConstPtr& pressureMsg);
+
+  void imuCallback(const sensor_msgs::ImuConstPtr &imuMsg);
+  void magneticFieldCallback(const sensor_msgs::MagneticFieldConstPtr &magMsg);
+  void
+  fluidPressureCallback(const sensor_msgs::FluidPressureConstPtr &pressureMsg);
 };
 
 } //  imu_covariance
 } //  galt
 
-#endif  //  GALT_IMU_COVARIANCE_NODE_HPP_
+#endif //  GALT_IMU_COVARIANCE_NODE_HPP_

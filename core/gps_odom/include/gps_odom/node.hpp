@@ -28,8 +28,6 @@
 #include <GeographicLib/MagneticModel.hpp>
 #include <GeographicLib/LocalCartesian.hpp>
 
-#include <gps_odom/altitude_kf.hpp>
-
 #include <memory>
 
 namespace gps_odom {

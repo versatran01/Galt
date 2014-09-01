@@ -25,7 +25,7 @@
         /spectrometer/spectrum
         /ublox_gps/fix
         /ublox_gps/fix_velocity
-        /ublox_gps/ublox/navposllh
-        /ublox_gps/ublox/navstatus
-        /ublox_gps/ublox/navvelned"/>
+        /ublox_gps/navposllh
+        /ublox_gps/navstatus
+        /ublox_gps/navvelned"/>
 </launch>

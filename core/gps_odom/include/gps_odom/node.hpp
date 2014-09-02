@@ -20,9 +20,12 @@
 #include <sensor_msgs/NavSatFix.h>
 #include <sensor_msgs/NavSatStatus.h>
 #include <geometry_msgs/Vector3Stamped.h>
+#include <geometry_msgs/TwistWithCovarianceStamped.h>
 #include <message_filters/subscriber.h>
 #include <message_filters/sync_policies/exact_time.h>
 #include <message_filters/sync_policies/approximate_time.h>
+
+#include <pressure_altimeter/Height.h>
 
 #include <GeographicLib/Geoid.hpp>
 #include <GeographicLib/MagneticModel.hpp>
@@ -45,8 +48,8 @@ private:
   
   ros::NodeHandle nh_;
   std::string pkgPath_;
-  std::string bodyFrameId_;
-  std::string worldFrameId_;
+  std::string childFrameId_;
+  std::string frameId_;
   ros::Publisher pubOdometry_;
   ros::Publisher pubImu_;
   
@@ -60,23 +63,22 @@ private:
   
   std::shared_ptr<SynchronizerIMU> syncImu_;
   
-  void imuCallback(const sensor_msgs::ImuConstPtr&,
-                   const sensor_msgs::FluidPressureConstPtr&);
+  void imuCallback(const sensor_msgs::ImuConstPtr&);
   
   message_filters::Subscriber<sensor_msgs::NavSatFix> subFix_;
-  message_filters::Subscriber<geometry_msgs::Vector3Stamped> subFixVelocity_;
+  message_filters::Subscriber<geometry_msgs::TwistWithCovarianceStamped> subFixTwist_;
   
   //  time sync policy for GPS data
   using TimeSyncGPS = message_filters::sync_policies::ApproximateTime<
     sensor_msgs::NavSatFix, 
-    geometry_msgs::Vector3Stamped,
+    geometry_msgs::TwistWithCovarianceStamped,
     sensor_msgs::Imu>;
   using SynchronizerGPS = message_filters::Synchronizer<TimeSyncGPS>;
   
   std::shared_ptr<SynchronizerGPS> syncGps_;
   
   void gpsCallback(const sensor_msgs::NavSatFixConstPtr&,
-                   const geometry_msgs::Vector3StampedConstPtr&,
+                   const geometry_msgs::TwistWithCovarianceStampedConstPtr &navSatTwist,
                    const sensor_msgs::ImuConstPtr&);
   
   //  geographic lib objects
@@ -86,10 +88,6 @@ private:
   bool refSet_;
   GeographicLib::LocalCartesian refPoint_;
   double currentDeclination_;
-  
-  double hAcc_;  //  default horizontal accuracy
-  double vAcc_;  //  default vertical accuracy
-  double sAcc_;  //  default speed accuracy
 };
 
 } //  namespace_gps_odom

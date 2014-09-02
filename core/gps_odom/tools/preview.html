@@ -25,7 +25,8 @@
                 
         <script type="text/javascript">
         
-            var map = L.map('map').setView([38.350991, -121.2490313], 18);
+            var map = L.map('map'); //.setView([38.350991, -121.2490313], 18);
+            var firstGps = true;
             
             //  marker for GPS waypoints
             var redCircleIcon = L.icon({
@@ -35,6 +36,10 @@
             });
             
             function gpsCallback(message) {
+                if (firstGps) {
+                    map.setView([message.latitude, message.longitude], 18);
+                    firstGps = false;
+                }
                 //  add a red circle to the map
                 L.marker([message.latitude, message.longitude], {icon: redCircleIcon}).addTo(map);
             }

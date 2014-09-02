@@ -11,31 +11,14 @@
 
 #include <gps_kf/node.hpp>
 #include <geometry_msgs/PoseStamped.h>
+#include <eigen_conversions/eigen_msg.h>
 
 namespace gps_kf {
 
 Node::Node() : nh_("~") {
-  
-  //  load noise parameters
-  double stdGyro[3],stdAccel[3];
-  
-  nh_.param("noise_std/accel/x",stdAccel[0], 7.0);
-  nh_.param("noise_std/accel/y",stdAccel[1], 7.0);
-  nh_.param("noise_std/accel/z",stdAccel[2], 7.0);
-  
-  nh_.param("noise_std/gyro/x",stdGyro[0], 0.01);
-  nh_.param("noise_std/gyro/y",stdGyro[1], 0.01);
-  nh_.param("noise_std/gyro/z",stdGyro[2], 0.01);
-  
-  varAccel_.setZero();
-  varGyro_.setZero();
-  for (int i=0; i < 3; i++) {
-   varAccel_(i,i) = stdAccel[i]*stdAccel[i];
-   varGyro_(i,i) = stdGyro[i]*stdGyro[i];
-  }
-  
-  nh_.param("world_frame_id", worldFrameId_, std::string("/world"));
-  nh_.param("body_frame_id", bodyFrameId_, std::string("/body"));
+  /// @todo: figureo out to with these...
+  nh_.param<std::string>("frame_id", frameId_, "imu");
+  nh_.param<std::string>("child_frame_id", childFrameId_, "world");
 }
 
 void Node::initialize() {
@@ -46,8 +29,6 @@ void Node::initialize() {
   subOdometry_ = nh_.subscribe("gps_odom", 1, &Node::odoCallback, this);
   
   predictTime_ = ros::Time(0,0);
-  
-  oldAccel = kr::vec3d(0.0,0.0,0.0);
 }
 
 void Node::imuCallback(const sensor_msgs::ImuConstPtr& imu) {
@@ -56,22 +37,29 @@ void Node::imuCallback(const sensor_msgs::ImuConstPtr& imu) {
     return; //  wait for first GPS
   }
   
-  //  TODO: change underlying node to use m/s^2
   kr::vec3d accel;
-  accel[0] = imu->linear_acceleration.x * kOneG;
-  accel[1] = imu->linear_acceleration.y * kOneG;
-  accel[2] = imu->linear_acceleration.z * kOneG;
+  kr::mat3d varAccel;
+  tf::vectorMsgToEigen(imu->linear_acceleration, accel);
   
   kr::vec3d gyro;
-  gyro[0] = imu->angular_velocity.x;
-  gyro[1] = imu->angular_velocity.y;
-  gyro[2] = imu->angular_velocity.z;
+  kr::mat3d varGyro;
+  tf::vectorMsgToEigen(imu->angular_velocity, gyro);
   
   kr::quatd wQb;
-  wQb.w() = imu->orientation.w;
-  wQb.x() = imu->orientation.x;
-  wQb.y() = imu->orientation.y;
-  wQb.z() = imu->orientation.z;
+  kr::mat3d varRot;
+  tf::quaternionMsgToEigen(imu->orientation, wQb);
+  
+  for (int i=0; i < 3; i++) {
+    for (int j=0; j < 3; j++) {
+      varAccel(i,j) = imu->linear_acceleration_covariance[i*3 + j];
+      varGyro(i,j) = imu->angular_velocity_covariance[i*3 + j];
+      varRot(i,j) = imu->orientation_covariance[i*3 + j];
+    }
+  }
+  
+  //std::cout << "Input accel: " << varAccel << std::endl;
+  //std::cout << "Input gyro: " << varGyro << std::endl;
+  //std::cout << "Input rot: " << varRot << std::endl;
   
   double delta = 0.0;
   if (predictTime_.sec != 0) {
@@ -80,30 +68,28 @@ void Node::imuCallback(const sensor_msgs::ImuConstPtr& imu) {
   predictTime_ = imu->header.stamp;
   
   //  predict
-  positionKF_.setBiasUncertainties(0, 0.0);
-  positionKF_.predict(gyro,varGyro_,accel,varAccel_,delta);
+  positionKF_.setBiasUncertainties(0.0, 1.0);
+  positionKF_.predict(gyro,varGyro,accel,varAccel,delta);
   
-  auto P = positionKF_.getCovariance();
+  //  output covariance
+  const kr::mat<double,15,15>& P = positionKF_.getCovariance();
+  
+  //std::cout << "P:" << P << std::endl << std::endl;
   
   //  publish odometry
   nav_msgs::Odometry odo;
   odo.header.stamp = imu->header.stamp;
-  odo.header.frame_id = worldFrameId_;
-  odo.child_frame_id = bodyFrameId_;
+  odo.header.frame_id = frameId_;
+  odo.child_frame_id = childFrameId_;
   
-  odo.pose.pose.position.x = positionKF_.getPosition()[0];
-  odo.pose.pose.position.y = positionKF_.getPosition()[1];
-  odo.pose.pose.position.z = positionKF_.getPosition()[2];
-  odo.pose.pose.orientation.w = positionKF_.getOrientation().w();
-  odo.pose.pose.orientation.x = positionKF_.getOrientation().x();
-  odo.pose.pose.orientation.y = positionKF_.getOrientation().y();
-  odo.pose.pose.orientation.z = positionKF_.getOrientation().z();
+  tf::pointEigenToMsg(positionKF_.getPosition(), odo.pose.pose.position);
+  tf::quaternionEigenToMsg(positionKF_.getOrientation(), odo.pose.pose.orientation);
   
   static ros::Publisher pubPoseStamped = nh_.advertise<geometry_msgs::PoseStamped>("debug_pose", 1);
-  geometry_msgs::PoseStamped ps;
+   geometry_msgs::PoseStamped ps;
   ps.pose = odo.pose.pose;
   ps.header.stamp = imu->header.stamp;
-  ps.header.frame_id = worldFrameId_;
+  ps.header.frame_id = frameId_;
   pubPoseStamped.publish(ps);
   
   //  top left 3x3 (filter) and bottom right 3x3 (from imu)
@@ -114,9 +100,7 @@ void Node::imuCallback(const sensor_msgs::ImuConstPtr& imu) {
     }
   }
   
-  odo.twist.twist.linear.x = positionKF_.getVelocity()[0];
-  odo.twist.twist.linear.y = positionKF_.getVelocity()[1];
-  odo.twist.twist.linear.z = positionKF_.getVelocity()[2];
+  tf::vectorEigenToMsg(positionKF_.getVelocity(), odo.twist.twist.linear);
   odo.twist.twist.angular = imu->angular_velocity;
   
   //  same as above copy
@@ -132,17 +116,13 @@ void Node::imuCallback(const sensor_msgs::ImuConstPtr& imu) {
 
 void Node::odoCallback(const nav_msgs::OdometryConstPtr& odometry) {
   
+  static ros::Time firstTs = odometry->header.stamp;
+  
   kr::vec3d p,v;
-  kr::quatd q = kr::quatd(odometry->pose.pose.orientation.w,
-                          odometry->pose.pose.orientation.x,
-                          odometry->pose.pose.orientation.y,
-                          odometry->pose.pose.orientation.z);
-  p[0] = odometry->pose.pose.position.x;
-  p[1] = odometry->pose.pose.position.y;
-  p[2] = odometry->pose.pose.position.z;
-  v[0] = odometry->twist.twist.linear.x;
-  v[1] = odometry->twist.twist.linear.y;
-  v[2] = odometry->twist.twist.linear.z;
+  kr::quatd q;
+  tf::quaternionMsgToEigen(odometry->pose.pose.orientation, q);
+  tf::pointMsgToEigen(odometry->pose.pose.position, p);
+  tf::vectorMsgToEigen(odometry->twist.twist.linear, v);
   
   kr::mat3d varP,varV,varQ;
   for (int i=0; i < 3; i++) {
@@ -153,19 +133,20 @@ void Node::odoCallback(const nav_msgs::OdometryConstPtr& odometry) {
     }
   }
   
-  //  scale up velocity variance as velocity decreases
-  const double magv = v.norm();
-  const double f = std::min(std::max(1-magv,0.0),1.0);
-  const double scale = 1.0 + 15*(3*f*f - 2*f*f*f);
-  varV *= scale;
+  //std::cout << "Input pos: " << varP << std::endl;
+  //std::cout << "Input rot: " << varQ << std::endl;
+  //std::cout << "Input vel: " << varV << std::endl;
   
-  if (!initialized_) {
+  if (!initialized_ && (odometry->header.stamp - firstTs).toSec() > 3) {
     initialized_ = true;
     positionKF_.initState(q,p,v);
+    positionKF_.initCovariance(1e-3, 0.0, 0.2, 0.5, 5.0);
   } else {
     if (!positionKF_.update(q,varQ,p,varP,v,varV)) {
       ROS_WARN("Warning: Kalman gain was singular in update");
     }
+    
+    std::cout << "Ba: " << positionKF_.getAccelBias().transpose() << std::endl;
   }
 }
 

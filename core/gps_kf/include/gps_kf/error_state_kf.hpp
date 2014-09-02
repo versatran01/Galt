@@ -250,7 +250,7 @@ bool ErrorStateKF<Scalar>::update(const kr::quat<Scalar> &qm,
   H.template block<3, 3>(6, 6).setIdentity();
 
   //  orientation
-  H.template block<3, 3>(0, 0).setIdentity();
+  //H.template block<3, 3>(0, 0).setIdentity();
 
   // residual
   kr::mat<Scalar, 9, 1> r;

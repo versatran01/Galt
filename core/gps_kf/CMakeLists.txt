@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 2.8.3)
 project(gps_kf)
 
 find_package(catkin REQUIRED COMPONENTS
+  eigen_conversions
   geometry_msgs
   kr_math
   nav_msgs
@@ -26,4 +27,8 @@ add_executable(${PROJECT_NAME}
 
 target_link_libraries(${PROJECT_NAME}
   ${catkin_LIBRARIES}
+)
+
+add_dependencies(${PROJECT_NAME}
+  ${catkin_EXPORTED_TARGETS}
 )

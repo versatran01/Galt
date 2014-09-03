@@ -51,35 +51,25 @@ private:
   std::string childFrameId_;
   std::string frameId_;
   ros::Publisher pubOdometry_;
-  ros::Publisher pubImu_;
   
-  message_filters::Subscriber<sensor_msgs::Imu> subImu_;
-  message_filters::Subscriber<sensor_msgs::FluidPressure> subPressure_;
-  
-  //  time sync policy for IMU data
-  using TimeSyncIMU = message_filters::sync_policies::ExactTime<
-    sensor_msgs::Imu, sensor_msgs::FluidPressure>;
-  using SynchronizerIMU = message_filters::Synchronizer<TimeSyncIMU>;
-  
-  std::shared_ptr<SynchronizerIMU> syncImu_;
-  
-  void imuCallback(const sensor_msgs::ImuConstPtr&);
-  
+  message_filters::Subscriber<sensor_msgs::Imu> subImu_;    
   message_filters::Subscriber<sensor_msgs::NavSatFix> subFix_;
   message_filters::Subscriber<geometry_msgs::TwistWithCovarianceStamped> subFixTwist_;
+  message_filters::Subscriber<pressure_altimeter::Height> subHeight_;
   
   //  time sync policy for GPS data
   using TimeSyncGPS = message_filters::sync_policies::ApproximateTime<
     sensor_msgs::NavSatFix, 
     geometry_msgs::TwistWithCovarianceStamped,
-    sensor_msgs::Imu>;
+    sensor_msgs::Imu,
+    pressure_altimeter::Height>;
   using SynchronizerGPS = message_filters::Synchronizer<TimeSyncGPS>;
-  
   std::shared_ptr<SynchronizerGPS> syncGps_;
   
   void gpsCallback(const sensor_msgs::NavSatFixConstPtr&,
                    const geometry_msgs::TwistWithCovarianceStampedConstPtr &navSatTwist,
-                   const sensor_msgs::ImuConstPtr&);
+                   const sensor_msgs::ImuConstPtr&, 
+                   const pressure_altimeter::HeightConstPtr &height);
   
   //  geographic lib objects
   std::shared_ptr<GeographicLib::Geoid> geoid_;
@@ -87,6 +77,7 @@ private:
   
   bool refSet_;
   GeographicLib::LocalCartesian refPoint_;
+  double refHeight_;
   double currentDeclination_;
 };
 

@@ -9,17 +9,13 @@
  *		  Author: gareth
  */
 
-#include <ros/package.h>
 #include <gps_odom/node.hpp>
+#include <ros/package.h>
 #include <nav_msgs/Odometry.h>
-#include <std_msgs/Float64.h>
-
 #include <kr_math/SO3.hpp>
-
+#include <Eigen/Geometry>
 #include <algorithm>
 #include <cmath>
-
-#include <Eigen/Geometry>
 
 namespace gps_odom {
 
@@ -40,49 +36,25 @@ void Node::initialize() {
  
   //  IMU and GPS are synchronized separately
   subImu_.subscribe(nh_, "imu", kROSQueueSize);  
-//  syncImu_ = std::make_shared<SynchronizerIMU>(TimeSyncIMU(kROSQueueSize), 
-//                                               subImu_, subPressure_);
-//  syncImu_->registerCallback( boost::bind(&Node::imuCallback, this, _1, _2) );
-  
   subFix_.subscribe(nh_, "fix", kROSQueueSize);
   subFixTwist_.subscribe(nh_, "fix_velocity", kROSQueueSize);
+  subHeight_.subscribe(nh_, "pressure_height", kROSQueueSize);
   
   syncGps_ = std::make_shared<SynchronizerGPS>(TimeSyncGPS(kROSQueueSize),
-                                               subFix_, subFixTwist_, subImu_);
-  syncGps_->registerCallback( boost::bind(&Node::gpsCallback, this, _1, _2, _3) );
+                                               subFix_, 
+                                               subFixTwist_, 
+                                               subImu_,
+                                               subHeight_);
+  syncGps_->registerCallback(boost::bind(&Node::gpsCallback,this,_1,_2,_3,_4));
   
   //  advertise odometry as output
   pubOdometry_ = nh_.advertise<nav_msgs::Odometry>("odometry", 1);
-  //pubImu_ = nh_.advertise<sensor_msgs::Imu>("corrected_imu", 1);
-}
-
-void Node::imuCallback(const sensor_msgs::ImuConstPtr& imu) {
-  
-  //  current orientation
-  kr::quatd wQb = kr::quatd(imu->orientation.w, imu->orientation.x,
-                            imu->orientation.y, imu->orientation.z);
-  
-  //  adjust for declination
-  Eigen::AngleAxisd aa;
-  aa.angle() = -currentDeclination_;
-  aa.axis() = Eigen::Vector3d(0.0,0.0,1.0);
-  
-  wQb = aa * wQb;
-  
-  //  re-publish IMU message
-  sensor_msgs::Imu outImu;
-  outImu = *imu;
-  outImu.header.seq = 0;
-  outImu.orientation.w = wQb.w();
-  outImu.orientation.x = wQb.x();
-  outImu.orientation.y = wQb.y();
-  outImu.orientation.z = wQb.z();
-  //pubImu_.publish(outImu);
 }
 
 void Node::gpsCallback(const sensor_msgs::NavSatFixConstPtr& navSatFix,
                        const geometry_msgs::TwistWithCovarianceStampedConstPtr &navSatTwist, 
-                       const sensor_msgs::ImuConstPtr& imu) {
+                       const sensor_msgs::ImuConstPtr& imu,
+                       const pressure_altimeter::HeightConstPtr& height) {
   
   const double lat = navSatFix->latitude;
   const double lon = navSatFix->longitude;
@@ -114,6 +86,7 @@ void Node::gpsCallback(const sensor_msgs::NavSatFixConstPtr& navSatFix,
   //  generate linear coordinates
   if (!refSet_) {
     refPoint_ = GeographicLib::LocalCartesian(lat,lon,0);
+    refHeight_ = height->height;
     refSet_ = true;
   }
   
@@ -128,7 +101,7 @@ void Node::gpsCallback(const sensor_msgs::NavSatFixConstPtr& navSatFix,
   //  calculate corrected yaw angle
   //  matrix composition is of the form wRb = Rz * Ry * Rx
   Eigen::AngleAxisd aa;
-  aa.angle() = -currentDeclination_;
+  aa.angle() = currentDeclination_;
   aa.axis() = Eigen::Vector3d(0.0,0.0,1.0);
   
   kr::quatd wQb = kr::quatd(imu->orientation.w,imu->orientation.x,
@@ -145,7 +118,7 @@ void Node::gpsCallback(const sensor_msgs::NavSatFixConstPtr& navSatFix,
   odometry.pose.pose.orientation.z = wQb.z();
   odometry.pose.pose.position.x = locX;
   odometry.pose.pose.position.y = locY;
-  odometry.pose.pose.position.z = locZ;
+  odometry.pose.pose.position.z = (height->height - refHeight_);
   
   //  generate covariance (6x6 with order: x,y,z,rot_x,rot_y,rot_z)
   kr::mat<double,6,6> poseCovariance;
@@ -155,6 +128,8 @@ void Node::gpsCallback(const sensor_msgs::NavSatFixConstPtr& navSatFix,
       poseCovariance(i,j) = navSatFix->position_covariance[i*3 + j];   
     }
   }
+  //  replace covariance w/ number from altimeter
+  poseCovariance(3,3) = height->variance;
   
   //  orientation: copy from IMU
   for (int i=0; i < 3; i++) {
@@ -179,6 +154,9 @@ void Node::gpsCallback(const sensor_msgs::NavSatFixConstPtr& navSatFix,
       velCovariance(i+3,j+3) = -1;  //  unsupported
     }
   }
+  //  scale up z covariance on GPS velocity
+  velCovariance(2,2) *= 10;
+  
   //  copy covariance to output
   for (int i=0; i < 6; i++) {
     for (int j=0; j < 6; j++) {

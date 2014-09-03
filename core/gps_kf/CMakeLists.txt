@@ -20,6 +20,8 @@ include_directories(
   include
 )
 
+add_definitions("-Wall -Werror -std=c++11 -DNDEBUG -O3")
+
 add_executable(${PROJECT_NAME}
   src/node.cpp
   src/main.cpp

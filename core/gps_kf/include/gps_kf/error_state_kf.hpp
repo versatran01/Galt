@@ -242,45 +242,45 @@ bool ErrorStateKF<Scalar>::update(const kr::quat<Scalar> &qm,
                                   const kr::vec3<Scalar> &vm,
                                   const kr::mat3<Scalar> &varV) {
   //  form the measurement jacobian
-  kr::mat<Scalar, 9, 15> H;
+  kr::mat<Scalar, 6, 15> H;
   H.setZero();
 
   //  position and velocity
-  H.template block<3, 3>(3, 12).setIdentity();
-  H.template block<3, 3>(6, 6).setIdentity();
+  H.template block<3, 3>(0, 12).setIdentity();
+  H.template block<3, 3>(3, 6).setIdentity();
 
   //  orientation
   //H.template block<3, 3>(0, 0).setIdentity();
 
   // residual
-  kr::mat<Scalar, 9, 1> r;
+  kr::mat<Scalar, 6, 1> r;
 
   //  non-linear rotation residual
   const kr::quat<Scalar> dq = q_.conjugate() * qm;
   const Eigen::AngleAxis<Scalar> aa(dq);
-  r.template block<3, 1>(0, 0) =
-      aa.angle() * aa.axis();
+  //r.template block<3, 1>(0, 0) =
+  //    aa.angle() * aa.axis();
 
   //  linear pos/velocity
-  r.template block<3, 1>(3, 0) = pm - p_;
-  r.template block<3, 1>(6, 0) = vm - v_;
+  r.template block<3, 1>(0, 0) = pm - p_;
+  r.template block<3, 1>(3, 0) = vm - v_;
 
   //  measurement covariance
-  kr::mat<Scalar, 9, 9> R;
+  kr::mat<Scalar, 6, 6> R;
   R.setZero();
-  R.template block<3, 3>(0, 0) = varQ;
-  R.template block<3, 3>(3, 3) = varP;
-  R.template block<3, 3>(6, 6) = varV;
+  //R.template block<3, 3>(0, 0) = varQ;
+  R.template block<3, 3>(0, 0) = varP;
+  R.template block<3, 3>(3, 3) = varV;
 
   //  kalman update
-  kr::mat<Scalar, 9, 9> S = H * P_ * H.transpose() + R;
+  kr::mat<Scalar, 6, 6> S = H * P_ * H.transpose() + R;
   auto LU = S.fullPivLu();
   if (!LU.isInvertible()) {
     return false;
   }
   S = LU.inverse();
 
-  const kr::mat<Scalar, 15, 9> K = P_ * H.transpose() * S;
+  const kr::mat<Scalar, 15, 6> K = P_ * H.transpose() * S;
   const kr::mat<Scalar, 15, 1> dx = K * r;
 
   P_ = (kr::mat<Scalar, 15, 15>::Identity() - K * H) * P_;

@@ -12,7 +12,7 @@ class QuadrotorUKF {
   // Dimensions
   static const int state_count_ = 12;
   static const int process_noise_count_ = 9;
-  static const int meas_gps_count_ = 9;
+  static const int meas_gps_count_ = 7;
   static const int input_count_ = 6;
 
   typedef Eigen::Matrix<double, state_count_, 1> StateVec;

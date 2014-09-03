@@ -32,7 +32,6 @@ void Node::initialize() {
 }
 
 void Node::imuCallback(const sensor_msgs::ImuConstPtr& imu) {
-  
   if (!initialized_) {
     return; //  wait for first GPS
   }
@@ -57,10 +56,6 @@ void Node::imuCallback(const sensor_msgs::ImuConstPtr& imu) {
     }
   }
   
-  //std::cout << "Input accel: " << varAccel << std::endl;
-  //std::cout << "Input gyro: " << varGyro << std::endl;
-  //std::cout << "Input rot: " << varRot << std::endl;
-  
   double delta = 0.0;
   if (predictTime_.sec != 0) {
     delta = (imu->header.stamp - predictTime_).toSec();
@@ -68,14 +63,17 @@ void Node::imuCallback(const sensor_msgs::ImuConstPtr& imu) {
   predictTime_ = imu->header.stamp;
   
   //  predict
-  positionKF_.setBiasUncertainties(0.0, 1.0);
+  positionKF_.setBiasUncertainties(1e-3, 1e-2);
   positionKF_.predict(gyro,varGyro,accel,varAccel,delta);
+  
+  static ros::Publisher pubBias = nh_.advertise<geometry_msgs::Vector3>("bias", 1);
+  geometry_msgs::Vector3 bias;
+  tf::vectorEigenToMsg(positionKF_.getAccelBias(), bias);
+  pubBias.publish(bias);
   
   //  output covariance
   const kr::mat<double,15,15>& P = positionKF_.getCovariance();
-  
-  //std::cout << "P:" << P << std::endl << std::endl;
-  
+    
   //  publish odometry
   nav_msgs::Odometry odo;
   odo.header.stamp = imu->header.stamp;
@@ -110,7 +108,6 @@ void Node::imuCallback(const sensor_msgs::ImuConstPtr& imu) {
       odo.twist.covariance[(i+3)*6 + (j+3)] = imu->angular_velocity_covariance[(i*3) + j];
     }
   }
-  
   pubOdometry_.publish(odo);
 }
 
@@ -123,30 +120,30 @@ void Node::odoCallback(const nav_msgs::OdometryConstPtr& odometry) {
   tf::quaternionMsgToEigen(odometry->pose.pose.orientation, q);
   tf::pointMsgToEigen(odometry->pose.pose.position, p);
   tf::vectorMsgToEigen(odometry->twist.twist.linear, v);
+    
+  //  get yaw from odometry quaternion
+  const kr::vec3d rpy = kr::getRPY(q.matrix());
   
   kr::mat3d varP,varV,varQ;
   for (int i=0; i < 3; i++) {
     for (int j=0; j < 3; j++) {
       varP(i,j) = odometry->pose.covariance[(i*6) + j];
-      varQ(i,j) = odometry->pose.covariance[((i+3)*6) + j+3];
+      varQ(i,j) = odometry->pose.covariance[(i+3)*6 + j+3];
       varV(i,j) = odometry->twist.covariance[(i*6) + j];
     }
   }
   
-  //std::cout << "Input pos: " << varP << std::endl;
-  //std::cout << "Input rot: " << varQ << std::endl;
-  //std::cout << "Input vel: " << varV << std::endl;
-  
-  if (!initialized_ && (odometry->header.stamp - firstTs).toSec() > 3) {
+  if (!initialized_ && (odometry->header.stamp - firstTs).toSec() > 0.25) {
     initialized_ = true;
-    positionKF_.initState(q,p,v);
-    positionKF_.initCovariance(1e-3, 0.0, 0.2, 0.5, 5.0);
+    positionKF_.initState(q, p, v);
+    positionKF_.initCovariance(1e-1, 1e-4, 0.8, 1.0, 5.0);
   } else {
+    std::cout << "P: " << positionKF_.getCovariance().block<3,3>(12,12) << std::endl;
+    std::cout << "Q: " << positionKF_.getCovariance().block<3,3>(0,0) << std::endl;
+    
     if (!positionKF_.update(q,varQ,p,varP,v,varV)) {
       ROS_WARN("Warning: Kalman gain was singular in update");
     }
-    
-    std::cout << "Ba: " << positionKF_.getAccelBias().transpose() << std::endl;
   }
 }
 

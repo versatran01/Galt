@@ -16,7 +16,7 @@
  */
 template <typename Scalar> class ErrorStateKF {
 public:
-  
+
   /**
    * @brief Construct new instance of ESKF.
    * @note Initializes orientation to identity and all other state variables
@@ -112,11 +112,10 @@ public:
    * @param bg Gyro bias drift rate uncertainty, rad/s^2.
    * @param ba Accelerometer bias drift rate uncertainty, m/s^3.
    */  
-  void setBiasUncertainties(Scalar bg, Scalar ba) {
-    Qbg_.setIdentity();
-    Qbg_ *= bg;
-    Qba_.setIdentity();
-    Qba_ *= ba;
+  void setBiasUncertainties(const kr::mat3<Scalar>& bg, 
+                            const kr::mat3<Scalar>& ba) {
+    Qbg_ = bg;
+    Qba_ = ba;
   }
   
   /**
@@ -242,56 +241,61 @@ bool ErrorStateKF<Scalar>::update(const kr::quat<Scalar> &qm,
                                   const kr::vec3<Scalar> &vm,
                                   const kr::mat3<Scalar> &varV) {
   //  form the measurement jacobian
-  kr::mat<Scalar, 9, 15> H;
+  kr::mat<Scalar, 7, 15> H;
   H.setZero();
 
   //  position and velocity
-  H.template block<3, 3>(3, 12).setIdentity();
-  H.template block<3, 3>(6, 6).setIdentity();
+  H.template block<3, 3>(0, 12).setIdentity();
+  H.template block<3, 3>(3, 6).setIdentity();
 
   //  orientation
-  H.template block<3, 3>(0, 0).setIdentity();
-
+  //H.template block<3, 3>(6, 0).setIdentity();
+  H(6,2) = 1;
+  
   // residual
-  kr::mat<Scalar, 9, 1> r;
+  kr::mat<Scalar, 7, 1> r;
 
-  //  non-linear rotation residual
+  //  non-linear rotation residual on yaw axis
   const kr::quat<Scalar> dq = q_.conjugate() * qm;
   const Eigen::AngleAxis<Scalar> aa(dq);
-  r.template block<3, 1>(0, 0) =
-      aa.angle() * aa.axis();
-
+  const kr::vec3<Scalar> rpy = kr::getRPY(aa.matrix());
+  
+  //r.template block<3, 1>(6, 0) = aa.angle()*aa.axis();
+  r(6,0) = rpy[2];
+  //printf("rot res: %f\n", r(6,0)*180/M_PI);
+  
   //  linear pos/velocity
-  r.template block<3, 1>(3, 0) = pm - p_;
-  r.template block<3, 1>(6, 0) = vm - v_;
+  r.template block<3, 1>(0, 0) = pm - p_;
+  r.template block<3, 1>(3, 0) = vm - v_;
 
   //  measurement covariance
-  kr::mat<Scalar, 9, 9> R;
+  kr::mat<Scalar, 7, 7> R;
   R.setZero();
-  R.template block<3, 3>(0, 0) = varQ;
-  R.template block<3, 3>(3, 3) = varP;
-  R.template block<3, 3>(6, 6) = varV;
-
+  R.template block<3, 3>(0, 0) = varP;
+  R.template block<3, 3>(3, 3) = varV;
+  //R.template block<3, 3>(6, 6) = varQ;
+  R(6,6) = varQ(2,2);
+  
   //  kalman update
-  kr::mat<Scalar, 9, 9> S = H * P_ * H.transpose() + R;
+  kr::mat<Scalar, 7, 7> S = H * P_ * H.transpose() + R;
   auto LU = S.fullPivLu();
   if (!LU.isInvertible()) {
     return false;
   }
   S = LU.inverse();
 
-  const kr::mat<Scalar, 15, 9> K = P_ * H.transpose() * S;
+  const kr::mat<Scalar, 15, 7> K = P_ * H.transpose() * S;
   const kr::mat<Scalar, 15, 1> dx = K * r;
 
   P_ = (kr::mat<Scalar, 15, 15>::Identity() - K * H) * P_;
 
   //  update state
   q_ *= kr::quat<Scalar>(1, dx[0] * 0.5, dx[1] * 0.5, dx[2] * 0.5);
-  q_.normalize();
-  bg_ += dx.template block<3, 1>(3, 0);
-  v_ += dx.template block<3, 1>(6, 0);
-  ba_ += dx.template block<3, 1>(9, 0);
-  p_ += dx.template block<3, 1>(12, 0);
+  q_.normalize();  
+  bg_.noalias() += dx.template block<3, 1>(3, 0);
+  v_.noalias() += dx.template block<3, 1>(6, 0);
+  ba_.noalias() += dx.template block<3, 1>(9, 0);
+  p_.noalias() += dx.template block<3, 1>(12, 0);
 
   return true;
 }

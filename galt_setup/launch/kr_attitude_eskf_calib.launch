@@ -3,31 +3,30 @@
   Author: Gareth
   Triggers:
     * imu_3dm_gx4
-    * kr_attitude_eskf (in calibration mode)
-    * rqt (acceleration plot)
-    * rviz (attitude display)
+    * kr_attitude_eskf
 
   Brief: Launches the attitude filter and microstrain IMU. This node is for
   calibration only and does not need to be recorded.
 -->
 
 <launch>
-
   <!-- Start IMU -->
   <include file="$(find galt_setup)/launch/imu_3dm_gx4.launch"/>
 
-  <!-- Launch attitude ESKF in calibration mode -->
-  <node pkg="kr_attitude_eskf" name="attitude_eskf" type="kr_attitude_eskf" output="screen">
+  <!-- Start IMU covariance -->
+  <node pkg="imu_covariance" name="imu_covariance" type="imu_covariance"
+    output="screen">
+    <!-- Load settings from our profile -->
+    <param name="config_path"
+      type="string"
+      value="$(find galt_setup)/profiles/debug/imu.yml"/>
 
-    <param name="enable_magnetometer" type="bool" value="true"/>
-    <param name="calibrate_magnetometer" type="string" value="full"/>
-    <param name="broadcast_frame" type="bool" value="false"/>
-    <param name="publish_pose" type="bool" value="true"/>
-
-    <remap from="~imu" to="/imu/imu"/>
-    <remap from="~field" to="/imu/magnetic_field"/>
-
-    <!-- Load filter parameters from galt_setup -->
-    <rosparam file="$(find galt_setup)/config/params_3dm_gx4_25.yaml"/>
+    <!-- Inputs from recorded IMU -->
+    <remap from="~imu_in" to="/imu/imu"/>
+    <remap from="~magnetic_field_in" to="/imu/magnetic_field"/>
+    <remap from="~pressure_in" to="/imu/pressure"/>
   </node>
+
+  <!-- Launch filter -->
+  <include file="$(find galt_setup)/launch/kr_attitude_eskf.launch"/>
 </launch>

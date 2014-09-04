@@ -40,23 +40,20 @@ public:
 private:
   ros::NodeHandle nh_;
   ros::Publisher pubOdometry_;
+  ros::Publisher pubAccelBias_;
+  ros::Publisher pubGyroBias_;
+  ros::Publisher pubPose_;
   ros::Subscriber subImu_;
   ros::Subscriber subOdometry_;
   ros::Time predictTime_;
   
   std::string worldFrameId_;
-  std::string bodyFrameId_;
   
   void imuCallback(const sensor_msgs::ImuConstPtr &imu);
   
   void odoCallback(const nav_msgs::OdometryConstPtr& odometry);
   
   ErrorStateKF<double> positionKF_;
-  
-  kr::mat3d varAccel_;
-  kr::mat3d varGyro_;
-  
-  kr::vec3d oldAccel;
   
   bool initialized_{false};
 };

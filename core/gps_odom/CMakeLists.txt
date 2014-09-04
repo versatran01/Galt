@@ -11,6 +11,7 @@ find_package(catkin REQUIRED COMPONENTS
   sensor_msgs
   std_msgs
   ublox_msgs
+  pressure_altimeter
 )
 
 find_package(GeographicLib 1.35 REQUIRED)

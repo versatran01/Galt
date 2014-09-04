@@ -13,10 +13,12 @@
 -->
 
 <launch>
+  <arg name="serial_id"
+    default="usb-Lord_Microstrain_Lord_Inertial_Sensor_0000__6234.21073-if00"/>
   <node pkg="imu_3dm_gx4" name="imu" type="imu_3dm_gx4" respawn="true"
       output="screen">
       <param name="device" type="string"
-          value="/dev/serial/by-id/usb-Lord_Microstrain_Lord_Inertial_Sensor_0000__6234.21073-if00"/>
+          value="/dev/serial/by-id/$(arg serial_id)"/>
     <param name="baudrate" type="int" value="921600"/>
 
     <!-- 1000/4 = 250Hz -->

@@ -16,9 +16,14 @@
 
 <launch>
   <arg name="disp" default="log"/>
+  <arg name="serial_id"
+    default="usb-u-blox_AG_-_www.u-blox.com_u-blox_7_-_GPS_GNSS_Receiver-if00"/>
+
   <node name="ublox_gps" pkg="ublox_gps" type="ublox_gps"
         output="$(arg disp)" respawn="true">
-    <param name="device" type="string" value="/dev/serial/by-id/usb-u-blox_AG_-_www.u-blox.com_u-blox_7_-_GPS_GNSS_Receiver-if00"/>
+    <param name="device"
+      type="string"
+      value="/dev/serial/by-id/$(arg serial_id)"/>
 
     <!-- Device options -->
     <param name="frame_id" type="string" value="gps"/>

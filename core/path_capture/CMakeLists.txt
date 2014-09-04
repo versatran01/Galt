@@ -11,12 +11,11 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 catkin_package(
-  INCLUDE_DIRS include
+  #INCLUDE_DIRS include
 )
 
 include_directories(
   ${catkin_INCLUDE_DIRS}
-  include
 )
 
 add_executable(${PROJECT_NAME}

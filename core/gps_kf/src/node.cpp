@@ -63,7 +63,7 @@ void Node::imuCallback(const sensor_msgs::ImuConstPtr& imu) {
   predictTime_ = imu->header.stamp;
   
   //  predict
-  positionKF_.setBiasUncertainties(1e-3, 1e-2);
+  positionKF_.setBiasUncertainties(1e-4, 1e-2);
   positionKF_.predict(gyro,varGyro,accel,varAccel,delta);
   
   static ros::Publisher pubBias = nh_.advertise<geometry_msgs::Vector3>("bias", 1);
@@ -120,9 +120,6 @@ void Node::odoCallback(const nav_msgs::OdometryConstPtr& odometry) {
   tf::quaternionMsgToEigen(odometry->pose.pose.orientation, q);
   tf::pointMsgToEigen(odometry->pose.pose.position, p);
   tf::vectorMsgToEigen(odometry->twist.twist.linear, v);
-    
-  //  get yaw from odometry quaternion
-  const kr::vec3d rpy = kr::getRPY(q.matrix());
   
   kr::mat3d varP,varV,varQ;
   for (int i=0; i < 3; i++) {
@@ -138,8 +135,8 @@ void Node::odoCallback(const nav_msgs::OdometryConstPtr& odometry) {
     positionKF_.initState(q, p, v);
     positionKF_.initCovariance(1e-1, 1e-4, 0.8, 1.0, 5.0);
   } else {
-    std::cout << "P: " << positionKF_.getCovariance().block<3,3>(12,12) << std::endl;
-    std::cout << "Q: " << positionKF_.getCovariance().block<3,3>(0,0) << std::endl;
+    //std::cout << "P: " << positionKF_.getCovariance().block<3,3>(12,12) << std::endl;
+    //std::cout << "Q: " << positionKF_.getCovariance().block<3,3>(0,0) << std::endl;
     
     if (!positionKF_.update(q,varQ,p,varP,v,varV)) {
       ROS_WARN("Warning: Kalman gain was singular in update");

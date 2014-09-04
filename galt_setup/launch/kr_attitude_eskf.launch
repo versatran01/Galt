@@ -14,10 +14,11 @@
 -->
 
 <launch>
-  <node pkg="kr_attitude_eskf" name="attitude_eskf" type="kr_attitude_eskf" output="screen">
+  <node pkg="kr_attitude_eskf" name="attitude_eskf" type="kr_attitude_eskf"
+    output="screen">
     <param name="enable_magnetometer" type="bool" value="true"/>
 
-    <remap from="~imu" to="/imu/imu"/>
-    <remap from="~magnetic_field" to="/imu/magnetic_field"/>
+    <remap from="~imu" to="/imu_covariance/imu"/>
+    <remap from="~magnetic_field" to="/imu_covariance/magnetic_field"/>
   </node>
 </launch>

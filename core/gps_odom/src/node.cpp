@@ -23,10 +23,8 @@ Node::Node() : nh_("~"), pkgPath_(ros::package::getPath("gps_odom")) {
   if (pkgPath_.empty()) {
     ROS_WARN("Failed to find path for package");
   }
-
-  /// @todo: figure out what these should actually be...
-  nh_.param<std::string>("child_frame_id", childFrameId_, "imu");
-  nh_.param<std::string>("frame_id", frameId_, "world");
+  //  ID to place on outgoing odometry
+  nh_.param<std::string>("world_frame_id", worldFrameId_, "world");
   
   refSet_ = false;
   currentDeclination_ = 0.0;
@@ -110,8 +108,8 @@ void Node::gpsCallback(const sensor_msgs::NavSatFixConstPtr& navSatFix,
   
   nav_msgs::Odometry odometry;
   odometry.header.stamp = navSatFix->header.stamp;
-  odometry.header.frame_id = frameId_;
-  odometry.child_frame_id = childFrameId_;
+  odometry.header.frame_id = worldFrameId_;
+  odometry.child_frame_id = worldFrameId_;
   odometry.pose.pose.orientation.w = wQb.w();
   odometry.pose.pose.orientation.x = wQb.x();
   odometry.pose.pose.orientation.y = wQb.y();

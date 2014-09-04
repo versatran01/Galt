@@ -5,11 +5,16 @@ find_package(catkin REQUIRED COMPONENTS
   eigen_conversions
   geometry_msgs
   kr_math
+  message_generation
   nav_msgs
   roscpp
   sensor_msgs
   std_msgs
 )
+
+# generate messages
+add_message_files(FILES Vector3WithCovarianceStamped.msg)
+generate_messages(DEPENDENCIES std_msgs geometry_msgs)
 
 catkin_package(
   INCLUDE_DIRS include
@@ -33,4 +38,5 @@ target_link_libraries(${PROJECT_NAME}
 
 add_dependencies(${PROJECT_NAME}
   ${catkin_EXPORTED_TARGETS}
+  ${${PROJECT_NAME}_EXPORTED_TARGETS}
 )

@@ -40,12 +40,14 @@ public:
 private:
   ros::NodeHandle nh_;
   ros::Publisher pubOdometry_;
+  ros::Publisher pubAccelBias_;
+  ros::Publisher pubGyroBias_;
+  ros::Publisher pubPose_;
   ros::Subscriber subImu_;
   ros::Subscriber subOdometry_;
   ros::Time predictTime_;
   
-  std::string frameId_;
-  std::string childFrameId_;
+  std::string worldFrameId_;
   
   void imuCallback(const sensor_msgs::ImuConstPtr &imu);
   

@@ -11,24 +11,27 @@
 
 #include <gps_kf/node.hpp>
 #include <geometry_msgs/PoseStamped.h>
+#include <geometry_msgs/Vector3Stamped.h>
 #include <eigen_conversions/eigen_msg.h>
+#include <gps_kf/Vector3WithCovarianceStamped.h>
+
+using ::gps_kf::Vector3WithCovarianceStamped;
 
 namespace gps_kf {
 
-Node::Node() : nh_("~") {
-  /// @todo: figureo out to with these...
-  nh_.param<std::string>("frame_id", frameId_, "imu");
-  nh_.param<std::string>("child_frame_id", childFrameId_, "world");
-}
+Node::Node() : nh_("~") {}
 
 void Node::initialize() {
   //  configure topics
   pubOdometry_ = nh_.advertise<nav_msgs::Odometry>("odometry", 1);
+  pubAccelBias_ = nh_.advertise<Vector3WithCovarianceStamped>("accel_bias", 1);
+  pubGyroBias_ = nh_.advertise<Vector3WithCovarianceStamped>("gyro_bias", 1);
+  pubPose_ = nh_.advertise<geometry_msgs::PoseStamped>("pose", 1);
   
   subImu_ = nh_.subscribe("imu", 1, &Node::imuCallback, this);
   subOdometry_ = nh_.subscribe("gps_odom", 1, &Node::odoCallback, this);
   
-  predictTime_ = ros::Time(0,0);
+  predictTime_ = ros::Time(0, 0);
 }
 
 void Node::imuCallback(const sensor_msgs::ImuConstPtr& imu) {
@@ -63,52 +66,82 @@ void Node::imuCallback(const sensor_msgs::ImuConstPtr& imu) {
   predictTime_ = imu->header.stamp;
   
   //  predict
-  positionKF_.setBiasUncertainties(1e-4, 1e-2);
+  kr::mat3d Qbg = kr::mat3d::Identity();
+  Qbg *= 1e-4;
+  kr::mat3d Qba = kr::mat3d::Identity();
+  Qba *= 1e-2;
+  positionKF_.setBiasUncertainties(Qbg, Qba);
   positionKF_.predict(gyro,varGyro,accel,varAccel,delta);
-  
-  static ros::Publisher pubBias = nh_.advertise<geometry_msgs::Vector3>("bias", 1);
-  geometry_msgs::Vector3 bias;
-  tf::vectorEigenToMsg(positionKF_.getAccelBias(), bias);
-  pubBias.publish(bias);
   
   //  output covariance
   const kr::mat<double,15,15>& P = positionKF_.getCovariance();
-    
+  const auto& rotCov = P.block<3,3>(0,0);
+  const auto& gBiasCov = P.block<3,3>(3,3);
+  const auto& velCov = P.block<3,3>(6,6);
+  const auto& aBiasCov = P.block<3,3>(9,9);
+  const auto& posCov = P.block<3,3>(12,12);
+  
   //  publish odometry
   nav_msgs::Odometry odo;
   odo.header.stamp = imu->header.stamp;
-  odo.header.frame_id = frameId_;
-  odo.child_frame_id = childFrameId_;
-  
+  odo.header.frame_id = worldFrameId_;
+  odo.child_frame_id = worldFrameId_;
+  //  NOTE: angular velocity is still in body frame, but we use worldFrameId_ 
+  //  anyways
   tf::pointEigenToMsg(positionKF_.getPosition(), odo.pose.pose.position);
   tf::quaternionEigenToMsg(positionKF_.getOrientation(), odo.pose.pose.orientation);
   
-  static ros::Publisher pubPoseStamped = nh_.advertise<geometry_msgs::PoseStamped>("debug_pose", 1);
-   geometry_msgs::PoseStamped ps;
-  ps.pose = odo.pose.pose;
-  ps.header.stamp = imu->header.stamp;
-  ps.header.frame_id = frameId_;
-  pubPoseStamped.publish(ps);
+  geometry_msgs::PoseStamped pose;
+  pose.pose = odo.pose.pose;
+  pose.header = odo.header;
+  pubPose_.publish(pose);
   
   //  top left 3x3 (filter) and bottom right 3x3 (from imu)
   for (int i=0; i < 3; i++) {
     for (int j=0; j < 3; j++) {
-      odo.pose.covariance[(i*6) + j] = P(i+12,j+12);
-      odo.pose.covariance[(i+3)*6 + (j+3)] = P(i,j);
+      odo.pose.covariance[(i*6) + j] = posCov(i,j);
+      odo.pose.covariance[(i+3)*6 + (j+3)] = rotCov(i,j);
     }
   }
   
   tf::vectorEigenToMsg(positionKF_.getVelocity(), odo.twist.twist.linear);
-  odo.twist.twist.angular = imu->angular_velocity;
   
-  //  same as above copy
+  //  subtract our bias estimate and propagate covariance 
+  kr::vec3d angRate;
+  tf::vectorMsgToEigen(imu->angular_velocity, angRate);
+  angRate.noalias() -= positionKF_.getGyroBias();
+  varGyro.noalias() += gBiasCov;
+  tf::vectorEigenToMsg(angRate, odo.twist.twist.angular);
+  
+  //  output velocity covariances
   for (int i=0; i < 3; i++) {
     for (int j=0; j < 3; j++) {
-      odo.twist.covariance[(i*6) + j] = P(i+6,j+6);
-      odo.twist.covariance[(i+3)*6 + (j+3)] = imu->angular_velocity_covariance[(i*3) + j];
+      odo.twist.covariance[(i*6) + j] = velCov(i,j);
+      odo.twist.covariance[(i+3)*6 + (j+3)] = varGyro(i,j);
     }
   }
   pubOdometry_.publish(odo);
+  
+  //  publish bias messages
+  Vector3WithCovarianceStamped aBiasVector, gBiasVector;
+   
+  aBiasVector.header.stamp = odo.header.stamp;
+  aBiasVector.header.frame_id = imu->header.frame_id;
+  tf::vectorEigenToMsg(positionKF_.getAccelBias(), aBiasVector.vector);
+  
+  gBiasVector.header.stamp = odo.header.stamp;
+  gBiasVector.header.frame_id = imu->header.frame_id;
+  tf::vectorEigenToMsg(positionKF_.getGyroBias(), gBiasVector.vector);
+  
+  for (int i=0; i < 3; i++) {
+    for (int j=0; j < 3; j++) {
+      aBiasVector.covariance[i*3 + j] = aBiasCov(i,j);
+      gBiasVector.covariance[i*3 + j] = gBiasCov(i,j);
+    }
+  }
+  
+  pubAccelBias_.publish(aBiasVector);
+  pubGyroBias_.publish(gBiasVector);  
 }
 
 void Node::odoCallback(const nav_msgs::OdometryConstPtr& odometry) {
@@ -132,6 +165,8 @@ void Node::odoCallback(const nav_msgs::OdometryConstPtr& odometry) {
   
   if (!initialized_ && (odometry->header.stamp - firstTs).toSec() > 0.25) {
     initialized_ = true;
+    //  take our output frame ID from the gps_odom
+    worldFrameId_ = odometry->header.frame_id;
     positionKF_.initState(q, p, v);
     positionKF_.initCovariance(1e-1, 1e-4, 0.8, 1.0, 5.0);
   } else {

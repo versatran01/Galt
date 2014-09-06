@@ -9,10 +9,14 @@
     * /hokuyo/scan
 -->
 <launch>
-  <group ns="hokuyo">
+    <arg name="ip" default="192.168.0.10"/>
+    <arg name="ns" default="hokuyo"/>
+    <arg name="disp" default="screen"/>
+    <arg name="calibrate_time" default="true"/>
+
     <node name="urg_node" pkg="urg_node" type="urg_node" respawn="true"
-        output="screen">
-      <param name="ip_address" type="string" value="192.168.0.10"/>
+        output="$(arg disp)" ns="$(arg ns)">
+        <param name="ip_address" type="string" value="$(arg ip)"/>
+        <param name="calibrate_time" type="bool" value="$(arg calibrate_time)"/>
     </node>
-  </group>
 </launch>

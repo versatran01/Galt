@@ -3,7 +3,7 @@ project(circle_tracker)
 
 find_package(OpenCV REQUIRED)
 find_package(cmake_modules)
-find_pacakge(Eigen)
+find_package(Eigen)
 
 find_package(catkin REQUIRED COMPONENTS
   geometry_msgs

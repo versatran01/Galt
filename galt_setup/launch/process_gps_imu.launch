@@ -13,8 +13,8 @@
 -->
 <launch>
   <!-- Bagfile launch options -->
-  <arg name="bagfile_home" value="$(env GALT_BAGFILES)/penn/"/>
-  <arg name="bagfile" default="shoemaker_20140904_good"/>
+  <arg name="bagfile_home" value="$(env GALT_BAGFILES)/pennstate/"/>
+  <arg name="bagfile" default="fireblight/2014-09-05-14-57-48"/>
   <arg name="bagfile_start" default="0"/>
 
   <!-- Rosbag -->
@@ -102,4 +102,12 @@
   <!--laser_filter-->
   <include file="$(find galt_setup)/launch/laser_filter.launch">
   </include>
+
+  <!-- Try recording...  -->
+  <!--
+  <node pkg="rosbag" type="record" name="recorder" output="screen"
+        args="/tf
+        /tf_static
+        /hokuyo/scan_filtered"/>
+  -->
 </launch>

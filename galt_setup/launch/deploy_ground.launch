@@ -36,14 +36,14 @@
     <arg name="serial" value="30000334"/>
     <arg name="fps" value="5"/>
     <arg name="color" value="false"/>
-    <arg name="expose" value="1000"/>
+    <arg name="expose_us" value="1000"/>
   </include>
 
   <include file="$(find bluefox2)/launch/single_node.launch">
     <arg name="serial" value="30000337"/>
     <arg name="fps" value="5"/>
     <arg name="color" value="false"/>
-    <arg name="expose" value="1000"/>
+    <arg name="expose_us" value="1000"/>
   </include>
 
   <!-- Color sensing -->
@@ -51,7 +51,7 @@
     <arg name="serial" value="29900189"/>
     <arg name="fps" value="5"/>
     <arg name="color" value="true"/>
-    <arg name="expose" value="1000"/>
+    <arg name="expose_us" value="1000"/>
   </include>
 
   <!-- Hokuyo -->

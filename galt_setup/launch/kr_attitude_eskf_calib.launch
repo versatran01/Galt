@@ -11,7 +11,10 @@
 
 <launch>
   <!-- Start IMU -->
-  <include file="$(find galt_setup)/launch/imu_3dm_gx4.launch"/>
+  <include file="$(find galt_setup)/launch/imu_3dm_gx4.launch">
+    <arg name="serial_id"
+    default="usb-Lord_Microstrain_Lord_Inertial_Sensor_0000__6234.38162-if00"/>
+  </include>
 
   <!-- Start IMU covariance -->
   <node pkg="imu_covariance" name="imu_covariance" type="imu_covariance"
@@ -28,5 +31,14 @@
   </node>
 
   <!-- Launch filter -->
-  <include file="$(find galt_setup)/launch/kr_attitude_eskf.launch"/>
+  <node pkg="kr_attitude_eskf" name="attitude_eskf" type="kr_attitude_eskf"
+    output="screen">
+    <param name="enable_magnetometer" type="bool" value="true"/>
+
+    <remap from="~imu" to="/imu_covariance/imu"/>
+    <remap from="~magnetic_field" to="/imu_covariance/magnetic_field"/>
+
+    <rosparam
+      file="$(find galt_setup)/calib/magnetometer/philadelphia_generic.yml"/>
+  </node>
 </launch>

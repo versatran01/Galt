@@ -13,8 +13,8 @@
 -->
 <launch>
   <!-- Bagfile launch options -->
-  <arg name="bagfile_home" value="$(env GALT_BAGFILES)/pennstate/"/>
-  <arg name="bagfile" default="fireblight/2014-09-05-14-57-48"/>
+  <arg name="bagfile_home" value="$(env GALT_BAGFILES)"/>
+  <arg name="bagfile"/>
   <arg name="bagfile_start" default="0"/>
 
   <!-- Rosbag -->

@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 2.8.3)
 project(circle_tracker)
 
 find_package(OpenCV REQUIRED)
+find_package(cmake_modules)
+find_pacakge(Eigen)
 
 find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
@@ -27,6 +29,7 @@ catkin_package(
 include_directories(
   ${catkin_INCLUDE_DIRS}
   ${OpenCV_INCLUDE_DIRS}
+  ${Eigen_INCLUDE_DIRS}
 )
 
 # additional warnings

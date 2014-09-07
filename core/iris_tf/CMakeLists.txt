@@ -3,15 +3,15 @@ project(iris_tf)
 
 add_definitions("-std=c++11 -Wall")
 find_package(catkin REQUIRED COMPONENTS
-    nav_msgs roscpp
+    roscpp
     tf2 tf2_ros
-    visualization_msgs
+    geometry_msgs visualization_msgs
     )
 
 catkin_package(
     INCLUDE_DIRS include
     LIBRARIES iris_tf
-    CATKIN_DEPENDS geometry_msgs nav_msgs roscpp std_msgs tf
+    CATKIN_DEPENDS roscpp tf2 tf2_ros geometry_msgs visualization_msgs
     DEPENDS system_lib
     )
 

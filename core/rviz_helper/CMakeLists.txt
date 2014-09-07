@@ -1,0 +1,36 @@
+cmake_minimum_required(VERSION 2.8.3)
+project(rviz_helper)
+
+add_definitions(-Wall -std=c++11)
+
+find_package(catkin REQUIRED COMPONENTS
+    roscpp
+    std_msgs geometry_msgs
+    visualization_msgs
+    )
+
+catkin_package(
+    INCLUDE_DIRS include
+    LIBRARIES rviz_helper
+    CATKIN_DEPENDS std_msgs geometry_msgs roscpp visualization_msgs
+    DEPENDS system_lib
+    )
+
+include_directories(
+    include
+    ${catkin_INCLUDE_DIRS}
+    )
+
+add_library(${PROJECT_NAME}
+    src/rviz_helper.cpp
+    )
+target_link_libraries(${PROJECT_NAME}
+    ${catkin_LIBRARIES}
+    )
+
+add_dependencies(${PROJECT_NAME}
+    ${catkin_EXPORTED_TARGETS}
+    ${PROJECT_NAME}_gencfg
+    ${PROJECT_NAME}_gencpp
+    ${${PROJECT_NAME}_EXPORTED_TARGETS}
+)

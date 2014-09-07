@@ -19,7 +19,7 @@ using ::gps_kf::Vector3WithCovarianceStamped;
 
 namespace gps_kf {
 
-Node::Node() : nh_("~") {}
+Node::Node() : nh_("~"), traj_viz_(nh_) {}
 
 void Node::initialize() {
   //  configure topics
@@ -32,6 +32,7 @@ void Node::initialize() {
   subOdometry_ = nh_.subscribe("gps_odom", 1, &Node::odoCallback, this);
 
   predictTime_ = ros::Time(0, 0);
+  traj_viz_.set_colorRGB(rviz_helper::colors::CYAN);
 }
 
 void Node::imuCallback(const sensor_msgs::ImuConstPtr &imu) {
@@ -96,6 +97,21 @@ void Node::imuCallback(const sensor_msgs::ImuConstPtr &imu) {
   pose.pose = odo.pose.pose;
   pose.header = odo.header;
   pubPose_.publish(pose);
+
+  //  publish tf stuff and trajectory visualizer
+  geometry_msgs::Vector3 translation;
+  translation.x = pose.pose.position.x;
+  translation.y = pose.pose.position.y;
+  translation.z = pose.pose.position.z;
+
+  geometry_msgs::TransformStamped transform_stamped;
+  transform_stamped.header = pose.header;
+  transform_stamped.child_frame_id = "imu";
+  transform_stamped.transform.translation = translation;
+  transform_stamped.transform.rotation = pose.pose.orientation;
+
+  broadcaster_.sendTransform(transform_stamped);
+  traj_viz_.PublishTrajectory(pose.pose.position, pose.header);
 
   //  top left 3x3 (filter) and bottom right 3x3 (from imu)
   for (int i = 0; i < 3; i++) {

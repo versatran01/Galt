@@ -96,7 +96,6 @@
 
   <!-- Frame broadcaster -->
   <include file="$(find iris_tf)/launch/node.launch">
-    <arg name="topic" value="/gps_kf/odometry"/>
   </include>
 
   <!--laser_filter-->

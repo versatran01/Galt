@@ -47,8 +47,8 @@ const cv::Mat GridDetectorBase::CreateMask(const cv::Mat &image,
       }
     }
   }
-//  cv::imshow("mask", mask);
-//  cv::waitKey(1);
+  //  cv::imshow("mask", mask);
+  //  cv::waitKey(1);
   return mask;
 }
 

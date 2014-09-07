@@ -24,19 +24,18 @@ namespace gps_kf {
 
 class Node {
 public:
-  
   static constexpr double kOneG = 9.80665;
-  
+
   /**
    * @brief Construct node and load parameters.
    */
   Node();
-  
+
   /**
    * @brief Subscribe to topics and advertise outputs.
    */
   void initialize();
-  
+
 private:
   ros::NodeHandle nh_;
   ros::Publisher pubOdometry_;
@@ -46,18 +45,18 @@ private:
   ros::Subscriber subImu_;
   ros::Subscriber subOdometry_;
   ros::Time predictTime_;
-  
+
   std::string worldFrameId_;
-  
+
   void imuCallback(const sensor_msgs::ImuConstPtr &imu);
-  
-  void odoCallback(const nav_msgs::OdometryConstPtr& odometry);
-  
+
+  void odoCallback(const nav_msgs::OdometryConstPtr &odometry);
+
   ErrorStateKF<double> positionKF_;
-  
-  bool initialized_{false};
+
+  bool initialized_{ false };
 };
 
 } //  namespace gps_kf
 
-#endif  //  GPS_KF_NODE_HPP
+#endif //  GPS_KF_NODE_HPP

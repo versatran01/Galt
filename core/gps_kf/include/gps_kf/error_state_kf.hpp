@@ -16,7 +16,6 @@
  */
 template <typename Scalar> class ErrorStateKF {
 public:
-
   /**
    * @brief Construct new instance of ESKF.
    * @note Initializes orientation to identity and all other state variables
@@ -34,15 +33,15 @@ public:
    */
   void initCovariance(Scalar qStd, Scalar bgStd, Scalar vStd, Scalar baStd,
                       Scalar pStd);
-  
+
   /**
    * @brief initState
    * @param wQb
    * @param p
    * @param v
    */
-  void initState(const kr::quat<Scalar>& wQb, const kr::vec3<Scalar> p,
-                 const kr::vec3<Scalar>& v);
+  void initState(const kr::quat<Scalar> &wQb, const kr::vec3<Scalar> p,
+                 const kr::vec3<Scalar> &v);
 
   /**
    * @brief Run the prediction step of the filter.
@@ -74,58 +73,56 @@ public:
    * @brief Orientation, transformation from body to world.
    * @return Quaternion.
    */
-  const kr::quat<Scalar>& getOrientation() const { return q_; }
-  
+  const kr::quat<Scalar> &getOrientation() const { return q_; }
+
   /**
    * @brief Gyro bias estimate, rad/s.
    * @return R3 Vector.
    */
-  const kr::vec3<Scalar>& getGyroBias() const { return bg_; }
-  
+  const kr::vec3<Scalar> &getGyroBias() const { return bg_; }
+
   /**
    * @brief Velocity estimate, m/s.
    * @return R3 Vector.
    */
-  const kr::vec3<Scalar>& getVelocity() const { return v_; }
-  
+  const kr::vec3<Scalar> &getVelocity() const { return v_; }
+
   /**
    * @brief Accelerometer bias estimate, m/s^2.
    * @return R3 Vector.
    */
-  const kr::vec3<Scalar>& getAccelBias() const { return ba_; }
-  
+  const kr::vec3<Scalar> &getAccelBias() const { return ba_; }
+
   /**
    * @brief Position estimate, m.
    * @return R3 Vector.
    */
-  const kr::vec3<Scalar>& getPosition() const { return p_; }
-  
+  const kr::vec3<Scalar> &getPosition() const { return p_; }
+
   /**
    * @brief Get system covariance.
    * @return 15x15 matrix.
    * @note Order of elements: [theta, gyro bias, vel, accel bias, pos]
    */
-  const kr::mat<Scalar,15,15>& getCovariance() const { return P_; }
-  
+  const kr::mat<Scalar, 15, 15> &getCovariance() const { return P_; }
+
   /**
    * @brief Set std dev. of bias drift rates.
    * @param bg Gyro bias drift rate uncertainty, rad/s^2.
    * @param ba Accelerometer bias drift rate uncertainty, m/s^3.
-   */  
-  void setBiasUncertainties(const kr::mat3<Scalar>& bg, 
-                            const kr::mat3<Scalar>& ba) {
+   */
+  void setBiasUncertainties(const kr::mat3<Scalar> &bg,
+                            const kr::mat3<Scalar> &ba) {
     Qbg_ = bg;
     Qba_ = ba;
   }
-  
+
   /**
    * @brief Set the magnitude of the gravity vector.
    * @param g Gravity magnitude, m/s^2.
    */
-  void setGravity(Scalar g) {
-    g_ = g;
-  }
-  
+  void setGravity(Scalar g) { g_ = g; }
+
 private:
   kr::quat<Scalar> q_;  /// Orientation
   kr::vec3<Scalar> bg_; /// Gyro bias
@@ -141,8 +138,7 @@ private:
   Scalar g_; /// Gravity constant
 };
 
-template <typename Scalar>
-ErrorStateKF<Scalar>::ErrorStateKF() : g_(9.80665) {
+template <typename Scalar> ErrorStateKF<Scalar>::ErrorStateKF() : g_(9.80665) {
   q_.setIdentity();
   bg_.setZero();
   v_.setZero();
@@ -159,18 +155,18 @@ void ErrorStateKF<Scalar>::initCovariance(Scalar qStd, Scalar bgStd,
                                           Scalar vStd, Scalar baStd,
                                           Scalar pStd) {
   static const kr::mat3<Scalar> I3 = kr::mat3<Scalar>::Identity();
-  
-  P_.template block<3,3>(0,0) = I3*qStd*qStd;
-  P_.template block<3,3>(3,3) = I3*bgStd*bgStd;
-  P_.template block<3,3>(6,6) = I3*vStd*vStd;
-  P_.template block<3,3>(9,9) = I3*baStd*baStd;
-  P_.template block<3,3>(12,12) = I3*pStd*pStd;
+
+  P_.template block<3, 3>(0, 0) = I3 * qStd * qStd;
+  P_.template block<3, 3>(3, 3) = I3 * bgStd * bgStd;
+  P_.template block<3, 3>(6, 6) = I3 * vStd * vStd;
+  P_.template block<3, 3>(9, 9) = I3 * baStd * baStd;
+  P_.template block<3, 3>(12, 12) = I3 * pStd * pStd;
 }
 
 template <typename Scalar>
-void ErrorStateKF<Scalar>::initState(const kr::quat<Scalar>& wQb, 
+void ErrorStateKF<Scalar>::initState(const kr::quat<Scalar> &wQb,
                                      const kr::vec3<Scalar> p,
-                                     const kr::vec3<Scalar>& v) {
+                                     const kr::vec3<Scalar> &v) {
   q_ = wQb;
   p_ = p;
   v_ = v;
@@ -202,15 +198,15 @@ void ErrorStateKF<Scalar>::predict(const kr::vec3<Scalar> &wbody,
   F.setZero();
 
   ///  dth = [wh] x dth - bg
-  F.template block<3, 3>(0, 0) = -kr::skewSymmetric(wh);                  
+  F.template block<3, 3>(0, 0) = -kr::skewSymmetric(wh);
   F.template block<3, 3>(0, 3) = -kr::mat3<Scalar>::Identity();
 
   //  dv = -R[ah] x dth - R[ba]
-  F.template block<3, 3>(6, 0) = -wRb * kr::skewSymmetric(ah);            
+  F.template block<3, 3>(6, 0) = -wRb * kr::skewSymmetric(ah);
   F.template block<3, 3>(6, 9) = -wRb;
 
   //  dp = dv
-  F.template block<3, 3>(12, 6).setIdentity(); 
+  F.template block<3, 3>(12, 6).setIdentity();
 
   //  form process covariance matrix
   kr::mat<Scalar, 12, 12> Q;
@@ -219,7 +215,7 @@ void ErrorStateKF<Scalar>::predict(const kr::vec3<Scalar> &wbody,
   Q.template block<3, 3>(3, 3) = Qbg_;
   Q.template block<3, 3>(6, 6) = varA;
   Q.template block<3, 3>(9, 9) = Qba_;
-  
+
   kr::mat<Scalar, 15, 12> G;
   G.setZero();
 
@@ -230,7 +226,7 @@ void ErrorStateKF<Scalar>::predict(const kr::vec3<Scalar> &wbody,
   G.template block<3, 3>(9, 9).setIdentity();
 
   //  integrate covariance forward
-  P_ += (F*P_ + P_*F.transpose() + G*Q*G.transpose()) * dt;
+  P_ += (F * P_ + P_ * F.transpose() + G * Q * G.transpose()) * dt;
 }
 
 template <typename Scalar>
@@ -249,9 +245,9 @@ bool ErrorStateKF<Scalar>::update(const kr::quat<Scalar> &qm,
   H.template block<3, 3>(3, 6).setIdentity();
 
   //  orientation
-  //H.template block<3, 3>(6, 0).setIdentity();
-  H(6,2) = 1;
-  
+  // H.template block<3, 3>(6, 0).setIdentity();
+  H(6, 2) = 1;
+
   // residual
   kr::mat<Scalar, 7, 1> r;
 
@@ -259,11 +255,11 @@ bool ErrorStateKF<Scalar>::update(const kr::quat<Scalar> &qm,
   const kr::quat<Scalar> dq = q_.conjugate() * qm;
   const Eigen::AngleAxis<Scalar> aa(dq);
   const kr::vec3<Scalar> rpy = kr::getRPY(aa.matrix());
-  
-  //r.template block<3, 1>(6, 0) = aa.angle()*aa.axis();
-  r(6,0) = rpy[2];
-  //printf("rot res: %f\n", r(6,0)*180/M_PI);
-  
+
+  // r.template block<3, 1>(6, 0) = aa.angle()*aa.axis();
+  r(6, 0) = rpy[2];
+  // printf("rot res: %f\n", r(6,0)*180/M_PI);
+
   //  linear pos/velocity
   r.template block<3, 1>(0, 0) = pm - p_;
   r.template block<3, 1>(3, 0) = vm - v_;
@@ -273,9 +269,9 @@ bool ErrorStateKF<Scalar>::update(const kr::quat<Scalar> &qm,
   R.setZero();
   R.template block<3, 3>(0, 0) = varP;
   R.template block<3, 3>(3, 3) = varV;
-  //R.template block<3, 3>(6, 6) = varQ;
-  R(6,6) = varQ(2,2);
-  
+  // R.template block<3, 3>(6, 6) = varQ;
+  R(6, 6) = varQ(2, 2);
+
   //  kalman update
   kr::mat<Scalar, 7, 7> S = H * P_ * H.transpose() + R;
   auto LU = S.fullPivLu();
@@ -291,7 +287,7 @@ bool ErrorStateKF<Scalar>::update(const kr::quat<Scalar> &qm,
 
   //  update state
   q_ *= kr::quat<Scalar>(1, dx[0] * 0.5, dx[1] * 0.5, dx[2] * 0.5);
-  q_.normalize();  
+  q_.normalize();
   bg_.noalias() += dx.template block<3, 1>(3, 0);
   v_.noalias() += dx.template block<3, 1>(6, 0);
   ba_.noalias() += dx.template block<3, 1>(9, 0);

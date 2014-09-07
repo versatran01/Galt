@@ -31,6 +31,9 @@
 #include <GeographicLib/MagneticModel.hpp>
 #include <GeographicLib/LocalCartesian.hpp>
 
+#include <rviz_helper/rviz_helper.h>
+#include <tf2_ros/transform_broadcaster.h>
+
 #include <memory>
 
 namespace gps_odom {
@@ -77,6 +80,9 @@ private:
   GeographicLib::LocalCartesian refPoint_;
   double refHeight_;
   double currentDeclination_;
+
+  tf2_ros::TransformBroadcaster broadcaster_;
+  rviz_helper::TrajectoryVisualizer traj_viz_;
 };
 
 } //  namespace_gps_odom

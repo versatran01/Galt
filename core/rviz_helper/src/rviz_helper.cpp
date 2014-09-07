@@ -5,7 +5,7 @@ namespace rviz_helper {
 TrajectoryVisualizer::TrajectoryVisualizer(const ros::NodeHandle &nh,
                                            const std::string &topic)
     : nh_{ nh }, traj_pub_(nh_.advertise<visualization_msgs::Marker>(topic, 1)),
-      num_skip_(0), total_points_cnt_(0) {
+      num_skip_(1), total_points_cnt_(0) {
   markers_.pose.orientation.w = 1.0;
   set_colorRGB(colors::RED);
   set_scale(0.05);

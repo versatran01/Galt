@@ -33,7 +33,7 @@ void Node::initialize() {
 
   predictTime_ = ros::Time(0, 0);
   traj_viz_.set_colorRGB(rviz_helper::colors::CYAN);
-  traj_viz_.set_num_skip(10);
+  traj_viz_.set_num_skip(12);
 }
 
 void Node::imuCallback(const sensor_msgs::ImuConstPtr &imu) {

@@ -19,7 +19,8 @@
 
 namespace gps_odom {
 
-Node::Node() : nh_("~"), pkgPath_(ros::package::getPath("gps_odom")) {
+Node::Node()
+    : nh_("~"), pkgPath_(ros::package::getPath("gps_odom")), traj_viz_(nh_) {
   if (pkgPath_.empty()) {
     ROS_WARN("Failed to find path for package");
   }
@@ -28,6 +29,7 @@ Node::Node() : nh_("~"), pkgPath_(ros::package::getPath("gps_odom")) {
 
   refSet_ = false;
   currentDeclination_ = 0.0;
+  traj_viz_.set_colorRGB(rviz_helper::colors::RED);
 }
 
 void Node::initialize() {
@@ -175,5 +177,21 @@ void Node::gpsCallback(
     }
   }
   pubOdometry_.publish(odometry);
+
+  //  publish tf stuff and trajectory visualizer
+  geometry_msgs::Vector3 translation;
+  translation.x = odometry.pose.pose.position.x;
+  translation.y = odometry.pose.pose.position.y;
+  translation.z = odometry.pose.pose.position.z;
+
+  geometry_msgs::TransformStamped transform_stamped;
+  transform_stamped.header = odometry.header;
+  transform_stamped.child_frame_id = "gps";
+  transform_stamped.transform.translation = translation;
+  transform_stamped.transform.rotation = odometry.pose.pose.orientation;
+
+  broadcaster_.sendTransform(transform_stamped);
+  traj_viz_.PublishTrajectory(odometry.pose.pose.position, odometry.header);
 }
+
 } //  namespace gps_odom

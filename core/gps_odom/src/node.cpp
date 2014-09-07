@@ -47,6 +47,8 @@ void Node::initialize() {
   
   //  advertise odometry as output
   pubOdometry_ = nh_.advertise<nav_msgs::Odometry>("odometry", 1);
+  //  reference point on a latched topic
+  pubRefPoint_ = nh_.advertise<sensor_msgs::NavSatFix>("reference", 1, true);
 }
 
 void Node::gpsCallback(const sensor_msgs::NavSatFixConstPtr& navSatFix,
@@ -86,6 +88,11 @@ void Node::gpsCallback(const sensor_msgs::NavSatFixConstPtr& navSatFix,
     refPoint_ = GeographicLib::LocalCartesian(lat,lon,0);
     refHeight_ = height->height;
     refSet_ = true;
+    
+    //  publish only once
+    sensor_msgs::NavSatFix refFix = *navSatFix;
+    refFix.header.seq = 0;
+    pubRefPoint_.publish(refFix);
   }
   
   double locX,locY,locZ;

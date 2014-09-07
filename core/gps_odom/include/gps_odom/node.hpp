@@ -50,6 +50,7 @@ private:
   std::string pkgPath_;
   std::string worldFrameId_;
   ros::Publisher pubOdometry_;
+  ros::Publisher pubRefPoint_;
   
   message_filters::Subscriber<sensor_msgs::Imu> subImu_;    
   message_filters::Subscriber<sensor_msgs::NavSatFix> subFix_;

@@ -23,7 +23,7 @@
         args="--clock -s $(arg bagfile_start) $(arg bagfile_path)"/>
 
   <!-- Sensor profile to load -->
-  <arg name="profile" default="cart"/>
+  <arg name="profile"/>
 
   <!-- Magnetometer calibration to load -->
   <arg name="mag_calib" default="philadelphia_generic"/>

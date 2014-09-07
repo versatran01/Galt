@@ -1,49 +1,33 @@
 #include <ros/ros.h>
 #include <geometry_msgs/PoseStamped.h>
+#include <nav_msgs/Path.h>
 #include <nav_msgs/Odometry.h>
 #include <tf2_ros/transform_broadcaster.h>
 #include <tf2_ros/static_transform_broadcaster.h>
 
-#include "iris_tf/rviz_helper.h"
-
 namespace galt {
 namespace iris_tf {
-/**
- * @brief The IrisTransform class
- */
+
 class IrisTransform {
  public:
-  /**
-   * @brief IrisTransform Constructor
-   * @param nh Private node handle
-   */
   IrisTransform(const ros::NodeHandle &nh);
 
  private:
-  /**
-   * @brief OdomCb Odometry callback
-   * @param odom_msg nav_msgs::Odometry
-   */
   void OdomCb(const nav_msgs::OdometryConstPtr &odom_msg);
 
   ros::NodeHandle nh_;
   ros::Subscriber sub_odom_;
-  ros::Publisher pub_traj_;
+  ros::Publisher pub_path_;
   std::string frame_;
   tf2_ros::TransformBroadcaster broadcaster_;
-  TrajectoryVisualizer viz_traj_;
+  nav_msgs::Path path_;
 };
 
-IrisTransform::IrisTransform(const ros::NodeHandle &nh) : nh_{nh} {
+IrisTransform::IrisTransform(const ros::NodeHandle &nh)
+    : nh_{nh},
+      sub_odom_(nh_.subscribe("topic", 1, &IrisTransform::OdomCb, this)),
+      pub_path_(nh_.advertise<nav_msgs::Path>("path", 1)) {
   nh_.param<std::string>("frame", frame_, "imu");
-  sub_odom_ = nh_.subscribe("topic", 1, &IrisTransform::OdomCb, this);
-
-  pub_traj_ = nh_.advertise<visualization_msgs::Marker>("trajectory", 1);
-  std_msgs::ColorRGBA traj_color;
-  traj_color.r = 1;
-  traj_color.g = 1;
-  traj_color.a = 1;
-  viz_traj_ = TrajectoryVisualizer(pub_traj_, traj_color, 0.05, "line");
 }
 
 void IrisTransform::OdomCb(const nav_msgs::OdometryConstPtr &odom_msg) {
@@ -62,16 +46,19 @@ void IrisTransform::OdomCb(const nav_msgs::OdometryConstPtr &odom_msg) {
   transform_stamped.transform.translation = translation;
   transform_stamped.transform.rotation = quaternion;
 
+  geometry_msgs::PoseStamped pose_stamped;
+  pose_stamped.pose = odom_msg->pose.pose;
+  pose_stamped.header = odom_msg->header;
+  path_.header = odom_msg->header;
+  path_.poses.push_back(pose_stamped);
+  pub_path_.publish(path_);
+
   broadcaster_.sendTransform(transform_stamped);
-  viz_traj_.PublishTrajectory(odom_msg->pose.pose.position, odom_msg->header);
 }
 
 }  // namespace iris_tf
 }  // namespace galt
 
-/**
- * @brief main
- */
 int main(int argc, char **argv) {
   ros::init(argc, argv, "iris_tf");
   ros::NodeHandle nh("~");

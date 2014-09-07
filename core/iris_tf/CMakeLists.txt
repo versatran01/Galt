@@ -17,14 +17,13 @@ catkin_package(
     #  DEPENDS system_lib
     )
 
-include_directories(include)
 include_directories(
+    include
     ${catkin_INCLUDE_DIRS}
     )
 
 add_executable(${PROJECT_NAME}_node
     src/iris_tf_node.cpp
-    src/rviz_helper.cpp
     )
 
 target_link_libraries(${PROJECT_NAME}_node

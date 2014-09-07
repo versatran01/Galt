@@ -32,6 +32,7 @@ public:
   void set_lifetime(const ros::Duration &duration) {
     markers_.lifetime = duration;
   }
+  void set_num_skip(int num_skip) { num_skip_ = num_skip; }
 
   void PublishTrajectory(const geometry_msgs::Point &point,
                          const std_msgs::Header &header);
@@ -41,6 +42,8 @@ public:
 private:
   ros::NodeHandle nh_;
   ros::Publisher traj_pub_;
+  int num_skip_;
+  int total_points_cnt_;
   visualization_msgs::Marker markers_;
 };
 

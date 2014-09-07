@@ -14,11 +14,11 @@
 <launch>
   <!-- Bagfile launch options -->
   <arg name="bagfile_home" default="$(env GALT_BAGFILES)"/>
-  <arg name="bagfile"/>
+  <arg name="bagfile" default=""/>
   <arg name="bagfile_start" default="0"/>
 
   <!-- Rosbag -->
-  <arg name="bagfile_path" value="$(arg bagfile_home)/$(arg bagfile).bag"/>
+  <arg name="bagfile_path" default="$(arg bagfile_home)/$(arg bagfile).bag"/>
   <node name="playback" pkg="rosbag" type="play" output="log"
         args="--clock -s $(arg bagfile_start) $(arg bagfile_path)"/>
 

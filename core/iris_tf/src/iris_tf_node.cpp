@@ -1,9 +1,12 @@
 #include <ros/ros.h>
 #include <geometry_msgs/PoseStamped.h>
+#include <visualization_msgs/Marker.h>
 #include <nav_msgs/Path.h>
 #include <nav_msgs/Odometry.h>
 #include <tf2_ros/transform_broadcaster.h>
 #include <tf2_ros/static_transform_broadcaster.h>
+
+#include "iris_tf/rviz_helper.h"
 
 namespace galt {
 namespace iris_tf {
@@ -17,17 +20,18 @@ class IrisTransform {
 
   ros::NodeHandle nh_;
   ros::Subscriber sub_odom_;
-  ros::Publisher pub_path_;
   std::string frame_;
   tf2_ros::TransformBroadcaster broadcaster_;
-  nav_msgs::Path path_;
+  TrajectoryVisualizer path_viz_;
 };
 
 IrisTransform::IrisTransform(const ros::NodeHandle &nh)
-    : nh_{nh},
+    : nh_(nh),
       sub_odom_(nh_.subscribe("topic", 1, &IrisTransform::OdomCb, this)),
-      pub_path_(nh_.advertise<nav_msgs::Path>("path", 1)) {
+      path_viz_(nh) {
   nh_.param<std::string>("frame", frame_, "imu");
+  path_viz_.set_scale(0.1);
+  path_viz_.set_colorRGBA({1, 1, 0, 1});
 }
 
 void IrisTransform::OdomCb(const nav_msgs::OdometryConstPtr &odom_msg) {
@@ -46,14 +50,8 @@ void IrisTransform::OdomCb(const nav_msgs::OdometryConstPtr &odom_msg) {
   transform_stamped.transform.translation = translation;
   transform_stamped.transform.rotation = quaternion;
 
-  geometry_msgs::PoseStamped pose_stamped;
-  pose_stamped.pose = odom_msg->pose.pose;
-  pose_stamped.header = odom_msg->header;
-  path_.header = odom_msg->header;
-  path_.poses.push_back(pose_stamped);
-  pub_path_.publish(path_);
-
   broadcaster_.sendTransform(transform_stamped);
+  path_viz_.PublishTrajectory(position, odom_msg->header);
 }
 
 }  // namespace iris_tf

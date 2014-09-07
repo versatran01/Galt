@@ -3,18 +3,16 @@ project(iris_tf)
 
 add_definitions("-std=c++11 -Wall")
 find_package(catkin REQUIRED COMPONENTS
-    nav_msgs
-    roscpp
-    tf2
-    tf2_ros
+    nav_msgs roscpp
+    tf2 tf2_ros
     visualization_msgs
     )
 
 catkin_package(
-    #  INCLUDE_DIRS include
-    #  LIBRARIES iris_tf
-    #  CATKIN_DEPENDS geometry_msgs nav_msgs roscpp std_msgs tf
-    #  DEPENDS system_lib
+    INCLUDE_DIRS include
+    LIBRARIES iris_tf
+    CATKIN_DEPENDS geometry_msgs nav_msgs roscpp std_msgs tf
+    DEPENDS system_lib
     )
 
 include_directories(
@@ -24,6 +22,7 @@ include_directories(
 
 add_executable(${PROJECT_NAME}_node
     src/iris_tf_node.cpp
+    src/rviz_helper.cpp
     )
 
 target_link_libraries(${PROJECT_NAME}_node

@@ -99,14 +99,9 @@
   </include>
 
   <!--laser_filter-->
-  <include file="$(find galt_setup)/launch/laser_filter.launch">
-  </include>
-
-  <!-- Try recording...  -->
-  <!--
-  <node pkg="rosbag" type="record" name="recorder" output="screen"
-        args="/tf
-        /tf_static
-        /hokuyo/scan_filtered"/>
-  -->
+  <node pkg="laser_filters" type="scan_to_scan_filter_chain"
+        name="laser_filter" ns="/hokuyo">
+      <rosparam command="load"
+          file="$(find galt_setup)/profiles/$(arg profile)/laser_filter.yml"/>
+  </node>
 </launch>

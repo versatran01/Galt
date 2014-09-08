@@ -8,7 +8,6 @@
 #include <opencv2/video/video.hpp>
 
 namespace galt {
-
 namespace stereo_vo {
 
 void Display(const CvStereoImage &stereo_image,
@@ -90,13 +89,6 @@ void Display(const FramePtr &frame, const FramePtr &key_frame) {
   Display(frame->stereo_image(), frame->features(), key_frame);
 }
 
-void CornerSubPix(const cv::Mat &image, std::vector<CvPoint2> &corners) {
-  cv::TermCriteria criteria =
-      cv::TermCriteria(CV_TERMCRIT_EPS + CV_TERMCRIT_ITER, 40, 0.001);
-  /// Calculate the refined corner locations
-  cv::cornerSubPix(image, corners, cv::Size(5, 5), cv::Size(-1, -1), criteria);
-}
 
 }  // namespace stereo_vo
-
 }  // namespace galt

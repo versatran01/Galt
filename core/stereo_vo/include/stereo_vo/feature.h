@@ -24,6 +24,7 @@ class Feature {
    * @brief Feature Default constructor
    */
   Feature() = default;
+
   /**
    * @brief Feature Constructor Create a feature
    * @param id Unique id of this feature
@@ -32,6 +33,7 @@ class Feature {
    */
   Feature(const Id& id, const CvPoint2& p_pixel, const bool& init = true)
       : id_(id), p_pixel_(p_pixel), init_(init) {}
+
   /**
    * @brief Feature Constructor Create a newly detected feautre
    * @param p_pixel Pixel position of this feature
@@ -44,32 +46,18 @@ class Feature {
   const CvPoint2& p_pixel() const { return p_pixel_; }
   void set_p_pixel(const CvPoint2& p_pixel) { p_pixel_ = p_pixel; }
 
-  const CvPoint2& p_right() const { return p_right_; }
-  void set_p_right(const CvPoint2& p_right) { p_right_ = p_right; }
-
   const bool& init() const { return init_; }
   void set_init(const bool& init) { init_ = init; }
 
  private:
   Id id_;             ///< id of this feature
   CvPoint2 p_pixel_;  ///< pixel position
-  CvPoint2 p_right_;  ///< pixel position in right image
   bool init_;         ///< true if this feature was newly added
 };
 
-/**
- * @brief ExtractCorners Extract corners from a vector of features
- * @param features A vector of features
- * @return A vector of corners
- */
 std::vector<CvPoint2> ExtractCorners(const std::vector<Feature>& features);
-
-/**
- * @brief ExtractIds Extract ids from a vector of features
- * @param features A vector of features
- * @return A vector of ids
- */
 std::vector<Id> ExtractIds(const std::vector<Feature>& features);
+void MakeFeaturesOld(std::vector<Feature>& features);
 
 }  // namespace stereo_vo
 }  // namespace galt

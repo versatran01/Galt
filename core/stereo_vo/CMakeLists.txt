@@ -12,7 +12,9 @@ find_package(catkin REQUIRED COMPONENTS
     dynamic_reconfigure
     kr_math
     eigen_conversions
-)
+    rviz_helper
+    tf2_ros
+    )
 
 find_package(OpenCV)
 #find_package(gtsam)
@@ -20,32 +22,32 @@ find_package(OpenCV)
 
 generate_dynamic_reconfigure_options(
     cfg/StereoVoDyn.cfg
-)
+    )
 
 catkin_package(
-#  INCLUDE_DIRS include
-#  LIBRARIES stereo_vo
-#  CATKIN_DEPENDS roscpp
-#  DEPENDS system_lib
-)
+    #  INCLUDE_DIRS include
+    #  LIBRARIES stereo_vo
+    #  CATKIN_DEPENDS roscpp
+    #  DEPENDS system_lib
+    )
 
-include_directories(include)
 include_directories(
+    include
     ${catkin_INCLUDE_DIRS}
     ${OpenCV_INCLUDE_DIRS}
     #${GTSAM_INCLUDE_DIRS}
     #${G2O_INCLUDE_DIR}
     #/usr/include/suitesparse # g2o may require this
-)
+    )
 
 add_library(${PROJECT_NAME}
-    src/stereo_vo.cc
-    src/corner_detector.cc
-    src/utils.cc
-    src/frame.cc
-    src/feature.cc
-    #src/optimizer.cc
-)
+    src/stereo_vo.cpp
+    src/feature_detector.cpp
+    #src/utils.cpp
+    src/frame.cpp
+    src/feature.cpp
+    #src/optimizer.cpp
+    )
 target_link_libraries(${PROJECT_NAME}
     ${catkin_LIBRARIES}
     ${OpenCV_LIBRARIES}
@@ -59,19 +61,19 @@ target_link_libraries(${PROJECT_NAME}
     #${G2O_TYPES_SBA}
     #cxsparse
     #cholmod
-)
+    )
 
 add_executable(${PROJECT_NAME}_node
-    src/main.cc
-    src/stereo_vo_node.cc
-)
+    src/main.cpp
+    src/stereo_vo_node.cpp
+    )
 target_link_libraries(${PROJECT_NAME}_node
     ${PROJECT_NAME}
-)
+    )
 
 add_dependencies(${PROJECT_NAME}
     ${catkin_EXPORTED_TARGETS}
     ${PROJECT_NAME}_gencfg
     ${PROJECT_NAME}_gencpp
     ${${PROJECT_NAME}_EXPORTED_TARGETS}
-)
+    )

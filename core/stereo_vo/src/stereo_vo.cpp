@@ -27,6 +27,7 @@ void StereoVo::Initialize(const CvStereoImage &stereo_image,
   // Add the first stereo image as first keyframe
   FramePtr curr_frame = boost::make_shared<Frame>(stereo_image);
   AddKeyFrame(curr_frame);
+  //AddKeyFrame(iamges, corners);
 
   // Save frame for next iteration
   //  prev_frame_ = curr_frame;

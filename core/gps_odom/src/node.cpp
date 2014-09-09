@@ -12,6 +12,7 @@
 #include <gps_odom/node.hpp>
 #include <ros/package.h>
 #include <nav_msgs/Odometry.h>
+#include <visualization_msgs/Marker.h>
 #include <kr_math/SO3.hpp>
 #include <Eigen/Geometry>
 #include <algorithm>
@@ -20,7 +21,8 @@
 namespace gps_odom {
 
 Node::Node()
-    : nh_("~"), pkgPath_(ros::package::getPath("gps_odom")), traj_viz_(nh_) {
+    : nh_("~"), pkgPath_(ros::package::getPath("gps_odom")), 
+      trajViz_(nh_), covViz_(nh_) {
   if (pkgPath_.empty()) {
     ROS_WARN("Failed to find path for package");
   }
@@ -29,7 +31,8 @@ Node::Node()
 
   refSet_ = false;
   currentDeclination_ = 0.0;
-  traj_viz_.set_colorRGB(rviz_helper::colors::RED);
+  trajViz_.set_colorRGB(rviz_helper::colors::RED);
+  covViz_.set_colorRGB({1,0,0,0.5});
 }
 
 void Node::initialize() {
@@ -108,7 +111,7 @@ void Node::gpsCallback(
   //  determine magnetic declination
   double bEast, bNorth, bUp;
   magneticModel_->operator()(tYears, lat, lon, hWGS84, bEast, bNorth, bUp);
-  currentDeclination_ = std::atan2(bEast, bNorth);
+  currentDeclination_ = -std::atan2(bEast, bNorth);
 
   //  calculate corrected yaw angle
   //  matrix composition is of the form wRb = Rz * Ry * Rx
@@ -132,17 +135,21 @@ void Node::gpsCallback(
   odometry.pose.pose.position.y = locY;
   odometry.pose.pose.position.z = (height->height - refHeight_);
 
+  /// @todo: get rid of this scale factor for next data sets!
+  /// This is only here because of mistake in ublox_gps
+  const double hackFactor = 9;
+  
   //  generate covariance (6x6 with order: x,y,z,rot_x,rot_y,rot_z)
   kr::mat<double, 6, 6> poseCovariance;
   poseCovariance.setZero();
   for (int i = 0; i < 3; i++) {
     for (int j = 0; j < 3; j++) {
-      poseCovariance(i, j) = navSatFix->position_covariance[i * 3 + j];
+      poseCovariance(i,j) = navSatFix->position_covariance[i*3 + j]*hackFactor;
     }
   }
   //  replace covariance w/ number from altimeter
   poseCovariance(3, 3) = height->variance;
-
+  
   //  orientation: copy from IMU
   for (int i = 0; i < 3; i++) {
     for (int j = 0; j < 3; j++) {
@@ -162,12 +169,12 @@ void Node::gpsCallback(
   velCovariance.setZero();
   for (int i = 0; i < 3; i++) {
     for (int j = 0; j < 3; j++) {
-      velCovariance(i, j) = navSatTwist->twist.covariance[(i * 6) + j];
-      velCovariance(i + 3, j + 3) = -1; //  unsupported
+      velCovariance(i,j) = navSatTwist->twist.covariance[(i*6) + j]*hackFactor;
+      velCovariance(i+3,j+3) = -1; //  unsupported
     }
   }
   //  scale up z covariance on GPS velocity
-  velCovariance(2, 2) *= 10;
+  //velCovariance(2, 2) *= 10;
 
   //  copy covariance to output
   for (int i = 0; i < 6; i++) {
@@ -177,7 +184,7 @@ void Node::gpsCallback(
     }
   }
   pubOdometry_.publish(odometry);
-
+  
   //  publish tf stuff and trajectory visualizer
   geometry_msgs::Vector3 translation;
   translation.x = odometry.pose.pose.position.x;
@@ -191,7 +198,8 @@ void Node::gpsCallback(
   transform_stamped.transform.rotation = odometry.pose.pose.orientation;
 
   broadcaster_.sendTransform(transform_stamped);
-  traj_viz_.PublishTrajectory(odometry.pose.pose.position, odometry.header);
+  trajViz_.PublishTrajectory(odometry.pose.pose.position, odometry.header);
+  covViz_.PublishCovariance(odometry);
 }
 
 } //  namespace gps_odom

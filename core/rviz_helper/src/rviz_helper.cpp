@@ -32,4 +32,27 @@ void TrajectoryVisualizer::PublishTrajectory(const geometry_msgs::Point &point,
   traj_pub_.publish(markers_);
 }
 
+CovarianceVisualizer::CovarianceVisualizer(const ros::NodeHandle& nh,
+                     const std::string &topic) :
+  nh_(nh) {
+  cov_pub_ = nh_.advertise<visualization_msgs::Marker>(topic, 1);
+  //  default to a beige colour
+  set_colorRGB({1, 0.9255, 0.5});
+  
+  marker_.action = visualization_msgs::Marker::ADD;
+  marker_.type = visualization_msgs::Marker::SPHERE;
+  marker_.lifetime = ros::Duration(); //  last forever
+}
+
+void
+CovarianceVisualizer::PublishCovariance(const nav_msgs::Odometry& odometry) {
+  marker_.header = odometry.header;
+  marker_.pose.position = odometry.pose.pose.position;
+  marker_.pose.orientation.w = 1;
+  marker_.scale.x = odometry.pose.covariance[(0 * 6) + 0];
+  marker_.scale.y = odometry.pose.covariance[(1 * 6) + 1];
+  marker_.scale.z = odometry.pose.covariance[(2 * 6) + 2];
+  cov_pub_.publish(marker_);
+}
+
 } // namespace rviz_helper

@@ -82,7 +82,8 @@ private:
   double currentDeclination_;
 
   tf2_ros::TransformBroadcaster broadcaster_;
-  rviz_helper::TrajectoryVisualizer traj_viz_;
+  rviz_helper::TrajectoryVisualizer trajViz_;
+  rviz_helper::CovarianceVisualizer covViz_;
 };
 
 } //  namespace_gps_odom

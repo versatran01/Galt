@@ -1,13 +1,4 @@
 <launch>
-    <arg name="frame" default="imu"/>
-    <arg name="topic" default="gps_kf/odometry"/>
-
-    <!--iris_tf-->
-    <node pkg="iris_tf" type="iris_tf_node" name="iris_tf" output="screen">
-        <param name="frame" type="string" value="$(arg frame)"/>
-        <remap from="~topic" to="$(arg topic)"/>
-    </node>
-
     <!--imu_laser-->
     <node pkg="tf2_ros" type="static_transform_publisher"
         name="imu_laser_broadcaster"

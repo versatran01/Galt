@@ -19,7 +19,7 @@ using ::gps_kf::Vector3WithCovarianceStamped;
 
 namespace gps_kf {
 
-Node::Node() : nh_("~"), traj_viz_(nh_) {}
+Node::Node() : nh_("~"), trajViz_(nh_), covViz_(nh_) {}
 
 void Node::initialize() {
   //  configure topics
@@ -31,9 +31,13 @@ void Node::initialize() {
   subImu_ = nh_.subscribe("imu", 1, &Node::imuCallback, this);
   subOdometry_ = nh_.subscribe("gps_odom", 1, &Node::odoCallback, this);
 
+  nh_.param("gyro_bias_drift_std", gyroBiasDriftStd_, 1.0e-3);
+  nh_.param("accel_bias_drift_std", accelBiasDriftStd_, 1.0e-2);
+  
   predictTime_ = ros::Time(0, 0);
-  traj_viz_.set_colorRGB(rviz_helper::colors::CYAN);
-  traj_viz_.set_num_skip(12);
+  trajViz_.set_colorRGB(rviz_helper::colors::CYAN);
+  trajViz_.set_num_skip(12);
+  covViz_.set_colorRGB({0,1,1,0.5});  //  transparent cyan
 }
 
 void Node::imuCallback(const sensor_msgs::ImuConstPtr &imu) {
@@ -69,9 +73,9 @@ void Node::imuCallback(const sensor_msgs::ImuConstPtr &imu) {
 
   //  predict
   kr::mat3d Qbg = kr::mat3d::Identity();
-  Qbg *= 1e-4;
+  Qbg *= gyroBiasDriftStd_*gyroBiasDriftStd_;
   kr::mat3d Qba = kr::mat3d::Identity();
-  Qba *= 1e-2;
+  Qba *= accelBiasDriftStd_*accelBiasDriftStd_;
   positionKF_.setBiasUncertainties(Qbg, Qba);
   positionKF_.predict(gyro, varGyro, accel, varAccel, delta);
 
@@ -112,7 +116,7 @@ void Node::imuCallback(const sensor_msgs::ImuConstPtr &imu) {
   transform_stamped.transform.rotation = pose.pose.orientation;
 
   broadcaster_.sendTransform(transform_stamped);
-  traj_viz_.PublishTrajectory(pose.pose.position, pose.header);
+  trajViz_.PublishTrajectory(pose.pose.position, pose.header);
 
   //  top left 3x3 (filter) and bottom right 3x3 (from imu)
   for (int i = 0; i < 3; i++) {
@@ -139,6 +143,7 @@ void Node::imuCallback(const sensor_msgs::ImuConstPtr &imu) {
     }
   }
   pubOdometry_.publish(odo);
+  covViz_.PublishCovariance(odo);
 
   //  publish bias messages
   Vector3WithCovarianceStamped aBiasVector, gBiasVector;
@@ -188,11 +193,6 @@ void Node::odoCallback(const nav_msgs::OdometryConstPtr &odometry) {
     positionKF_.initState(q, p, v);
     positionKF_.initCovariance(1e-1, 1e-4, 0.8, 1.0, 5.0);
   } else {
-    // std::cout << "P: " << positionKF_.getCovariance().block<3,3>(12,12) <<
-    // std::endl;
-    // std::cout << "Q: " << positionKF_.getCovariance().block<3,3>(0,0) <<
-    // std::endl;
-
     if (!positionKF_.update(q, varQ, p, varP, v, varV)) {
       ROS_WARN("Warning: Kalman gain was singular in update");
     }

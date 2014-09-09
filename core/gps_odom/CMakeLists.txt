@@ -14,6 +14,7 @@ find_package(catkin REQUIRED COMPONENTS
   pressure_altimeter
   tf2_ros
   rviz_helper
+  visualization_msgs
 )
 
 find_package(GeographicLib 1.35 REQUIRED)

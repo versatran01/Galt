@@ -4,6 +4,7 @@
 #include <ros/ros.h>
 #include <std_msgs/Header.h>
 #include <geometry_msgs/Point.h>
+#include <nav_msgs/Odometry.h>
 #include <visualization_msgs/Marker.h>
 
 namespace rviz_helper {
@@ -26,7 +27,11 @@ public:
     markers_.color.r = rgb[0];
     markers_.color.g = rgb[1];
     markers_.color.b = rgb[2];
-    markers_.color.a = 1;
+    if (rgb.size() == 4) {
+      markers_.color.a = rgb[3];
+    } else {
+      markers_.color.a = 1;
+    }
   }
   void set_scale(double scale) { markers_.scale.x = scale; }
   void set_lifetime(const ros::Duration &duration) {
@@ -45,6 +50,34 @@ private:
   int num_skip_;
   int total_points_cnt_;
   visualization_msgs::Marker markers_;
+};
+
+/**
+ * @brief Visualize covariance as a scaled ellipsoid.
+ */
+class CovarianceVisualizer {
+public:
+  CovarianceVisualizer(const ros::NodeHandle& nh,
+                       const std::string &topic = std::string("covariance"));
+  
+  void set_colorRGB(const std::vector<double>& rgb) {
+    marker_.color.r = rgb[0];
+    marker_.color.g = rgb[1];
+    marker_.color.b = rgb[2];
+    if (rgb.size() == 4) {
+      marker_.color.a = rgb[3];
+    } else {
+      marker_.color.a = 1;
+    }
+  }
+  
+  /// Extract covariance, position and header from odometry and publish.
+  void PublishCovariance(const nav_msgs::Odometry& odometry);
+  
+private:
+  ros::NodeHandle nh_;
+  ros::Publisher cov_pub_;
+  visualization_msgs::Marker marker_;
 };
 
 } // namespace rviz_helper

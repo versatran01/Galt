@@ -108,8 +108,8 @@ public:
 
   /**
    * @brief Set std dev. of bias drift rates.
-   * @param bg Gyro bias drift rate uncertainty, rad/s^2.
-   * @param ba Accelerometer bias drift rate uncertainty, m/s^3.
+   * @param bg Gyro bias drift rate covariance, rad^2/s^4.
+   * @param ba Accelerometer bias drift rate covariance, m^2/s^6.
    */
   void setBiasUncertainties(const kr::mat3<Scalar> &bg,
                             const kr::mat3<Scalar> &ba) {
@@ -258,7 +258,6 @@ bool ErrorStateKF<Scalar>::update(const kr::quat<Scalar> &qm,
 
   // r.template block<3, 1>(6, 0) = aa.angle()*aa.axis();
   r(6, 0) = rpy[2];
-  // printf("rot res: %f\n", r(6,0)*180/M_PI);
 
   //  linear pos/velocity
   r.template block<3, 1>(0, 0) = pm - p_;

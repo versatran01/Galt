@@ -47,7 +47,9 @@ private:
   void odoCallback(const nav_msgs::OdometryConstPtr &odometry);
 
   ErrorStateKF<double> positionKF_;
-
+  double gyroBiasDriftStd_;
+  double accelBiasDriftStd_;
+  
   bool initialized_{ false };
 
   ros::NodeHandle nh_;
@@ -61,7 +63,8 @@ private:
 
   std::string worldFrameId_;
   tf2_ros::TransformBroadcaster broadcaster_;
-  rviz_helper::TrajectoryVisualizer traj_viz_;
+  rviz_helper::TrajectoryVisualizer trajViz_;
+  rviz_helper::CovarianceVisualizer covViz_;
 };
 
 } //  namespace gps_kf

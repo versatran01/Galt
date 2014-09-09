@@ -49,9 +49,19 @@ CovarianceVisualizer::PublishCovariance(const nav_msgs::Odometry& odometry) {
   marker_.header = odometry.header;
   marker_.pose.position = odometry.pose.pose.position;
   marker_.pose.orientation.w = 1;
-  marker_.scale.x = odometry.pose.covariance[(0 * 6) + 0];
-  marker_.scale.y = odometry.pose.covariance[(1 * 6) + 1];
-  marker_.scale.z = odometry.pose.covariance[(2 * 6) + 2];
+  
+  double scale[3];
+  for (int i=0; i < 3; i++) {
+    if (odometry.pose.covariance[(i *6) + i] >= 0) {
+      scale[i] = std::sqrt(odometry.pose.covariance[(i * 6) + i]);
+    } else {
+      scale[i] = 0;
+    }
+  }
+  
+  marker_.scale.x = scale[0];
+  marker_.scale.y = scale[1];
+  marker_.scale.z = scale[2];
   cov_pub_.publish(marker_);
 }
 

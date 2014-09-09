@@ -1,0 +1,107 @@
+<!--
+  Name: process_gps_imu.launch
+  Triggers:
+    * rosbag playback
+    * imu_covariance
+    * kr_attitude_eskf
+    * pressure_altimeter
+    * gps_odom
+    * gps_kf
+    * stereo_vo
+    * laser_filter
+    * iris_tf
+
+  Brief: Launch the GPS + IMU components of the post-processing suite.
+-->
+<launch>
+  <!-- Bagfile launch options -->
+  <arg name="bagfile_home" default="$(env GALT_BAGFILES)"/>
+  <arg name="bagfile" default=""/>
+  <arg name="bagfile_start" default="0"/>
+
+  <!-- Rosbag -->
+  <arg name="bagfile_path" default="$(arg bagfile_home)/$(arg bagfile).bag"/>
+  <node name="playback" pkg="rosbag" type="play" output="log"
+        args="--clock -s $(arg bagfile_start) $(arg bagfile_path)"/>
+
+  <!-- Sensor profile to load -->
+  <arg name="profile"/>
+
+  <!-- Magnetometer calibration to load -->
+  <arg name="mag_calib" default="philadelphia_generic"/>
+
+  <!-- IMU Covariance -->
+  <node pkg="imu_covariance" name="imu_covariance" type="imu_covariance"
+    output="screen">
+    <!-- Load settings from our profile -->
+    <param name="config_path"
+      type="string"
+      value="$(find galt_setup)/profiles/$(arg profile)/imu.yml"/>
+
+    <!-- Inputs from recorded IMU -->
+    <remap from="~imu_in" to="/imu/imu"/>
+    <remap from="~magnetic_field_in" to="/imu/magnetic_field"/>
+    <remap from="~pressure_in" to="/imu/pressure"/>
+  </node>
+
+  <!-- Attitude Filter -->
+  <node pkg="kr_attitude_eskf" name="attitude_eskf" type="kr_attitude_eskf"
+    output="screen">
+    <param name="enable_magnetometer" type="bool" value="true"/>
+
+    <!-- Magnetometer calibration parameters -->
+    <rosparam
+      file="$(find galt_setup)/calib/magnetometer/$(arg mag_calib).yml"/>
+
+    <!-- IMU data w/ proper covariance parameters -->
+    <remap from="~imu" to="/imu_covariance/imu"/>
+    <remap from="~magnetic_field" to="/imu_covariance/magnetic_field"/>
+  </node>
+
+  <!-- Barometric altimeter -->
+  <node name="pressure_altimeter" pkg="pressure_altimeter"
+    type="pressure_altimeter" output="screen">
+    <!-- name of the frame in the header of the output -->
+    <param name="world_frame_id" type="string" value="world"/>
+    <!-- input topic -->
+    <remap from="~fluid_pressure" to="/imu_covariance/pressure"/>
+  </node>
+
+  <!-- GPS Odometer -->
+  <node name="gps_odom" pkg="gps_odom" type="gps_odom" output="screen">
+    <!-- IMU w/ attitude estimate -->
+    <remap from="~imu" to="/attitude_eskf/filtered_imu"/>
+    <!-- GPS inputs -->
+    <remap from="~fix" to="/ublox_gps/fix"/>
+    <remap from="~fix_velocity" to="/ublox_gps/fix_velocity"/>
+    <!-- Altitude -->
+    <remap from="~pressure_height" to="/pressure_altimeter/height"/>
+    <!-- ID of world frame for GPS coordinates -->
+    <param name="world_frame_id" type="string" value="world"/>
+  </node>
+
+  <!-- GPS KF -->
+  <node name="gps_kf" pkg="gps_kf" type="gps_kf" output="screen">
+    <!-- filter inputs -->
+    <remap from="~imu" to="/attitude_eskf/filtered_imu"/>
+    <remap from="~gps_odom" to="/gps_odom/odometry"/>
+  </node>
+
+  <!-- Stereo VO -->
+  <node pkg="stereo_image_proc" type="stereo_image_proc"
+        name="stereo_image_proc" ns="/mv_stereo">
+  </node>
+  <node name="stereo_vo" pkg="stereo_vo" type="stereo_vo_node"
+    output="screen" ns="/mv_stereo">
+    <rosparam file="$(find galt_setup)/profiles/$(arg profile)/stereo_vo.yml"/>
+  </node>
+
+  <!-- Frame broadcaster -->
+  <include file="$(find iris_tf)/launch/node.launch">
+  </include>
+
+  <!--laser_filter-->
+  <include file="$(find galt_setup)/launch/laser_filter.launch">
+  </include>
+
+</launch>

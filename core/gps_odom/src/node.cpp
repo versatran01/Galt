@@ -24,8 +24,7 @@ Node::Node()
     : nh_("~"),
       pkgPath_(ros::package::getPath("gps_odom")),
       trajViz_(nh_),
-      covViz_(nh_),
-      tfPub_("gps") {
+      covViz_(nh_) {
   if (pkgPath_.empty()) {
     ROS_WARN("Failed to find path for package");
   }
@@ -191,6 +190,7 @@ void Node::gpsCallback(
   pubOdometry_.publish(odometry);
 
   //  publish tf stuff and trajectory visualizer
+  tfPub_.set_child_frame_id(imu->header.frame_id);
   tfPub_.PublishTransform(odometry.pose.pose, odometry.header);
   trajViz_.PublishTrajectory(odometry.pose.pose.position, odometry.header);
   covViz_.PublishCovariance(odometry);

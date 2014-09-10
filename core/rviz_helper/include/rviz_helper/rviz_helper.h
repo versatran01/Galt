@@ -97,7 +97,10 @@ class TfPublisher {
       : child_frame_id_(child_frame_id) {}
 
   const std::string &child_frame_id() const { return child_frame_id_; }
-
+  void set_child_frame_id(const std::string& id) { 
+    child_frame_id_ = id;
+  }
+  
   void PublishTransform(const geometry_msgs::Pose &pose,
                         const std_msgs::Header &header);
   void PublishTransform(const geometry_msgs::Pose &pose,

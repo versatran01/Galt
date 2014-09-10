@@ -5,7 +5,7 @@ add_definitions(-Wall -std=c++11)
 
 find_package(catkin REQUIRED COMPONENTS
     roscpp
-    std_msgs geometry_msgs
+    std_msgs geometry_msgs nav_msgs
     visualization_msgs
     tf2_ros
     )
@@ -13,7 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
     INCLUDE_DIRS include
     LIBRARIES rviz_helper
-    CATKIN_DEPENDS std_msgs geometry_msgs roscpp visualization_msgs tf2_ros
+    CATKIN_DEPENDS std_msgs geometry_msgs nav_msgs roscpp visualization_msgs tf2_ros
     DEPENDS system_lib
     )
 

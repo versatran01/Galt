@@ -21,10 +21,6 @@ using image_geometry::StereoCameraModel;
 
 class StereoVo {
  public:
-  /**
-   * @brief StereoVo Constructor
-   * @param config Dynamic reconfigure config of stereo_vo
-   */
   StereoVo() : init_(false) {}
 
   void set_config(const StereoVoDynConfig &config) {
@@ -33,6 +29,10 @@ class StereoVo {
   }
 
   bool init() const { return init_; }
+  bool init_pose() const { return init_pose_; }
+  void set_init_pose(bool init_pose) { init_pose_ = init_pose; }
+  const KrPose &pose() const { return pose_; }
+  void set_pose(const KrPose &pose) { pose_ = pose; }
   //  const FramePtr &prev_frame() const { return prev_frame_; }
   //  const KrPose &pose_world() const { return prev_frame_->pose(); }
   //  const std::deque<FramePtr> &key_frames() const { return key_frames_; }
@@ -108,6 +108,8 @@ class StereoVo {
   //  const FrameConstPtr prev_key_frame() const { return key_frames_.back(); }
 
   bool init_;                 ///< True if stereo_vo is initialized
+  bool init_pose_;            ///< True if initial pose is set
+  KrPose pose_;               ///< Pose initialized from gps_kf
   StereoCameraModel model_;   ///< Stereo camera model
   StereoVoDynConfig config_;  ///< Dynamic reconfigure config of stereo_vo
   FeatureDetector detector_;  ///< Grid based feature detector

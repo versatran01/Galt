@@ -23,20 +23,26 @@ using image_geometry::StereoCameraModel;
 void StereoVo::Initialize(const CvStereoImage &stereo_image,
                           const StereoCameraModel &model) {
   ROS_INFO("Initializing stereo_vo");
+  // Don't initialize if initial pose is not set
+  if (!init_pose()) {
+    ROS_INFO("Initial pose not set, stop initialization");
+    return;
+  }
+
   model_ = model;
   // Add the first stereo image as first keyframe
-  FramePtr curr_frame = boost::make_shared<Frame>(stereo_image);
-  AddKeyFrame(curr_frame);
-  //AddKeyFrame(iamges, corners);
+  //  FramePtr curr_frame = boost::make_shared<Frame>(stereo_image);
+  // AddKeyFrame(curr_frame);
+  // AddKeyFrame(iamges, corners);
 
   // Save frame for next iteration
-  //  prev_frame_ = curr_frame;
+  // prev_frame_ = curr_frame;
 
   //  CheckEverything();
   //  ROS_WARN("Passed check everything for initializing");
 
-  cv::namedWindow("display",
-                  CV_WINDOW_NORMAL | CV_WINDOW_KEEPRATIO | CV_GUI_EXPANDED);
+  //  cv::namedWindow("display",
+  //                  CV_WINDOW_NORMAL | CV_WINDOW_KEEPRATIO | CV_GUI_EXPANDED);
   init_ = true;
   ROS_INFO_STREAM("StereVo initialized, baseline: " << model_.baseline());
 }

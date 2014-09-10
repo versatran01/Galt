@@ -12,6 +12,7 @@
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/CameraInfo.h>
 #include <sensor_msgs/image_encodings.h>
+#include <geometry_msgs/PoseStamped.h>
 #include <cv_bridge/cv_bridge.h>
 #include <image_geometry/stereo_camera_model.h>
 #include <dynamic_reconfigure/server.h>
@@ -42,7 +43,7 @@ class StereoVoNode {
                              const std::string& cinfo_topic,
                              const image_transport::TransportHints& hints);
 
-  void OdomCb(const nav_msgs::Odometry& odom_msg);
+  void OdometryCb(const nav_msgs::Odometry& odom_msg);
 
   void StereoCb(const ImageConstPtr& l_image_msg,
                 const CameraInfoConstPtr& l_cinfo_msg,
@@ -63,9 +64,8 @@ class StereoVoNode {
   image_geometry::StereoCameraModel stereo_model_;  ///< Stereo camera model
   tf2_ros::TransformBroadcaster tf_;                ///< Transform broadcaster
   rviz_helper::TrajectoryVisualizer traj_viz_;      ///< Trajectory visualizer
-  dynamic_reconfigure::Server<StereoVoDynConfig>
-      cfg_server_;      ///< Dynamic reconfigure server
-  StereoVo stereo_vo_;  ///< Stereo visual odometry
+  StereoVo stereo_vo_;                              ///< Stereo visual odometry
+  dynamic_reconfigure::Server<StereoVoDynConfig> cfg_server_;
 
   //  void PublishPoseStamped(const geometry_msgs::Pose& pose,
   //                          const ros::Time& time,
@@ -77,7 +77,7 @@ class StereoVoNode {
   //  void PublishTrajectory(const geometry_msgs::Pose& pose, const ros::Time&
   // time,
   //                         const std::string& frame_id);
-};  // class StereoVoNode
+};
 
 geometry_msgs::Pose KrPoseToRosPose(const KrPose& kr_pose);
 

@@ -18,7 +18,7 @@ namespace stereo_vo {
 StereoVoNode::StereoVoNode(const ros::NodeHandle& nh)
     : nh_(nh),
       it_(nh),
-      odom_sub_(nh_.subscribe("odom", 1, &StereoVoNode::OdomCb, this)),
+      odom_sub_(nh_.subscribe("odometry", 1, &StereoVoNode::OdometryCb, this)),
       traj_viz_(nh) {
   image_transport::TransportHints hints("raw", ros::TransportHints(), nh_);
   SubscribeStereoTopics("image_rect", "camera_info", hints);
@@ -44,8 +44,15 @@ void StereoVoNode::SubscribeStereoTopics(
   r_cinfo_sub_.subscribe(nh_, resolve(append(right, cinfo_topic)), 1);
 }
 
-void StereoVoNode::OdomCb(const nav_msgs::Odometry& odom_msg) {
-  ROS_INFO_THROTTLE(1, "in odom cb");
+void StereoVoNode::OdometryCb(const nav_msgs::Odometry& odom_msg) {
+  // Unsubscribe if stereo vo is already initialized
+  if (stereo_vo_.init()) {
+    odom_sub_.shutdown();
+    ROS_INFO("StereoVo initialized, unsubscribe from gps_kf/odometry");
+    return;
+  }
+  stereo_vo_.set_pose(KrPose(odom_msg.pose.pose));
+  if (!stereo_vo_.init_pose()) stereo_vo_.set_init_pose(true);
 }
 
 void StereoVoNode::ReconfigureCb(const StereoVoDynConfig& config, int level) {
@@ -86,13 +93,13 @@ void StereoVoNode::StereoCb(const ImageConstPtr& l_image_msg,
   cv::waitKey(1);
 
   //  stereo_vo_.Iterate(stereo_image);
-  //  auto camera_pose = KrPoseToRosPose(stereo_vo_.pose_world());
 
   // Publish PointCloud from keyframe pose and features
   //  PublishPointCloud(stereo_vo_.point3ds(), stereo_vo_.key_frames(),
   //                    l_image_msg->header.stamp, "/world");
   //  PublishPoseStamped(camera_pose, l_image_msg->header.stamp, "/world");
   //  PublishTrajectory(camera_pose, l_image_msg->header.stamp, "/world");
+//  traj_viz_.PublishTrajectory();
 }
 
 /*

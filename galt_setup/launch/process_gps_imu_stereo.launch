@@ -37,6 +37,7 @@
     <node name="stereo_vo" pkg="stereo_vo" type="stereo_vo_node"
         output="screen" ns="/mv_stereo">
         <rosparam file="$(find galt_setup)/profiles/$(arg profile)/stereo_vo.yml"/>
+        <remap from="~odometry" to="/gps_kf/odometry"/>
     </node>
 
 </launch>

@@ -4,10 +4,9 @@ Panels:
     Name: Displays
     Property Tree Widget:
       Expanded:
+        - /Status1
         - /Axes1
         - /TF1
-        - /TF1/Status1
-        - /Marker1
       Splitter Ratio: 0.5
     Tree Height: 761
   - Class: rviz/Selection
@@ -106,9 +105,9 @@ Visualization Manager:
       Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
-      Max Intensity: 2076
+      Max Intensity: 1665
       Min Color: 0; 0; 0
-      Min Intensity: 473
+      Min Intensity: 579
       Name: LaserScan
       Position Transformer: XYZ
       Queue Size: 10
@@ -125,6 +124,8 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: true
+        gps:
+          Value: true
         imu:
           Value: true
         laser:
@@ -142,6 +143,8 @@ Visualization Manager:
       Show Names: true
       Tree:
         world:
+          gps:
+            {}
           imu:
             laser:
               {}
@@ -154,6 +157,30 @@ Visualization Manager:
     - Class: rviz/Marker
       Enabled: true
       Marker Topic: /gps_kf/traj
+      Name: Marker
+      Namespaces:
+        "": true
+      Queue Size: 100
+      Value: true
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /gps_odom/traj
+      Name: Marker
+      Namespaces:
+        "": true
+      Queue Size: 100
+      Value: true
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /gps_kf/covariance
+      Name: Marker
+      Namespaces:
+        "": true
+      Queue Size: 100
+      Value: true
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /gps_odom/covariance
       Name: Marker
       Namespaces:
         "": true
@@ -182,22 +209,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 43.4956
+      Distance: 45.1463
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -3.7178
-        Y: -4.75398
-        Z: -6.03167
+        X: -5.79454
+        Y: -11.0247
+        Z: -2.60761
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.224801
+      Pitch: 0.489802
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 4.76502
+      Yaw: 2.24003
     Saved: ~
 Window Geometry:
   Displays:

@@ -1,0 +1,15 @@
+Calibration results 
+====================
+Camera-system parameters:
+	cam0 (/mv_25001185/image_raw):
+	 type: <class 'aslam_cv.libaslam_cv_python.DistortedPinholeCameraGeometry'>
+	 distortion: [-0.42432168  0.17346946  0.0002981   0.00084845] +- [ 0.00513241  0.0099342   0.00069123  0.00082194]
+	 projection: [ 626.27255217  627.51023995  331.71821577  251.67546859] +- [ 3.19935056  3.2240674   2.84821786  2.38181753]
+	 reprojection error: [0.000001, 0.000001] +- [0.138856, 0.166961]
+
+
+
+Target configuration
+====================
+
+  Type: circlegrid

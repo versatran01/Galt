@@ -62,8 +62,9 @@ class StereoVoNode {
   boost::shared_ptr<ExactSync> exact_sync_;         ///< Exact time sync policy
   visualization_msgs::Marker traj_;                 ///< Trajectory marker
   image_geometry::StereoCameraModel stereo_model_;  ///< Stereo camera model
-  tf2_ros::TransformBroadcaster tf_;                ///< Transform broadcaster
+  rviz_helper::TfPublisher tf_pub_;                 ///< Transfrom publisher
   rviz_helper::TrajectoryVisualizer traj_viz_;      ///< Trajectory visualizer
+  std::string frame_id_;                            ///< Reference frame
   StereoVo stereo_vo_;                              ///< Stereo visual odometry
   dynamic_reconfigure::Server<StereoVoDynConfig> cfg_server_;
 

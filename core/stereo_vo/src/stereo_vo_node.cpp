@@ -19,6 +19,7 @@ StereoVoNode::StereoVoNode(const ros::NodeHandle& nh)
     : nh_(nh),
       it_(nh),
       odom_sub_(nh_.subscribe("odometry", 1, &StereoVoNode::OdometryCb, this)),
+      tf_pub_("stereo"),
       traj_viz_(nh) {
   image_transport::TransportHints hints("raw", ros::TransportHints(), nh_);
   SubscribeStereoTopics("image_rect", "camera_info", hints);
@@ -52,6 +53,8 @@ void StereoVoNode::OdometryCb(const nav_msgs::Odometry& odom_msg) {
     return;
   }
   stereo_vo_.set_pose(KrPose(odom_msg.pose.pose));
+  // Set frame_id only once
+  if (frame_id_.empty()) frame_id_ = odom_msg.header.frame_id;
   if (!stereo_vo_.init_pose()) stereo_vo_.set_init_pose(true);
 }
 
@@ -99,7 +102,11 @@ void StereoVoNode::StereoCb(const ImageConstPtr& l_image_msg,
   //                    l_image_msg->header.stamp, "/world");
   //  PublishPoseStamped(camera_pose, l_image_msg->header.stamp, "/world");
   //  PublishTrajectory(camera_pose, l_image_msg->header.stamp, "/world");
-//  traj_viz_.PublishTrajectory();
+  const geometry_msgs::Pose pose =
+      static_cast<geometry_msgs::Pose>(stereo_vo_.pose());
+  tf_pub_.PublishTransform(pose, frame_id_, l_image_msg->header.stamp);
+  traj_viz_.PublishTrajectory(pose.position, frame_id_,
+                              l_image_msg->header.stamp);
 }
 
 /*

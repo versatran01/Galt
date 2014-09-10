@@ -28,14 +28,12 @@ void TrajectoryVisualizer::PublishTrajectory(const geometry_msgs::Point &point,
 
 void TrajectoryVisualizer::PublishTrajectory(const geometry_msgs::Point &point,
                                              const std::string &frame_id,
-                                             const ros::Time &time) {
+                                             const ros::Time &stamp) {
   ++total_points_cnt_;
-  if (total_points_cnt_ % num_skip_) {
-    return;
-  }
+  if (total_points_cnt_ % num_skip_) return;
   markers_.points.push_back(point);
   markers_.header.frame_id = frame_id;
-  markers_.header.stamp = time;
+  markers_.header.stamp = stamp;
   traj_pub_.publish(markers_);
 }
 
@@ -83,13 +81,20 @@ void CovarianceVisualizer::PublishCovariance(
 
 void TfPublisher::PublishTransform(const geometry_msgs::Pose &pose,
                                    const std_msgs::Header &header) {
+  PublishTransform(pose, header.frame_id, header.stamp);
+}
+
+void TfPublisher::PublishTransform(const geometry_msgs::Pose &pose,
+                                   const std::string &frame_id,
+                                   const ros::Time &stamp) {
   geometry_msgs::Vector3 translation;
   translation.x = pose.position.x;
   translation.y = pose.position.y;
   translation.z = pose.position.z;
 
   geometry_msgs::TransformStamped transform_stamped;
-  transform_stamped.header = header;
+  transform_stamped.header.frame_id = frame_id;
+  transform_stamped.header.stamp = stamp;
   transform_stamped.child_frame_id = child_frame_id_;
   transform_stamped.transform.translation = translation;
   transform_stamped.transform.rotation = pose.orientation;

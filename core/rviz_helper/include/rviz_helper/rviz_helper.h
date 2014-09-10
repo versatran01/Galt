@@ -49,7 +49,7 @@ class TrajectoryVisualizer {
   void PublishTrajectory(const geometry_msgs::Point &point,
                          const std_msgs::Header &header);
   void PublishTrajectory(const geometry_msgs::Point &point,
-                         const std::string &frame_id, const ros::Time &time);
+                         const std::string &frame_id, const ros::Time &stamp);
 
  private:
   ros::NodeHandle nh_;
@@ -98,6 +98,8 @@ class TfPublisher {
 
   void PublishTransform(const geometry_msgs::Pose &pose,
                         const std_msgs::Header &header);
+  void PublishTransform(const geometry_msgs::Pose &pose,
+                        const std::string &frame_id, const ros::Time &stamp);
 
  private:
   std::string child_frame_id_;

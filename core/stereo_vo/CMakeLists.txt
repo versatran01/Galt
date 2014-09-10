@@ -13,7 +13,6 @@ find_package(catkin REQUIRED COMPONENTS
     kr_math
     eigen_conversions
     rviz_helper
-    tf2_ros
     )
 
 find_package(OpenCV)

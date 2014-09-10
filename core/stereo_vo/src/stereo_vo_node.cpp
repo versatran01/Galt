@@ -48,29 +48,40 @@ void StereoVoNode::SubscribeStereoTopics(
 }
 
 void StereoVoNode::OdometryCb(const nav_msgs::OdometryConstPtr& odom_msg) {
+  // Set frame_id only once
+  if (frame_id_.empty()) {
+    frame_id_ = odom_msg->header.frame_id;
+    ROS_INFO("Set frame id to %s", frame_id_.c_str());
+  }
+
   // Unsubscribe if stereo vo is already initialized
   if (stereo_vo_.init()) {
     odom_sub_.shutdown();
     ROS_INFO("StereoVo initialized, unsubscribe from gps_kf/odometry");
     return;
   }
-  // Get the latest transform
+
+  // Set stereo vo initial pose if it's not been set
+  if (stereo_vo_.init_pose()) {
+    ROS_INFO("StereoVo initial pose already set.");
+    return;
+  }
+
+  // Get the latest transform from stereo to world
   try {
-    const geometry_msgs::TransformStamped transform =
-        core_.lookupTransform("world", "mv_stereo/left", ros::Time(0));
+    const geometry_msgs::TransformStamped transform = core_.lookupTransform(
+        odom_msg->header.frame_id, "mv_stereo/left", ros::Time(0));
     const geometry_msgs::Vector3& t = transform.transform.translation;
     const geometry_msgs::Quaternion& r = transform.transform.rotation;
     kr::vec3<scalar_t> p(t.x, t.y, t.z);
     kr::quat<scalar_t> q(r.w, r.x, r.y, r.z);
     stereo_vo_.set_pose(KrPose(q, p));
+    // Mark init pose as set
+    stereo_vo_.set_init_pose(true);
   }
   catch (const tf2::TransformException& e) {
     ROS_WARN("%s", e.what());
   }
-
-  // Set frame_id only once
-  if (frame_id_.empty()) frame_id_ = odom_msg->header.frame_id;
-  if (!stereo_vo_.init_pose()) stereo_vo_.set_init_pose(true);
 }
 
 void StereoVoNode::ReconfigureCb(const StereoVoDynConfig& config, int level) {
@@ -119,6 +130,7 @@ void StereoVoNode::StereoCb(const ImageConstPtr& l_image_msg,
   //  PublishTrajectory(camera_pose, l_image_msg->header.stamp, "/world");
   const geometry_msgs::Pose pose =
       static_cast<geometry_msgs::Pose>(stereo_vo_.pose());
+  ROS_ASSERT_MSG(!frame_id_.empty(), "frame id empty");
   tf_pub_.PublishTransform(pose, frame_id_, l_image_msg->header.stamp);
   traj_viz_.PublishTrajectory(pose.position, frame_id_,
                               l_image_msg->header.stamp);

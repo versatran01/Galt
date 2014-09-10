@@ -21,7 +21,7 @@ using image_geometry::StereoCameraModel;
 
 class StereoVo {
  public:
-  StereoVo() : init_(false) {}
+  StereoVo() : init_(false), init_pose_(false) {}
 
   void set_config(const StereoVoDynConfig &config) {
     config_ = config;

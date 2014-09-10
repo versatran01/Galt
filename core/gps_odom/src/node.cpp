@@ -21,8 +21,11 @@
 namespace gps_odom {
 
 Node::Node()
-    : nh_("~"), pkgPath_(ros::package::getPath("gps_odom")), 
-      trajViz_(nh_), covViz_(nh_) {
+    : nh_("~"),
+      pkgPath_(ros::package::getPath("gps_odom")),
+      trajViz_(nh_),
+      covViz_(nh_),
+      tfPub_("gps") {
   if (pkgPath_.empty()) {
     ROS_WARN("Failed to find path for package");
   }
@@ -32,7 +35,7 @@ Node::Node()
   refSet_ = false;
   currentDeclination_ = 0.0;
   trajViz_.set_colorRGB(rviz_helper::colors::RED);
-  covViz_.set_colorRGB({1,0,0,0.5});
+  covViz_.set_colorRGB({1, 0, 0, 0.5});
 }
 
 void Node::initialize() {
@@ -138,18 +141,19 @@ void Node::gpsCallback(
   /// @todo: get rid of this scale factor for next data sets!
   /// This is only here because of mistake in ublox_gps
   const double hackFactor = 9;
-  
+
   //  generate covariance (6x6 with order: x,y,z,rot_x,rot_y,rot_z)
   kr::mat<double, 6, 6> poseCovariance;
   poseCovariance.setZero();
   for (int i = 0; i < 3; i++) {
     for (int j = 0; j < 3; j++) {
-      poseCovariance(i,j) = navSatFix->position_covariance[i*3 + j]*hackFactor;
+      poseCovariance(i, j) =
+          navSatFix->position_covariance[i * 3 + j] * hackFactor;
     }
   }
   //  replace covariance w/ number from altimeter
   poseCovariance(3, 3) = height->variance;
-  
+
   //  orientation: copy from IMU
   for (int i = 0; i < 3; i++) {
     for (int j = 0; j < 3; j++) {
@@ -169,12 +173,13 @@ void Node::gpsCallback(
   velCovariance.setZero();
   for (int i = 0; i < 3; i++) {
     for (int j = 0; j < 3; j++) {
-      velCovariance(i,j) = navSatTwist->twist.covariance[(i*6) + j]*hackFactor;
-      velCovariance(i+3,j+3) = -1; //  unsupported
+      velCovariance(i, j) =
+          navSatTwist->twist.covariance[(i * 6) + j] * hackFactor;
+      velCovariance(i + 3, j + 3) = -1;  //  unsupported
     }
   }
   //  scale up z covariance on GPS velocity
-  //velCovariance(2, 2) *= 10;
+  // velCovariance(2, 2) *= 10;
 
   //  copy covariance to output
   for (int i = 0; i < 6; i++) {
@@ -184,22 +189,11 @@ void Node::gpsCallback(
     }
   }
   pubOdometry_.publish(odometry);
-  
+
   //  publish tf stuff and trajectory visualizer
-  geometry_msgs::Vector3 translation;
-  translation.x = odometry.pose.pose.position.x;
-  translation.y = odometry.pose.pose.position.y;
-  translation.z = odometry.pose.pose.position.z;
-
-  geometry_msgs::TransformStamped transform_stamped;
-  transform_stamped.header = odometry.header;
-  transform_stamped.child_frame_id = "gps";
-  transform_stamped.transform.translation = translation;
-  transform_stamped.transform.rotation = odometry.pose.pose.orientation;
-
-  broadcaster_.sendTransform(transform_stamped);
+  tfPub_.PublishTransform(odometry.pose.pose, odometry.header);
   trajViz_.PublishTrajectory(odometry.pose.pose.position, odometry.header);
   covViz_.PublishCovariance(odometry);
 }
 
-} //  namespace gps_odom
+}  //  namespace gps_odom

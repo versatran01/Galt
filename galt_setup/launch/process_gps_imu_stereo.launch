@@ -13,6 +13,7 @@
 
   Brief: Launch the GPS + IMU components of the post-processing suite.
 -->
+
 <launch>
   <!-- Bagfile launch options -->
   <arg name="bagfile_home" default="$(env GALT_BAGFILES)"/>
@@ -23,6 +24,14 @@
   <arg name="bagfile_path" default="$(arg bagfile_home)/$(arg bagfile).bag"/>
   <node name="playback" pkg="rosbag" type="play" output="log"
         args="--clock -s $(arg bagfile_start) $(arg bagfile_path)"/>
+
+  <!--laser_filter-->
+  <include file="$(find galt_setup)/launch/laser_filter.launch">
+  </include>
+
+  <!-- Frame broadcaster -->
+  <include file="$(find iris_tf)/launch/node.launch">
+  </include>
 
   <!-- Sensor profile to load -->
   <arg name="profile"/>
@@ -95,13 +104,5 @@
     output="screen" ns="/mv_stereo">
     <rosparam file="$(find galt_setup)/profiles/$(arg profile)/stereo_vo.yml"/>
   </node>
-
-  <!-- Frame broadcaster -->
-  <include file="$(find iris_tf)/launch/node.launch">
-  </include>
-
-  <!--laser_filter-->
-  <include file="$(find galt_setup)/launch/laser_filter.launch">
-  </include>
 
 </launch>

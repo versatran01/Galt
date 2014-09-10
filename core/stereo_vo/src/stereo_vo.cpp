@@ -44,7 +44,7 @@ void StereoVo::Initialize(const CvStereoImage &stereo_image,
   //  cv::namedWindow("display",
   //                  CV_WINDOW_NORMAL | CV_WINDOW_KEEPRATIO | CV_GUI_EXPANDED);
   init_ = true;
-  ROS_INFO_STREAM("StereVo initialized, baseline: " << model_.baseline());
+  ROS_INFO_STREAM("StereoVo initialized, baseline: " << model_.baseline());
 }
 
 void StereoVo::AddKeyFrame(const FramePtr &frame) {

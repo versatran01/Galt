@@ -61,12 +61,6 @@ void StereoVoNode::OdometryCb(const nav_msgs::OdometryConstPtr& odom_msg) {
     return;
   }
 
-  // Set stereo vo initial pose if it's not been set
-  if (stereo_vo_.init_pose()) {
-    ROS_INFO("StereoVo initial pose already set.");
-    return;
-  }
-
   // Get the latest transform from stereo to world
   try {
     const geometry_msgs::TransformStamped transform = core_.lookupTransform(
@@ -76,7 +70,6 @@ void StereoVoNode::OdometryCb(const nav_msgs::OdometryConstPtr& odom_msg) {
     kr::vec3<scalar_t> p(t.x, t.y, t.z);
     kr::quat<scalar_t> q(r.w, r.x, r.y, r.z);
     stereo_vo_.set_pose(KrPose(q, p));
-    // Mark init pose as set
     stereo_vo_.set_init_pose(true);
   }
   catch (const tf2::TransformException& e) {
@@ -116,10 +109,6 @@ void StereoVoNode::StereoCb(const ImageConstPtr& l_image_msg,
     stereo_vo_.Initialize(stereo_image, stereo_model_);
     return;
   }
-
-  cv::imshow("left", l_image_rect);
-  cv::imshow("right", r_image_rect);
-  cv::waitKey(1);
 
   //  stereo_vo_.Iterate(stereo_image);
 

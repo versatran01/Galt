@@ -16,6 +16,8 @@
  */
 template <typename Scalar> class ErrorStateKF {
 public:
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+  
   /**
    * @brief Construct new instance of ESKF.
    * @note Initializes orientation to identity and all other state variables

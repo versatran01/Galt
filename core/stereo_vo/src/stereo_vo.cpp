@@ -1,6 +1,6 @@
 #include "stereo_vo/stereo_vo.h"
 #include "stereo_vo/feature.h"
-#include "stereo_vo/frame.h"
+#include "stereo_vo/keyframe.h"
 #include "stereo_vo/utils.h"
 
 #include <image_geometry/stereo_camera_model.h>
@@ -47,6 +47,7 @@ void StereoVo::Initialize(const CvStereoImage &stereo_image,
   ROS_INFO_STREAM("StereoVo initialized, baseline: " << model_.baseline());
 }
 
+/*
 void StereoVo::AddKeyFrame(const FramePtr &frame) {
   // Detect new corners and add to features in current frame
   std::vector<Feature> &features = frame->features();
@@ -67,7 +68,6 @@ void StereoVo::AddKeyFrame(const FramePtr &frame) {
     ROS_INFO("Set initial pose");
   }
 
-  /*
   // Retriangulate in current pose
   Triangulate(frame->pose(), features, right_corners);
 
@@ -77,8 +77,8 @@ void StereoVo::AddKeyFrame(const FramePtr &frame) {
 
   //  do more outlier rejection
   //  NukeOutliers();
-*/
 }
+*/
 
 void StereoVo::TrackSpatial(const CvStereoImage &stereo_image,
                             std::vector<Feature> &features,

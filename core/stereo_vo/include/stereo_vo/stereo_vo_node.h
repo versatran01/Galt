@@ -83,8 +83,6 @@ class StereoVoNode {
   //                         const std::string& frame_id);
 };
 
-geometry_msgs::Pose KrPoseToRosPose(const KrPose& kr_pose);
-
 }  // namespace stereo_vo
 }  // namespace galt
 

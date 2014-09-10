@@ -228,11 +228,6 @@ void StereoVoNode::PublishTrajectory(const geometry_msgs::Pose& pose,
 //  return config;
 //}
 
-geometry_msgs::Pose KrPoseToRosPose(const KrPose& kr_pose) {
-  geometry_msgs::Pose ros_pose = static_cast<geometry_msgs::Pose>(kr_pose);
-  return ros_pose;
-}
-
 }  // namespace stereo_vo
 
 }  // namespace galt

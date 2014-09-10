@@ -5,7 +5,7 @@
 #include "stereo_vo/feature.h"
 #include "stereo_vo/point3d.h"
 #include "stereo_vo/feature_detector.h"
-#include "stereo_vo/frame.h"
+#include "stereo_vo/keyframe.h"
 
 #include <vector>
 #include <memory>
@@ -33,13 +33,6 @@ class StereoVo {
   void set_init_pose(bool init_pose) { init_pose_ = init_pose; }
   const KrPose &pose() const { return pose_; }
   void set_pose(const KrPose &pose) { pose_ = pose; }
-  //  const FramePtr &prev_frame() const { return prev_frame_; }
-  //  const KrPose &pose_world() const { return prev_frame_->pose(); }
-  //  const std::deque<FramePtr> &key_frames() const { return key_frames_; }
-  //  const std::map<Id, Point3d> &point3ds() const { return point3ds_; }
-  //  const std::vector<Feature> &features() const {
-  //    return prev_frame_->features();
-  //  }
 
   void Initialize(const CvStereoImage &stereo_image,
                   const StereoCameraModel &model);

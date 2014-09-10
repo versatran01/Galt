@@ -9,7 +9,7 @@
 
 namespace galt {
 namespace stereo_vo {
-
+/*
 void Display(const CvStereoImage &stereo_image,
              const std::vector<Feature> &features, const FramePtr &key_frame) {
   auto &l_image = stereo_image.first;
@@ -88,6 +88,7 @@ void Display(const CvStereoImage &stereo_image,
 void Display(const FramePtr &frame, const FramePtr &key_frame) {
   Display(frame->stereo_image(), frame->features(), key_frame);
 }
+*/
 
 
 }  // namespace stereo_vo

@@ -1,16 +1,16 @@
-#include "stereo_vo/frame.h"
+#include "stereo_vo/keyframe.h"
 #include "stereo_vo/feature.h"
 #include "stereo_vo/utils.h"
 
 namespace galt {
 namespace stereo_vo {
 
-Id Frame::frame_counter = 0;
+Id KeyFrame::frame_counter = 0;
 
-Frame::Frame() : id_(frame_counter++), is_keyframe_(false) {}
+KeyFrame::KeyFrame() : id_(frame_counter++), is_keyframe_(false) {}
 
-Frame::Frame(const CvStereoImage &stereo_image)
-    : id_(frame_counter++), is_keyframe_(false), stereo_image_(stereo_image) {}
+KeyFrame::KeyFrame(const CvStereoImage &stereo_image)
+    : id_(frame_counter++), stereo_image_(stereo_image) {}
 
 /*
 size_t Frame::RemoveById(const std::set<Id> &ids_to_remove, bool force) {

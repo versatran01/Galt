@@ -10,6 +10,7 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <eigen_conversions/eigen_msg.h>
+#include <tf2/transform_datatypes.h>
 
 namespace galt {
 
@@ -20,7 +21,8 @@ StereoVoNode::StereoVoNode(const ros::NodeHandle& nh)
       it_(nh),
       odom_sub_(nh_.subscribe("odometry", 1, &StereoVoNode::OdometryCb, this)),
       tf_pub_("stereo"),
-      traj_viz_(nh) {
+      traj_viz_(nh),
+      tf_listener_(core_) {
   image_transport::TransportHints hints("raw", ros::TransportHints(), nh_);
   SubscribeStereoTopics("image_rect", "camera_info", hints);
 
@@ -45,16 +47,29 @@ void StereoVoNode::SubscribeStereoTopics(
   r_cinfo_sub_.subscribe(nh_, resolve(append(right, cinfo_topic)), 1);
 }
 
-void StereoVoNode::OdometryCb(const nav_msgs::Odometry& odom_msg) {
+void StereoVoNode::OdometryCb(const nav_msgs::OdometryConstPtr& odom_msg) {
   // Unsubscribe if stereo vo is already initialized
   if (stereo_vo_.init()) {
     odom_sub_.shutdown();
     ROS_INFO("StereoVo initialized, unsubscribe from gps_kf/odometry");
     return;
   }
-  stereo_vo_.set_pose(KrPose(odom_msg.pose.pose));
+  // Get the latest transform
+  try {
+    const geometry_msgs::TransformStamped transform =
+        core_.lookupTransform("world", "mv_stereo/left", ros::Time(0));
+    const geometry_msgs::Vector3& t = transform.transform.translation;
+    const geometry_msgs::Quaternion& r = transform.transform.rotation;
+    kr::vec3<scalar_t> p(t.x, t.y, t.z);
+    kr::quat<scalar_t> q(r.w, r.x, r.y, r.z);
+    stereo_vo_.set_pose(KrPose(q, p));
+  }
+  catch (const tf2::TransformException& e) {
+    ROS_WARN("%s", e.what());
+  }
+
   // Set frame_id only once
-  if (frame_id_.empty()) frame_id_ = odom_msg.header.frame_id;
+  if (frame_id_.empty()) frame_id_ = odom_msg->header.frame_id;
   if (!stereo_vo_.init_pose()) stereo_vo_.set_init_pose(true);
 }
 

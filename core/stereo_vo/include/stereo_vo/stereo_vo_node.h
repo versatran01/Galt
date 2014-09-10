@@ -17,6 +17,7 @@
 #include <image_geometry/stereo_camera_model.h>
 #include <dynamic_reconfigure/server.h>
 #include <tf2_ros/transform_broadcaster.h>
+#include <tf2_ros/transform_listener.h>
 #include <stereo_vo/StereoVoDynConfig.h>
 
 #include <rviz_helper/rviz_helper.h>
@@ -43,7 +44,7 @@ class StereoVoNode {
                              const std::string& cinfo_topic,
                              const image_transport::TransportHints& hints);
 
-  void OdometryCb(const nav_msgs::Odometry& odom_msg);
+  void OdometryCb(const nav_msgs::OdometryConstPtr& odom_msg);
 
   void StereoCb(const ImageConstPtr& l_image_msg,
                 const CameraInfoConstPtr& l_cinfo_msg,
@@ -66,6 +67,8 @@ class StereoVoNode {
   rviz_helper::TrajectoryVisualizer traj_viz_;      ///< Trajectory visualizer
   std::string frame_id_;                            ///< Reference frame
   StereoVo stereo_vo_;                              ///< Stereo visual odometry
+  tf2::BufferCore core_;
+  tf2_ros::TransformListener tf_listener_;
   dynamic_reconfigure::Server<StereoVoDynConfig> cfg_server_;
 
   //  void PublishPoseStamped(const geometry_msgs::Pose& pose,

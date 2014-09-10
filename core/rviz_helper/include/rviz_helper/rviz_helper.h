@@ -4,10 +4,13 @@
 #include <ros/ros.h>
 #include <std_msgs/Header.h>
 #include <geometry_msgs/Point.h>
+#include <geometry_msgs/Pose.h>
+#include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/PoseWithCovariance.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <nav_msgs/Odometry.h>
 #include <visualization_msgs/Marker.h>
+#include <tf2_ros/transform_broadcaster.h>
 
 namespace rviz_helper {
 
@@ -41,6 +44,8 @@ class TrajectoryVisualizer {
   }
   void set_num_skip(int num_skip) { num_skip_ = num_skip; }
 
+  void PublishTrajectory(const geometry_msgs::Pose &pose,
+                         const std_msgs::Header &header);
   void PublishTrajectory(const geometry_msgs::Point &point,
                          const std_msgs::Header &header);
   void PublishTrajectory(const geometry_msgs::Point &point,
@@ -83,6 +88,20 @@ class CovarianceVisualizer {
   ros::NodeHandle nh_;
   ros::Publisher cov_pub_;
   visualization_msgs::Marker marker_;
+};
+
+class TfPublisher {
+ public:
+  TfPublisher() = default;
+  TfPublisher(const std::string &child_frame_id)
+      : child_frame_id_(child_frame_id) {}
+
+  void PublishTransform(const geometry_msgs::Pose &pose,
+                        const std_msgs::Header &header);
+
+ private:
+  std::string child_frame_id_;
+  tf2_ros::TransformBroadcaster tf_broadcaster_;
 };
 
 }  // namespace rviz_helper

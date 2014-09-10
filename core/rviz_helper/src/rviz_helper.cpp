@@ -16,6 +16,11 @@ TrajectoryVisualizer::TrajectoryVisualizer(const ros::NodeHandle &nh,
   markers_.lifetime = ros::Duration();
 }
 
+void TrajectoryVisualizer::PublishTrajectory(const geometry_msgs::Pose &pose,
+                                             const std_msgs::Header &header) {
+  PublishTrajectory(pose.position, header);
+}
+
 void TrajectoryVisualizer::PublishTrajectory(const geometry_msgs::Point &point,
                                              const std_msgs::Header &header) {
   PublishTrajectory(point, header.frame_id, header.stamp);
@@ -74,6 +79,22 @@ void CovarianceVisualizer::PublishCovariance(
 void CovarianceVisualizer::PublishCovariance(
     const nav_msgs::Odometry &odometry) {
   PublishCovariance(odometry.pose, odometry.header);
+}
+
+void TfPublisher::PublishTransform(const geometry_msgs::Pose &pose,
+                                   const std_msgs::Header &header) {
+  geometry_msgs::Vector3 translation;
+  translation.x = pose.position.x;
+  translation.y = pose.position.y;
+  translation.z = pose.position.z;
+
+  geometry_msgs::TransformStamped transform_stamped;
+  transform_stamped.header = header;
+  transform_stamped.child_frame_id = child_frame_id_;
+  transform_stamped.transform.translation = translation;
+  transform_stamped.transform.rotation = pose.orientation;
+
+  tf_broadcaster_.sendTransform(transform_stamped);
 }
 
 }  // namespace rviz_helper

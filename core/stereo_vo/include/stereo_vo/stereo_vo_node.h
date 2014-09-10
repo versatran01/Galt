@@ -42,6 +42,8 @@ class StereoVoNode {
                              const std::string& cinfo_topic,
                              const image_transport::TransportHints& hints);
 
+  void OdomCb(const nav_msgs::Odometry& odom_msg);
+
   void StereoCb(const ImageConstPtr& l_image_msg,
                 const CameraInfoConstPtr& l_cinfo_msg,
                 const ImageConstPtr& r_image_msg,
@@ -55,6 +57,7 @@ class StereoVoNode {
   image_transport::SubscriberFilter r_image_sub_;   ///< Right image subscriber
   CinfoSubscriberFilter l_cinfo_sub_;               ///< Left cinfo subscriber
   CinfoSubscriberFilter r_cinfo_sub_;               ///< Right cinfo subscriber
+  ros::Subscriber odom_sub_;                        ///< Kf odometry subscriber
   boost::shared_ptr<ExactSync> exact_sync_;         ///< Exact time sync policy
   visualization_msgs::Marker traj_;                 ///< Trajectory marker
   image_geometry::StereoCameraModel stereo_model_;  ///< Stereo camera model

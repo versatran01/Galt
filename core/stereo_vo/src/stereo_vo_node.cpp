@@ -16,14 +16,12 @@ namespace galt {
 namespace stereo_vo {
 
 StereoVoNode::StereoVoNode(const ros::NodeHandle& nh)
-    : nh_(nh), it_(nh), traj_viz_(nh) {
+    : nh_(nh),
+      it_(nh),
+      odom_sub_(nh_.subscribe("odom", 1, &StereoVoNode::OdomCb, this)),
+      traj_viz_(nh) {
   image_transport::TransportHints hints("raw", ros::TransportHints(), nh_);
   SubscribeStereoTopics("image_rect", "camera_info", hints);
-
-  exact_sync_.reset(new ExactSync(ExactPolicy(5), l_image_sub_, l_cinfo_sub_,
-                                  r_image_sub_, r_cinfo_sub_));
-  exact_sync_->registerCallback(
-      boost::bind(&StereoVoNode::StereoCb, this, _1, _2, _3, _4));
 
   cfg_server_.setCallback(
       boost::bind(&StereoVoNode::ReconfigureCb, this, _1, _2));
@@ -33,6 +31,10 @@ StereoVoNode::StereoVoNode(const ros::NodeHandle& nh)
 void StereoVoNode::SubscribeStereoTopics(
     const std::string& image_topic, const std::string& cinfo_topic,
     const image_transport::TransportHints& hints) {
+  exact_sync_.reset(new ExactSync(ExactPolicy(5), l_image_sub_, l_cinfo_sub_,
+                                  r_image_sub_, r_cinfo_sub_));
+  exact_sync_->registerCallback(
+      boost::bind(&StereoVoNode::StereoCb, this, _1, _2, _3, _4));
   using namespace ros::names;
   std::string left("left");
   std::string right("right");
@@ -40,6 +42,10 @@ void StereoVoNode::SubscribeStereoTopics(
   l_cinfo_sub_.subscribe(nh_, resolve(append(left, cinfo_topic)), 1);
   r_image_sub_.subscribe(it_, resolve(append(right, image_topic)), 1, hints);
   r_cinfo_sub_.subscribe(nh_, resolve(append(right, cinfo_topic)), 1);
+}
+
+void StereoVoNode::OdomCb(const nav_msgs::Odometry& odom_msg) {
+  ROS_INFO_THROTTLE(1, "in odom cb");
 }
 
 void StereoVoNode::ReconfigureCb(const StereoVoDynConfig& config, int level) {

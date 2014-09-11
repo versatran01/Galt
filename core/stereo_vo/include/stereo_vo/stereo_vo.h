@@ -34,13 +34,19 @@ class StereoVo {
   const KrPose &pose() const { return pose_; }
   void set_pose(const KrPose &pose) { pose_ = pose; }
 
+  /**
+   * @brief Initialize
+   * @param stereo_image
+   * @param model
+   */
   void Initialize(const CvStereoImage &stereo_image,
                   const StereoCameraModel &model);
   /**
    * @brief Iterate Do one iteration of stereo visual odometry
    * @param stereo_image Incoming stereo image
    */
-  //  void Iterate(const CvStereoImage &stereo_image);
+  void Iterate(const CvStereoImage &stereo_image);
+  
   /**
    * @brief UpdateConfig
    * @param config Dynamic reconfigure config of stereo_vo

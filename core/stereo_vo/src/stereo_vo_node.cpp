@@ -109,8 +109,7 @@ void StereoVoNode::StereoCb(const ImageConstPtr& l_image_msg,
     stereo_vo_.Initialize(stereo_image, stereo_model_);
     return;
   }
-
-  //  stereo_vo_.Iterate(stereo_image);
+  stereo_vo_.Iterate(stereo_image);
 
   // Publish PointCloud from keyframe pose and features
   //  PublishPointCloud(stereo_vo_.point3ds(), stereo_vo_.key_frames(),

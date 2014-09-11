@@ -136,19 +136,19 @@ void StereoVo::FindFundamentalMat(const std::vector<CvPoint2> &points1,
   cv::findFundamentalMat(points1, points2, cv::FM_RANSAC, 0.5, 0.999, status);
 }
 
-/*
+
 void StereoVo::Iterate(const CvStereoImage &stereo_image) {
   // Construct a new frame based on incoming stereo image
-  FramePtr curr_frame = std::make_shared<Frame>(stereo_image);
+  //FramePtr curr_frame = std::make_shared<Frame>(stereo_image);
   // Track corners from previous frame into current frame
   // Remove corresponding corners in last key frame only if they are newly
   // initialized
-  TrackTemporal(prev_frame_, curr_frame, prev_key_frame());
+  //TrackTemporal(prev_frame_, curr_frame, prev_key_frame());
 
   // Estimate pose using 2D-to-3D correspondences
   // 2D - currently tracked corners
   // 3D - points triangulated in world frame
-  EstimatePose(curr_frame, point3ds_, prev_frame_->pose());
+  //EstimatePose(curr_frame, point3ds_, prev_frame_->pose());
 
   // Check whether to add key frame based on the following criteria
   // 1. Movement exceeds config_.kf_dist_thresh
@@ -156,18 +156,18 @@ void StereoVo::Iterate(const CvStereoImage &stereo_image) {
   // 3. Number of features falls below threshold (see ShouldAddKeyFrame)
   // After this step, tracked_corners will contain both old corners and newly
   // added corners
-  if (ShouldAddKeyFrame(curr_frame)) {
-    AddKeyFrame(curr_frame);
-  }
+  //if (ShouldAddKeyFrame(curr_frame)) {
+  //  AddKeyFrame(curr_frame);
+  //}
 
   // Visualization (optional)
-  Display(curr_frame, prev_key_frame());
+  //Display(curr_frame, prev_key_frame());
 
   //  perform graph check
-  CheckEverything();
-  prev_frame_ = curr_frame;
+  //CheckEverything();
+  //prev_frame_ = curr_frame;
 }
-*/
+
 /*
 void StereoVo::CheckEverything() {
   std::map<Id, int> feat_counts;

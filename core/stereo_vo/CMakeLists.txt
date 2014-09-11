@@ -45,6 +45,8 @@ add_library(${PROJECT_NAME}
     #src/utils.cpp
     src/keyframe.cpp
     src/feature.cpp
+    src/tracker.cpp
+    src/point3d.cpp
     #src/optimizer.cpp
     )
 target_link_libraries(${PROJECT_NAME}

@@ -61,7 +61,9 @@ class StereoVo {
   //  void CheckEverything();
 
  private:
-  void AddKeyFrame(const std::shared_ptr<KeyFrame> &frame);
+  /// Add a key frame.
+  void AddKeyFrame(const CvStereoImage& stereo_image);
+  
   void TrackSpatial(const CvStereoImage &stereo_image,
                     std::vector<Feature> &features,
                     std::vector<CvPoint2> &r_corners);
@@ -115,8 +117,11 @@ class StereoVo {
   FeatureDetector detector_;  ///< Grid based feature detector
   std::vector<std::shared_ptr<KeyFrame>> key_frames_;  ///< A deque of key frames in window
 
-  Tracker temporal_tracker_;
-  cv::Mat prev_left_;
+  Tracker temporal_tracker_;  ///< Track features previous to current.
+  Tracker spatial_tracker_;   ///< Track features left to right.
+  cv::Mat prev_left_;         ///< Last left image.
+  
+  std::map<Id, Point3d> points_; ///< 3D points, keyed by unique ID.
 };
 
 }  // namespace stereo_vo

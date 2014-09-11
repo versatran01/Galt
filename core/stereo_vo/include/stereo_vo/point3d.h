@@ -49,6 +49,9 @@ class Point3d {
    * @param id Unique ID assigned to this point.
    */
   Point3d(const Id id) : id_(id) {}
+  
+  Point3d() : id_(0) {}
+  Point3d(const Point3d&) = default;
 
   const CvPoint3& p_world() const { return p_world_; }
   void set_p_world(const CvPoint3& p_world) { p_world_ = p_world; }

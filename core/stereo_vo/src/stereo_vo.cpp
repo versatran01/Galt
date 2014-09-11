@@ -47,38 +47,88 @@ void StereoVo::Initialize(const CvStereoImage &stereo_image,
   ROS_INFO_STREAM("StereoVo initialized, baseline: " << model_.baseline());
 }
 
-/*
-void StereoVo::AddKeyFrame(const FramePtr &frame) {
-  // Detect new corners and add to features in current frame
-  std::vector<Feature> &features = frame->features();
-  detector_.AddFeatures(frame->l_image(), features);
-  ROS_ASSERT_MSG(!features.empty(), "no feature detected");
+void StereoVo::AddKeyFrame(const CvStereoImage &stereo_image) {
+  //  capture the current pose and create new key frame
+  const KrPose current_pose = pose();
+  KeyFramePtr ptr = std::make_shared<KeyFrame>(stereo_image);
+  ptr->set_pose(current_pose);
+  
+  //  add more features using the grid pattern
+  const std::vector<Feature> features = temporal_tracker_.features();  
+  const std::vector<Feature> new_features = 
+      detector_.AddFeatures(stereo_image.first, features);
+  
+  //  track new features left -> right
+  spatial_tracker_.Reset();
+  spatial_tracker_.AddFeatures(new_features);
+  std::vector<Feature> left_features;
+  spatial_tracker_.Track(stereo_image.first,stereo_image.second,left_features);
+  
+  //  left_features and right_features now contain matching points
+  std::vector<Feature> right_features = 
+      spatial_tracker_.features();
 
-  // Track features into right image
-  std::vector<CvPoint2> right_corners;
-  TrackSpatial(frame->stereo_image(), features, right_corners);
-  ROS_ASSERT_MSG(!right_corners.empty(), "no right corners");
-
-  if (!init_) {
-    //  make up a pose that looks pretty
-    KrPose init_pose(
-        kr::quat<scalar_t>(0, 1 / std::sqrt(2), 0, 1 / std::sqrt(2)),
-        kr::vec3<scalar_t>(0, 0, 1.5));
-    frame->set_pose(init_pose);
-    ROS_INFO("Set initial pose");
+  //  create point 3ds for new features
+  auto ite_l = left_features.begin();
+  auto ite_r = right_features.begin();
+  
+  while (ite_l != left_features.end()) {
+    const Id id = ite_l->id();
+    const CvPoint2& left = ite_l->p_pixel();
+    const CvPoint2& right = ite_r->p_pixel();
+    
+    Point3d point(id);
+    if (point.AddObservation(config_,model_,ptr,left,right)) {
+      //  sanity check
+      assert(points_.find(id) == points_.end());
+      points_[id] = point;
+      ite_l++;
+      ite_r++;
+    } else {
+      //  bad initial triangulation, toss it out
+      ite_l = left_features.erase(ite_l);
+      ite_r = right_features.erase(ite_r);
+    }
   }
-
-  // Retriangulate in current pose
-  Triangulate(frame->pose(), features, right_corners);
-
-  frame->SetKeyFrame();
-  // Add key frame to queue with current_pose, features and stereo_image
-  key_frames_.push_back(frame);
-
-  //  do more outlier rejection
-  //  NukeOutliers();
+  
+#define DEBUG_GUI
+#ifdef DEBUG_GUI
+  //  display left and right images with matched features
+  //  assume same dimensions here
+  const int rows = stereo_image.first.rows;
+  const int cols = stereo_image.first.cols;
+  cv::Mat images(rows,cols*2,CV_8UC1);
+  
+  images(cv::Range(0,rows), cv::Range(0,cols)) = stereo_image.first;
+  images(cv::Range(0,rows), cv::Range(cols,2*cols)) = stereo_image.second;
+  
+  for (size_t i=0; i < left_features.size(); i++) {
+    const CvPoint2& left = left_features[i].p_pixel();
+    const CvPoint2& right = right_features[i].p_pixel();
+    
+    cv::circle(images,left,3,cv::Scalar(255,0,0),1);
+    cv::circle(images,CvPoint2(right.x+cols,right.y),3,cv::Scalar(255,0,0),1);
+    cv::line(images,left,CvPoint2(right.x+cols,right.y),cv::Scalar(0,0,255));
+  }
+  cv::imshow("left", stereo_image.first);
+  cv::imshow("stereo_pair", images);
+  cv::waitKey(1);
+#endif
+  
+  //  update old point 3ds with new pose
+  for (const Feature& f : features) {
+    std::map<Id,Point3d>::iterator ite = points_.find(f.id());
+    assert(ite != points_.end());
+    Point3d& p3d = ite->second;
+    //  add only left p_pixel here
+    assert(p3d.IsInitialized());
+    p3d.AddObservation(config_,model_,ptr,f.p_pixel());
+  }
+  
+  //  add the new left features to the collection of trackables
+  temporal_tracker_.AddFeatures(left_features);
+  key_frames_.push_back(ptr);
 }
-*/
 
 void StereoVo::TrackSpatial(const CvStereoImage &stereo_image,
                             std::vector<Feature> &features,
@@ -138,26 +188,34 @@ void StereoVo::FindFundamentalMat(const std::vector<CvPoint2> &points1,
 
 
 void StereoVo::Iterate(const CvStereoImage &stereo_image) {
-  //  use some threshold here...
-  if (temporal_tracker_.empty()) {
-    //  insert new features into the tracker
-    std::vector<Feature> new_features;
-    detector_.AddFeatures(stereo_image.first, new_features);
-    temporal_tracker_.AddFeatures(new_features);
-  } else {
-    if (!prev_left_.empty()) {
-      temporal_tracker_.Track(prev_left_,stereo_image.first);
-    }
+  if (!prev_left_.empty()) {
+    //  track from previous frame
+    std::vector<Feature> unused;
+    temporal_tracker_.Track(prev_left_, stereo_image.first,unused);
   }
   
-  cv::Mat debug_image;
-  cv::cvtColor(stereo_image.first,debug_image,CV_GRAY2RGB);
-  //  draw the tracked features
-  for (const Feature& f : temporal_tracker_.features()) {
-    cv::circle(debug_image, f.p_pixel(), 3, cv::Scalar(255,0,0),1);
-  }
-  cv::imshow("derp derp", debug_image);
-  cv::waitKey(1);
+//  //  use some threshold here...
+//  if (temporal_tracker_.IsEmpty()) {
+//    //  detect new features
+//    std::vector<Feature> new_features;
+//    detector_.AddFeatures(stereo_image.first, new_features);
+    
+//    //  add to trackers
+//    temporal_tracker_.AddFeatures(new_features);
+//    spatial_tracker_.Reset();
+//    spatial_tracker_.AddFeatures(new_features);
+//  }
+  
+//  cv::Mat debug_image;
+//  cv::cvtColor(stereo_image.first,debug_image,CV_GRAY2RGB);
+//  //  draw the tracked features
+//  for (const Feature& f : temporal_tracker_.features()) {
+//    cv::circle(debug_image, f.p_pixel(), 3, cv::Scalar(255,0,0),1);
+//  }
+//  cv::imshow("derp derp", debug_image);
+//  cv::waitKey(1);
+  
+  AddKeyFrame(stereo_image);
   prev_left_ = stereo_image.first;
   
   

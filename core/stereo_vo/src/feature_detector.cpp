@@ -22,20 +22,22 @@ Grid FeatureDetector::CreateGrid(const std::vector<Feature> &features) const {
   return grid;
 }
 
-size_t FeatureDetector::AddFeatures(const cv::Mat &image,
-                                    std::vector<Feature> &features) const {
+std::vector<Feature> 
+FeatureDetector::AddFeatures(const cv::Mat &image,
+                             const std::vector<Feature> &features) const {
   // Mark all tracked corners as old
-  MakeFeaturesOld(features);
+  //MakeFeaturesOld(features);
   // Create a new grid
   const Grid grid = CreateGrid(features);
   std::vector<CvPoint2> corners;
   DetectCorners(image, grid, corners);
   CornerSubPix(image, corners);
 
+  std::vector<Feature> new_features;
   for (const CvPoint2 &corner : corners) {
-    features.emplace_back(corner);
+    new_features.emplace_back(corner);
   }
-  return corners.size();
+  return new_features;
 }
 
 void FeatureDetector::DetectCorners(const cv::Mat &image, const Grid &grid,

@@ -17,8 +17,8 @@ class FeatureDetector {
   FeatureDetector() : cell_size_(40) {}
 
   void set_cell_size(int cell_size) { cell_size_ = cell_size; }
-  size_t AddFeatures(const cv::Mat& image,
-                     std::vector<Feature>& features) const;
+  std::vector<Feature> AddFeatures(const cv::Mat& image,
+                     const std::vector<Feature> &features) const;
 
  private:
   Grid CreateGrid(const std::vector<Feature>& features) const;

@@ -1,0 +1,25 @@
+Calibration results 
+====================
+Camera-system parameters:
+	cam0 (/flir_gige/image_calib):
+	 type: <class 'aslam_cv.libaslam_cv_python.DistortedPinholeCameraGeometry'>
+	 distortion: [-0.18538382  0.01423783 -0.00392047 -0.00042624] +- [ 0.03426808  0.04346348  0.00436405  0.00452639]
+	 projection: [ 264.77704521  262.93191559  149.80406981  133.20550914] +- [ 0.00115216  0.00119548  0.00011258  0.00004828]
+	 reprojection error: [-0.000021, 0.000015] +- [0.129110, 0.177487]
+
+	cam1 (/mv_25000855/image_raw):
+	 type: <class 'aslam_cv.libaslam_cv_python.DistortedPinholeCameraGeometry'>
+	 distortion: [-0.26364616  0.07496152 -0.00700309  0.00317642] +- [ 0.02106925  0.02866714  0.00229394  0.0024525 ]
+	 projection: [ 516.52405159  515.69503515  356.00689769  239.18300553] +- [ 0.00029384  0.000329    0.00001241  0.00005969]
+	 reprojection error: [-0.000031, 0.000007] +- [0.102322, 0.101986]
+
+	baseline T_1_0:
+	 q: [-0.00264695  0.00519457  0.0054288   0.99996827] +- [ 0.01465935  0.01484237  0.00174866]
+	 t: [-0.09517077 -0.00454587  0.045697  ] +- [ 0.00510819  0.00506914  0.00105726]
+
+
+
+Target configuration
+====================
+
+  Type: circlegrid

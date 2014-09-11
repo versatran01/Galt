@@ -113,20 +113,16 @@ void StereoVoNode::StereoCb(const ImageConstPtr& l_image_msg,
     stereo_vo_.Iterate(stereo_image);
   }
 
-  //  publish points
+  //  publish points and pose
   PublishPointCloud(l_image_msg->header.stamp);
   
-  // Publish PointCloud from keyframe pose and features
-  //  PublishPointCloud(stereo_vo_.point3ds(), stereo_vo_.key_frames(),
-  //                    l_image_msg->header.stamp, "/world");
-  //  PublishPoseStamped(camera_pose, l_image_msg->header.stamp, "/world");
-  //  PublishTrajectory(camera_pose, l_image_msg->header.stamp, "/world");
-//  const geometry_msgs::Pose pose =
-//      static_cast<geometry_msgs::Pose>(stereo_vo_.pose());
-//  ROS_ASSERT_MSG(!frame_id_.empty(), "frame id empty");
-//  tf_pub_.PublishTransform(pose, frame_id_, l_image_msg->header.stamp);
-//  traj_viz_.PublishTrajectory(pose.position, frame_id_,
-//                              l_image_msg->header.stamp);
+  const geometry_msgs::Pose pose =
+      static_cast<geometry_msgs::Pose>(stereo_vo_.pose());
+  ROS_ASSERT_MSG(!frame_id_.empty(), "frame id empty");
+  tf_pub_.PublishTransform(pose, frame_id_, 
+                           l_image_msg->header.stamp);
+  traj_viz_.PublishTrajectory(pose.position, frame_id_,
+                              l_image_msg->header.stamp);
 }
 
 void StereoVoNode::PublishPointCloud(const ros::Time& time,
@@ -171,16 +167,6 @@ void StereoVoNode::PublishPointCloud(const ros::Time& time,
 }
 
 /*
-void StereoVoNode::PublishPoseStamped(const geometry_msgs::Pose& pose,
-                                      const ros::Time& time,
-                                      const std::string& frame_id) const {
-  geometry_msgs::PoseStamped pose_stamped;
-  pose_stamped.header.stamp = time;
-  pose_stamped.header.frame_id = frame_id;
-  pose_stamped.pose = pose;
-  pose_pub_.publish(pose_stamped);
-}
-
 void StereoVoNode::PublishTrajectory(const geometry_msgs::Pose& pose,
                                      const ros::Time& time,
                                      const std::string& frame_id) {

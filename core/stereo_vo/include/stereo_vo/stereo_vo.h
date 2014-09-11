@@ -60,50 +60,13 @@ class StereoVo {
   /// Add a key frame.
   void AddKeyFrame(const CvStereoImage& stereo_image);
   
-//  void TrackSpatial(const CvStereoImage &stereo_image,
-//                    std::vector<Feature> &features,
-//                    std::vector<CvPoint2> &r_corners);
-  //  void Triangulate(const KrPose &pose, std::vector<Feature> &features,
-  //                   std::vector<CvPoint2> &corners);
-  //  bool ShouldAddKeyFrame(const FramePtr &frame) const;
-  //  void TrackTemporal(const FramePtr &frame1, const FramePtr &frame2,
-  //                     const FramePtr &key_frame);
-  //  void TrackTemporal(const cv::Mat &image1, const cv::Mat &image2,
-  //                     const std::vector<Feature> &features1,
-  //                     std::vector<Feature> &features2,
-  //                     const FramePtr &key_frame);
+  /// Check if a key frame should be added.
+  bool ShouldAddKeyFrame() const;
+  
   /**
-   * @brief EstimatePose Estimate pose of current frame based on its 2d features
-   * @param frame Current frame
-   * @param point3ds Triangulated 3d points in world frame
+   * @brief Estimate pose with Ransac PnP.
    */
-  //  void EstimatePose(const FramePtr &frame, const std::map<Id, Point3d>
-  // point3ds,
-  //                    const KrPose &old_pose);
-//  void OpticalFlow(const cv::Mat &image1, const cv::Mat &image2,
-//                   const std::vector<CvPoint2> &points1,
-//                   std::vector<CvPoint2> &points2, std::vector<uchar> &status);
-//  void FindFundamentalMat(const std::vector<CvPoint2> &points1,
-//                          const std::vector<CvPoint2> &points2,
-//                          std::vector<uchar> &status);
-  /**
-   * @brief TriangulatePoint
-   * @param left Left observation in pixels.
-   * @param right Right observation in pixels.
-   * @param point3d Resulting 3d point in camera frame.
-   * @return False if the triangulation is poor and the feature should be
-   * rejected.
-   */
-  //  bool TriangulatePoint(const CvPoint2 &left, const CvPoint2 &right,
-  //                        kr::vec3<scalar_t> &p_cam);
-
-  /**
-   * @brief NukeOutliers
-   */
-  //  void NukeOutliers();
-
-  //  FramePtr &prev_key_frame() { return key_frames_.back(); }
-  //  const FrameConstPtr prev_key_frame() const { return key_frames_.back(); }
+  void EstimatePose();
 
   bool init_;                 ///< True if stereo_vo is initialized
   bool init_pose_;            ///< True if initial pose is set

@@ -47,6 +47,42 @@ void StereoVo::Initialize(const CvStereoImage &stereo_image,
   ROS_INFO_STREAM("StereoVo initialized, baseline: " << model_.baseline());
 }
 
+bool StereoVo::ShouldAddKeyFrame() const {
+  // Not initialized, thus no keyframes, add one
+  if (!init_) {
+    return true;
+  }
+  
+  if (temporal_tracker_.features().size() < 30) {
+    //  insufficient features
+    return true;
+  }
+  
+//  const KrPose &diff = frame->pose().difference(prev_key_frame()->pose());
+//  if (diff.p().norm() > config_.kf_dist_thresh) {
+//    ROS_INFO("Distance: %f", diff.p().norm());
+//    //  over distance threshold, add keyframe
+//    return true;
+//  }
+
+//  const kr::vec3<scalar_t> &angles = kr::getRPY(diff.bRw());
+//  if (std::abs(angles[2] * 180 / M_PI) > config_.kf_yaw_thresh) {
+//    ROS_INFO("Angle: %f", angles[2]);
+//    //  over yaw angle threshold, add keyframe
+//    return true;
+//  }
+
+//  const size_t min_features =
+//      std::ceil(config_.kf_min_filled * config_.shi_max_corners);
+//  if (frame->num_features() < min_features) {
+//    ROS_INFO("Corners: %lu", frame->num_features());
+//    //  insufficent features, add keyframe with new ones
+//    return true;
+//  }
+
+  return false;
+}
+
 void StereoVo::AddKeyFrame(const CvStereoImage &stereo_image) {
   //  capture the current pose and create new key frame
   const KrPose current_pose = pose();
@@ -195,18 +231,6 @@ void StereoVo::Iterate(const CvStereoImage &stereo_image) {
     temporal_tracker_.Track(prev_left_, stereo_image.first, unused);
   }
   
-//  //  use some threshold here...
-//  if (temporal_tracker_.IsEmpty()) {
-//    //  detect new features
-//    std::vector<Feature> new_features;
-//    detector_.AddFeatures(stereo_image.first, new_features);
-    
-//    //  add to trackers
-//    temporal_tracker_.AddFeatures(new_features);
-//    spatial_tracker_.Reset();
-//    spatial_tracker_.AddFeatures(new_features);
-//  }
-  
   cv::Mat debug_image;
   cv::cvtColor(stereo_image.first,debug_image,CV_GRAY2RGB);
   //  draw the tracked features
@@ -216,30 +240,76 @@ void StereoVo::Iterate(const CvStereoImage &stereo_image) {
   cv::imshow("derp derp", debug_image);
   cv::waitKey(1);
   
-  AddKeyFrame(stereo_image);
+  //  ransac PnP
+  EstimatePose();
+  
+  //  add keyframe: extract features, match, triangulate, insert into map
+  if (ShouldAddKeyFrame()) {
+    AddKeyFrame(stereo_image);
+  }
+  
+  /// @todo: do visualization
+  
   prev_left_ = stereo_image.first;
+}
 
-  // Estimate pose using 2D-to-3D correspondences
-  // 2D - currently tracked corners
-  // 3D - points triangulated in world frame
-  //EstimatePose(curr_frame, point3ds_, prev_frame_->pose());
+void StereoVo::EstimatePose() {
+  std::vector<CvPoint2> pixel_points;
+  std::vector<CvPoint3> world_points;
+  
+  //  iterate over all presently visible features
+  for (const Feature &feature : temporal_tracker_.features()) {
+    //  retrieve corresponding 3D point
+    std::map<Id,Point3d>::iterator ite_pt = points_.find(feature.id());
+    assert(ite_pt != points_.end());
+    const Point3d& point3d = ite_pt->second;
+    
+    if (point3d.IsInitialized()) { /// @todo: check for inlier status
+     pixel_points.push_back(feature.p_pixel());
+     world_points.push_back(point3d.p_world());
+    }
+  }
+  
+  const size_t N = pixel_points.size();
+  if (N < 4) {
+    //  need at least 4 points for PnP
+    ROS_WARN("Insufficient points for PnP - skipping");
+    return;
+  }
 
-  // Check whether to add key frame based on the following criteria
-  // 1. Movement exceeds config_.kf_dist_thresh
-  // 2. Yaw angle exceeds config_.kf_yaw_thresh
-  // 3. Number of features falls below threshold (see ShouldAddKeyFrame)
-  // After this step, tracked_corners will contain both old corners and newly
-  // added corners
-  //if (ShouldAddKeyFrame(curr_frame)) {
-  //  AddKeyFrame(curr_frame);
-  //}
+  cv::Mat rvec = cv::Mat::zeros(3, 3, CV_64FC1);
+  cv::Mat tvec = cv::Mat::zeros(3, 3, CV_64FC1);
 
-  // Visualization (optional)
-  //Display(curr_frame, prev_key_frame());
+  const size_t min_inliers = std::ceil(N * config_.pnp_ransac_inliers);
+  cv::solvePnPRansac(world_points, pixel_points,
+                     model_.left().fullIntrinsicMatrix(), std::vector<double>(),
+                     rvec, tvec, false, 200, config_.pnp_ransac_error,
+                     min_inliers);
 
-  //  perform graph check
-  //CheckEverything();
-  //prev_frame_ = curr_frame;
+  const vec3 r(rvec.at<double>(0, 0), rvec.at<double>(1, 0),
+                       rvec.at<double>(2, 0));
+  const vec3 t(tvec.at<double>(0, 0), tvec.at<double>(1, 0),
+                       tvec.at<double>(2, 0));
+  KrPose new_pose = KrPose::fromVectors(r, t);
+  
+  /// @todo: some kind of sanity check here
+
+//  const bool shenanigans =
+//      new_pose.difference(old_pose).p().norm() > config_.pnp_motion_thresh;
+//  if ((t[0] == 0 && t[1] == 0 && t[2] == 0) || shenanigans) {
+//    ROS_WARN("Probable shenanigans in ransac PnP - trying regular PnP");
+//    cv::solvePnP(world_points, image_points,
+//                 model_.left().fullIntrinsicMatrix(), std::vector<double>(),
+//                 rvec, tvec, false);
+
+//    r = kr::vec3<scalar_t>(rvec.at<double>(0, 0), rvec.at<double>(1, 0),
+//                           rvec.at<double>(2, 0));
+//    t = kr::vec3<scalar_t>(tvec.at<double>(0, 0), tvec.at<double>(1, 0),
+//                           tvec.at<double>(2, 0));
+//    new_pose = KrPose::fromVectors(r, t);
+//  }
+
+  pose_ = new_pose;
 }
 
 /*
@@ -337,105 +407,6 @@ void StereoVo::TrackTemporal(const cv::Mat &image1, const cv::Mat &image2,
 }
 */
 
-/*
-void StereoVo::EstimatePose(const FramePtr &frame,
-                            const std::map<Id, Point3d> point3ds,
-                            const KrPose &old_pose) {
-  const size_t n_features = frame->num_features();
-
-  std::vector<CvPoint2> image_points;
-  std::vector<CvPoint3> world_points;
-  std::vector<int> inliers;
-  std::vector<Id> ids;
-  // std::set<Id> ids_to_remove;
-
-  image_points.reserve(n_features);
-  world_points.reserve(n_features);
-
-  for (const Feature &feature : frame->features()) {
-    const auto it = point3ds.find(feature.id());
-    if (it != point3ds.end()) {
-      const Point3d &point3d = it->second;
-      image_points.push_back(feature.p_pixel());
-      world_points.push_back(point3d.p_world());
-      ids.push_back(feature.id());
-    }
-  }
-
-  if (image_points.empty()) {
-    ROS_WARN("No viable features for PnP, skipping");
-    frame->set_pose(old_pose);
-    return;
-  }
-
-  static cv::Mat rvec = cv::Mat::zeros(3, 3, CV_64FC1);
-  static cv::Mat tvec = cv::Mat::zeros(3, 3, CV_64FC1);
-
-  const size_t min_inliers =
-      std::ceil(world_points.size() * config_.pnp_ransac_inliers);
-  cv::solvePnPRansac(world_points, image_points,
-                     model_.left().fullIntrinsicMatrix(), std::vector<double>(),
-                     rvec, tvec, false, 200, config_.pnp_ransac_error,
-                     min_inliers, inliers, cv::ITERATIVE);
-
-  kr::vec3<scalar_t> r(rvec.at<double>(0, 0), rvec.at<double>(1, 0),
-                       rvec.at<double>(2, 0));
-  kr::vec3<scalar_t> t(tvec.at<double>(0, 0), tvec.at<double>(1, 0),
-                       tvec.at<double>(2, 0));
-  KrPose new_pose = KrPose::fromVectors(r, t);
-
-  const bool shenanigans =
-      new_pose.difference(old_pose).p().norm() > config_.pnp_motion_thresh;
-  if ((t[0] == 0 && t[1] == 0 && t[2] == 0) || shenanigans) {
-    ROS_WARN("Probable shenanigans in ransac PnP - trying regular PnP");
-    cv::solvePnP(world_points, image_points,
-                 model_.left().fullIntrinsicMatrix(), std::vector<double>(),
-                 rvec, tvec, false);
-
-    r = kr::vec3<scalar_t>(rvec.at<double>(0, 0), rvec.at<double>(1, 0),
-                           rvec.at<double>(2, 0));
-    t = kr::vec3<scalar_t>(tvec.at<double>(0, 0), tvec.at<double>(1, 0),
-                           tvec.at<double>(2, 0));
-    new_pose = KrPose::fromVectors(r, t);
-  }
-
-  // This is now absolute pose
-  frame->set_pose(new_pose);
-}
-*/
-
-/*
-bool StereoVo::ShouldAddKeyFrame(const FramePtr &frame) const {
-  // Not initialized, thus no keyframes, add one
-  if (!init_) {
-    return true;
-  }
-
-  const KrPose &diff = frame->pose().difference(prev_key_frame()->pose());
-  if (diff.p().norm() > config_.kf_dist_thresh) {
-    ROS_INFO("Distance: %f", diff.p().norm());
-    //  over distance threshold, add keyframe
-    return true;
-  }
-
-  const kr::vec3<scalar_t> &angles = kr::getRPY(diff.bRw());
-  if (std::abs(angles[2] * 180 / M_PI) > config_.kf_yaw_thresh) {
-    ROS_INFO("Angle: %f", angles[2]);
-    //  over yaw angle threshold, add keyframe
-    return true;
-  }
-
-  const size_t min_features =
-      std::ceil(config_.kf_min_filled * config_.shi_max_corners);
-  if (frame->num_features() < min_features) {
-    ROS_INFO("Corners: %lu", frame->num_features());
-    //  insufficent features, add keyframe with new ones
-    return true;
-  }
-
-  return false;
-}
-*/
 /*
 void StereoVo::Triangulate(const KrPose &pose, std::vector<Feature> &features,
                            std::vector<CvPoint2> &corners) {

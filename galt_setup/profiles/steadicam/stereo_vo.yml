@@ -9,6 +9,6 @@ kf_yaw_thresh: 45
 kf_size: 3
 kf_min_filled: 0.85
 pnp_ransac_error: 4.0
-pnp_ransac_inliers: 0.9
+pnp_ransac_inliers: 0.8
 pnp_motion_thresh: 3
 tri_max_eigenratio: 100000

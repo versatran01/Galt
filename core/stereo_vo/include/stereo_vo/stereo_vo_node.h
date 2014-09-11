@@ -71,6 +71,11 @@ class StereoVoNode {
   tf2_ros::TransformListener tf_listener_;
   dynamic_reconfigure::Server<StereoVoDynConfig> cfg_server_;
 
+  /// Visualize point cloud of triangulated points
+  void PublishPointCloud(const std::map<Id, Point3d>& point3ds,
+                         const ros::Time& time,
+                         const std::string& frame_id = "world") const;
+  
   //  void PublishPoseStamped(const geometry_msgs::Pose& pose,
   //                          const ros::Time& time,
   //                          const std::string& frame_id) const;

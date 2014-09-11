@@ -30,11 +30,15 @@ class StereoVo {
   }
 
   bool init() const { return init_; }
+  
   bool init_pose() const { return init_pose_; }
   void set_init_pose(bool init_pose) { init_pose_ = init_pose; }
+  
   const KrPose &pose() const { return pose_; }
   void set_pose(const KrPose &pose) { pose_ = pose; }
 
+  const std::map<Id,Point3d>& points() const { return points_; }
+  
   /**
    * @brief Initialize
    * @param stereo_image
@@ -47,26 +51,14 @@ class StereoVo {
    * @param stereo_image Incoming stereo image
    */
   void Iterate(const CvStereoImage &stereo_image);
-  
-  /**
-   * @brief UpdateConfig
-   * @param config Dynamic reconfigure config of stereo_vo
-   */
-
-  /**
-   * @brief CheckEverything
-   * @note Check the graph integrity and self-destruct everything if something
-   * is bad.
-   */
-  //  void CheckEverything();
 
  private:
   /// Add a key frame.
   void AddKeyFrame(const CvStereoImage& stereo_image);
   
-  void TrackSpatial(const CvStereoImage &stereo_image,
-                    std::vector<Feature> &features,
-                    std::vector<CvPoint2> &r_corners);
+//  void TrackSpatial(const CvStereoImage &stereo_image,
+//                    std::vector<Feature> &features,
+//                    std::vector<CvPoint2> &r_corners);
   //  void Triangulate(const KrPose &pose, std::vector<Feature> &features,
   //                   std::vector<CvPoint2> &corners);
   //  bool ShouldAddKeyFrame(const FramePtr &frame) const;
@@ -84,12 +76,12 @@ class StereoVo {
   //  void EstimatePose(const FramePtr &frame, const std::map<Id, Point3d>
   // point3ds,
   //                    const KrPose &old_pose);
-  void OpticalFlow(const cv::Mat &image1, const cv::Mat &image2,
-                   const std::vector<CvPoint2> &points1,
-                   std::vector<CvPoint2> &points2, std::vector<uchar> &status);
-  void FindFundamentalMat(const std::vector<CvPoint2> &points1,
-                          const std::vector<CvPoint2> &points2,
-                          std::vector<uchar> &status);
+//  void OpticalFlow(const cv::Mat &image1, const cv::Mat &image2,
+//                   const std::vector<CvPoint2> &points1,
+//                   std::vector<CvPoint2> &points2, std::vector<uchar> &status);
+//  void FindFundamentalMat(const std::vector<CvPoint2> &points1,
+//                          const std::vector<CvPoint2> &points2,
+//                          std::vector<uchar> &status);
   /**
    * @brief TriangulatePoint
    * @param left Left observation in pixels.
@@ -115,7 +107,7 @@ class StereoVo {
   StereoCameraModel model_;   ///< Stereo camera model
   StereoVoDynConfig config_;  ///< Dynamic reconfigure config of stereo_vo
   FeatureDetector detector_;  ///< Grid based feature detector
-  std::vector<std::shared_ptr<KeyFrame>> key_frames_;  ///< A deque of key frames in window
+  std::vector<KeyFramePtr> key_frames_;  ///< A deque of key frames in window
 
   Tracker temporal_tracker_;  ///< Track features previous to current.
   Tracker spatial_tracker_;   ///< Track features left to right.

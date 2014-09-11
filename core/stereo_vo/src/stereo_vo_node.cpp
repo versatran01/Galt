@@ -107,29 +107,32 @@ void StereoVoNode::StereoCb(const ImageConstPtr& l_image_msg,
   // Initialize stereo visual odometry if not
   if (!stereo_vo_.init()) {
     stereo_vo_.Initialize(stereo_image, stereo_model_);
-    return;
+  } else {
+    stereo_vo_.Iterate(stereo_image);
   }
-  stereo_vo_.Iterate(stereo_image);
 
+  //  publish points
+  
+  
   // Publish PointCloud from keyframe pose and features
   //  PublishPointCloud(stereo_vo_.point3ds(), stereo_vo_.key_frames(),
   //                    l_image_msg->header.stamp, "/world");
   //  PublishPoseStamped(camera_pose, l_image_msg->header.stamp, "/world");
   //  PublishTrajectory(camera_pose, l_image_msg->header.stamp, "/world");
-  const geometry_msgs::Pose pose =
-      static_cast<geometry_msgs::Pose>(stereo_vo_.pose());
-  ROS_ASSERT_MSG(!frame_id_.empty(), "frame id empty");
-  tf_pub_.PublishTransform(pose, frame_id_, l_image_msg->header.stamp);
-  traj_viz_.PublishTrajectory(pose.position, frame_id_,
-                              l_image_msg->header.stamp);
+//  const geometry_msgs::Pose pose =
+//      static_cast<geometry_msgs::Pose>(stereo_vo_.pose());
+//  ROS_ASSERT_MSG(!frame_id_.empty(), "frame id empty");
+//  tf_pub_.PublishTransform(pose, frame_id_, l_image_msg->header.stamp);
+//  traj_viz_.PublishTrajectory(pose.position, frame_id_,
+//                              l_image_msg->header.stamp);
 }
 
-/*
 void StereoVoNode::PublishPointCloud(const std::map<Id, Point3d>& point3ds,
-                                     const std::deque<FramePtr>& key_frames,
                                      const ros::Time& time,
                                      const std::string& frame_id) const {
   sensor_msgs::PointCloud cloud;
+  cloud.header.stamp = time;
+  cloud.header.frame_id = frame_id;
   sensor_msgs::ChannelFloat32 channel;
   channel.name = "rgb";
 
@@ -138,10 +141,7 @@ void StereoVoNode::PublishPointCloud(const std::map<Id, Point3d>& point3ds,
     float val;
   } color;
 
-  const Frame& cur_frame = *key_frames.back();
-  const auto features = cur_frame.features();
-
-  for (const Feature& feature : features) {
+  for (const Feature& feature : stereo_vo_.) {
 
     if (feature.init()) {
       color.rgb[0] = 255;
@@ -177,7 +177,7 @@ void StereoVoNode::PublishPointCloud(const std::map<Id, Point3d>& point3ds,
   cloud.header.frame_id = frame_id;
   points_pub_.publish(cloud);
 }
-*/
+
 /*
 void StereoVoNode::PublishPoseStamped(const geometry_msgs::Pose& pose,
                                       const ros::Time& time,

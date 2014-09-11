@@ -16,8 +16,8 @@ Grid FeatureDetector::CreateGrid(const std::vector<Feature> &features) const {
   Grid grid;
   std::for_each(features.cbegin(), features.cend(),
                 [&](const Feature &feature) {
-    grid.emplace(Discretize(feature.p_pixel().x, cell_size_),
-                 Discretize(feature.p_pixel().y, cell_size_));
+    grid.emplace(Discretize(feature.p_pixel().x),
+                 Discretize(feature.p_pixel().y));
   });
   //  for (const Feature &feature : features) {
   //    const int x = static_cast<int>(feature.p_pixel().x / cell_size_);

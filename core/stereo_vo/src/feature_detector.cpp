@@ -28,7 +28,7 @@ std::vector<Feature> FeatureDetector::AddFeatures(
   const Grid grid = CreateGrid(features);
   std::vector<CvPoint2> corners;
   DetectCorners(image, grid, &corners);
-  CornerSubPix(image, corners);
+  CornerSubPix(image, &corners);
 
   std::vector<Feature> new_features(corners.cbegin(), corners.cend());
   //  for (const CvPoint2 &corner : corners) {
@@ -71,11 +71,11 @@ bool IsCloseToImageBorder(const CvPoint2 &point, const cv::Mat &image,
            point.x < (image.cols - border) && point.y < (image.rows - border));
 }
 
-void CornerSubPix(const cv::Mat &image, std::vector<CvPoint2>& corners) {
+void CornerSubPix(const cv::Mat &image, std::vector<CvPoint2> *corners) {
   cv::TermCriteria criteria =
       cv::TermCriteria(CV_TERMCRIT_EPS + CV_TERMCRIT_ITER, 40, 0.001);
   /// Calculate the refined corner locations
-  cv::cornerSubPix(image, corners, cv::Size(5, 5), cv::Size(-1, -1), criteria);
+  cv::cornerSubPix(image, *corners, cv::Size(5, 5), cv::Size(-1, -1), criteria);
 }
 
 }  // namespace stereo_vo

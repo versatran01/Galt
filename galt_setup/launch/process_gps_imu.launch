@@ -16,14 +16,25 @@
   <arg name="bagfile_home" default="$(env GALT_BAGFILES)"/>
   <arg name="bagfile" default=""/>
   <arg name="bagfile_start" default="0"/>
+  <arg name="bagfile_path" default="$(arg bagfile_home)/$(arg bagfile).bag"/>
 
   <!-- Rosbag -->
-  <arg name="bagfile_path" default="$(arg bagfile_home)/$(arg bagfile).bag"/>
   <node name="playback" pkg="rosbag" type="play" output="log"
         args="--clock -s $(arg bagfile_start) $(arg bagfile_path)"/>
 
   <!-- Sensor profile to load -->
   <arg name="profile"/>
+
+  <!-- Frame broadcaster -->
+  <include file="$(find iris_tf)/launch/node.launch">
+  </include>
+
+  <!--laser_filter-->
+  <node pkg="laser_filters" type="scan_to_scan_filter_chain"
+        name="laser_filter" ns="/hokuyo">
+      <rosparam command="load"
+          file="$(find galt_setup)/profiles/$(arg profile)/laser_filter.yml"/>
+  </node>
 
   <!-- Magnetometer calibration to load -->
   <arg name="mag_calib" default="philadelphia_generic"/>
@@ -94,14 +105,5 @@
   </node>
   -->
 
-  <!-- Frame broadcaster -->
-  <include file="$(find iris_tf)/launch/node.launch">
-  </include>
 
-  <!--laser_filter-->
-  <node pkg="laser_filters" type="scan_to_scan_filter_chain"
-        name="laser_filter" ns="/hokuyo">
-      <rosparam command="load"
-          file="$(find galt_setup)/profiles/$(arg profile)/laser_filter.yml"/>
-  </node>
 </launch>

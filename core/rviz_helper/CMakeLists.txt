@@ -5,14 +5,15 @@ add_definitions(-Wall -std=c++11)
 
 find_package(catkin REQUIRED COMPONENTS
     roscpp
-    std_msgs geometry_msgs
+    std_msgs geometry_msgs nav_msgs
     visualization_msgs
+    tf2_ros
     )
 
 catkin_package(
     INCLUDE_DIRS include
     LIBRARIES rviz_helper
-    CATKIN_DEPENDS std_msgs geometry_msgs roscpp visualization_msgs
+    CATKIN_DEPENDS std_msgs geometry_msgs nav_msgs roscpp visualization_msgs tf2_ros
     DEPENDS system_lib
     )
 
@@ -30,7 +31,4 @@ target_link_libraries(${PROJECT_NAME}
 
 add_dependencies(${PROJECT_NAME}
     ${catkin_EXPORTED_TARGETS}
-    ${PROJECT_NAME}_gencfg
-    ${PROJECT_NAME}_gencpp
-    ${${PROJECT_NAME}_EXPORTED_TARGETS}
-)
+    )

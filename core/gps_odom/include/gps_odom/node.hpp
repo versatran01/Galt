@@ -25,26 +25,24 @@
 #include <message_filters/sync_policies/exact_time.h>
 #include <message_filters/sync_policies/approximate_time.h>
 
-#include <pressure_altimeter/Height.h>
-
 #include <GeographicLib/Geoid.hpp>
 #include <GeographicLib/MagneticModel.hpp>
 #include <GeographicLib/LocalCartesian.hpp>
 
+#include <pressure_altimeter/Height.h>
 #include <rviz_helper/rviz_helper.h>
-#include <tf2_ros/transform_broadcaster.h>
 
 #include <memory>
 
 namespace gps_odom {
 
 class Node {
-public:
+ public:
   Node();
 
   void initialize();
 
-private:
+ private:
   static constexpr int kROSQueueSize = 200;
 
   ros::NodeHandle nh_;
@@ -56,7 +54,7 @@ private:
   message_filters::Subscriber<sensor_msgs::Imu> subImu_;
   message_filters::Subscriber<sensor_msgs::NavSatFix> subFix_;
   message_filters::Subscriber<geometry_msgs::TwistWithCovarianceStamped>
-  subFixTwist_;
+      subFixTwist_;
   message_filters::Subscriber<pressure_altimeter::Height> subHeight_;
 
   //  time sync policy for GPS data
@@ -81,11 +79,11 @@ private:
   double refHeight_;
   double currentDeclination_;
 
-  tf2_ros::TransformBroadcaster broadcaster_;
+  rviz_helper::TfPublisher tfPub_;
   rviz_helper::TrajectoryVisualizer trajViz_;
   rviz_helper::CovarianceVisualizer covViz_;
 };
 
-} //  namespace_gps_odom
+}  //  namespace_gps_odom
 
-#endif // GPS_ODOM_NODE_HPP
+#endif  // GPS_ODOM_NODE_HPP

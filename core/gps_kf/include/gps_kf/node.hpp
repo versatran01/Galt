@@ -15,9 +15,6 @@
 #include <ros/ros.h>
 #include <ros/node_handle.h>
 
-#include <tf2_ros/transform_broadcaster.h>
-#include <tf2_ros/static_transform_broadcaster.h>
-
 #include <sensor_msgs/Imu.h>
 #include <nav_msgs/Odometry.h>
 
@@ -49,7 +46,7 @@ private:
   ErrorStateKF<double> positionKF_;
   double gyroBiasDriftStd_;
   double accelBiasDriftStd_;
-  
+
   bool initialized_{ false };
 
   ros::NodeHandle nh_;
@@ -62,7 +59,7 @@ private:
   ros::Time predictTime_;
 
   std::string worldFrameId_;
-  tf2_ros::TransformBroadcaster broadcaster_;
+  rviz_helper::TfPublisher tfPub_;
   rviz_helper::TrajectoryVisualizer trajViz_;
   rviz_helper::CovarianceVisualizer covViz_;
 };

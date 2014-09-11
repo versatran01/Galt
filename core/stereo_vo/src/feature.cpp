@@ -1,7 +1,6 @@
 #include "stereo_vo/feature.h"
 
 namespace galt {
-
 namespace stereo_vo {
 
 Id Feature::feature_count = 0;
@@ -18,6 +17,10 @@ std::vector<Id> ExtractIds(const std::vector<Feature>& features) {
   return ids;
 }
 
-}  // namespace stereo_vo
+void MakeFeaturesOld(std::vector<Feature>& features) {
+  std::for_each(features.begin(), features.end(),
+                [](Feature& feature) { feature.set_init(false); });
+}
 
+}  // namespace stereo_vo
 }  // namespace galt

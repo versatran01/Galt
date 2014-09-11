@@ -10,63 +10,34 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <eigen_conversions/eigen_msg.h>
+#include <tf2/transform_datatypes.h>
 
 namespace galt {
 
 namespace stereo_vo {
 
 StereoVoNode::StereoVoNode(const ros::NodeHandle& nh)
-    : nh_{nh}, it_{nh}, stereo_vo_(ReadConfig(nh)) {
-  // Queue size 1 should be OK;
-  // the one that matters is the synchronizer queue size.
+    : nh_(nh),
+      it_(nh),
+      odom_sub_(nh_.subscribe("odometry", 1, &StereoVoNode::OdometryCb, this)),
+      tf_pub_("stereo"),
+      traj_viz_(nh),
+      tf_listener_(core_) {
   image_transport::TransportHints hints("raw", ros::TransportHints(), nh_);
   SubscribeStereoTopics("image_rect", "camera_info", hints);
 
-  // Setup synchronize policy
-  int queue_size;
-  nh_.param<int>("queue_size", queue_size, 5);
-  bool approx;
-  nh_.param<bool>("approximate_sync", approx, false);
-  if (approx) {
-    approximate_sync_.reset(new ApproximateSync(ApproximatePolicy(queue_size),
-                                                l_image_sub_, l_cinfo_sub_,
-                                                r_image_sub_, r_cinfo_sub_));
-    approximate_sync_->registerCallback(
-        boost::bind(&StereoVoNode::StereoCallback, this, _1, _2, _3, _4));
-
-  } else {
-    exact_sync_.reset(new ExactSync(ExactPolicy(queue_size), l_image_sub_,
-                                    l_cinfo_sub_, r_image_sub_, r_cinfo_sub_));
-    exact_sync_->registerCallback(
-        boost::bind(&StereoVoNode::StereoCallback, this, _1, _2, _3, _4));
-  }
-
-  // Setup dynamic reconfigure server
   cfg_server_.setCallback(
-      boost::bind(&StereoVoNode::ReconfigureCallback, this, _1, _2));
-
-  // Setup all publishers
-  points_pub_ =
-      nh_.advertise<sensor_msgs::PointCloud>("triangulated_points", 1);
-  pose_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("pose", 1);
-  traj_pub_ = nh_.advertise<visualization_msgs::Marker>("traj", 1);
-  // Initialize common fields of marker
-  traj_.ns = "stereo_vo";
-  traj_.id = 0;
-  traj_.type = visualization_msgs::Marker::LINE_STRIP;
-  traj_.action = visualization_msgs::Marker::ADD;
-  traj_.color.r = 1.0;
-  traj_.color.g = 0.1;
-  traj_.color.b = 1.0;
-  traj_.color.a = 1.0;
-  traj_.scale.x = 0.1;
-  traj_.lifetime = ros::Duration();
-  traj_.pose.orientation.w = 1.0;
+      boost::bind(&StereoVoNode::ReconfigureCb, this, _1, _2));
+  traj_viz_.set_colorRGB(rviz_helper::colors::MAGENTA);
 }
 
 void StereoVoNode::SubscribeStereoTopics(
     const std::string& image_topic, const std::string& cinfo_topic,
     const image_transport::TransportHints& hints) {
+  exact_sync_.reset(new ExactSync(ExactPolicy(5), l_image_sub_, l_cinfo_sub_,
+                                  r_image_sub_, r_cinfo_sub_));
+  exact_sync_->registerCallback(
+      boost::bind(&StereoVoNode::StereoCb, this, _1, _2, _3, _4));
   using namespace ros::names;
   std::string left("left");
   std::string right("right");
@@ -76,27 +47,51 @@ void StereoVoNode::SubscribeStereoTopics(
   r_cinfo_sub_.subscribe(nh_, resolve(append(right, cinfo_topic)), 1);
 }
 
-void StereoVoNode::ReconfigureCallback(const StereoVoDynConfig& config,
-                                       int level) {
-  stereo_vo_.UpdateConfig(config);
-}
-
-void StereoVoNode::StereoCallback(const ImageConstPtr& l_image_msg,
-                                  const CameraInfoConstPtr& l_cinfo_msg,
-                                  const ImageConstPtr& r_image_msg,
-                                  const CameraInfoConstPtr& r_cinfo_msg) {
-  // Get stereo camera infos
-  static image_geometry::StereoCameraModel stereo_model;
-  if (!stereo_model.initialized() &&
-      (!l_cinfo_msg->K[0] || !r_cinfo_msg->K[0])) {
-    ROS_WARN_THROTTLE(1, "Uncalibrated camera.");
+void StereoVoNode::OdometryCb(const nav_msgs::OdometryConstPtr& odom_msg) {
+  // Unsubscribe if stereo vo is already initialized
+  if (stereo_vo_.init()) {
+    odom_sub_.shutdown();
+    ROS_INFO("StereoVo initialized, unsubscribe from gps_kf/odometry");
     return;
   }
-  CameraInfo linfo = *l_cinfo_msg;
-  CameraInfo rinfo = *r_cinfo_msg;
-  linfo.header.frame_id = "/stereo";
-  rinfo.header.frame_id = "/stereo";
-  stereo_model.fromCameraInfo(linfo, rinfo);
+  // Get the latest transform
+  try {
+    const geometry_msgs::TransformStamped transform =
+        core_.lookupTransform("world", "mv_stereo/left", ros::Time(0));
+    const geometry_msgs::Vector3& t = transform.transform.translation;
+    const geometry_msgs::Quaternion& r = transform.transform.rotation;
+    kr::vec3<scalar_t> p(t.x, t.y, t.z);
+    kr::quat<scalar_t> q(r.w, r.x, r.y, r.z);
+    stereo_vo_.set_pose(KrPose(q, p));
+  }
+  catch (const tf2::TransformException& e) {
+    ROS_WARN("%s", e.what());
+  }
+
+  // Set frame_id only once
+  if (frame_id_.empty()) frame_id_ = odom_msg->header.frame_id;
+  if (!stereo_vo_.init_pose()) stereo_vo_.set_init_pose(true);
+}
+
+void StereoVoNode::ReconfigureCb(const StereoVoDynConfig& config, int level) {
+  if (level < 0) {
+    ROS_INFO("%s: %s", nh_.getNamespace().c_str(),
+             "Initializing dynamic reconfigure server");
+  }
+  stereo_vo_.set_config(config);
+}
+
+void StereoVoNode::StereoCb(const ImageConstPtr& l_image_msg,
+                            const CameraInfoConstPtr& l_cinfo_msg,
+                            const ImageConstPtr& r_image_msg,
+                            const CameraInfoConstPtr& r_cinfo_msg) {
+  // Get stereo camera infos
+  stereo_model_.fromCameraInfo(l_cinfo_msg, r_cinfo_msg);
+  if (!stereo_model_.initialized() &&
+      (!l_cinfo_msg->K[0] || !r_cinfo_msg->K[0])) {
+    ROS_ERROR_THROTTLE(1, "Uncalibrated camera.");
+    return;
+  }
 
   // Get stereo images
   cv::Mat l_image_rect =
@@ -107,20 +102,29 @@ void StereoVoNode::StereoCallback(const ImageConstPtr& l_image_msg,
 
   // Initialize stereo visual odometry if not
   if (!stereo_vo_.init()) {
-    stereo_vo_.Initialize(stereo_image, stereo_model);
+    stereo_vo_.Initialize(stereo_image, stereo_model_);
     return;
   }
 
-  stereo_vo_.Iterate(stereo_image);
-  auto camera_pose = KrPoseToRosPose(stereo_vo_.pose_world());
+  cv::imshow("left", l_image_rect);
+  cv::imshow("right", r_image_rect);
+  cv::waitKey(1);
+
+  //  stereo_vo_.Iterate(stereo_image);
 
   // Publish PointCloud from keyframe pose and features
-  PublishPointCloud(stereo_vo_.point3ds(), stereo_vo_.key_frames(),
-                    l_image_msg->header.stamp, "/world");
-  PublishPoseStamped(camera_pose, l_image_msg->header.stamp, "/world");
-  PublishTrajectory(camera_pose, l_image_msg->header.stamp, "/world");
+  //  PublishPointCloud(stereo_vo_.point3ds(), stereo_vo_.key_frames(),
+  //                    l_image_msg->header.stamp, "/world");
+  //  PublishPoseStamped(camera_pose, l_image_msg->header.stamp, "/world");
+  //  PublishTrajectory(camera_pose, l_image_msg->header.stamp, "/world");
+  const geometry_msgs::Pose pose =
+      static_cast<geometry_msgs::Pose>(stereo_vo_.pose());
+  tf_pub_.PublishTransform(pose, frame_id_, l_image_msg->header.stamp);
+  traj_viz_.PublishTrajectory(pose.position, frame_id_,
+                              l_image_msg->header.stamp);
 }
 
+/*
 void StereoVoNode::PublishPointCloud(const std::map<Id, Point3d>& point3ds,
                                      const std::deque<FramePtr>& key_frames,
                                      const ros::Time& time,
@@ -136,9 +140,9 @@ void StereoVoNode::PublishPointCloud(const std::map<Id, Point3d>& point3ds,
 
   const Frame& cur_frame = *key_frames.back();
   const auto features = cur_frame.features();
-  
+
   for (const Feature& feature : features) {
-    
+
     if (feature.init()) {
       color.rgb[0] = 255;
       color.rgb[1] = 255;
@@ -150,7 +154,7 @@ void StereoVoNode::PublishPointCloud(const std::map<Id, Point3d>& point3ds,
       color.rgb[2] = 0;
       color.rgb[3] = 0;
     }
-    
+
     const auto& id = feature.id();
     const auto& it_point3d = point3ds.find(id);
     if (it_point3d != point3ds.end()) {
@@ -173,7 +177,8 @@ void StereoVoNode::PublishPointCloud(const std::map<Id, Point3d>& point3ds,
   cloud.header.frame_id = frame_id;
   points_pub_.publish(cloud);
 }
-
+*/
+/*
 void StereoVoNode::PublishPoseStamped(const geometry_msgs::Pose& pose,
                                       const ros::Time& time,
                                       const std::string& frame_id) const {
@@ -196,30 +201,31 @@ void StereoVoNode::PublishTrajectory(const geometry_msgs::Pose& pose,
   traj_.points.push_back(p);
   traj_pub_.publish(traj_);
 }
+*/
 
-const StereoVoConfig ReadConfig(const ros::NodeHandle& nh) {
-  StereoVoConfig config;
-  nh.param<int>("cell_size", config.cell_size, 50);
+// StereoVoConfig ReadConfig(const ros::NodeHandle& nh) {
+//  StereoVoConfig config;
+//  nh.param<int>("cell_size", config.cell_size, 50);
 
-  nh.param<int>("shi_max_corners", config.shi_max_corners, 200);
-  nh.param<double>("shi_quality_level", config.shi_quality_level, 0.01);
-  nh.param<double>("shi_min_distance", config.shi_min_distance, 12);
+//  nh.param<int>("shi_max_corners", config.shi_max_corners, 200);
+//  nh.param<double>("shi_quality_level", config.shi_quality_level, 0.01);
+//  nh.param<double>("shi_min_distance", config.shi_min_distance, 12);
 
-  nh.param<int>("klt_max_level", config.klt_max_level, 3);
-  nh.param<int>("klt_win_size", config.klt_win_size, 13);
+//  nh.param<int>("klt_max_level", config.klt_max_level, 3);
+//  nh.param<int>("klt_win_size", config.klt_win_size, 13);
 
-  nh.param<double>("pnp_ransac_inliers", config.pnp_ransac_inliers, 0.7);
-  nh.param<double>("pnp_ransac_error", config.pnp_ransac_error, 4.0);
-  nh.param<double>("pnp_motion_thresh", config.pnp_motion_thresh, 0.5);
+//  nh.param<double>("pnp_ransac_inliers", config.pnp_ransac_inliers, 0.7);
+//  nh.param<double>("pnp_ransac_error", config.pnp_ransac_error, 4.0);
+//  nh.param<double>("pnp_motion_thresh", config.pnp_motion_thresh, 0.5);
 
-  nh.param<int>("kf_size", config.kf_size, 4);
-  nh.param<double>("kf_dist_thresh", config.kf_dist_thresh, 1.5);
-  nh.param<double>("kf_yaw_thresh", config.kf_yaw_thresh, 45);
-  nh.param<double>("kf_min_filled", config.kf_min_filled, 0.7);
+//  nh.param<int>("kf_size", config.kf_size, 4);
+//  nh.param<double>("kf_dist_thresh", config.kf_dist_thresh, 1.5);
+//  nh.param<double>("kf_yaw_thresh", config.kf_yaw_thresh, 45);
+//  nh.param<double>("kf_min_filled", config.kf_min_filled, 0.7);
 
-  nh.param<double>("tri_max_eigenratio", config.tri_max_eigenratio, 1.0e5);
-  return config;
-}
+//  nh.param<double>("tri_max_eigenratio", config.tri_max_eigenratio, 1.0e5);
+//  return config;
+//}
 
 geometry_msgs::Pose KrPoseToRosPose(const KrPose& kr_pose) {
   geometry_msgs::Pose ros_pose = static_cast<geometry_msgs::Pose>(kr_pose);

@@ -33,17 +33,18 @@ void Node::initialize() {
 
   nh_.param("gyro_bias_drift_std", gyroBiasDriftStd_, 1.0e-3);
   nh_.param("accel_bias_drift_std", accelBiasDriftStd_, 1.0e-2);
-  
+
   predictTime_ = ros::Time(0, 0);
   trajViz_.set_colorRGB(rviz_helper::colors::CYAN);
   trajViz_.set_num_skip(12);
-  covViz_.set_colorRGB({0,1,1,0.5});  //  transparent cyan
+  covViz_.set_colorRGB({0, 1, 1, 0.5});  //  transparent cyan
 }
 
 void Node::imuCallback(const sensor_msgs::ImuConstPtr &imu) {
   if (!initialized_) {
-    return; //  wait for first GPS
+    return;  //  wait for first GPS
   }
+  tfPub_.set_child_frame_id(imu->header.frame_id);
 
   kr::vec3d accel;
   kr::mat3d varAccel;
@@ -73,9 +74,9 @@ void Node::imuCallback(const sensor_msgs::ImuConstPtr &imu) {
 
   //  predict
   kr::mat3d Qbg = kr::mat3d::Identity();
-  Qbg *= gyroBiasDriftStd_*gyroBiasDriftStd_;
+  Qbg *= gyroBiasDriftStd_ * gyroBiasDriftStd_;
   kr::mat3d Qba = kr::mat3d::Identity();
-  Qba *= accelBiasDriftStd_*accelBiasDriftStd_;
+  Qba *= accelBiasDriftStd_ * accelBiasDriftStd_;
   positionKF_.setBiasUncertainties(Qbg, Qba);
   positionKF_.predict(gyro, varGyro, accel, varAccel, delta);
 
@@ -103,19 +104,7 @@ void Node::imuCallback(const sensor_msgs::ImuConstPtr &imu) {
   pose.header = odo.header;
   pubPose_.publish(pose);
 
-  //  publish tf stuff and trajectory visualizer
-  geometry_msgs::Vector3 translation;
-  translation.x = pose.pose.position.x;
-  translation.y = pose.pose.position.y;
-  translation.z = pose.pose.position.z;
-
-  geometry_msgs::TransformStamped transform_stamped;
-  transform_stamped.header = pose.header;
-  transform_stamped.child_frame_id = "imu";
-  transform_stamped.transform.translation = translation;
-  transform_stamped.transform.rotation = pose.pose.orientation;
-
-  broadcaster_.sendTransform(transform_stamped);
+  tfPub_.PublishTransform(odo.pose.pose, odo.header);
   trajViz_.PublishTrajectory(pose.pose.position, pose.header);
 
   //  top left 3x3 (filter) and bottom right 3x3 (from imu)

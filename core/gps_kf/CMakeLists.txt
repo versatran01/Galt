@@ -11,8 +11,6 @@ find_package(catkin REQUIRED COMPONENTS
     sensor_msgs
     std_msgs
     rviz_helper
-    tf2
-    tf2_ros
     )
 
 # generate messages

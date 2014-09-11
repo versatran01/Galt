@@ -4,22 +4,27 @@
 #include <ros/ros.h>
 #include <std_msgs/Header.h>
 #include <geometry_msgs/Point.h>
+#include <geometry_msgs/Pose.h>
+#include <geometry_msgs/PoseStamped.h>
+#include <geometry_msgs/PoseWithCovariance.h>
+#include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <nav_msgs/Odometry.h>
 #include <visualization_msgs/Marker.h>
+#include <tf2_ros/transform_broadcaster.h>
 
 namespace rviz_helper {
 
 namespace colors {
-const std::vector<double> RED = { 1, 0, 0 };
-const std::vector<double> GREEN = { 0, 1, 0 };
-const std::vector<double> BLUE = { 0, 0, 1 };
-const std::vector<double> CYAN = { 0, 1, 1 };
-const std::vector<double> MAGENTA = { 1, 0, 1 };
-const std::vector<double> YELLOW = { 1, 1, 0 };
+const std::vector<double> RED = {1, 0, 0};
+const std::vector<double> GREEN = {0, 1, 0};
+const std::vector<double> BLUE = {0, 0, 1};
+const std::vector<double> CYAN = {0, 1, 1};
+const std::vector<double> MAGENTA = {1, 0, 1};
+const std::vector<double> YELLOW = {1, 1, 0};
 }
 
 class TrajectoryVisualizer {
-public:
+ public:
   TrajectoryVisualizer(const ros::NodeHandle &nh,
                        const std::string &topic = std::string("traj"));
 
@@ -39,12 +44,14 @@ public:
   }
   void set_num_skip(int num_skip) { num_skip_ = num_skip; }
 
+  void PublishTrajectory(const geometry_msgs::Pose &pose,
+                         const std_msgs::Header &header);
   void PublishTrajectory(const geometry_msgs::Point &point,
                          const std_msgs::Header &header);
   void PublishTrajectory(const geometry_msgs::Point &point,
-                         const std::string &frame_id, const ros::Time &time);
+                         const std::string &frame_id, const ros::Time &stamp);
 
-private:
+ private:
   ros::NodeHandle nh_;
   ros::Publisher traj_pub_;
   int num_skip_;
@@ -56,11 +63,11 @@ private:
  * @brief Visualize covariance as a scaled ellipsoid.
  */
 class CovarianceVisualizer {
-public:
-  CovarianceVisualizer(const ros::NodeHandle& nh,
+ public:
+  CovarianceVisualizer(const ros::NodeHandle &nh,
                        const std::string &topic = std::string("covariance"));
-  
-  void set_colorRGB(const std::vector<double>& rgb) {
+
+  void set_colorRGB(const std::vector<double> &rgb) {
     marker_.color.r = rgb[0];
     marker_.color.g = rgb[1];
     marker_.color.b = rgb[2];
@@ -70,16 +77,40 @@ public:
       marker_.color.a = 1;
     }
   }
-  
-  /// Extract covariance, position and header from odometry and publish.
-  void PublishCovariance(const nav_msgs::Odometry& odometry);
-  
-private:
+
+  void PublishCovariance(const geometry_msgs::PoseWithCovariance &pose_cov,
+                         const std_msgs::Header &header);
+  void PublishCovariance(
+      const geometry_msgs::PoseWithCovarianceStamped &pose_cov_stamped);
+  void PublishCovariance(const nav_msgs::Odometry &odometry);
+
+ private:
   ros::NodeHandle nh_;
   ros::Publisher cov_pub_;
   visualization_msgs::Marker marker_;
 };
 
-} // namespace rviz_helper
+class TfPublisher {
+ public:
+  TfPublisher() = default;
+  TfPublisher(const std::string &child_frame_id)
+      : child_frame_id_(child_frame_id) {}
 
-#endif // RVIZ_HELPER_H_
+  const std::string &child_frame_id() const { return child_frame_id_; }
+  void set_child_frame_id(const std::string& id) { 
+    child_frame_id_ = id;
+  }
+  
+  void PublishTransform(const geometry_msgs::Pose &pose,
+                        const std_msgs::Header &header);
+  void PublishTransform(const geometry_msgs::Pose &pose,
+                        const std::string &frame_id, const ros::Time &stamp);
+
+ private:
+  std::string child_frame_id_;
+  tf2_ros::TransformBroadcaster tf_broadcaster_;
+};
+
+}  // namespace rviz_helper
+
+#endif  // RVIZ_HELPER_H_

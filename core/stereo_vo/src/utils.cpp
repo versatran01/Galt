@@ -9,9 +9,51 @@
 
 namespace galt {
 namespace stereo_vo {
+
+void Display(const cv::Mat &image,
+             const std::vector<Feature> &keyframe_features,
+             const std::vector<Feature> &tracked_features) {
+  // Convert to color
+  cv::Mat display;
+  cv::cvtColor(image, display, CV_GRAY2BGR);
+
+  // Draw tracked features
+  DrawFeaturesOnImage(display, tracked_features, cv_color::GREEN);
+  DrawCorrespondencOnImage(display, keyframe_features, tracked_features,
+                           cv_color::YELLOW);
+  cv::imshow("display", display);
+  cv::waitKey(1);
+}
+
+void DrawFeaturesOnImage(cv::Mat &image, const std::vector<Feature> &features,
+                         const cv::Scalar &color) {
+  std::for_each(features.cbegin(), features.cend(),
+                [&](const Feature &feature) {
+    cv::circle(image, feature.p_pixel(), 1, color, 2);
+  });
+}
+
+void DrawCorrespondencOnImage(cv::Mat &image,
+                              const std::vector<Feature> &features1,
+                              const std::vector<Feature> &features2,
+                              const cv::Scalar &color) {
+  for (const Feature &feature : features1) {
+    auto id = feature.id();
+    const auto it =
+        std::find_if(features2.cbegin(), features2.cend(),
+                     [id](const Feature &f) { return id == f.id(); });
+    if (it != features2.end()) {
+      const CvPoint2 &p1 = it->p_pixel();
+      const CvPoint2 &p2 = feature.p_pixel();
+      cv::line(image, p1, p2, color);
+    }
+  }
+}
+
 /*
 void Display(const CvStereoImage &stereo_image,
-             const std::vector<Feature> &features, const FramePtr &key_frame) {
+             const std::vector<Feature> &features, const FramePtr &key_frame)
+{
   auto &l_image = stereo_image.first;
   auto &r_image = stereo_image.second;
   auto &l_image_prev = key_frame->l_image();
@@ -43,11 +85,13 @@ void Display(const CvStereoImage &stereo_image,
   // How many matching features?
   std::ostringstream ss;
   ss << "C/F: " << features.size() << "/" << key_frame->features().size();
-  cv::putText(display, ss.str(), CvPoint2(offset_x, n_rows * 2 - offset_y / 2),
+  cv::putText(display, ss.str(), CvPoint2(offset_x, n_rows * 2 - offset_y /
+2),
               font, scale, text_color, thickness);
   //  ss.str(std::string());
   //  ss << "Features: " << key_frame.features().size();
-  //  cv::putText(display, ss.str(), CvPoint2(offset_x, n_rows - offset_y / 2),
+  //  cv::putText(display, ss.str(), CvPoint2(offset_x, n_rows - offset_y /
+2),
   //              font, scale, cv_color::YELLOW, thickness);
 
   // Draw currently tracked features on current frame and key frame
@@ -89,7 +133,6 @@ void Display(const FramePtr &frame, const FramePtr &key_frame) {
   Display(frame->stereo_image(), frame->features(), key_frame);
 }
 */
-
 
 }  // namespace stereo_vo
 }  // namespace galt

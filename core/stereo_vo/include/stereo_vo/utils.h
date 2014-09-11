@@ -23,6 +23,7 @@ const cv::Scalar CYAN = cv::Scalar(255, 255, 0);
 
 /// @note: these two could possibly be rewrote using erase and remove_if for
 /// better performance and readability
+/*
 template <typename T, typename U>
 void PruneByStatus(const std::vector<U> &status, std::vector<T> &objects,
                    std::set<T> &removed) {
@@ -52,7 +53,17 @@ void PruneByStatus(const std::vector<U> &status, std::vector<T> &objects) {
     }
   }
 }
+*/
 
+void Display(const cv::Mat &image,
+             const std::vector<Feature> &keyframe_features,
+             const std::vector<Feature> &tracked_features);
+void DrawFeaturesOnImage(cv::Mat &image, const std::vector<Feature> &features,
+                         const cv::Scalar &color);
+void DrawCorrespondencOnImage(cv::Mat &image,
+                              const std::vector<Feature> &features1,
+                              const std::vector<Feature> &features2,
+                              const cv::Scalar &color);
 /*
 void Display(const FramePtr &frame, const FramePtr &key_frame);
 void Display(const CvStereoImage &stereo_image,

@@ -90,7 +90,7 @@ void StereoVo::AddKeyFrame(const CvStereoImage& stereo_image) {
   ptr->set_pose(current_pose);
 
   //  add more features using the grid pattern
-  const std::vector<Feature> features = temporal_tracker_.features();
+  const std::vector<Feature>& features = temporal_tracker_.features();
   const std::vector<Feature> new_features =
       detector_.AddFeatures(stereo_image.first, features);
 
@@ -232,6 +232,7 @@ void StereoVo::Iterate(const CvStereoImage& stereo_image) {
     temporal_tracker_.Track(prev_left_image_, stereo_image.first, unused);
   }
 
+  /*
   cv::Mat debug_image;
   cv::cvtColor(stereo_image.first, debug_image, CV_GRAY2RGB);
   //  draw the tracked features
@@ -240,6 +241,7 @@ void StereoVo::Iterate(const CvStereoImage& stereo_image) {
   }
   cv::imshow("derp derp", debug_image);
   cv::waitKey(1);
+  */
 
   //  ransac PnP
   EstimatePose();
@@ -250,6 +252,8 @@ void StereoVo::Iterate(const CvStereoImage& stereo_image) {
   }
 
   /// @todo: do visualization
+  Display(stereo_image.first, spatial_tracker_.features(),
+          temporal_tracker_.features());
 
   prev_left_image_ = stereo_image.first;
 }

@@ -42,7 +42,7 @@ include_directories(
 add_library(${PROJECT_NAME}
     src/stereo_vo.cpp
     src/feature_detector.cpp
-    #src/utils.cpp
+    src/utils.cpp
     src/keyframe.cpp
     src/feature.cpp
     src/tracker.cpp

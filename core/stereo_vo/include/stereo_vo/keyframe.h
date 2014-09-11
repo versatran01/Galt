@@ -44,9 +44,6 @@ class KeyFrame {
   std::vector<Feature> features_;  ///< all features observed in this frame
 };
 
-using KeyFramePtr = KeyFrame::Ptr;
-using KeyFrameConstPtr = KeyFrame::ConstPtr;
-
 }  // namespace stereo_vo
 }  // namespace galt
 

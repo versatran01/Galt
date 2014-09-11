@@ -18,18 +18,20 @@ class FeatureDetector {
 
   void set_cell_size(int cell_size) { cell_size_ = cell_size; }
   std::vector<Feature> AddFeatures(const cv::Mat& image,
-                     const std::vector<Feature> &features) const;
+                                   const std::vector<Feature>& features) const;
 
  private:
   Grid CreateGrid(const std::vector<Feature>& features) const;
   void DetectCorners(const cv::Mat& image, const Grid& grid,
-                     std::vector<CvPoint2>& corners) const;
+                     std::vector<CvPoint2>* corners) const;
 
   const static int border_ = 25;
   int cell_size_;
 };
 
 void CornerSubPix(const cv::Mat& image, std::vector<CvPoint2>& corners);
+bool IsCloseToImageBorder(const CvPoint2& point, const cv::Mat& image,
+                          int border);
 
 }  // namespace stereo_vo
 }  // namespace galt

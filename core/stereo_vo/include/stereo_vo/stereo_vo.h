@@ -54,7 +54,7 @@ class StereoVo {
   //  void CheckEverything();
 
  private:
-  void AddKeyFrame(const FramePtr &frame);
+  void AddKeyFrame(const std::shared_ptr<KeyFrame> &frame);
   void TrackSpatial(const CvStereoImage &stereo_image,
                     std::vector<Feature> &features,
                     std::vector<CvPoint2> &r_corners);
@@ -106,7 +106,7 @@ class StereoVo {
   StereoCameraModel model_;   ///< Stereo camera model
   StereoVoDynConfig config_;  ///< Dynamic reconfigure config of stereo_vo
   FeatureDetector detector_;  ///< Grid based feature detector
-  std::vector<FramePtr> key_frames_;  ///< A deque of key frames in window
+  std::vector<std::shared_ptr<KeyFrame>> key_frames_;  ///< A deque of key frames in window
 
   //  FramePtr prev_frame_;           ///< Previous frame
   //  std::map<Id, Point3d> point3ds_;   ///< Triangulated 3d points in world

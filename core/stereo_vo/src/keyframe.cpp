@@ -7,7 +7,7 @@ namespace stereo_vo {
 
 Id KeyFrame::frame_counter = 0;
 
-KeyFrame::KeyFrame() : id_(frame_counter++), is_keyframe_(false) {}
+KeyFrame::KeyFrame() : id_(frame_counter++) {}
 
 KeyFrame::KeyFrame(const CvStereoImage &stereo_image)
     : id_(frame_counter++), stereo_image_(stereo_image) {}

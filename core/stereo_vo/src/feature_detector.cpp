@@ -14,11 +14,16 @@ namespace stereo_vo {
 
 Grid FeatureDetector::CreateGrid(const std::vector<Feature> &features) const {
   Grid grid;
-  for (const Feature &feature : features) {
-    const int x = static_cast<int>(feature.p_pixel().x / cell_size_);
-    const int y = static_cast<int>(feature.p_pixel().y / cell_size_);
-    grid.emplace(x, y);
-  }
+  std::for_each(features.cbegin(), features.cend(),
+                [&](const Feature &feature) {
+    grid.emplace(Discretize(feature.p_pixel().x, cell_size_),
+                 Discretize(feature.p_pixel().y, cell_size_));
+  });
+  //  for (const Feature &feature : features) {
+  //    const int x = static_cast<int>(feature.p_pixel().x / cell_size_);
+  //    const int y = static_cast<int>(feature.p_pixel().y / cell_size_);
+  //    grid.emplace(x, y);
+  //  }
   return grid;
 }
 

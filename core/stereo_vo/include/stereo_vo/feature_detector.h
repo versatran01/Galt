@@ -32,6 +32,9 @@ class FeatureDetector {
 void CornerSubPix(const cv::Mat& image, std::vector<CvPoint2>* corners);
 bool IsCloseToImageBorder(const CvPoint2& point, const cv::Mat& image,
                           int border);
+static inline int Discretize(scalar_t value, int cell_size) {
+  return static_cast<int>(value / cell_size);
+}
 
 }  // namespace stereo_vo
 }  // namespace galt

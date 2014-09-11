@@ -73,8 +73,8 @@ bool IsCloseToImageBorder(const CvPoint2 &point, const cv::Mat &image,
 
 void CornerSubPix(const cv::Mat &image, std::vector<CvPoint2> *corners) {
   cv::TermCriteria criteria =
-      cv::TermCriteria(CV_TERMCRIT_EPS + CV_TERMCRIT_ITER, 40, 0.001);
-  /// Calculate the refined corner locations
+      cv::TermCriteria(CV_TERMCRIT_EPS + CV_TERMCRIT_ITER, 10, 0.001);
+  // Calculate the refined corner locations
   cv::cornerSubPix(image, *corners, cv::Size(5, 5), cv::Size(-1, -1), criteria);
 }
 

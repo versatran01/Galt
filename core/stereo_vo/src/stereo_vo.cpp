@@ -138,6 +138,29 @@ void StereoVo::FindFundamentalMat(const std::vector<CvPoint2> &points1,
 
 
 void StereoVo::Iterate(const CvStereoImage &stereo_image) {
+  //  use some threshold here...
+  if (temporal_tracker_.empty()) {
+    //  insert new features into the tracker
+    std::vector<Feature> new_features;
+    detector_.AddFeatures(stereo_image.first, new_features);
+    temporal_tracker_.AddFeatures(new_features);
+  } else {
+    if (!prev_left_.empty()) {
+      temporal_tracker_.Track(prev_left_,stereo_image.first);
+    }
+  }
+  
+  cv::Mat debug_image;
+  cv::cvtColor(stereo_image.first,debug_image,CV_GRAY2RGB);
+  //  draw the tracked features
+  for (const Feature& f : temporal_tracker_.features()) {
+    cv::circle(debug_image, f.p_pixel(), 3, cv::Scalar(255,0,0),1);
+  }
+  cv::imshow("derp derp", debug_image);
+  cv::waitKey(1);
+  prev_left_ = stereo_image.first;
+  
+  
   // Construct a new frame based on incoming stereo image
   //FramePtr curr_frame = std::make_shared<Frame>(stereo_image);
   // Track corners from previous frame into current frame

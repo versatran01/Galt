@@ -6,6 +6,7 @@
 #include "stereo_vo/point3d.h"
 #include "stereo_vo/feature_detector.h"
 #include "stereo_vo/keyframe.h"
+#include "stereo_vo/tracker.h"
 
 #include <vector>
 #include <memory>
@@ -114,9 +115,8 @@ class StereoVo {
   FeatureDetector detector_;  ///< Grid based feature detector
   std::vector<std::shared_ptr<KeyFrame>> key_frames_;  ///< A deque of key frames in window
 
-  //  FramePtr prev_frame_;           ///< Previous frame
-  //  std::map<Id, Point3d> point3ds_;   ///< Triangulated 3d points in world
-  // frame
+  Tracker temporal_tracker_;
+  cv::Mat prev_left_;
 };
 
 }  // namespace stereo_vo

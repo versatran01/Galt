@@ -34,6 +34,10 @@ class Tracker {
   const double& ransac_thresh() const { return ransac_thresh_; }
   void set_ransac_thresh(const double& thresh) { ransac_thresh_ = thresh; }
   
+  const std::vector<Feature>& features() const { return features_; }
+  
+  bool empty() const { return features_.empty(); }
+  
  private:
   std::vector<Feature> features_;
   cv::Size window_size_;  /// Default to (21,21)

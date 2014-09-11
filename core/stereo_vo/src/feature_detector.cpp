@@ -22,26 +22,23 @@ Grid FeatureDetector::CreateGrid(const std::vector<Feature> &features) const {
   return grid;
 }
 
-std::vector<Feature> 
-FeatureDetector::AddFeatures(const cv::Mat &image,
-                             const std::vector<Feature> &features) const {
-  // Mark all tracked corners as old
-  //MakeFeaturesOld(features);
+std::vector<Feature> FeatureDetector::AddFeatures(
+    const cv::Mat &image, const std::vector<Feature> &features) const {
   // Create a new grid
   const Grid grid = CreateGrid(features);
   std::vector<CvPoint2> corners;
-  DetectCorners(image, grid, corners);
-  CornerSubPix(image, corners);
+  DetectCorners(image, grid, &corners);
+  CornerSubPix(image, &corners);
 
-  std::vector<Feature> new_features;
-  for (const CvPoint2 &corner : corners) {
-    new_features.emplace_back(corner);
-  }
+  std::vector<Feature> new_features(corners.cbegin(), corners.cend());
+  //  for (const CvPoint2 &corner : corners) {
+  //    new_features.emplace_back(corner);
+  //  }
   return new_features;
 }
 
 void FeatureDetector::DetectCorners(const cv::Mat &image, const Grid &grid,
-                                    std::vector<CvPoint2> &corners) const {
+                                    std::vector<CvPoint2> *corners) const {
   const auto grid_cols = static_cast<int>(image.cols / cell_size_);
   const auto grid_rows = static_cast<int>(image.rows / cell_size_);
   // Detect one corner in each empty grid
@@ -59,10 +56,8 @@ void FeatureDetector::DetectCorners(const cv::Mat &image, const Grid &grid,
           corner.x += x * cell_size_;
           corner.y += y * cell_size_;
           // Corner should never be too close to image border
-          if (corner.x > border_ && corner.y > border_ &&
-              corner.x < (image.cols - border_) &&
-              corner.y < (image.rows - border_)) {
-            corners.emplace_back(corner.x, corner.y);
+          if (!IsCloseToImageBorder(corner, image, border_)) {
+            corners->push_back(corner);
           }
         }
       }
@@ -70,11 +65,17 @@ void FeatureDetector::DetectCorners(const cv::Mat &image, const Grid &grid,
   }
 }
 
-void CornerSubPix(const cv::Mat &image, std::vector<CvPoint2> &corners) {
+bool IsCloseToImageBorder(const CvPoint2 &point, const cv::Mat &image,
+                          int border) {
+  return !(point.x > border && point.y > border &&
+           point.x < (image.cols - border) && point.y < (image.rows - border));
+}
+
+void CornerSubPix(const cv::Mat &image, std::vector<CvPoint2> *corners) {
   cv::TermCriteria criteria =
       cv::TermCriteria(CV_TERMCRIT_EPS + CV_TERMCRIT_ITER, 40, 0.001);
   /// Calculate the refined corner locations
-  cv::cornerSubPix(image, corners, cv::Size(5, 5), cv::Size(-1, -1), criteria);
+  cv::cornerSubPix(image, *corners, cv::Size(5, 5), cv::Size(-1, -1), criteria);
 }
 
 }  // namespace stereo_vo

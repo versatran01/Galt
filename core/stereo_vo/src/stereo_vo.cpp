@@ -94,7 +94,6 @@ void StereoVo::AddKeyFrame(const CvStereoImage &stereo_image) {
   }
   ROS_INFO("Initialized %lu features", added_count);
   
-//#define DEBUG_GUI
 #ifdef DEBUG_GUI
   //  display left and right images with matched features
   //  assume same dimensions here
@@ -124,7 +123,7 @@ void StereoVo::AddKeyFrame(const CvStereoImage &stereo_image) {
     Point3d& p3d = ite->second;
     //  add only left p_pixel here
     assert(p3d.IsInitialized());
-    p3d.AddObservation(config_,model_,ptr,f.p_pixel());
+    //p3d.AddObservation(config_,model_,ptr,f.p_pixel());
   }
   
   //  add the new left features to the collection of trackables

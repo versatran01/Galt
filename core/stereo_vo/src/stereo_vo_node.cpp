@@ -29,6 +29,8 @@ StereoVoNode::StereoVoNode(const ros::NodeHandle& nh)
   cfg_server_.setCallback(
       boost::bind(&StereoVoNode::ReconfigureCb, this, _1, _2));
   traj_viz_.set_colorRGB(rviz_helper::colors::MAGENTA);
+  
+  point_pub_ = nh_.advertise<sensor_msgs::PointCloud>("points", 1);
 }
 
 void StereoVoNode::SubscribeStereoTopics(
@@ -112,7 +114,7 @@ void StereoVoNode::StereoCb(const ImageConstPtr& l_image_msg,
   }
 
   //  publish points
-  
+  PublishPointCloud(l_image_msg->header.stamp);
   
   // Publish PointCloud from keyframe pose and features
   //  PublishPointCloud(stereo_vo_.point3ds(), stereo_vo_.key_frames(),
@@ -127,8 +129,7 @@ void StereoVoNode::StereoCb(const ImageConstPtr& l_image_msg,
 //                              l_image_msg->header.stamp);
 }
 
-void StereoVoNode::PublishPointCloud(const std::map<Id, Point3d>& point3ds,
-                                     const ros::Time& time,
+void StereoVoNode::PublishPointCloud(const ros::Time& time,
                                      const std::string& frame_id) const {
   sensor_msgs::PointCloud cloud;
   cloud.header.stamp = time;
@@ -141,41 +142,32 @@ void StereoVoNode::PublishPointCloud(const std::map<Id, Point3d>& point3ds,
     float val;
   } color;
 
-  for (const Feature& feature : stereo_vo_.) {
-
-    if (feature.init()) {
-      color.rgb[0] = 255;
-      color.rgb[1] = 255;
-      color.rgb[2] = 0;
-      color.rgb[3] = 0;
-    } else {
-      color.rgb[0] = 0;
-      color.rgb[1] = 255;
-      color.rgb[2] = 0;
-      color.rgb[3] = 0;
-    }
-
-    const auto& id = feature.id();
-    const auto& it_point3d = point3ds.find(id);
-    if (it_point3d != point3ds.end()) {
-      const Point3d& point3d = it_point3d->second;
+  const std::map<Id,Point3d> points = stereo_vo_.points();
+  for (const Feature& feature : stereo_vo_.features()) {
+    //  find corresponding point 3d
+    std::map<Id,Point3d>::const_iterator point_ite = points.find(feature.id());
+    assert(point_ite != points.end());
+    
+    color.rgb[0] = 255;
+    color.rgb[1] = 255;
+    color.rgb[2] = 0;
+    color.rgb[3] = 0;
+    
+      const Point3d& point3d = point_ite->second;
 
       geometry_msgs::Point32 p32;
-      kr::vec3<scalar_t> p(point3d.p_world().x, point3d.p_world().y,
-                           point3d.p_world().z);
+      const vec3 p(point3d.p_world().x, point3d.p_world().y, 
+                   point3d.p_world().z);
       p32.x = p[0];
       p32.y = p[1];
       p32.z = p[2];
 
       cloud.points.push_back(p32);
       channel.values.push_back(color.val);
-    }
   }
 
   cloud.channels.push_back(channel);
-  cloud.header.stamp = time;
-  cloud.header.frame_id = frame_id;
-  points_pub_.publish(cloud);
+  point_pub_.publish(cloud);
 }
 
 /*

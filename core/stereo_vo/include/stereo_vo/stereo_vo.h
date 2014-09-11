@@ -39,6 +39,10 @@ class StereoVo {
 
   const std::map<Id,Point3d>& points() const { return points_; }
   
+  const std::vector<Feature>& features() const { 
+    return temporal_tracker_.features();
+  }
+  
   /**
    * @brief Initialize
    * @param stereo_image

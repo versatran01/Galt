@@ -60,6 +60,7 @@ class StereoVoNode {
   CinfoSubscriberFilter l_cinfo_sub_;               ///< Left cinfo subscriber
   CinfoSubscriberFilter r_cinfo_sub_;               ///< Right cinfo subscriber
   ros::Subscriber odom_sub_;                        ///< Kf odometry subscriber
+  ros::Publisher point_pub_;                        ///< Publisher for points
   boost::shared_ptr<ExactSync> exact_sync_;         ///< Exact time sync policy
   visualization_msgs::Marker traj_;                 ///< Trajectory marker
   image_geometry::StereoCameraModel stereo_model_;  ///< Stereo camera model
@@ -72,8 +73,7 @@ class StereoVoNode {
   dynamic_reconfigure::Server<StereoVoDynConfig> cfg_server_;
 
   /// Visualize point cloud of triangulated points
-  void PublishPointCloud(const std::map<Id, Point3d>& point3ds,
-                         const ros::Time& time,
+  void PublishPointCloud(const ros::Time& time,
                          const std::string& frame_id = "world") const;
   
   //  void PublishPoseStamped(const geometry_msgs::Pose& pose,

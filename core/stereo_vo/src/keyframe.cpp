@@ -5,12 +5,13 @@
 namespace galt {
 namespace stereo_vo {
 
-Id KeyFrame::frame_counter = 0;
+Id KeyFrame::counter = 0;
 
-KeyFrame::KeyFrame() : id_(frame_counter++) {}
+KeyFrame::KeyFrame() : id_(counter++) {}
 
-KeyFrame::KeyFrame(const CvStereoImage &stereo_image)
-    : id_(frame_counter++), stereo_image_(stereo_image) {}
+KeyFrame::KeyFrame(const CvStereoImage &stereo_image) : KeyFrame() {
+  stereo_image_ = stereo_image;
+}
 
 /*
 size_t Frame::RemoveById(const std::set<Id> &ids_to_remove, bool force) {

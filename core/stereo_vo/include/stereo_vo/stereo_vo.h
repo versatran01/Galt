@@ -30,19 +30,19 @@ class StereoVo {
   }
 
   bool init() const { return init_; }
-  
+
   bool init_pose() const { return init_pose_; }
   void set_init_pose(bool init_pose) { init_pose_ = init_pose; }
-  
+
   const KrPose &pose() const { return pose_; }
   void set_pose(const KrPose &pose) { pose_ = pose; }
 
-  const std::map<Id,Point3d>& points() const { return points_; }
-  
-  const std::vector<Feature>& features() const { 
+  const std::map<Id, Point3d> &points() const { return points_; }
+
+  const std::vector<Feature> &features() const {
     return temporal_tracker_.features();
   }
-  
+
   /**
    * @brief Initialize
    * @param stereo_image
@@ -58,11 +58,11 @@ class StereoVo {
 
  private:
   /// Add a key frame.
-  void AddKeyFrame(const CvStereoImage& stereo_image);
-  
+  void AddKeyFrame(const CvStereoImage &stereo_image);
+
   /// Check if a key frame should be added.
   bool ShouldAddKeyFrame() const;
-  
+
   /**
    * @brief Estimate pose with Ransac PnP.
    */
@@ -78,9 +78,9 @@ class StereoVo {
 
   Tracker temporal_tracker_;  ///< Track features previous to current.
   Tracker spatial_tracker_;   ///< Track features left to right.
-  cv::Mat prev_left_;         ///< Last left image.
-  
-  std::map<Id, Point3d> points_; ///< 3D points, keyed by unique ID.
+  cv::Mat prev_left_image_;   ///< Last left image.
+
+  std::map<Id, Point3d> points_;  ///< 3D points, keyed by unique ID.
 };
 
 }  // namespace stereo_vo

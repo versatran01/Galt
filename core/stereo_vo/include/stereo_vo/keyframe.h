@@ -15,7 +15,7 @@ class KeyFrame {
   using Ptr = boost::shared_ptr<KeyFrame>;
   using ConstPtr = boost::shared_ptr<const KeyFrame>;
 
-  static Id frame_counter;
+  static Id counter;
 
   KeyFrame();
   KeyFrame(const CvStereoImage &stereo_image);
@@ -38,7 +38,7 @@ class KeyFrame {
   //  size_t RemoveById(const std::set<Id> &ids_to_remove, bool force = false);
 
  private:
-  Id id_;                          ///< id of this frame
+  Id id_;                          ///< unique id of this frame
   KrPose pose_;                    ///< pose of the frame in world frame
   CvStereoImage stereo_image_;     ///< stereo images of this frame
   std::vector<Feature> features_;  ///< all features observed in this frame

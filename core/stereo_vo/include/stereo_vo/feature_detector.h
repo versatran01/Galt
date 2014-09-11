@@ -29,7 +29,7 @@ class FeatureDetector {
   int cell_size_;
 };
 
-void CornerSubPix(const cv::Mat& image, std::vector<CvPoint2>& corners);
+void CornerSubPix(const cv::Mat& image, std::vector<CvPoint2>* corners);
 bool IsCloseToImageBorder(const CvPoint2& point, const cv::Mat& image,
                           int border);
 

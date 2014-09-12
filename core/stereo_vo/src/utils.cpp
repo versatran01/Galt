@@ -146,6 +146,6 @@ void Display(const CvStereoImage &stereo_image,
   cv::imshow("display", display);
   cv::waitKey(1);
 }
-
+*/
 }  // namespace stereo_vo
 }  // namespace galt

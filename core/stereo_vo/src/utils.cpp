@@ -28,6 +28,7 @@ void Display(const cv::Mat &image,
   AnnotateFeatureCounts(display, keyframe_features, cv_color::RED, 1);
   AnnotateFeatureCounts(display, tracked_features, cv_color::GREEN, 4);
 
+  // Display
   cv::imshow("display", display);
   cv::waitKey(1);
 }
@@ -43,15 +44,12 @@ void DrawFeatures(cv::Mat &image, const std::vector<Feature> &features,
 void DrawCorrespondence(cv::Mat &image, const std::vector<Feature> &features1,
                         const std::vector<Feature> &features2,
                         const cv::Scalar &color) {
-  for (const Feature &feature : features1) {
-    auto id = feature.id();
+  for (const Feature &f1 : features1) {
     const auto it =
         std::find_if(features2.cbegin(), features2.cend(),
-                     [id](const Feature &f) { return id == f.id(); });
+                     [&f1](const Feature &f2) { return f1.id() == f2.id(); });
     if (it != features2.end()) {
-      const CvPoint2 &p1 = it->p_pixel();
-      const CvPoint2 &p2 = feature.p_pixel();
-      cv::line(image, p1, p2, color);
+      cv::line(image, f1.p_pixel(), it->p_pixel(), color);
     }
   }
 }
@@ -59,32 +57,16 @@ void DrawCorrespondence(cv::Mat &image, const std::vector<Feature> &features1,
 void AnnotateFeatureCounts(cv::Mat &image, const std::vector<Feature> &features,
                            const cv::Scalar &color, int quadrant) {
 
-  int offset_x = 15;
-  int offset_y = 30;
-  int k = 5;
-  CvPoint2 position;
-  switch (quadrant) {
-    case 1:
-      position.x = image.cols - k * offset_x;
-      position.y = offset_y;
-      break;
-    case 2:
-      position.x = offset_x;
-      position.y = offset_y;
-      break;
-    case 3:
-      position.x = offset_x;
-      position.y = image.rows - offset_y;
-      break;
-    case 4:
-      position.x = image.cols - k * offset_x;
-      position.y = image.rows - offset_y;
-      break;
-    default:
-      position.x = image.cols - k * offset_x;
-      position.y = image.rows - offset_y;
-  }
-  cv::putText(image, std::to_string(features.size()), position,
+  scalar_t offset_x = 15;
+  scalar_t offset_y = 30;
+  scalar_t k = 5;
+  quadrant = quadrant < 1 ? 1 : (quadrant > 4 ? 4 : quadrant);
+  static std::vector<CvPoint2> positions = {
+      {image.cols - k * offset_x, offset_y},
+      {offset_x, offset_y},
+      {offset_x, image.rows - offset_y},
+      {image.cols - k * offset_x, image.rows - offset_y}};
+  cv::putText(image, std::to_string(features.size()), positions[quadrant - 1],
               cv::FONT_HERSHEY_SIMPLEX, 1, color, 2);
 }
 
@@ -164,11 +146,6 @@ void Display(const CvStereoImage &stereo_image,
   cv::imshow("display", display);
   cv::waitKey(1);
 }
-
-void Display(const FramePtr &frame, const FramePtr &key_frame) {
-  Display(frame->stereo_image(), frame->features(), key_frame);
-}
-*/
 
 }  // namespace stereo_vo
 }  // namespace galt

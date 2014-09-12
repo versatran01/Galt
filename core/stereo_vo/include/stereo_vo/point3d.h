@@ -48,19 +48,23 @@ class Point3d {
    * @brief Point3d
    * @param id Unique ID assigned to this point.
    */
-  Point3d(const Id id) : id_(id) {}
+  Point3d(const Id id) : id_(id), is_inlier_(false) {}
   
-  Point3d() : id_(0) {}
+  Point3d() : Point3d(0) {}
   Point3d(const Point3d&) = default;
 
   const CvPoint3& p_world() const { return p_world_; }
   void set_p_world(const CvPoint3& p_world) { p_world_ = p_world; }
 
   /**
-   * @brief isInitialized
+   * @brief is_initialized
    * @return True if the point is triangulated and has its first observation.
    */
-  bool IsInitialized() const { return !observations_.empty(); }
+  bool is_initialized() const { return !observations_.empty(); }
+  
+  /// Is the feature an inlier?
+  void set_is_inlier(const bool& inlier) { is_inlier_ = inlier; }
+  bool is_inlier() const { return is_inlier_; }
   
   /**
    * @brief AddObservation
@@ -87,6 +91,7 @@ class Point3d {
   std::vector<Observation> observations_; ///< Collection of observations
   
   kr::DepthFilter<scalar_t> filter_;  ///< filter on feature depth
+  bool is_inlier_;                    ///< Is the point an inlier?
 };
 
 }  // namespace stereo_vo

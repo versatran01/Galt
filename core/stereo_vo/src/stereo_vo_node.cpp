@@ -114,15 +114,15 @@ void StereoVoNode::StereoCb(const ImageConstPtr& l_image_msg,
   }
 
   //  publish points and pose
-  PublishPointCloud(l_image_msg->header.stamp);
-  
-  const geometry_msgs::Pose pose =
-      static_cast<geometry_msgs::Pose>(stereo_vo_.pose());
-  ROS_ASSERT_MSG(!frame_id_.empty(), "frame id empty");
-  tf_pub_.PublishTransform(pose, frame_id_, 
-                           l_image_msg->header.stamp);
-  traj_viz_.PublishTrajectory(pose.position, frame_id_,
-                              l_image_msg->header.stamp);
+  if (!frame_id_.empty()) {
+    PublishPointCloud(l_image_msg->header.stamp);
+    const geometry_msgs::Pose pose =
+        static_cast<geometry_msgs::Pose>(stereo_vo_.pose());
+    tf_pub_.PublishTransform(pose, frame_id_, 
+                             l_image_msg->header.stamp);
+    traj_viz_.PublishTrajectory(pose.position, frame_id_,
+                                l_image_msg->header.stamp);
+  }
 }
 
 void StereoVoNode::PublishPointCloud(const ros::Time& time,
@@ -144,22 +144,29 @@ void StereoVoNode::PublishPointCloud(const ros::Time& time,
     std::map<Id,Point3d>::const_iterator point_ite = points.find(feature.id());
     assert(point_ite != points.end());
     
-    color.rgb[0] = 255;
-    color.rgb[1] = 255;
-    color.rgb[2] = 0;
-    color.rgb[3] = 0;
+    const Point3d& point3d = point_ite->second;
     
-      const Point3d& point3d = point_ite->second;
-
-      geometry_msgs::Point32 p32;
-      const vec3 p(point3d.p_world().x, point3d.p_world().y, 
-                   point3d.p_world().z);
-      p32.x = p[0];
-      p32.y = p[1];
-      p32.z = p[2];
-
-      cloud.points.push_back(p32);
-      channel.values.push_back(color.val);
+    if (!point3d.is_inlier()) {
+      color.rgb[0] = 255;
+      color.rgb[1] = 255;
+      color.rgb[2] = 0;
+      color.rgb[3] = 0;
+    } else {
+      color.rgb[0] = 0;
+      color.rgb[1] = 255;
+      color.rgb[2] = 255;
+      color.rgb[3] = 0;
+    }
+    
+    geometry_msgs::Point32 p32;
+    const vec3 p(point3d.p_world().x, point3d.p_world().y, 
+                 point3d.p_world().z);
+    p32.x = p[0];
+    p32.y = p[1];
+    p32.z = p[2];
+    
+    cloud.points.push_back(p32);
+    channel.values.push_back(color.val);
   }
 
   cloud.channels.push_back(channel);

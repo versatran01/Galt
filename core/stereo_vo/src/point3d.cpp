@@ -25,7 +25,7 @@ bool Point3d::AddObservation(const StereoVoDynConfig &config,
   vec3 tri_position;
   scalar_t eigenratio;
   
-  if (!IsInitialized()) {
+  if (!is_initialized()) {
     //  first observation, we need both left and right
     assert(right.x >= 0 && right.y >= 0);
    
@@ -70,6 +70,12 @@ bool Point3d::AddObservation(const StereoVoDynConfig &config,
     const vec3 p_world = ref_pose.transformFromBody(p_cam);
     
     p_world_ = CvPoint3(p_world[0],p_world[1],p_world[2]);
+    
+    //  check filter status
+    if (filter_.pi() > 0.5 && filter_.sigma < filter_.tau * 0.6) {
+      //  converged
+      set_is_inlier(true);
+    }
   }
   observations_.emplace_back(id_,left,Xn,key_frame);
   return true;

@@ -58,12 +58,14 @@ bool StereoVo::ShouldAddKeyFrame() const {
     return true;
   }
 
-  //  const KrPose &diff = frame->pose().difference(prev_key_frame()->pose());
-  //  if (diff.p().norm() > config_.kf_dist_thresh) {
-  //    ROS_INFO("Distance: %f", diff.p().norm());
-  //    //  over distance threshold, add keyframe
-  //    return true;
-  //  }
+  const KeyFramePtr prev_key_frame = key_frames_.back();
+  
+  const KrPose &diff = pose().difference(prev_key_frame->pose());
+  if (diff.p().norm() > config_.kf_dist_thresh) {
+    ROS_INFO("Distance: %f", diff.p().norm());
+    //  over distance threshold, add keyframe
+    return true;
+  }
 
   //  const kr::vec3<scalar_t> &angles = kr::getRPY(diff.bRw());
   //  if (std::abs(angles[2] * 180 / M_PI) > config_.kf_yaw_thresh) {
@@ -72,18 +74,12 @@ bool StereoVo::ShouldAddKeyFrame() const {
   //    return true;
   //  }
 
-  //  const size_t min_features =
-  //      std::ceil(config_.kf_min_filled * config_.shi_max_corners);
-  //  if (frame->num_features() < min_features) {
-  //    ROS_INFO("Corners: %lu", frame->num_features());
-  //    //  insufficent features, add keyframe with new ones
-  //    return true;
-  //  }
-
   return false;
 }
 
 void StereoVo::AddKeyFrame(const CvStereoImage& stereo_image) {
+  const bool first_frame = key_frames_.empty();
+  
   //  capture the current pose and create new key frame
   const KrPose current_pose = pose();
   KeyFramePtr ptr = std::make_shared<KeyFrame>(stereo_image);
@@ -118,6 +114,10 @@ void StereoVo::AddKeyFrame(const CvStereoImage& stereo_image) {
     if (point.AddObservation(config_, model_, ptr, left, right)) {
       //  sanity check
       assert(points_.find(id) == points_.end());
+      if (first_frame) {
+        //  mark first key-frame features as inliers
+        point.set_is_inlier(true);
+      }
       points_[id] = point;
       ite_l++;
       ite_r++;
@@ -160,8 +160,10 @@ void StereoVo::AddKeyFrame(const CvStereoImage& stereo_image) {
     assert(ite != points_.end());
     Point3d& p3d = ite->second;
     //  add only left p_pixel here
-    assert(p3d.IsInitialized());
-    // p3d.AddObservation(config_,model_,ptr,f.p_pixel());
+    assert(p3d.is_initialized());
+    if (!p3d.is_inlier()) {
+      p3d.AddObservation(config_,model_,ptr,f.p_pixel());
+    }
   }
 
   //  add the new left features to the collection of trackables
@@ -269,7 +271,7 @@ void StereoVo::EstimatePose() {
     assert(ite_pt != points_.end());
     const Point3d& point3d = ite_pt->second;
 
-    if (point3d.IsInitialized()) {  /// @todo: check for inlier status
+    if (point3d.is_initialized()) {// && point3d.is_inlier()) {
       pixel_points.push_back(feature.p_pixel());
       world_points.push_back(point3d.p_world());
     }

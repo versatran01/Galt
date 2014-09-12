@@ -41,8 +41,6 @@ void StereoVo::Initialize(const CvStereoImage& stereo_image,
   //  CheckEverything();
   //  ROS_WARN("Passed check everything for initializing");
 
-  //  cv::namedWindow("display",
-  //                  CV_WINDOW_NORMAL | CV_WINDOW_KEEPRATIO | CV_GUI_EXPANDED);
   init_ = true;
   ROS_INFO_STREAM("StereoVo initialized, baseline: " << model_.baseline());
 }

@@ -58,12 +58,13 @@ void PruneByStatus(const std::vector<U> &status, std::vector<T> &objects) {
 void Display(const cv::Mat &image,
              const std::vector<Feature> &keyframe_features,
              const std::vector<Feature> &tracked_features);
-void DrawFeaturesOnImage(cv::Mat &image, const std::vector<Feature> &features,
-                         const cv::Scalar &color);
-void DrawCorrespondencOnImage(cv::Mat &image,
-                              const std::vector<Feature> &features1,
-                              const std::vector<Feature> &features2,
-                              const cv::Scalar &color);
+void DrawFeatures(cv::Mat &image, const std::vector<Feature> &features,
+                  const cv::Scalar &color);
+void DrawCorrespondence(cv::Mat &image, const std::vector<Feature> &features1,
+                        const std::vector<Feature> &features2,
+                        const cv::Scalar &color);
+void AnnotateFeatureCounts(cv::Mat &image, const std::vector<Feature> &features,
+                           const cv::Scalar &color, int quadrant);
 /*
 void Display(const FramePtr &frame, const FramePtr &key_frame);
 void Display(const CvStereoImage &stereo_image,

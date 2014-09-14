@@ -160,7 +160,7 @@ void StereoVo::AddKeyFrame(const CvStereoImage& stereo_image) {
     //  add only left p_pixel here
     assert(p3d.is_initialized());
     if (!p3d.is_inlier()) {
-      p3d.AddObservation(config_,model_,ptr,f.p_pixel());
+      //p3d.AddObservation(config_,model_,ptr,f.p_pixel());
     }
   }
 

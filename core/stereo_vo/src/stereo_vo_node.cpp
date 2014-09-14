@@ -28,7 +28,8 @@ StereoVoNode::StereoVoNode(const ros::NodeHandle& nh)
 
   cfg_server_.setCallback(
       boost::bind(&StereoVoNode::ReconfigureCb, this, _1, _2));
-  traj_viz_.set_colorRGB(rviz_helper::colors::MAGENTA);
+  traj_viz_.set_color(rviz_helper::colors::MAGENTA);
+  traj_viz_.set_alpha(1);
 }
 
 void StereoVoNode::SubscribeStereoTopics(

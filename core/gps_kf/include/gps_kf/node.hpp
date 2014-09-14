@@ -20,7 +20,7 @@
 
 #include <gps_kf/error_state_kf.hpp>
 
-#include <rviz_helper/rviz_helper.h>
+#include <rviz_helper/visualizer.h>
 
 namespace gps_kf {
 

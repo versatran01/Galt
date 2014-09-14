@@ -30,7 +30,7 @@
 #include <GeographicLib/LocalCartesian.hpp>
 
 #include <pressure_altimeter/Height.h>
-#include <rviz_helper/rviz_helper.h>
+#include <rviz_helper/visualizer.h>
 
 #include <memory>
 

@@ -20,12 +20,12 @@
 
 #include <gps_kf/error_state_kf.hpp>
 
-#include <rviz_helper/rviz_helper.h>
+#include <rviz_helper/visualizer.h>
 
 namespace gps_kf {
 
 class Node {
-public:
+ public:
   static constexpr double kOneG = 9.80665;
 
   /**
@@ -38,7 +38,7 @@ public:
    */
   void initialize();
 
-private:
+ private:
   void imuCallback(const sensor_msgs::ImuConstPtr &imu);
 
   void odoCallback(const nav_msgs::OdometryConstPtr &odometry);
@@ -47,7 +47,7 @@ private:
   double gyroBiasDriftStd_;
   double accelBiasDriftStd_;
 
-  bool initialized_{ false };
+  bool initialized_{false};
 
   ros::NodeHandle nh_;
   ros::Publisher pubOdometry_;
@@ -59,11 +59,11 @@ private:
   ros::Time predictTime_;
 
   std::string worldFrameId_;
-  rviz_helper::TfPublisher tfPub_;
-  rviz_helper::TrajectoryVisualizer trajViz_;
-  rviz_helper::CovarianceVisualizer covViz_;
+  kr::rviz_helper::TfPublisher tfPub_;
+  kr::rviz_helper::TrajectoryVisualizer trajViz_;
+  kr::rviz_helper::CovarianceVisualizer covViz_;
 };
 
-} //  namespace gps_kf
+}  //  namespace gps_kf
 
-#endif //  GPS_KF_NODE_HPP
+#endif  //  GPS_KF_NODE_HPP

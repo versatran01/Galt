@@ -30,7 +30,7 @@
 #include <GeographicLib/LocalCartesian.hpp>
 
 #include <pressure_altimeter/Height.h>
-#include <rviz_helper/rviz_helper.h>
+#include <rviz_helper/visualizer.h>
 
 #include <memory>
 
@@ -79,9 +79,9 @@ class Node {
   double refHeight_;
   double currentDeclination_;
 
-  rviz_helper::TfPublisher tfPub_;
-  rviz_helper::TrajectoryVisualizer trajViz_;
-  rviz_helper::CovarianceVisualizer covViz_;
+  kr::rviz_helper::TfPublisher tfPub_;
+  kr::rviz_helper::TrajectoryVisualizer trajViz_;
+  kr::rviz_helper::CovarianceVisualizer covViz_;
 };
 
 }  //  namespace_gps_odom

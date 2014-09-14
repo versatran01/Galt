@@ -58,12 +58,12 @@ bool StereoVo::ShouldAddKeyFrame() const {
 
   const KeyFramePtr prev_key_frame = key_frames_.back();
   
-  const KrPose &diff = pose().difference(prev_key_frame->pose());
-  if (diff.p().norm() > config_.kf_dist_thresh) {
-    ROS_INFO("Distance: %f", diff.p().norm());
-    //  over distance threshold, add keyframe
-    return true;
-  }
+//  const KrPose &diff = pose().difference(prev_key_frame->pose());
+//  if (diff.p().norm() > config_.kf_dist_thresh) {
+//    ROS_INFO("Distance: %f", diff.p().norm());
+//    //  over distance threshold, add keyframe
+//    return true;
+//  }
 
   //  const kr::vec3<scalar_t> &angles = kr::getRPY(diff.bRw());
   //  if (std::abs(angles[2] * 180 / M_PI) > config_.kf_yaw_thresh) {
@@ -229,6 +229,10 @@ void StereoVo::Iterate(const CvStereoImage& stereo_image) {
   if (!prev_left_image_.empty()) {
     //  track from previous frame
     std::vector<Feature> unused;
+    temporal_tracker_.set_window_size(cv::Size(config_.klt_win_size,
+                                              config_.klt_win_size));
+    temporal_tracker_.set_ransac_thresh(config_.klt_ransac_thresh);
+    temporal_tracker_.set_max_levels(config_.klt_max_level);
     temporal_tracker_.Track(prev_left_image_, stereo_image.first, unused);
   }
 

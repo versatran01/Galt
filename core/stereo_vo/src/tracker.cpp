@@ -45,7 +45,7 @@ std::set<Id> Tracker::Track(const cv::Mat& from, const cv::Mat& to,
 
     if (!source.empty()) {
       cv::findFundamentalMat(source, dest, status, cv::FM_RANSAC,
-                             ransac_thresh(), 0.99);
+                             ransac_thresh(), 0.999);
       //  update features with new positions
       EraseByStatus(dest, status);
       EraseByStatus(features_, status, erased);

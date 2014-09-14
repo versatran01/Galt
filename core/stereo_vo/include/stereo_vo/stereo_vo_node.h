@@ -20,7 +20,7 @@
 #include <tf2_ros/transform_listener.h>
 #include <stereo_vo/StereoVoDynConfig.h>
 
-#include <rviz_helper/rviz_helper.h>
+#include <rviz_helper/visualizer.h>
 
 #include "stereo_vo/stereo_vo.h"
 #include "stereo_vo/common.h"

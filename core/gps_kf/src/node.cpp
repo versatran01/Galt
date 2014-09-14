@@ -35,9 +35,11 @@ void Node::initialize() {
   nh_.param("accel_bias_drift_std", accelBiasDriftStd_, 1.0e-2);
 
   predictTime_ = ros::Time(0, 0);
-  trajViz_.set_colorRGB(rviz_helper::colors::CYAN);
+  trajViz_.set_color(rviz_helper::colors::CYAN);
+  trajViz_.set_alpha(1);
   trajViz_.set_num_skip(12);
-  covViz_.set_colorRGB({0, 1, 1, 0.5});  //  transparent cyan
+  covViz_.set_color(rviz_helper::colors::CYAN);  //  transparent cyan
+  covViz_.set_alpha(0.5);
 }
 
 void Node::imuCallback(const sensor_msgs::ImuConstPtr &imu) {

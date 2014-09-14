@@ -57,6 +57,4 @@
   <!-- Hokuyo -->
   <include file="$(find galt_setup)/launch/hokuyo_eth.launch"/>
 
-  <!-- -->
-
 </launch>

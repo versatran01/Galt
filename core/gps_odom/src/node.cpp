@@ -33,9 +33,9 @@ Node::Node()
 
   refSet_ = false;
   currentDeclination_ = 0.0;
-  trajViz_.set_color(rviz_helper::colors::RED);
+  trajViz_.set_color(kr::rviz_helper::colors::RED);
   trajViz_.set_alpha(1);
-  covViz_.set_color(rviz_helper::colors::RED);
+  covViz_.set_color(kr::rviz_helper::colors::RED);
   covViz_.set_alpha(0.5);
 }
 

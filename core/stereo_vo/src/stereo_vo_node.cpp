@@ -28,7 +28,7 @@ StereoVoNode::StereoVoNode(const ros::NodeHandle& nh)
 
   cfg_server_.setCallback(
       boost::bind(&StereoVoNode::ReconfigureCb, this, _1, _2));
-  traj_viz_.set_color(rviz_helper::colors::MAGENTA);
+  traj_viz_.set_color(kr::rviz_helper::colors::MAGENTA);
   traj_viz_.set_alpha(1);
   point_pub_ = nh_.advertise<sensor_msgs::PointCloud>("points", 1);
 }

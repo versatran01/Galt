@@ -65,8 +65,8 @@ class StereoVoNode {
   boost::shared_ptr<ExactSync> exact_sync_;         ///< Exact time sync policy
   visualization_msgs::Marker traj_;                 ///< Trajectory marker
   image_geometry::StereoCameraModel stereo_model_;  ///< Stereo camera model
-  rviz_helper::TfPublisher tf_pub_;                 ///< Transfrom publisher
-  rviz_helper::TrajectoryVisualizer traj_viz_;      ///< Trajectory visualizer
+  kr::rviz_helper::TfPublisher tf_pub_;             ///< Transfrom publisher
+  kr::rviz_helper::TrajectoryVisualizer traj_viz_;  ///< Trajectory visualizer
   std::string frame_id_;                            ///< Reference frame
   StereoVo stereo_vo_;                              ///< Stereo visual odometry
   tf2::BufferCore core_;
@@ -76,7 +76,7 @@ class StereoVoNode {
   /// Visualize point cloud of triangulated points
   void PublishPointCloud(const ros::Time& time,
                          const std::string& frame_id = "world") const;
-    
+
   //  void PublishPointCloud(const std::map<Id, Point3d>& point3ds,
   //                         const std::deque<FramePtr>& key_frames,
   //                         const ros::Time& time,

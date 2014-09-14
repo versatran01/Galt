@@ -79,9 +79,9 @@ class Node {
   double refHeight_;
   double currentDeclination_;
 
-  rviz_helper::TfPublisher tfPub_;
-  rviz_helper::TrajectoryVisualizer trajViz_;
-  rviz_helper::CovarianceVisualizer covViz_;
+  kr::rviz_helper::TfPublisher tfPub_;
+  kr::rviz_helper::TrajectoryVisualizer trajViz_;
+  kr::rviz_helper::CovarianceVisualizer covViz_;
 };
 
 }  //  namespace_gps_odom

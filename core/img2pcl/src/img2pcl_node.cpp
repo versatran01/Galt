@@ -6,7 +6,7 @@
 #include <geometry_msgs/Quaternion.h>
 #include <cv_bridge/cv_bridge.h>
 #include <visualization_msgs/Marker.h>
-#include <laser_assembler/AssembleScans.h>
+#include <laser_assembler/AssembleScans2.h>
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/calib3d/calib3d.hpp>
@@ -22,8 +22,8 @@ Img2pclNode::Img2pclNode(const ros::NodeHandle &nh, const ros::NodeHandle &pnh)
   image_transport::TransportHints hints("raw", ros::TransportHints(), nh_);
   sub_camera_ =
       it_.subscribeCamera(image, 1, &Img2pclNode::CameraCb, this, hints);
-  srv_client_ = nh_.serviceClient<laser_assembler::AssembleScans>("assemble");
-  pub_cloud_ = nh_.advertise<sensor_msgs::PointCloud>("cloud", 1);
+  srv_client_ = nh_.serviceClient<laser_assembler::AssembleScans2>("assemble");
+  pub_cloud_ = nh_.advertise<sensor_msgs::PointCloud2>("cloud", 1);
 }
 
 // Implement this later
@@ -37,22 +37,24 @@ void Img2pclNode::CameraCb(const sensor_msgs::ImageConstPtr &image_msg,
     prev_time = image_msg->header.stamp - ros::Duration(kDelay);
     return;
   }
-  laser_assembler::AssembleScans srv;
+  laser_assembler::AssembleScans2 srv;
   const ros::Time &curr_time = image_msg->header.stamp - ros::Duration(kDelay);
   srv.request.end = curr_time;
   srv.request.begin = prev_time;
   prev_time = curr_time;
 
   if (!srv_client_.call(srv)) {
-    ROS_WARN("Sercie call failed");
+    ROS_WARN_THROTTLE(1, "Sercie call failed");
     return;
   }
 
-  if (srv.response.cloud.points.empty()) {
+  if (srv.response.cloud.data.empty()) {
     ROS_WARN("Empty cloud");
     return;
   }
 
+  // Project point cloud in world frame back to camera frame
+  const sensor_msgs::PointCloud2 &laser_cloud_w = srv.response.cloud;
   /*
   // Project point cloud back into thermal image and get color
   sensor_msgs::PointCloud thermal_cloud;

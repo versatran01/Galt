@@ -7,6 +7,6 @@
     <node pkg="img2pcl" type="img2pcl_node" name="img2pcl"
         ns="$(arg camera)" output="$(arg output)">
         <param name="image" type="string" value="$(arg image)"/>
-        <remap from="assemble" to="/$(arg assembler)/assemble_scans"/>
+        <remap from="assemble" to="/$(arg assembler)/assemble_scans2"/>
     </node>
 </launch>

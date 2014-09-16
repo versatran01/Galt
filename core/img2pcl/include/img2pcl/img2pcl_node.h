@@ -25,16 +25,16 @@ class Img2pclNode {
   void CameraCb(const sensor_msgs::ImageConstPtr &image_msg,
                 const sensor_msgs::CameraInfoConstPtr &cinfo_msg);
   void ConnectCb();
-  void ProjectCloud(const sensor_msgs::PointCloud &cloud_in,
-                    const cv::Mat &image,
-                    const image_geometry::PinholeCameraModel &model,
-                    sensor_msgs::PointCloud &cloud_out) const;
-  void PixelsToCloud(const cv::Mat &image,
-                     const std::vector<cv::Point2f> &pixels,
-                     const sensor_msgs::PointCloud cloud_in,
-                     sensor_msgs::PointCloud &cloud_out) const;
-  void CloudToPoints(const sensor_msgs::PointCloud &cloud,
-                     std::vector<cv::Point3f> &points) const;
+//  void ProjectCloud(const sensor_msgs::PointCloud &cloud_in,
+//                    const cv::Mat &image,
+//                    const image_geometry::PinholeCameraModel &model,
+//                    sensor_msgs::PointCloud &cloud_out) const;
+//  void PixelsToCloud(const cv::Mat &image,
+//                     const std::vector<cv::Point2f> &pixels,
+//                     const sensor_msgs::PointCloud cloud_in,
+//                     sensor_msgs::PointCloud &cloud_out) const;
+//  void CloudToPoints(const sensor_msgs::PointCloud &cloud,
+//                     std::vector<cv::Point3f> &points) const;
 
   ros::NodeHandle nh_;
   image_transport::ImageTransport it_;

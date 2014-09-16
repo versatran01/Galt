@@ -22,9 +22,10 @@ Img2pclNode::Img2pclNode(const ros::NodeHandle &nh) : nh_(nh), it_(nh) {
   sub_camera_ =
       it_.subscribeCamera(topic, 1, &Img2pclNode::CameraCb, this, hints);
   client_ = nh_.serviceClient<laser_assembler::AssembleScans>("assemble_scans");
-  pub_cloud_ = nh_.advertise<sensor_msgs::PointCloud>("thermal_cloud", 1);
+  pub_cloud_ = nh_.advertise<sensor_msgs::PointCloud>("cloud", 1);
 }
 
+// Implement this later
 void Img2pclNode::ConnectCb() {}
 
 void Img2pclNode::CameraCb(const sensor_msgs::ImageConstPtr &image_msg,
@@ -51,6 +52,7 @@ void Img2pclNode::CameraCb(const sensor_msgs::ImageConstPtr &image_msg,
     return;
   }
 
+  /*
   // Project point cloud back into thermal image and get color
   sensor_msgs::PointCloud thermal_cloud;
   const sensor_msgs::PointCloud &laser_cloud = srv.response.cloud;
@@ -59,14 +61,10 @@ void Img2pclNode::CameraCb(const sensor_msgs::ImageConstPtr &image_msg,
   ProjectCloud(laser_cloud, image, camera_model_, thermal_cloud);
   // Publish point cloud
   pub_cloud_.publish(thermal_cloud);
-
-  // Rotate the thermal image 180 degree
-  cv::Mat flipped;
-  cv::flip(image, flipped, -1);
-  cv::imshow("thermal", flipped);
-  cv::waitKey(1);
+  */
 }
 
+/*
 void Img2pclNode::ProjectCloud(const sensor_msgs::PointCloud &cloud_in,
                                const cv::Mat &image,
                                const image_geometry::PinholeCameraModel &model,
@@ -79,7 +77,9 @@ void Img2pclNode::ProjectCloud(const sensor_msgs::PointCloud &cloud_in,
                     model.distortionCoeffs(), image_points);
   PixelsToCloud(image, image_points, cloud_in, cloud_out);
 }
+*/
 
+/*
 void Img2pclNode::PixelsToCloud(const cv::Mat &image,
                                 const std::vector<cv::Point2f> &pixels,
                                 const sensor_msgs::PointCloud cloud_in,
@@ -110,13 +110,16 @@ void Img2pclNode::PixelsToCloud(const cv::Mat &image,
   }
   cloud_out.channels.push_back(channel);
 }
+*/
 
+/*
 void Img2pclNode::CloudToPoints(const sensor_msgs::PointCloud &cloud,
                                 std::vector<cv::Point3f> &points) const {
   for (const geometry_msgs::Point32 &point : cloud.points) {
     points.push_back(cv::Point3f(point.x, point.y, point.z));
   }
 }
+*/
 
 }  // namespace thermal_map
 }  // namespace galt

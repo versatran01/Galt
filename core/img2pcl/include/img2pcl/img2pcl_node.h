@@ -17,7 +17,7 @@ namespace img2pcl {
 class Img2pclNode {
 
  public:
-  Img2pclNode(const ros::NodeHandle &nh);
+  Img2pclNode(const ros::NodeHandle &nh, const ros::NodeHandle &pnh);
 
  private:
   constexpr static double kDelay = 0.03;
@@ -25,23 +25,23 @@ class Img2pclNode {
   void CameraCb(const sensor_msgs::ImageConstPtr &image_msg,
                 const sensor_msgs::CameraInfoConstPtr &cinfo_msg);
   void ConnectCb();
-//  void ProjectCloud(const sensor_msgs::PointCloud &cloud_in,
-//                    const cv::Mat &image,
-//                    const image_geometry::PinholeCameraModel &model,
-//                    sensor_msgs::PointCloud &cloud_out) const;
-//  void PixelsToCloud(const cv::Mat &image,
-//                     const std::vector<cv::Point2f> &pixels,
-//                     const sensor_msgs::PointCloud cloud_in,
-//                     sensor_msgs::PointCloud &cloud_out) const;
-//  void CloudToPoints(const sensor_msgs::PointCloud &cloud,
-//                     std::vector<cv::Point3f> &points) const;
+  //  void ProjectCloud(const sensor_msgs::PointCloud &cloud_in,
+  //                    const cv::Mat &image,
+  //                    const image_geometry::PinholeCameraModel &model,
+  //                    sensor_msgs::PointCloud &cloud_out) const;
+  //  void PixelsToCloud(const cv::Mat &image,
+  //                     const std::vector<cv::Point2f> &pixels,
+  //                     const sensor_msgs::PointCloud cloud_in,
+  //                     sensor_msgs::PointCloud &cloud_out) const;
+  //  void CloudToPoints(const sensor_msgs::PointCloud &cloud,
+  //                     std::vector<cv::Point3f> &points) const;
 
-  ros::NodeHandle nh_;
+  ros::NodeHandle nh_, pnh_;
   image_transport::ImageTransport it_;
   image_transport::CameraSubscriber sub_camera_;
   ros::Publisher pub_cloud_;
   image_geometry::PinholeCameraModel camera_model_;
-  ros::ServiceClient client_;
+  ros::ServiceClient srv_client_;
 };
 
 template <typename T>

@@ -15,13 +15,14 @@
 namespace galt {
 namespace img2pcl {
 
-Img2pclNode::Img2pclNode(const ros::NodeHandle &nh) : nh_(nh), it_(nh) {
-  std::string topic;
-  nh_.param<std::string>("topic", topic, "");
+Img2pclNode::Img2pclNode(const ros::NodeHandle &nh, const ros::NodeHandle &pnh)
+    : nh_(nh), pnh_(pnh), it_(nh) {
+  std::string image;
+  pnh_.param<std::string>("image", image, "");
   image_transport::TransportHints hints("raw", ros::TransportHints(), nh_);
   sub_camera_ =
-      it_.subscribeCamera(topic, 1, &Img2pclNode::CameraCb, this, hints);
-  client_ = nh_.serviceClient<laser_assembler::AssembleScans>("assemble_scans");
+      it_.subscribeCamera(image, 1, &Img2pclNode::CameraCb, this, hints);
+  srv_client_ = nh_.serviceClient<laser_assembler::AssembleScans>("assemble");
   pub_cloud_ = nh_.advertise<sensor_msgs::PointCloud>("cloud", 1);
 }
 
@@ -42,7 +43,7 @@ void Img2pclNode::CameraCb(const sensor_msgs::ImageConstPtr &image_msg,
   srv.request.begin = prev_time;
   prev_time = curr_time;
 
-  if (!client_.call(srv)) {
+  if (!srv_client_.call(srv)) {
     ROS_WARN("Sercie call failed");
     return;
   }

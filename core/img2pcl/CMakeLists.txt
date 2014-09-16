@@ -23,3 +23,10 @@ catkin_package(
     #  DEPENDS system_lib
     )
 
+add_executable(${PROJECT_NAME}_node
+    src/img2pcl_node.cpp
+    src/img2pcl_main.cpp
+    )
+target_link_libraries(${PROJECT_NAME}_node
+    ${catkin_LIBRARIES}
+    )

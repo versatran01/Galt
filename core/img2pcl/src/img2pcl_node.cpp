@@ -1,19 +1,4 @@
-/*
- * thermal_map_node.cpp
- *  _   _             _           _____         _
- * | \ | | ___  _   _| | ____ _  |_   _|__  ___| |__
- * |  \| |/ _ \| | | | |/ / _` |   | |/ _ \/ __| '_ \
- * | |\  | (_) | |_| |   < (_| |   | |  __/ (__| | | |
- * |_| \_|\___/ \__,_|_|\_\__,_|   |_|\___|\___|_| |_|
- *
- *  Copyright (c) 2014 Nouka Technologies. All rights reserved.
- *
- *  This file is part of thermal_map.
- *
- *	Created on: 23/08/2014
- */
-
-#include "thermal_map/thermal_map_node.h"
+#include "img2pcl/img2pcl_node.h"
 
 #include <cstdint>
 #include <cmath>
@@ -28,23 +13,22 @@
 #include <opencv2/highgui/highgui.hpp>
 
 namespace galt {
-namespace thermal_map {
+namespace img2pcl {
 
-ThermalMapNode::ThermalMapNode(const ros::NodeHandle &nh) : nh_{nh}, it_{nh} {
+Img2pclNode::Img2pclNode(const ros::NodeHandle &nh) : nh_(nh), it_(nh) {
+  std::string topic;
+  nh_.param<std::string>("topic", topic, "");
   image_transport::TransportHints hints("raw", ros::TransportHints(), nh_);
-  sub_camera_ = it_.subscribeCamera("color_map", 1, &ThermalMapNode::CameraCb,
-                                    this, hints);
-  sub_image_ = it_.subscribe("/mv_stereo/left/image_raw", 1,
-                             &ThermalMapNode::ImageCb, this, hints);
+  sub_camera_ =
+      it_.subscribeCamera(topic, 1, &Img2pclNode::CameraCb, this, hints);
   client_ = nh_.serviceClient<laser_assembler::AssembleScans>("assemble_scans");
   pub_cloud_ = nh_.advertise<sensor_msgs::PointCloud>("thermal_cloud", 1);
 }
 
-void ThermalMapNode::ConnectCb() {}
+void Img2pclNode::ConnectCb() {}
 
-void ThermalMapNode::CameraCb(
-    const sensor_msgs::ImageConstPtr &image_msg,
-    const sensor_msgs::CameraInfoConstPtr &cinfo_msg) {
+void Img2pclNode::CameraCb(const sensor_msgs::ImageConstPtr &image_msg,
+                           const sensor_msgs::CameraInfoConstPtr &cinfo_msg) {
   // Get point cloud from laser assembler
   static ros::Time prev_time(0);
   if (prev_time == ros::Time(0)) {
@@ -83,20 +67,10 @@ void ThermalMapNode::CameraCb(
   cv::waitKey(1);
 }
 
-void ThermalMapNode::ImageCb(const sensor_msgs::ImageConstPtr &image_msg) {
-  const cv::Mat image = cv_bridge::toCvShare(image_msg)->image;
-  // Rotate stereo left 90 degree
-  cv::Mat rotated = image.t();
-  cv::flip(rotated, rotated, 1);
-
-  cv::imshow("stereo_left", rotated);
-  cv::waitKey(1);
-}
-
-void ThermalMapNode::ProjectCloud(
-    const sensor_msgs::PointCloud &cloud_in, const cv::Mat &image,
-    const image_geometry::PinholeCameraModel &model,
-    sensor_msgs::PointCloud &cloud_out) const {
+void Img2pclNode::ProjectCloud(const sensor_msgs::PointCloud &cloud_in,
+                               const cv::Mat &image,
+                               const image_geometry::PinholeCameraModel &model,
+                               sensor_msgs::PointCloud &cloud_out) const {
   std::vector<cv::Point3f> camera_points;
   CloudToPoints(cloud_in, camera_points);
   std::vector<cv::Point2f> image_points;
@@ -106,10 +80,10 @@ void ThermalMapNode::ProjectCloud(
   PixelsToCloud(image, image_points, cloud_in, cloud_out);
 }
 
-void ThermalMapNode::PixelsToCloud(const cv::Mat &image,
-                                   const std::vector<cv::Point2f> &pixels,
-                                   const sensor_msgs::PointCloud cloud_in,
-                                   sensor_msgs::PointCloud &cloud_out) const {
+void Img2pclNode::PixelsToCloud(const cv::Mat &image,
+                                const std::vector<cv::Point2f> &pixels,
+                                const sensor_msgs::PointCloud cloud_in,
+                                sensor_msgs::PointCloud &cloud_out) const {
   cloud_out.header = cloud_in.header;
   sensor_msgs::ChannelFloat32 channel;
   channel.name = "rgb";
@@ -137,8 +111,8 @@ void ThermalMapNode::PixelsToCloud(const cv::Mat &image,
   cloud_out.channels.push_back(channel);
 }
 
-void ThermalMapNode::CloudToPoints(const sensor_msgs::PointCloud &cloud,
-                                   std::vector<cv::Point3f> &points) const {
+void Img2pclNode::CloudToPoints(const sensor_msgs::PointCloud &cloud,
+                                std::vector<cv::Point3f> &points) const {
   for (const geometry_msgs::Point32 &point : cloud.points) {
     points.push_back(cv::Point3f(point.x, point.y, point.z));
   }

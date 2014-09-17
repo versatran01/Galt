@@ -5,7 +5,7 @@ add_definitions(-std=c++11 -Wall)
 
 find_package(catkin REQUIRED COMPONENTS
     roscpp image_transport sensor_msgs tf2_ros image_geometry pcl_ros
-    pcl_conversions eigen_conversions
+    pcl_conversions eigen_conversions cv_bridge
     )
 
 include_directories(include

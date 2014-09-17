@@ -1,6 +1,7 @@
 #include "img2pcl/img2pcl_node.h"
 
 #include <laser_assembler/AssembleScans2.h>
+#include <cv_bridge/cv_bridge.h>
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/calib3d/calib3d.hpp>
@@ -8,6 +9,8 @@
 
 namespace galt {
 namespace img2pcl {
+
+using namespace pcl;
 
 Img2pclNode::Img2pclNode(const ros::NodeHandle &nh, const ros::NodeHandle &pnh)
     : nh_(nh), pnh_(pnh), it_(nh), tf_listener_(core_) {
@@ -25,6 +28,12 @@ void Img2pclNode::ConnectCb() {}
 
 void Img2pclNode::CameraCb(const sensor_msgs::ImageConstPtr &image_msg,
                            const sensor_msgs::CameraInfoConstPtr &cinfo_msg) {
+  if (cinfo_msg->K[0] == 0.0 || cinfo_msg->height == 0) {
+    ROS_WARN_THROTTLE(1, "Uncalibrated camera.");
+    return;
+  }
+  camera_model_.fromCameraInfo(cinfo_msg);
+
   // Get point cloud from laser assembler
   static ros::Time prev_time(0);
   if (prev_time == ros::Time(0)) {
@@ -47,53 +56,37 @@ void Img2pclNode::CameraCb(const sensor_msgs::ImageConstPtr &image_msg,
     return;
   }
 
-  // Transform point cloud msg from world to camera frame
-  const sensor_msgs::PointCloud2 &cloud_msg_w = srv.response.cloud;
-
+  // Transform world cloud msg to camera frame pcl point cloud
   geometry_msgs::TransformStamped tf_stamped;
-  if (!GetLatestTransfrom("mv_stereo/left", "world", &tf_stamped)) {
+  static const std::string camera_frame = "mv_stereo/left";
+  if (!GetLatestTransfrom(camera_frame, "world", &tf_stamped)) {
     return;
   }
-  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_pcl_c(
-      new pcl::PointCloud<pcl::PointXYZ>);
-  TransformCloud(cloud_msg_w, tf_stamped.transform, *cloud_pcl_c);
 
-  // Back project pcl point cloud on to image and modify rgb value
+  // Convert ros PointCloud2 to pcl PointCloud<T>
+  const sensor_msgs::PointCloud2 &cloud_ros_w = srv.response.cloud;
+  PointCloud<PointXYZ> cloud_pcl_c;
+  TransformCloud(cloud_ros_w, tf_stamped.transform, camera_frame, &cloud_pcl_c);
 
-  // Convert pcl point cloud back to point cloud msg and republish
-
-  //  ROS_INFO("%f, %f, %f", tf_stamped.transform.translation.x,
-  //           tf_stamped.transform.translation.y,
-  //           tf_stamped.transform.translation.z);
-
-  /*
-  // Project point cloud back into thermal image and get color
-  sensor_msgs::PointCloud thermal_cloud;
-  const sensor_msgs::PointCloud &laser_cloud = srv.response.cloud;
-  camera_model_.fromCameraInfo(cinfo_msg);
-  const cv::Mat image = cv_bridge::toCvShare(image_msg)->image;
-  ProjectCloud(laser_cloud, image, camera_model_, thermal_cloud);
-  // Publish point cloud
-  pub_cloud_.publish(thermal_cloud);
-  */
+  // Back project pcl PointCloud<T> on to image and modify rgb/intensity value
+  const cv::Mat image =
+      cv_bridge::toCvShare(image_msg, image_msg->encoding)->image;
+  sensor_msgs::PointCloud2 cloud_ros_c;
+  ExtractInfoFromImage(cloud_pcl_c, image, camera_model_, &cloud_ros_c);
+  pub_cloud_.publish(cloud_ros_c);
 }
 
 bool Img2pclNode::GetLatestTransfrom(
-    const std::string &target_frame, const std::string &source_frame,
-    geometry_msgs::TransformStamped *tf_stamped) {
+    const std::string &frame_tgt, const std::string &frame_src,
+    geometry_msgs::TransformStamped *tf_stamped) const {
   try {
-    *tf_stamped =
-        core_.lookupTransform(target_frame, source_frame, ros::Time(0));
+    *tf_stamped = core_.lookupTransform(frame_tgt, frame_src, ros::Time(0));
     return true;
   }
   catch (const tf2::TransformException &e) {
     ROS_WARN_THROTTLE(1, "%s", e.what());
     return false;
   }
-}
-void TransformCloud(const sensor_msgs::PointCloud2 &cloud_msg_in,
-                    const geometry_msgs::Transform &transform,
-                    pcl::PointCloud<pcl::PointXYZ> &cloud_pcl_out) {
 }
 
 /*

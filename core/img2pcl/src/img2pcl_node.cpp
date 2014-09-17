@@ -115,13 +115,14 @@ void ExtractInfoFromImage(const PointCloud<PointXYZ> pcl_cloud_in,
   cv::Mat zeros = cv::Mat::zeros(1, 3, CV_64FC1);
   cv::projectPoints(cam_pts, zeros, zeros, model.fullIntrinsicMatrix(),
                     model.distortionCoeffs(), img_pts);
-  //
+  /*
   cv::Mat disp(image.clone());
   for (const auto &p : img_pts) {
     cv::circle(disp, p, 1, cv::Scalar(255, 0, 0), 1);
   }
   cv::imshow("image", disp);
   cv::waitKey(1);
+  */
 
   // Convert grayscale image to color
   cv::Mat color;

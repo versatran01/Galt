@@ -3,12 +3,9 @@ project(img2pcl)
 
 add_definitions(-std=c++11 -Wall)
 
-find_package(cmake_modules)
-find_package(Eigen)
 find_package(catkin REQUIRED COMPONENTS
-    roscpp image_transport sensor_msgs nav_msgs cv_bridge
-    std_msgs geometry_msgs tf
-    message_filters laser_geometry image_geometry
+    roscpp image_transport sensor_msgs tf2_ros image_geometry pcl_ros
+    pcl_conversions eigen_conversions
     )
 
 include_directories(include

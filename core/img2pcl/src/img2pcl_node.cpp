@@ -1,11 +1,5 @@
 #include "img2pcl/img2pcl_node.h"
 
-#include <cstdint>
-#include <cmath>
-
-#include <geometry_msgs/Quaternion.h>
-#include <cv_bridge/cv_bridge.h>
-#include <visualization_msgs/Marker.h>
 #include <laser_assembler/AssembleScans2.h>
 
 #include <opencv2/core/core.hpp>
@@ -16,7 +10,7 @@ namespace galt {
 namespace img2pcl {
 
 Img2pclNode::Img2pclNode(const ros::NodeHandle &nh, const ros::NodeHandle &pnh)
-    : nh_(nh), pnh_(pnh), it_(nh) {
+    : nh_(nh), pnh_(pnh), it_(nh), tf_listener_(core_) {
   std::string image;
   pnh_.param<std::string>("image", image, "");
   image_transport::TransportHints hints("raw", ros::TransportHints(), nh_);
@@ -53,8 +47,25 @@ void Img2pclNode::CameraCb(const sensor_msgs::ImageConstPtr &image_msg,
     return;
   }
 
-  // Project point cloud in world frame back to camera frame
-  const sensor_msgs::PointCloud2 &laser_cloud_w = srv.response.cloud;
+  // Transform point cloud msg from world to camera frame
+  const sensor_msgs::PointCloud2 &cloud_msg_w = srv.response.cloud;
+
+  geometry_msgs::TransformStamped tf_stamped;
+  if (!GetLatestTransfrom("mv_stereo/left", "world", &tf_stamped)) {
+    return;
+  }
+  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_pcl_c(
+      new pcl::PointCloud<pcl::PointXYZ>);
+  TransformCloud(cloud_msg_w, tf_stamped.transform, *cloud_pcl_c);
+
+  // Back project pcl point cloud on to image and modify rgb value
+
+  // Convert pcl point cloud back to point cloud msg and republish
+
+  //  ROS_INFO("%f, %f, %f", tf_stamped.transform.translation.x,
+  //           tf_stamped.transform.translation.y,
+  //           tf_stamped.transform.translation.z);
+
   /*
   // Project point cloud back into thermal image and get color
   sensor_msgs::PointCloud thermal_cloud;
@@ -65,6 +76,24 @@ void Img2pclNode::CameraCb(const sensor_msgs::ImageConstPtr &image_msg,
   // Publish point cloud
   pub_cloud_.publish(thermal_cloud);
   */
+}
+
+bool Img2pclNode::GetLatestTransfrom(
+    const std::string &target_frame, const std::string &source_frame,
+    geometry_msgs::TransformStamped *tf_stamped) {
+  try {
+    *tf_stamped =
+        core_.lookupTransform(target_frame, source_frame, ros::Time(0));
+    return true;
+  }
+  catch (const tf2::TransformException &e) {
+    ROS_WARN_THROTTLE(1, "%s", e.what());
+    return false;
+  }
+}
+void TransformCloud(const sensor_msgs::PointCloud2 &cloud_msg_in,
+                    const geometry_msgs::Transform &transform,
+                    pcl::PointCloud<pcl::PointXYZ> &cloud_pcl_out) {
 }
 
 /*

@@ -110,7 +110,7 @@
 
   <!-- Img2pcl -->
   <include file="$(find img2pcl)/launch/node.launch">
-    <arg name="camera" value="mv_stereo/left"/>
+    <arg name="camera" value="mv_29900189"/>
   </include>
 
 </launch>

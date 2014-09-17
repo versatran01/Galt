@@ -33,16 +33,6 @@ class Img2pclNode {
   bool GetLatestTransfrom(const std::string &frame_tgt,
                           const std::string &frame_src,
                           geometry_msgs::TransformStamped *tf_stamped) const;
-  //  void ProjectCloud(const sensor_msgs::PointCloud &cloud_in,
-  //                    const cv::Mat &image,
-  //                    const image_geometry::PinholeCameraModel &model,
-  //                    sensor_msgs::PointCloud &cloud_out) const;
-  //  void PixelsToCloud(const cv::Mat &image,
-  //                     const std::vector<cv::Point2f> &pixels,
-  //                     const sensor_msgs::PointCloud cloud_in,
-  //                     sensor_msgs::PointCloud &cloud_out) const;
-  //  void CloudToPoints(const sensor_msgs::PointCloud &cloud,
-  //                     std::vector<cv::Point3f> &points) const;
 
   ros::NodeHandle nh_, pnh_;
   image_transport::ImageTransport it_;
@@ -53,23 +43,6 @@ class Img2pclNode {
   tf2::BufferCore core_;
   tf2_ros::TransformListener tf_listener_;
 };
-
-template <typename PclPointT>
-void TransformCloud(const sensor_msgs::PointCloud2 &src_ros_cloud,
-                    const geometry_msgs::Transform &transform,
-                    const std::string &tgt_frame,
-                    pcl::PointCloud<PclPointT> *tgt_pcl_cloud) {
-
-  // Convert transform message to eigen
-  Eigen::Affine3d affine;
-  tf::transformMsgToEigen(transform, affine);
-  // Convert point cloud msg
-  pcl::PointCloud<PclPointT> cloud_pcl_src;
-  pcl::fromROSMsg(src_ros_cloud, cloud_pcl_src);
-  // Transform point cloud
-  pcl::transformPointCloud(cloud_pcl_src, *tgt_pcl_cloud, affine);
-  tgt_pcl_cloud->header.frame_id = tgt_frame;
-}
 
 template <typename PclPointT, typename Scalar>
 void CloudToPoints3(const pcl::PointCloud<PclPointT> &pcl_cloud,
@@ -85,50 +58,15 @@ bool IsInsideImage(cv::Point_<Scalar> point, int width, int height) {
          (point.y < height);
 }
 
-template <typename PclPointT>
-void ExtractInfoFromImage(const pcl::PointCloud<PclPointT> pcl_cloud_in,
+void TransformCloud(const sensor_msgs::PointCloud2 &src_ros_cloud,
+                    const geometry_msgs::Transform &transform,
+                    const std::string &tgt_frame,
+                    pcl::PointCloud<pcl::PointXYZ> *tgt_pcl_cloud);
+
+void ExtractInfoFromImage(const pcl::PointCloud<pcl::PointXYZ> pcl_cloud_in,
                           const cv::Mat &image,
                           const image_geometry::PinholeCameraModel &model,
-                          sensor_msgs::PointCloud2 *ros_cloud_out) {
-  std::vector<cv::Point3f> cam_pts;
-  std::vector<cv::Point2f> img_pts;
-  CloudToPoints3(pcl_cloud_in, &cam_pts);
-  cv::Mat zeros = cv::Mat::zeros(1, 3, CV_64FC1);
-  cv::projectPoints(cam_pts, zeros, zeros, model.fullIntrinsicMatrix(),
-                    model.distortionCoeffs(), img_pts);
-  // Construct a new point cloud, super hacky, will need to refactor this shit
-  pcl::PointCloud<pcl::PointXYZRGB> cloud_pcl_out;
-  pcl::copyPointCloud(pcl_cloud_in, cloud_pcl_out);
-  cloud_pcl_out.points.clear();
-  //  cv::Mat color;
-  //  cv::cvtColor(image, color, CV_GRAY2BGR);
-  for (size_t i = 0; i < pcl_cloud_in.points.size(); ++i) {
-    cv::Point2i pixel_rounded(img_pts[i].x, img_pts[i].y);
-    if (IsInsideImage(pixel_rounded, image.cols, image.rows)) {
-      pcl::PointXYZRGB point;
-      point.x = pcl_cloud_in.points[i].x;
-      point.y = pcl_cloud_in.points[i].y;
-      point.z = pcl_cloud_in.points[i].z;
-      const uchar *p = image.ptr<uchar>(pixel_rounded.y);
-      int col = pixel_rounded.x;
-      point.r = p[3 * col];
-      point.g = p[3 * col + 1];
-      point.b = p[3 * col + 2];
-      cloud_pcl_out.points.push_back(point);
-    }
-  }
-  cloud_pcl_out.width = cloud_pcl_out.points.size();
-  pcl::toROSMsg(cloud_pcl_out, *ros_cloud_out);
-  ros_cloud_out->header.frame_id = "mv_stereo/left";
-}
-
-/*
-template <typename T>
-bool InsideImage(const cv::Size &size, const cv::Point_<T> &pixel) {
-  return (pixel.x >= 0) && (pixel.y >= 0) && (pixel.x <= size.width) &&
-         (pixel.y <= size.height);
-}
-*/
+                          sensor_msgs::PointCloud2 *ros_cloud_out);
 
 }  // namespace thermal_map
 }  // namespace galt

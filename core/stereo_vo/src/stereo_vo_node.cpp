@@ -28,8 +28,9 @@ StereoVoNode::StereoVoNode(const ros::NodeHandle& nh)
 
   cfg_server_.setCallback(
       boost::bind(&StereoVoNode::ReconfigureCb, this, _1, _2));
-  traj_viz_.set_color(rviz_helper::colors::MAGENTA);
+  traj_viz_.set_color(kr::rviz_helper::colors::MAGENTA);
   traj_viz_.set_alpha(1);
+  point_pub_ = nh_.advertise<sensor_msgs::PointCloud>("points", 1);
 }
 
 void StereoVoNode::SubscribeStereoTopics(
@@ -49,21 +50,29 @@ void StereoVoNode::SubscribeStereoTopics(
 }
 
 void StereoVoNode::OdometryCb(const nav_msgs::OdometryConstPtr& odom_msg) {
+  // Set frame_id only once
+  if (frame_id_.empty()) {
+    frame_id_ = odom_msg->header.frame_id;
+    ROS_INFO("Set frame id to %s", frame_id_.c_str());
+  }
+
   // Unsubscribe if stereo vo is already initialized
   if (stereo_vo_.init()) {
     odom_sub_.shutdown();
     ROS_INFO("StereoVo initialized, unsubscribe from gps_kf/odometry");
     return;
   }
-  // Get the latest transform
+
+  // Get the latest transform from stereo to world
   try {
-    const geometry_msgs::TransformStamped transform =
-        core_.lookupTransform("world", "mv_stereo/left", ros::Time(0));
+    const geometry_msgs::TransformStamped transform = core_.lookupTransform(
+        odom_msg->header.frame_id, "mv_stereo/left", ros::Time(0));
     const geometry_msgs::Vector3& t = transform.transform.translation;
     const geometry_msgs::Quaternion& r = transform.transform.rotation;
     kr::vec3<scalar_t> p(t.x, t.y, t.z);
     kr::quat<scalar_t> q(r.w, r.x, r.y, r.z);
     stereo_vo_.set_pose(KrPose(q, p));
+    stereo_vo_.set_init_pose(true);
   }
   catch (const tf2::TransformException& e) {
     ROS_WARN("%s", e.what());
@@ -104,33 +113,26 @@ void StereoVoNode::StereoCb(const ImageConstPtr& l_image_msg,
   // Initialize stereo visual odometry if not
   if (!stereo_vo_.init()) {
     stereo_vo_.Initialize(stereo_image, stereo_model_);
-    return;
+  } else {
+    stereo_vo_.Iterate(stereo_image);
   }
 
-  cv::imshow("left", l_image_rect);
-  cv::imshow("right", r_image_rect);
-  cv::waitKey(1);
-
-  //  stereo_vo_.Iterate(stereo_image);
-
-  // Publish PointCloud from keyframe pose and features
-  //  PublishPointCloud(stereo_vo_.point3ds(), stereo_vo_.key_frames(),
-  //                    l_image_msg->header.stamp, "/world");
-  //  PublishPoseStamped(camera_pose, l_image_msg->header.stamp, "/world");
-  //  PublishTrajectory(camera_pose, l_image_msg->header.stamp, "/world");
-  const geometry_msgs::Pose pose =
-      static_cast<geometry_msgs::Pose>(stereo_vo_.pose());
-  tf_pub_.PublishTransform(pose, frame_id_, l_image_msg->header.stamp);
-  traj_viz_.PublishTrajectory(pose.position, frame_id_,
-                              l_image_msg->header.stamp);
+  //  publish points and pose
+  if (!frame_id_.empty()) {
+    PublishPointCloud(l_image_msg->header.stamp);
+    const geometry_msgs::Pose pose =
+        static_cast<geometry_msgs::Pose>(stereo_vo_.pose());
+    tf_pub_.PublishTransform(pose, frame_id_, l_image_msg->header.stamp);
+    traj_viz_.PublishTrajectory(pose.position, frame_id_,
+                                l_image_msg->header.stamp);
+  }
 }
 
-/*
-void StereoVoNode::PublishPointCloud(const std::map<Id, Point3d>& point3ds,
-                                     const std::deque<FramePtr>& key_frames,
-                                     const ros::Time& time,
+void StereoVoNode::PublishPointCloud(const ros::Time& time,
                                      const std::string& frame_id) const {
   sensor_msgs::PointCloud cloud;
+  cloud.header.stamp = time;
+  cloud.header.frame_id = frame_id;
   sensor_msgs::ChannelFloat32 channel;
   channel.name = "rgb";
 
@@ -139,12 +141,15 @@ void StereoVoNode::PublishPointCloud(const std::map<Id, Point3d>& point3ds,
     float val;
   } color;
 
-  const Frame& cur_frame = *key_frames.back();
-  const auto features = cur_frame.features();
+  const std::map<Id, Point3d> points = stereo_vo_.points();
+  for (const Feature& feature : stereo_vo_.features()) {
+    //  find corresponding point 3d
+    std::map<Id, Point3d>::const_iterator point_ite = points.find(feature.id());
+    assert(point_ite != points.end());
 
-  for (const Feature& feature : features) {
+    const Point3d& point3d = point_ite->second;
 
-    if (feature.init()) {
+    if (!point3d.is_inlier()) {
       color.rgb[0] = 255;
       color.rgb[1] = 255;
       color.rgb[2] = 0;
@@ -152,33 +157,24 @@ void StereoVoNode::PublishPointCloud(const std::map<Id, Point3d>& point3ds,
     } else {
       color.rgb[0] = 0;
       color.rgb[1] = 255;
-      color.rgb[2] = 0;
+      color.rgb[2] = 255;
       color.rgb[3] = 0;
     }
 
-    const auto& id = feature.id();
-    const auto& it_point3d = point3ds.find(id);
-    if (it_point3d != point3ds.end()) {
-      const Point3d& point3d = it_point3d->second;
+    geometry_msgs::Point32 p32;
+    const vec3 p(point3d.p_world().x, point3d.p_world().y, point3d.p_world().z);
+    p32.x = p[0];
+    p32.y = p[1];
+    p32.z = p[2];
 
-      geometry_msgs::Point32 p32;
-      kr::vec3<scalar_t> p(point3d.p_world().x, point3d.p_world().y,
-                           point3d.p_world().z);
-      p32.x = p[0];
-      p32.y = p[1];
-      p32.z = p[2];
-
-      cloud.points.push_back(p32);
-      channel.values.push_back(color.val);
-    }
+    cloud.points.push_back(p32);
+    channel.values.push_back(color.val);
   }
 
   cloud.channels.push_back(channel);
-  cloud.header.stamp = time;
-  cloud.header.frame_id = frame_id;
-  points_pub_.publish(cloud);
+  point_pub_.publish(cloud);
 }
-*/
+
 /*
 void StereoVoNode::PublishPoseStamped(const geometry_msgs::Pose& pose,
                                       const ros::Time& time,

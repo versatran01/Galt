@@ -40,14 +40,15 @@ def fix_bag(input_bag, input_path, output_path):
     # Open the bag file
     with rosbag.Bag(output_bag, 'w') as outbag:
         for index, (topic, msg, t) in enumerate(rosbag.Bag(input_bag).read_messages()):
+            outbag.write(topic, msg, msg.header.stamp if msg._has_header else t)
             # Print progress
             if not (index % 5000):
                 print(index, end=" ")
                 sys.stdout.flush()
 
-            if topic in (left_image_name, left_cinfo_name, right_image_name, right_cinfo_name):
-                msg.header.frame_id = "mv_stereo"
-                outbag.write(topic, msg, msg.header.stamp)
+            #if topic in (left_image_name, left_cinfo_name, right_image_name, right_cinfo_name):
+                #msg.header.frame_id = "mv_stereo"
+                #outbag.write(topic, msg, msg.header.stamp)
                 # left_cinfo.header = msg.header
                 # Write left image to outbag
                 # outbag.write(topic, msg, msg.header.stamp)

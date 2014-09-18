@@ -1,14 +1,11 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(thermal_map)
+project(img2pcl)
 
-add_definitions("-std=c++11 -Wall")
+add_definitions(-std=c++11 -Wall)
 
-find_package(cmake_modules)
-find_package(Eigen)
 find_package(catkin REQUIRED COMPONENTS
-    roscpp image_transport sensor_msgs nav_msgs cv_bridge
-    std_msgs geometry_msgs tf
-    message_filters laser_geometry image_geometry
+    roscpp image_transport sensor_msgs tf2_ros image_geometry pcl_ros
+    pcl_conversions eigen_conversions cv_bridge
     )
 
 include_directories(include
@@ -24,8 +21,8 @@ catkin_package(
     )
 
 add_executable(${PROJECT_NAME}_node
-    src/main.cpp
-    src/thermal_map_node.cpp
+    src/img2pcl_node.cpp
+    src/img2pcl_main.cpp
     )
 target_link_libraries(${PROJECT_NAME}_node
     ${catkin_LIBRARIES}

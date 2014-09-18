@@ -3,7 +3,7 @@
 
 #include "stereo_vo/common.h"
 #include "stereo_vo/feature.h"
-#include "stereo_vo/frame.h"
+#include "stereo_vo/keyframe.h"
 
 #include <algorithm>
 #include <deque>
@@ -23,6 +23,7 @@ const cv::Scalar CYAN = cv::Scalar(255, 255, 0);
 
 /// @note: these two could possibly be rewrote using erase and remove_if for
 /// better performance and readability
+/*
 template <typename T, typename U>
 void PruneByStatus(const std::vector<U> &status, std::vector<T> &objects,
                    std::set<T> &removed) {
@@ -52,13 +53,24 @@ void PruneByStatus(const std::vector<U> &status, std::vector<T> &objects) {
     }
   }
 }
+*/
 
-void CornerSubPix(const cv::Mat &image, std::vector<CvPoint2> &corners);
-
+void Display(const cv::Mat &image,
+             const std::vector<Feature> &keyframe_features,
+             const std::vector<Feature> &tracked_features);
+void DrawFeatures(cv::Mat &image, const std::vector<Feature> &features,
+                  const cv::Scalar &color);
+void DrawCorrespondence(cv::Mat &image, const std::vector<Feature> &features1,
+                        const std::vector<Feature> &features2,
+                        const cv::Scalar &color);
+void AnnotateFeatureCounts(cv::Mat &image, const std::vector<Feature> &features,
+                           const cv::Scalar &color, int quadrant);
+/*
 void Display(const FramePtr &frame, const FramePtr &key_frame);
 void Display(const CvStereoImage &stereo_image,
              const std::vector<Feature> &tracked_features,
              const FramePtr &key_frame);
+             */
 
 }  // namespace stereo_vo
 }  // namespace galt

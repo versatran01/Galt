@@ -10,8 +10,70 @@
 namespace galt {
 namespace stereo_vo {
 
+void Display(const cv::Mat &image,
+             const std::vector<Feature> &keyframe_features,
+             const std::vector<Feature> &tracked_features) {
+  cv::namedWindow("display",
+                  CV_WINDOW_NORMAL | CV_WINDOW_KEEPRATIO | CV_GUI_EXPANDED);
+  // Convert to color
+  cv::Mat display;
+  cv::cvtColor(image, display, CV_GRAY2BGR);
+
+  // Draw tracked features
+  DrawFeatures(display, tracked_features, cv_color::GREEN);
+  DrawCorrespondence(display, keyframe_features, tracked_features,
+                     cv_color::YELLOW);
+
+  // Draw annotations
+  AnnotateFeatureCounts(display, keyframe_features, cv_color::RED, 1);
+  AnnotateFeatureCounts(display, tracked_features, cv_color::GREEN, 4);
+
+  // Display
+  cv::imshow("display", display);
+  cv::waitKey(1);
+}
+
+void DrawFeatures(cv::Mat &image, const std::vector<Feature> &features,
+                  const cv::Scalar &color) {
+  std::for_each(features.cbegin(), features.cend(),
+                [&](const Feature &feature) {
+    cv::circle(image, feature.p_pixel(), 1, color, 2);
+  });
+}
+
+void DrawCorrespondence(cv::Mat &image, const std::vector<Feature> &features1,
+                        const std::vector<Feature> &features2,
+                        const cv::Scalar &color) {
+  for (const Feature &f1 : features1) {
+    const auto it =
+        std::find_if(features2.cbegin(), features2.cend(),
+                     [&f1](const Feature &f2) { return f1.id() == f2.id(); });
+    if (it != features2.end()) {
+      cv::line(image, f1.p_pixel(), it->p_pixel(), color);
+    }
+  }
+}
+
+void AnnotateFeatureCounts(cv::Mat &image, const std::vector<Feature> &features,
+                           const cv::Scalar &color, int quadrant) {
+
+  scalar_t offset_x = 15;
+  scalar_t offset_y = 30;
+  scalar_t k = 5;
+  quadrant = quadrant < 1 ? 1 : (quadrant > 4 ? 4 : quadrant);
+  static std::vector<CvPoint2> positions = {
+      {image.cols - k * offset_x, offset_y},
+      {offset_x, offset_y},
+      {offset_x, image.rows - offset_y},
+      {image.cols - k * offset_x, image.rows - offset_y}};
+  cv::putText(image, std::to_string(features.size()), positions[quadrant - 1],
+              cv::FONT_HERSHEY_SIMPLEX, 1, color, 2);
+}
+
+/*
 void Display(const CvStereoImage &stereo_image,
-             const std::vector<Feature> &features, const FramePtr &key_frame) {
+             const std::vector<Feature> &features, const FramePtr &key_frame)
+{
   auto &l_image = stereo_image.first;
   auto &r_image = stereo_image.second;
   auto &l_image_prev = key_frame->l_image();
@@ -36,18 +98,18 @@ void Display(const CvStereoImage &stereo_image,
   double scale = 1.0, thickness = 2.0;
   auto text_color = cv_color::CYAN;
   // Which frame?
-  cv::putText(display, "key frame", CvPoint2(offset_x, offset_y), font, scale,
-              text_color, thickness);
   cv::putText(display, "current frame", CvPoint2(offset_x, n_rows + offset_y),
               font, scale, text_color, thickness);
   // How many matching features?
   std::ostringstream ss;
   ss << "C/F: " << features.size() << "/" << key_frame->features().size();
-  cv::putText(display, ss.str(), CvPoint2(offset_x, n_rows * 2 - offset_y / 2),
+  cv::putText(display, ss.str(), CvPoint2(offset_x, n_rows * 2 - offset_y /
+2),
               font, scale, text_color, thickness);
   //  ss.str(std::string());
   //  ss << "Features: " << key_frame.features().size();
-  //  cv::putText(display, ss.str(), CvPoint2(offset_x, n_rows - offset_y / 2),
+  //  cv::putText(display, ss.str(), CvPoint2(offset_x, n_rows - offset_y /
+2),
   //              font, scale, cv_color::YELLOW, thickness);
 
   // Draw currently tracked features on current frame and key frame
@@ -84,11 +146,6 @@ void Display(const CvStereoImage &stereo_image,
   cv::imshow("display", display);
   cv::waitKey(1);
 }
-
-void Display(const FramePtr &frame, const FramePtr &key_frame) {
-  Display(frame->stereo_image(), frame->features(), key_frame);
-}
-
-
+*/
 }  // namespace stereo_vo
 }  // namespace galt

@@ -1,14 +1,15 @@
-cell_size: 20
+cell_size: 30
 shi_max_corners: 100
 shi_quality_level: 0.0001
 shi_min_distance: 40
 klt_max_level: 3
 klt_win_size: 21
+klt_ransac_thresh: 0.2
 kf_dist_thresh: 0.5
 kf_yaw_thresh: 45
 kf_size: 3
 kf_min_filled: 0.85
 pnp_ransac_error: 4.0
-pnp_ransac_inliers: 0.9
+pnp_ransac_inliers: 0.8
 pnp_motion_thresh: 3
 tri_max_eigenratio: 100000

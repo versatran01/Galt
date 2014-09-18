@@ -13,6 +13,7 @@
 
         <param name="klt_max_level" value="3"/>
         <param name="klt_win_size" value="13"/>
+        <param name="klt_ransac_thresh" value="1"/>
 
         <param name="kf_dist_thresh" value="3"/>
         <param name="kf_yaw_thresh" value="45"/>

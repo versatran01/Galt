@@ -293,7 +293,7 @@ void StereoVo::EstimatePose() {
   const size_t min_inliers = std::ceil(N * config_.pnp_ransac_inliers);
   cv::solvePnPRansac(world_points, pixel_points,
                      model_.left().fullIntrinsicMatrix(), std::vector<double>(),
-                     rvec, tvec, false, 200, config_.pnp_ransac_error,
+                     rvec, tvec, false, 300, config_.pnp_ransac_error,
                      min_inliers, inliers);
   
   //  throw away outliers

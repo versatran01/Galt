@@ -29,12 +29,15 @@
   <include file="$(find iris_tf)/launch/node.launch">
   </include>
 
-  <!--laser_filter-->
-  <node pkg="laser_filters" type="scan_to_scan_filter_chain"
-        name="laser_filter" ns="/hokuyo">
-      <rosparam command="load"
-          file="$(find galt_setup)/profiles/$(arg profile)/laser_filter.yml"/>
-  </node>
+  <!-- Laser Filter -->
+  <include file="$(find galt_setup)/launch/laser_filter.launch">
+    <arg name="filter" value="$(find galt_setup)/profiles/$(arg profile)/laser_filter.yml"/>
+  </include>
+
+  <!-- Laser Assembler -->
+  <include file="$(find galt_setup)/launch/laser_assembler.launch">
+    <arg name="max_scans" value="4000"/>
+  </include>
 
   <!-- Magnetometer calibration to load -->
   <arg name="mag_calib" default="philadelphia_generic"/>
@@ -105,5 +108,9 @@
   </node>
   -->
 
+  <!-- Img2pcl -->
+  <include file="$(find img2pcl)/launch/node.launch">
+    <arg name="camera" value="mv_29900189"/>
+  </include>
 
 </launch>

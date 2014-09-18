@@ -289,11 +289,18 @@ void StereoVo::EstimatePose() {
   cv::Mat rvec = cv::Mat::zeros(3, 3, CV_64FC1);
   cv::Mat tvec = cv::Mat::zeros(3, 3, CV_64FC1);
 
+  std::vector<int> inliers;
   const size_t min_inliers = std::ceil(N * config_.pnp_ransac_inliers);
   cv::solvePnPRansac(world_points, pixel_points,
                      model_.left().fullIntrinsicMatrix(), std::vector<double>(),
                      rvec, tvec, false, 200, config_.pnp_ransac_error,
-                     min_inliers);
+                     min_inliers, inliers);
+  
+  //  throw away outliers
+  std::set<Id> erased_ids = temporal_tracker_.RetainInliers(inliers);
+  for (const Id& id : erased_ids) {
+    points_.erase(id);
+  } 
 
   const vec3 r(rvec.at<double>(0, 0), rvec.at<double>(1, 0),
                rvec.at<double>(2, 0));

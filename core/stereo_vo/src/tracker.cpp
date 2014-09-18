@@ -58,6 +58,17 @@ std::set<Id> Tracker::Track(const cv::Mat& from, const cv::Mat& to,
   return erased;
 }
 
+std::set<Id> Tracker::RetainInliers(const std::vector<int>& inliers) {
+  std::set<Id> outliers;
+  std::vector<uchar> status(features_.size(), 0);
+  for (const int& idx : inliers) {
+    assert(static_cast<unsigned>(idx) < status.size());
+    status[idx] = 1;  //  retain this feature
+  }
+  EraseByStatus(features_, status, outliers);
+  return outliers;
+}
+
 void Tracker::EraseByStatus(std::vector<Feature>& vec,
                             const std::vector<uchar>& status,
                             std::set<Id>& erased) {

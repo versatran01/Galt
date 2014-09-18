@@ -44,6 +44,9 @@ class Tracker {
 
   void Reset() { features_.clear(); }
 
+  /// Erase indices not in 'inliers. Return a set of outlier IDs.
+  std::set<Id> RetainInliers(const std::vector<int>& inliers);
+  
  private:
   std::vector<Feature> features_;
   cv::Size window_size_;  /// Default to (21,21)

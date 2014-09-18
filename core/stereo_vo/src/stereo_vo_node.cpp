@@ -20,7 +20,7 @@ StereoVoNode::StereoVoNode(const ros::NodeHandle& nh)
     : nh_(nh),
       it_(nh),
       odom_sub_(nh_.subscribe("odometry", 1, &StereoVoNode::OdometryCb, this)),
-      tf_pub_("stereo"),
+      tf_pub_("stereo_vo"),
       traj_viz_(nh),
       tf_listener_(core_) {
   image_transport::TransportHints hints("raw", ros::TransportHints(), nh_);
@@ -66,7 +66,7 @@ void StereoVoNode::OdometryCb(const nav_msgs::OdometryConstPtr& odom_msg) {
   // Get the latest transform from stereo to world
   try {
     const geometry_msgs::TransformStamped transform = core_.lookupTransform(
-        odom_msg->header.frame_id, "mv_stereo/left", ros::Time(0));
+        odom_msg->header.frame_id, "stereo", ros::Time(0));
     const geometry_msgs::Vector3& t = transform.transform.translation;
     const geometry_msgs::Quaternion& r = transform.transform.rotation;
     kr::vec3<scalar_t> p(t.x, t.y, t.z);

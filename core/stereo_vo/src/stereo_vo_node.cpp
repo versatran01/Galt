@@ -19,7 +19,6 @@ namespace stereo_vo {
 StereoVoNode::StereoVoNode(const ros::NodeHandle& nh)
     : nh_(nh),
       it_(nh),
-      odom_sub_(nh_.subscribe("odometry", 1, &StereoVoNode::OdometryCb, this)),
       tf_pub_("stereo_vo"),
       traj_viz_(nh),
       tf_listener_(core_) {
@@ -31,6 +30,17 @@ StereoVoNode::StereoVoNode(const ros::NodeHandle& nh)
   traj_viz_.set_color(kr::rviz_helper::colors::MAGENTA);
   traj_viz_.set_alpha(1);
   point_pub_ = nh_.advertise<sensor_msgs::PointCloud>("points", 1);
+  
+  bool init_from_odom;
+  nh_.param("init_from_odom", init_from_odom, false);
+  if (init_from_odom) {
+    odom_sub_ = nh_.subscribe("odometry",1,&StereoVoNode::OdometryCb,this);
+  } else {
+    //  initialize with an arbitrary pose and default frame
+    nh_.param("world_frame_id", frame_id_, std::string("world"));
+    stereo_vo_.set_pose(KrPose(kr::quatf(0,1,0,0), kr::vec3f(0,0,0)));
+    stereo_vo_.set_init_pose(true);
+  }
 }
 
 void StereoVoNode::SubscribeStereoTopics(
@@ -87,6 +97,7 @@ void StereoVoNode::ReconfigureCb(const StereoVoDynConfig& config, int level) {
   if (level < 0) {
     ROS_INFO("%s: %s", nh_.getNamespace().c_str(),
              "Initializing dynamic reconfigure server");
+    ROS_INFO("Dist thresh: %f", config.kf_dist_thresh);
   }
   stereo_vo_.set_config(config);
 }

@@ -51,19 +51,19 @@ bool StereoVo::ShouldAddKeyFrame() const {
     return true;
   }
 
-  if (temporal_tracker_.features().size() < 30) {
+  if (temporal_tracker_.features().size() < 10) {
     //  insufficient features
     return true;
   }
 
   const KeyFramePtr prev_key_frame = key_frames_.back();
   
-//  const KrPose &diff = pose().difference(prev_key_frame->pose());
-//  if (diff.p().norm() > config_.kf_dist_thresh) {
-//    ROS_INFO("Distance: %f", diff.p().norm());
-//    //  over distance threshold, add keyframe
-//    return true;
-//  }
+  const KrPose &diff = pose().difference(prev_key_frame->pose());
+  if (diff.p().norm() > config_.kf_dist_thresh) {
+    ROS_INFO("Distance: %f", diff.p().norm());
+    //  over distance threshold, add keyframe
+    return true;
+  }
 
   //  const kr::vec3<scalar_t> &angles = kr::getRPY(diff.bRw());
   //  if (std::abs(angles[2] * 180 / M_PI) > config_.kf_yaw_thresh) {
@@ -160,7 +160,7 @@ void StereoVo::AddKeyFrame(const CvStereoImage& stereo_image) {
     //  add only left p_pixel here
     assert(p3d.is_initialized());
     if (!p3d.is_inlier()) {
-      //p3d.AddObservation(config_,model_,ptr,f.p_pixel());
+      p3d.AddObservation(config_,model_,ptr,f.p_pixel());
     }
   }
 

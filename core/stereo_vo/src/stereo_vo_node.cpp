@@ -131,6 +131,8 @@ void StereoVoNode::StereoCb(const ImageConstPtr& l_image_msg,
   }
 }
 
+
+
 /*
 void StereoVoNode::PublishPointCloud(const ros::Time& time,
                                      const std::string& frame_id) const {

@@ -5,23 +5,20 @@ add_definitions(-Wall -std=c++11)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake)
 
 find_package(catkin REQUIRED COMPONENTS
-    roscpp nodelet
-    image_transport message_filters
-    sensor_msgs visualization_msgs
-    cv_bridge image_geometry
-    dynamic_reconfigure
-    kr_math
-    eigen_conversions
-    rviz_helper
+    roscpp nodelet image_transport message_filters
+    sensor_msgs visualization_msgs cv_bridge image_geometry
+    dynamic_reconfigure eigen_conversions message_generation
+    kr_math rviz_helper
     )
 
 find_package(OpenCV)
 #find_package(gtsam)
 #find_package(G2O REQUIRED)
 
-generate_dynamic_reconfigure_options(
-    cfg/StereoVoDyn.cfg
-    )
+generate_dynamic_reconfigure_options(cfg/StereoVoDyn.cfg)
+add_message_files(DIRECTORY msg
+    FILES Feature.msg FeaturesStamped.msg StereoFeaturesStamped.msg)
+generate_messages(DEPENDENCIES std_msgs geometry_msgs)
 
 catkin_package(
     #  INCLUDE_DIRS include

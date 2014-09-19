@@ -14,7 +14,8 @@ find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
   nav_msgs
   visualization_msgs
-  laser_altimeter
+  stereo_vo
+  rviz_helper
 )
 
 find_package(gtsam REQUIRED)
@@ -43,7 +44,4 @@ target_link_libraries(${PROJECT_NAME}
 add_dependencies(${PROJECT_NAME}
   ${catkin_EXPORTED_TARGETS}
 )
-#  ${PROJECT_NAME}_gencfg
-#  ${PROJECT_NAME}_gencpp
-#  ${${PROJECT_NAME}_EXPORTED_TARGETS}
-#)
+

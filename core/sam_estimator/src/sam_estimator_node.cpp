@@ -23,21 +23,22 @@ using std::make_shared;
 namespace galt {
 namespace sam_estimator {
 
-SamEstimatorNode::SamEstimatorNode(const ros::NodeHandle &nh) : nh_(nh),
- init_height_(-1), prev_imu_time_(0.0) {
+SamEstimatorNode::SamEstimatorNode(const ros::NodeHandle &nh) : nh_(nh) {
   //  create an estimator
   estimator_ = make_shared<SamEstimator>();
   visualizer_ = make_shared<Visualizer>(nh_);
   
-  //  subscribe to all relevant topics
-  sub_gps_ = nh_.subscribe("gps_odom", kROSQueueSize,
-                           &SamEstimatorNode::GpsCallback, this);
-  sub_imu_ =
-      nh_.subscribe("imu", kROSQueueSize, &SamEstimatorNode::ImuCallback, this);
-  sub_vo_ = nh_.subscribe("vo_pose", kROSQueueSize,
-                              &SamEstimatorNode::VisualOdometryCallback, this);
-  sub_laser_height_ = nh_.subscribe("laser_height", kROSQueueSize,
-                             &SamEstimatorNode::LaserHeightCallback, this);
+  //  subscribe to topics
+  sub_features_.subscribe(nh_, "features", kROSQueueSize);
+  sub_odom_.subscribe(nh_, "odometry_in", kROSQueueSize);
+  
+  sync_ = make_shared<message_filters::Synchronizer<TimeSyncPolicy>>(
+             TimeSyncPolicy(kROSQueueSize), sub_features_, sub_odom_);
+  sync_->registerCallback(boost::bind(&SamEstimatorNode::odomFeaturesCallback,
+                                      this,_1,_2));
+  
+  ROS_INFO("Subscribing to ~features and ~odometry_in");
+  
   pub_odometry_ =
       nh_.advertise<nav_msgs::Odometry>("odometry", 1);
 }
@@ -81,37 +82,6 @@ void SamEstimatorNode::GpsCallback(
   }
 }
 
-void SamEstimatorNode::ImuCallback(const sensor_msgs::ImuConstPtr &imu_msg) {  
-  const double time = imu_msg->header.stamp.toSec();
-  if (prev_imu_time_ == 0) {
-    //  fudge the first IMU sample...
-    prev_imu_time_ = time;
-  }
-  
-  SamEstimator::ImuMeasurement meas;
-  meas.time = time;
-  meas.dt = time - prev_imu_time_;
-  meas.z[0] = imu_msg->linear_acceleration.x * 9.80665; /// @todo: Fix IMU node
-  meas.z[1] = imu_msg->linear_acceleration.y * 9.80665;
-  meas.z[2] = imu_msg->linear_acceleration.z * 9.80665;
-  meas.z[3] = imu_msg->angular_velocity.x;
-  meas.z[4] = imu_msg->angular_velocity.y;
-  meas.z[5] = imu_msg->angular_velocity.z;
-  meas.wQb = kr::quatd(imu_msg->orientation.w,
-                       imu_msg->orientation.x,
-                       imu_msg->orientation.y,
-                       imu_msg->orientation.z);
-  for (int i=0; i < 3; i++) {
-    for (int j=0; j < 3; j++) {
-      meas.cov(i,j) = imu_msg->orientation_covariance[i*3 + j];
-    }
-  }
-  if (estimator_->IsInitialized()) {
-    estimator_->AddImu(meas);
-  }
-  prev_imu_time_ = time;
-}
-
 void SamEstimatorNode::VisualOdometryCallback(
     const geometry_msgs::PoseStampedConstPtr &pose_msg) {
   
@@ -145,15 +115,13 @@ void SamEstimatorNode::VisualOdometryCallback(
   pub_odometry_.publish(odo);
 }
 
-void SamEstimatorNode::LaserHeightCallback(
-    const laser_altimeter::HeightConstPtr& height_msg) {
- 
-  const double height = height_msg->max;
-  if (init_height_ < 0) {
-    /// @todo: use a moving average filter here for initialization
-    init_height_ = height;
-    ROS_INFO("Laser initialization height: %.3f", height);
-  }
+void 
+SamEstimatorNode::odomFeaturesCallback(
+    const nav_msgs::OdometryConstPtr& odom_msg,
+    const stereo_vo::FeaturesStampedConstPtr& feat_msg) {
+  
+  
+  
 }
 
 }  // namespace sam_estimator

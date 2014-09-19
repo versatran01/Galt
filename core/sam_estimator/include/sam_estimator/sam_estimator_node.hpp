@@ -20,12 +20,11 @@
 #include <sam_estimator/visualizer.hpp>
 
 #include <ros/ros.h>
-#include <sensor_msgs/Imu.h>
-#include <sensor_msgs/LaserScan.h>
 #include <nav_msgs/Odometry.h>
-#include <geometry_msgs/PoseStamped.h>
-
-#include <laser_altimeter/Height.h>
+#include <stereo_vo/FeaturesStamped.h>
+#include <message_filters/subscriber.h>
+#include <message_filters/time_synchronizer.h>
+#include <message_filters/sync_policies/approximate_time.h>
 
 namespace galt {
 namespace sam_estimator {
@@ -36,33 +35,29 @@ class SamEstimatorNode {
   
 private:
   
-  constexpr static int kROSQueueSize = 1;
+  constexpr static int kROSQueueSize = 100;
 
   SamEstimator::Ptr estimator_;
   Visualizer::Ptr visualizer_;
     
   //  ROS objects
   ros::NodeHandle nh_;
-  ros::Subscriber sub_gps_;
-  ros::Subscriber sub_imu_;
-  ros::Subscriber sub_vo_;
-  ros::Subscriber sub_laser_height_;
   ros::Publisher pub_odometry_;
 
-  //  State
-  double init_height_;
-  double prev_imu_time_;
-  
-  //  ROS callbacks
-  void GpsCallback(const nav_msgs::OdometryConstPtr& odometry_msg);
-
-  void ImuCallback(const sensor_msgs::ImuConstPtr& imu_msg);
-
-  void VisualOdometryCallback(const geometry_msgs::PoseStampedConstPtr& pose_msg);
-
-  void LaserHeightCallback(const laser_altimeter::HeightConstPtr& height_msg);
+  message_filters::Subscriber<nav_msgs::Odometry> sub_odom_;
+  message_filters::Subscriber<stereo_vo::FeaturesStamped> sub_features_;
+    
+  typedef message_filters::sync_policies::ApproximateTime<
+    nav_msgs::Odometry, stereo_vo::FeaturesStamped> TimeSyncPolicy;
+  //  time synchronized
+  std::shared_ptr<message_filters::Synchronizer<TimeSyncPolicy>> sync_;
+ 
+  //  synchronized callback
+  void odomFeaturesCallback(const nav_msgs::OdometryConstPtr& odom_msg,
+                            const stereo_vo::FeaturesStampedConstPtr& feat_msg);
 };
-}
-}
+
+} //  namespace sam_estimator
+} //  namespace galt
 
 #endif

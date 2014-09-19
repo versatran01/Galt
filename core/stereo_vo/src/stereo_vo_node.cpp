@@ -19,36 +19,36 @@ namespace stereo_vo {
 StereoVoNode::StereoVoNode(const ros::NodeHandle& nh)
     : nh_(nh),
       it_(nh),
-      odom_sub_(nh_.subscribe("odometry", 1, &StereoVoNode::OdometryCb, this)),
+//      sub_odom_(nh_.subscribe("odometry", 1, &StereoVoNode::OdometryCb, this)),
       tf_pub_("stereo_vo"),
       traj_viz_(nh),
       tf_listener_(core_) {
   image_transport::TransportHints hints("raw", ros::TransportHints(), nh_);
   SubscribeStereoTopics("image_rect", "camera_info", hints);
+  cfg_server_.setCallback(boost::bind(&StereoVoNode::ConfigCb, this, _1, _2));
 
-  cfg_server_.setCallback(
-      boost::bind(&StereoVoNode::ReconfigureCb, this, _1, _2));
   traj_viz_.set_color(kr::rviz_helper::colors::MAGENTA);
   traj_viz_.set_alpha(1);
-  point_pub_ = nh_.advertise<sensor_msgs::PointCloud>("points", 1);
+  //  point_pub_ = nh_.advertise<sensor_msgs::PointCloud>("points", 1);
 }
 
 void StereoVoNode::SubscribeStereoTopics(
     const std::string& image_topic, const std::string& cinfo_topic,
     const image_transport::TransportHints& hints) {
-  exact_sync_.reset(new ExactSync(ExactPolicy(5), l_image_sub_, l_cinfo_sub_,
-                                  r_image_sub_, r_cinfo_sub_));
+  exact_sync_.reset(new ExactSync(ExactPolicy(5), sub_l_image_, sub_l_cinfo_,
+                                  sub_r_image_, sub_r_cinfo_));
   exact_sync_->registerCallback(
       boost::bind(&StereoVoNode::StereoCb, this, _1, _2, _3, _4));
   using namespace ros::names;
   std::string left("left");
   std::string right("right");
-  l_image_sub_.subscribe(it_, resolve(append(left, image_topic)), 1, hints);
-  l_cinfo_sub_.subscribe(nh_, resolve(append(left, cinfo_topic)), 1);
-  r_image_sub_.subscribe(it_, resolve(append(right, image_topic)), 1, hints);
-  r_cinfo_sub_.subscribe(nh_, resolve(append(right, cinfo_topic)), 1);
+  sub_l_image_.subscribe(it_, resolve(append(left, image_topic)), 1, hints);
+  sub_l_cinfo_.subscribe(nh_, resolve(append(left, cinfo_topic)), 1);
+  sub_r_image_.subscribe(it_, resolve(append(right, image_topic)), 1, hints);
+  sub_r_cinfo_.subscribe(nh_, resolve(append(right, cinfo_topic)), 1);
 }
 
+/*
 void StereoVoNode::OdometryCb(const nav_msgs::OdometryConstPtr& odom_msg) {
   // Set frame_id only once
   if (frame_id_.empty()) {
@@ -82,8 +82,9 @@ void StereoVoNode::OdometryCb(const nav_msgs::OdometryConstPtr& odom_msg) {
   if (frame_id_.empty()) frame_id_ = odom_msg->header.frame_id;
   if (!stereo_vo_.init_pose()) stereo_vo_.set_init_pose(true);
 }
+*/
 
-void StereoVoNode::ReconfigureCb(const StereoVoDynConfig& config, int level) {
+void StereoVoNode::ConfigCb(const StereoVoDynConfig& config, int level) {
   if (level < 0) {
     ROS_INFO("%s: %s", nh_.getNamespace().c_str(),
              "Initializing dynamic reconfigure server");
@@ -105,9 +106,11 @@ void StereoVoNode::StereoCb(const ImageConstPtr& l_image_msg,
 
   // Get stereo images
   cv::Mat l_image_rect =
-      cv_bridge::toCvCopy(l_image_msg, image_encodings::MONO8)->image;
+      cv_bridge::toCvCopy(l_image_msg, sensor_msgs::image_encodings::MONO8)
+          ->image;
   cv::Mat r_image_rect =
-      cv_bridge::toCvCopy(r_image_msg, image_encodings::MONO8)->image;
+      cv_bridge::toCvCopy(r_image_msg, sensor_msgs::image_encodings::MONO8)
+          ->image;
   auto stereo_image = std::make_pair(l_image_rect, r_image_rect);
 
   // Initialize stereo visual odometry if not
@@ -119,7 +122,7 @@ void StereoVoNode::StereoCb(const ImageConstPtr& l_image_msg,
 
   //  publish points and pose
   if (!frame_id_.empty()) {
-    PublishPointCloud(l_image_msg->header.stamp);
+    //    PublishPointCloud(l_image_msg->header.stamp);
     const geometry_msgs::Pose pose =
         static_cast<geometry_msgs::Pose>(stereo_vo_.pose());
     tf_pub_.PublishTransform(pose, frame_id_, l_image_msg->header.stamp);
@@ -128,6 +131,7 @@ void StereoVoNode::StereoCb(const ImageConstPtr& l_image_msg,
   }
 }
 
+/*
 void StereoVoNode::PublishPointCloud(const ros::Time& time,
                                      const std::string& frame_id) const {
   sensor_msgs::PointCloud cloud;
@@ -174,6 +178,7 @@ void StereoVoNode::PublishPointCloud(const ros::Time& time,
   cloud.channels.push_back(channel);
   point_pub_.publish(cloud);
 }
+*/
 
 /*
 void StereoVoNode::PublishPoseStamped(const geometry_msgs::Pose& pose,
@@ -223,11 +228,6 @@ void StereoVoNode::PublishTrajectory(const geometry_msgs::Pose& pose,
 //  nh.param<double>("tri_max_eigenratio", config.tri_max_eigenratio, 1.0e5);
 //  return config;
 //}
-
-geometry_msgs::Pose KrPoseToRosPose(const KrPose& kr_pose) {
-  geometry_msgs::Pose ros_pose = static_cast<geometry_msgs::Pose>(kr_pose);
-  return ros_pose;
-}
 
 }  // namespace stereo_vo
 

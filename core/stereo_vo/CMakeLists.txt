@@ -17,7 +17,7 @@ find_package(OpenCV)
 
 generate_dynamic_reconfigure_options(cfg/StereoVoDyn.cfg)
 add_message_files(DIRECTORY msg
-    FILES Feature.msg FeaturesStamped.msg StereoFeaturesStamped.msg)
+    FILES FeatureMsg.msg FeaturesStamped.msg StereoFeaturesStamped.msg)
 generate_messages(DEPENDENCIES std_msgs geometry_msgs)
 
 catkin_package(

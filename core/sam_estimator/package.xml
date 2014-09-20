@@ -23,6 +23,8 @@
   <build_depend>dynamic_reconfigure</build_depend>
   <build_depend>stereo_vo</build_depend>
   <build_depend>rviz_helper</build_depend>
+  <build_depend>image_geometry</build_depend>
+  <build_depend>tf2</build_depend>
 
   <run_depend>roscpp</run_depend>
   <run_depend>kr_math</run_depend>
@@ -36,4 +38,6 @@
   <run_depend>dynamic_reconfigure</run_depend>
   <run_depend>stereo_vo</run_depend>
   <run_depend>rviz_helper</run_depend>
+  <run_depend>image_geometry</run_depend>
+  <run_depend>tf2</run_depend>
 </package>

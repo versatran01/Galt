@@ -33,5 +33,7 @@
 #include <gtsam/nonlinear/NonlinearFactorGraph.h>
 #include <gtsam/slam/PriorFactor.h>
 #include <gtsam/slam/BetweenFactor.h>
+#include <gtsam/slam/StereoFactor.h>
+#include <gtsam/slam/ProjectionFactor.h>
 
 #endif  // GALT_SAM_ESTIMATOR_GTSAM_HPP_

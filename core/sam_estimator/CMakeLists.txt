@@ -16,6 +16,8 @@ find_package(catkin REQUIRED COMPONENTS
   visualization_msgs
   stereo_vo
   rviz_helper
+  image_geometry
+  tf2
 )
 
 find_package(gtsam REQUIRED)
@@ -32,7 +34,6 @@ add_executable(${PROJECT_NAME}
   src/main.cpp
   src/sam_estimator.cpp
   src/sam_estimator_node.cpp
-  src/visualizer.cpp
 )
 
 target_link_libraries(${PROJECT_NAME}

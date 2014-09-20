@@ -80,16 +80,20 @@ void SamEstimator::AddFrame(const kr::Posed& pose,
     estimates_.insert(CurPoseKey(), static_cast<Pose3>(pose));
   }
   
+  const auto pixel_noise = noiseModel::Isotropic::Sigma(2, 1.0);
+  gtsam::Cal3_S2::shared_ptr single_calib;
+  single_calib.reset(new gtsam::Cal3_S2(calib_->calibration()));
   if (feat_right.empty()) {
     //  normal frame, add regular reprojection factors for the left camera
-//    for (const stereo_vo::Feature& f : feat_left) {
+    for (const stereo_vo::Feature& f : feat_left) {
       
-      
-      
-//    }
+      Point2 point(f.point.x, f.point.y);
+      ProjectionFactor factor(point, pixel_noise, CurPoseKey(),
+                              Symbol('l', f.id), single_calib, cam_pose_in_body_);
+      graph_.add(factor);
+    }
   } else {
     assert(feat_left.size() == feat_right.size());
-    auto pixel_noise = noiseModel::Isotropic::Sigma(2, 1.0);
     
     //  key-frame, add stereo factors
     for (size_t i=0; i < feat_left.size(); i++) {
@@ -134,10 +138,7 @@ void SamEstimator::PerformUpdate() {
 //  }
   
   estimates_.clear();
-  graph_.resize(0); 
-  
-  //  advance one index
-  meas_index_++;
+  graph_.resize(0);
 }
 
 void SamEstimator::SetCalibration(double fx, double fy, double cx, 

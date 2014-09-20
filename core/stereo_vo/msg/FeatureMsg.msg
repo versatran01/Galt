@@ -1,4 +1,4 @@
 # Feature
-int32 id
+uint32 id
 geometry_msgs/Point point
 bool fresh

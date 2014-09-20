@@ -1,21 +1,15 @@
 #include "stereo_vo/stereo_vo.h"
-#include "stereo_vo/feature.h"
-#include "stereo_vo/keyframe.h"
-#include "stereo_vo/utils.h"
+#include <stereo_vo/Feature.h>
+//#include "stereo_vo/feature.h"
+//#include "stereo_vo/keyframe.h"
+//#include "stereo_vo/utils.h"
 
 #include <image_geometry/stereo_camera_model.h>
-
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/video/video.hpp"
 #include "opencv2/calib3d/calib3d.hpp"
 
-#include <kr_math/base_types.hpp>
-#include <kr_math/feature.hpp>
-#include <kr_math/pose.hpp>
-#include <kr_math/SO3.hpp>
-
 namespace galt {
-
 namespace stereo_vo {
 
 using image_geometry::StereoCameraModel;
@@ -23,13 +17,9 @@ using image_geometry::StereoCameraModel;
 void StereoVo::Initialize(const CvStereoImage& stereo_image,
                           const StereoCameraModel& model) {
   ROS_INFO("Initializing stereo_vo");
-  // Don't initialize if initial pose is not set
-  if (!init_pose()) {
-    ROS_INFO("Initial pose not set, stop initialization");
-    return;
-  }
 
   model_ = model;
+
   // Add the first stereo image as first keyframe
   //  FramePtr curr_frame = boost::make_shared<Frame>(stereo_image);
   // AddKeyFrame(curr_frame);
@@ -45,6 +35,7 @@ void StereoVo::Initialize(const CvStereoImage& stereo_image,
   ROS_INFO_STREAM("StereoVo initialized, baseline: " << model_.baseline());
 }
 
+/*
 bool StereoVo::ShouldAddKeyFrame() const {
   // Not initialized, thus no keyframes, add one
   if (!init_) {
@@ -74,7 +65,9 @@ bool StereoVo::ShouldAddKeyFrame() const {
 
   return false;
 }
+*/
 
+/*
 void StereoVo::AddKeyFrame(const CvStereoImage& stereo_image) {
   const bool first_frame = key_frames_.empty();
   
@@ -168,6 +161,7 @@ void StereoVo::AddKeyFrame(const CvStereoImage& stereo_image) {
   temporal_tracker_.AddFeatures(left_features);
   key_frames_.push_back(ptr);
 }
+*/
 
 // void StereoVo::TrackSpatial(const CvStereoImage &stereo_image,
 //                            std::vector<Feature> &features,
@@ -225,6 +219,7 @@ void StereoVo::AddKeyFrame(const CvStereoImage& stereo_image) {
 //  cv::findFundamentalMat(points1, points2, cv::FM_RANSAC, 0.5, 0.999, status);
 //}
 
+/*
 void StereoVo::Iterate(const CvStereoImage& stereo_image) {
   if (!prev_left_image_.empty()) {
     //  track from previous frame
@@ -235,6 +230,7 @@ void StereoVo::Iterate(const CvStereoImage& stereo_image) {
     temporal_tracker_.set_max_levels(config_.klt_max_level);
     temporal_tracker_.Track(prev_left_image_, stereo_image.first, unused);
   }
+  */
 
   /*
   cv::Mat debug_image;
@@ -248,6 +244,7 @@ void StereoVo::Iterate(const CvStereoImage& stereo_image) {
   */
 
   //  ransac PnP
+  /*
   EstimatePose();
 
   //  add keyframe: extract features, match, triangulate, insert into map
@@ -261,7 +258,9 @@ void StereoVo::Iterate(const CvStereoImage& stereo_image) {
 
   prev_left_image_ = stereo_image.first;
 }
+*/
 
+/*
 void StereoVo::EstimatePose() {
   std::vector<CvPoint2> pixel_points;
   std::vector<CvPoint3> world_points;
@@ -327,6 +326,7 @@ void StereoVo::EstimatePose() {
 
   pose_ = new_pose;
 }
+*/
 
 /*
 void StereoVo::CheckEverything() {
@@ -590,5 +590,4 @@ void StereoVo::NukeOutliers() {
 */
 
 }  // namespace stereo_vo
-
 }  // namespace galt

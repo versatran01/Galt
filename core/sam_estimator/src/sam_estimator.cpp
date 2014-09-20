@@ -44,8 +44,8 @@ SamEstimator::SamEstimator() : meas_index_(0), initialized_(false) {}
 
 void SamEstimator::AddFrame(const kr::Posed& pose, 
                             const kr::mat<double,6,6>& pose_cov,
-                const std::vector<stereo_vo::Feature>& feat_left,
-                const std::vector<stereo_vo::Feature>& feat_right) {
+                const std::vector<stereo_vo::FeatureMsg> &feat_left,
+                const std::vector<stereo_vo::FeatureMsg> &feat_right) {
   
   if (!calib_) {
     return; //  waiting for calibration
@@ -85,7 +85,7 @@ void SamEstimator::AddFrame(const kr::Posed& pose,
   single_calib.reset(new gtsam::Cal3_S2(calib_->calibration()));
   if (feat_right.empty()) {
     //  normal frame, add regular reprojection factors for the left camera
-    for (const stereo_vo::Feature& f : feat_left) {
+    for (const stereo_vo::FeatureMsg& f : feat_left) {
       
       Point2 point(f.point.x, f.point.y);
       ProjectionFactor factor(point, pixel_noise, CurPoseKey(),
@@ -97,8 +97,8 @@ void SamEstimator::AddFrame(const kr::Posed& pose,
     
     //  key-frame, add stereo factors
     for (size_t i=0; i < feat_left.size(); i++) {
-      const stereo_vo::Feature& f_left = feat_left[i];
-      const stereo_vo::Feature& f_right = feat_right[i];
+      const stereo_vo::FeatureMsg& f_left = feat_left[i];
+      const stereo_vo::FeatureMsg& f_right = feat_right[i];
       
       StereoPoint2 point(f_left.point.x,
                          f_right.point.x,

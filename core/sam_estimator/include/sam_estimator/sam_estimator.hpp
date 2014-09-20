@@ -20,7 +20,7 @@
 #define KR_MATH_GTSAM_CONVERSIONS
 
 #include <sam_estimator/common.hpp> //  must include after gstam
-#include <stereo_vo/Feature.h>
+#include <stereo_vo/FeatureMsg.h>
 
 #include <memory>
 #include <stdexcept>
@@ -45,8 +45,8 @@ class SamEstimator {
 
   /// Add a new frame with pose estimate and match stereo features    
   void AddFrame(const kr::Posed& pose, const kr::mat<double,6,6>& pose_cov,
-                const std::vector<stereo_vo::Feature>& feat_left,
-                const std::vector<stereo_vo::Feature>& feat_right);
+                const std::vector<stereo_vo::FeatureMsg>& feat_left,
+                const std::vector<stereo_vo::FeatureMsg>& feat_right);
     
   /// Check if the graph is initialized.
   bool IsInitialized() const { return meas_index_ >= kNumInitPoses; }

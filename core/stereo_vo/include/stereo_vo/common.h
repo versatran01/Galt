@@ -3,18 +3,13 @@
 
 #include <ros/ros.h>
 #include <opencv2/core/core.hpp>
-
-#include "kr_math/pose.hpp"
 #include "stereo_vo/StereoVoDynConfig.h"
 
 namespace galt {
 namespace stereo_vo {
 
 using scalar_t = float;
-using Id = unsigned long;
-using KrPose = kr::Pose<scalar_t>;
-using vec2 = kr::vec2<scalar_t>;
-using vec3 = kr::vec3<scalar_t>;
+using Id = unsigned int;
 using CvPoint2 = cv::Point_<scalar_t>;
 using CvPoint3 = cv::Point3_<scalar_t>;
 using CvStereoImage = std::pair<cv::Mat, cv::Mat>;

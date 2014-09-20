@@ -45,7 +45,7 @@ class StereoVoNode {
 
   void SubscribeStereoTopics(const std::string& image_topic,
                              const std::string& cinfo_topic,
-                             const image_transport::TransportHints& hints);
+                             const std::string& transport);
 
   //  void OdometryCb(const nav_msgs::OdometryConstPtr& odom_msg);
 
@@ -62,20 +62,18 @@ class StereoVoNode {
   image_transport::SubscriberFilter sub_r_image_;   ///< Right image subscriber
   CinfoSubscriberFilter sub_l_cinfo_;               ///< Left cinfo subscriber
   CinfoSubscriberFilter sub_r_cinfo_;               ///< Right cinfo subscriber
-  ros::Subscriber sub_odom_;                        ///< Kf odometry subscriber
-  ros::Publisher pub_point_;                        ///< Publisher for points
-  ros::Publisher pub_pose_;                         ///< Publisher for pose
   boost::shared_ptr<ExactSync> exact_sync_;         ///< Exact time sync policy
-  visualization_msgs::Marker traj_;                 ///< Trajectory marker
-  image_geometry::StereoCameraModel stereo_model_;  ///< Stereo camera model
-  kr::rviz_helper::TfPublisher tf_pub_;             ///< Transfrom publisher
-  kr::rviz_helper::TrajectoryVisualizer traj_viz_;  ///< Trajectory visualizer
-  std::string frame_id_;                            ///< Reference frame
-  StereoVo stereo_vo_;                              ///< Stereo visual odometry
-
-  tf2::BufferCore core_;
-  tf2_ros::TransformListener tf_listener_;
   dynamic_reconfigure::Server<StereoVoDynConfig> cfg_server_;
+  stereo_vo::StereoVo stereo_vo_;
+  //  std::string frame_id_;
+  //  ros::Subscriber sub_odom_;
+  //  ros::Publisher pub_point_;
+  //  ros::Publisher pub_pose_;
+  //  visualization_msgs::Marker traj_;
+  //  kr::rviz_helper::TfPublisher tf_pub_;
+  //  kr::rviz_helper::TrajectoryVisualizer traj_viz_;
+  //  tf2::BufferCore core_;
+  //  tf2_ros::TransformListener tf_listener_;
 
   /// Visualize point cloud of triangulated points
   //  void PublishPointCloud(const ros::Time& time,
@@ -89,6 +87,9 @@ class StereoVoNode {
   // time,
   //                         const std::string& frame_id);
 };
+
+CvStereoImage FromImage(const ImageConstPtr& l_image_msg,
+                        const ImageConstPtr& r_image_msg);
 
 }  // namespace stereo_vo
 }  // namespace galt

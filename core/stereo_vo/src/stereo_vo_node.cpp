@@ -16,25 +16,15 @@ namespace galt {
 
 namespace stereo_vo {
 
-StereoVoNode::StereoVoNode(const ros::NodeHandle& nh)
-    : nh_(nh),
-      it_(nh),
-//      sub_odom_(nh_.subscribe("odometry", 1, &StereoVoNode::OdometryCb, this)),
-      tf_pub_("stereo_vo"),
-      traj_viz_(nh),
-      tf_listener_(core_) {
-  image_transport::TransportHints hints("raw", ros::TransportHints(), nh_);
-  SubscribeStereoTopics("image_rect", "camera_info", hints);
+StereoVoNode::StereoVoNode(const ros::NodeHandle& nh) : nh_(nh), it_(nh) {
+  SubscribeStereoTopics("image_rect", "camera_info", "raw");
   cfg_server_.setCallback(boost::bind(&StereoVoNode::ConfigCb, this, _1, _2));
-
-  traj_viz_.set_color(kr::rviz_helper::colors::MAGENTA);
-  traj_viz_.set_alpha(1);
-  //  point_pub_ = nh_.advertise<sensor_msgs::PointCloud>("points", 1);
 }
 
-void StereoVoNode::SubscribeStereoTopics(
-    const std::string& image_topic, const std::string& cinfo_topic,
-    const image_transport::TransportHints& hints) {
+void StereoVoNode::SubscribeStereoTopics(const std::string& image_topic,
+                                         const std::string& cinfo_topic,
+                                         const std::string& transport) {
+  image_transport::TransportHints hints(transport, ros::TransportHints(), nh_);
   exact_sync_.reset(new ExactSync(ExactPolicy(5), sub_l_image_, sub_l_cinfo_,
                                   sub_r_image_, sub_r_cinfo_));
   exact_sync_->registerCallback(
@@ -97,41 +87,38 @@ void StereoVoNode::StereoCb(const ImageConstPtr& l_image_msg,
                             const ImageConstPtr& r_image_msg,
                             const CameraInfoConstPtr& r_cinfo_msg) {
   // Get stereo camera infos
-  stereo_model_.fromCameraInfo(l_cinfo_msg, r_cinfo_msg);
-  if (!stereo_model_.initialized() &&
+  static image_geometry::StereoCameraModel stereo_model;
+  stereo_model.fromCameraInfo(l_cinfo_msg, r_cinfo_msg);
+  if (!stereo_model.initialized() &&
       (!l_cinfo_msg->K[0] || !r_cinfo_msg->K[0])) {
     ROS_ERROR_THROTTLE(1, "Uncalibrated camera.");
     return;
   }
 
   // Get stereo images
-  cv::Mat l_image_rect =
-      cv_bridge::toCvCopy(l_image_msg, sensor_msgs::image_encodings::MONO8)
-          ->image;
-  cv::Mat r_image_rect =
-      cv_bridge::toCvCopy(r_image_msg, sensor_msgs::image_encodings::MONO8)
-          ->image;
-  auto stereo_image = std::make_pair(l_image_rect, r_image_rect);
+  CvStereoImage stereo_image = FromImage(l_image_msg, r_image_msg);
+
+  if (!stereo_vo_.init()) {
+    stereo_vo_.Initialize(stereo_image, stereo_model);
+    return;
+  }
 
   // Initialize stereo visual odometry if not
-  if (!stereo_vo_.init()) {
-    stereo_vo_.Initialize(stereo_image, stereo_model_);
-  } else {
-    stereo_vo_.Iterate(stereo_image);
-  }
-
+  //  if (!stereo_vo_.init()) {
+  //    stereo_vo_.Initialize(stereo_image, stereo_model_);
+  //    return;
+  //  }
+  //  stereo_vo_.I
   //  publish points and pose
-  if (!frame_id_.empty()) {
-    //    PublishPointCloud(l_image_msg->header.stamp);
-    const geometry_msgs::Pose pose =
-        static_cast<geometry_msgs::Pose>(stereo_vo_.pose());
-    tf_pub_.PublishTransform(pose, frame_id_, l_image_msg->header.stamp);
-    traj_viz_.PublishTrajectory(pose.position, frame_id_,
-                                l_image_msg->header.stamp);
-  }
+  //  if (!frame_id_.empty()) {
+  //    PublishPointCloud(l_image_msg->header.stamp);
+  //    const geometry_msgs::Pose pose =
+  //        static_cast<geometry_msgs::Pose>(stereo_vo_.pose());
+  //    tf_pub_.PublishTransform(pose, frame_id_, l_image_msg->header.stamp);
+  //    traj_viz_.PublishTrajectory(pose.position, frame_id_,
+  //                                l_image_msg->header.stamp);
+  //  }
 }
-
-
 
 /*
 void StereoVoNode::PublishPointCloud(const ros::Time& time,
@@ -207,29 +194,16 @@ void StereoVoNode::PublishTrajectory(const geometry_msgs::Pose& pose,
 }
 */
 
-// StereoVoConfig ReadConfig(const ros::NodeHandle& nh) {
-//  StereoVoConfig config;
-//  nh.param<int>("cell_size", config.cell_size, 50);
-
-//  nh.param<int>("shi_max_corners", config.shi_max_corners, 200);
-//  nh.param<double>("shi_quality_level", config.shi_quality_level, 0.01);
-//  nh.param<double>("shi_min_distance", config.shi_min_distance, 12);
-
-//  nh.param<int>("klt_max_level", config.klt_max_level, 3);
-//  nh.param<int>("klt_win_size", config.klt_win_size, 13);
-
-//  nh.param<double>("pnp_ransac_inliers", config.pnp_ransac_inliers, 0.7);
-//  nh.param<double>("pnp_ransac_error", config.pnp_ransac_error, 4.0);
-//  nh.param<double>("pnp_motion_thresh", config.pnp_motion_thresh, 0.5);
-
-//  nh.param<int>("kf_size", config.kf_size, 4);
-//  nh.param<double>("kf_dist_thresh", config.kf_dist_thresh, 1.5);
-//  nh.param<double>("kf_yaw_thresh", config.kf_yaw_thresh, 45);
-//  nh.param<double>("kf_min_filled", config.kf_min_filled, 0.7);
-
-//  nh.param<double>("tri_max_eigenratio", config.tri_max_eigenratio, 1.0e5);
-//  return config;
-//}
+CvStereoImage FromImage(const ImageConstPtr& l_image_msg,
+                        const ImageConstPtr& r_image_msg) {
+  cv::Mat l_image_rect =
+      cv_bridge::toCvCopy(l_image_msg, sensor_msgs::image_encodings::MONO8)
+          ->image;
+  cv::Mat r_image_rect =
+      cv_bridge::toCvCopy(r_image_msg, sensor_msgs::image_encodings::MONO8)
+          ->image;
+  return {l_image_rect, r_image_rect};
+}
 
 }  // namespace stereo_vo
 

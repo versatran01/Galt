@@ -1,29 +1,12 @@
 <launch>
-    <arg name="stereo_ns" default="/mv_stereo"/>
+    <arg name="stereo" default="mv_stereo"/>
+    <arg name="output" default="screen"/>
 
     <node pkg="stereo_image_proc" type="stereo_image_proc"
-        name="stereo_image_proc" ns="$(arg stereo_ns)">
-      <param name="min_disparity" type="int" value="-15"/>
-      <param name="disparity_range" type="int" value="64"/>
+        name="stereo_image_proc" ns="$(arg stereo)">
     </node>
 
     <node pkg="stereo_vo" type="stereo_vo_node" name="stereo_vo"
-        output="screen" ns="$(arg stereo_ns)">
-        <param name="cell_size" value="50"/>
-
-        <param name="klt_max_level" value="3"/>
-        <param name="klt_win_size" value="13"/>
-        <param name="klt_ransac_thresh" value="1"/>
-
-        <param name="kf_dist_thresh" value="3"/>
-        <param name="kf_yaw_thresh" value="45"/>
-        <param name="kf_size" value="3"/>
-        <param name="kf_min_filled" value="0.85"/>
-
-        <param name="pnp_ransac_error" value="4"/>
-        <param name="pnp_ransac_inliers" value="0.9"/>
-        <param name="pnp_motion_thresh" value="0.5"/>
-
-        <param name="tri_max_eigenratio" value="100000"/>
+        output="$(arg output)" ns="$(arg stereo)">
     </node>
 </launch>

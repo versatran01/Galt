@@ -19,11 +19,6 @@ Grid FeatureDetector::CreateGrid(const std::vector<Feature> &features) const {
     grid.emplace(Discretize(feature.p_pixel().x),
                  Discretize(feature.p_pixel().y));
   });
-  //  for (const Feature &feature : features) {
-  //    const int x = static_cast<int>(feature.p_pixel().x / cell_size_);
-  //    const int y = static_cast<int>(feature.p_pixel().y / cell_size_);
-  //    grid.emplace(x, y);
-  //  }
   return grid;
 }
 
@@ -36,9 +31,6 @@ std::vector<Feature> FeatureDetector::AddFeatures(
   CornerSubPix(image, &corners);
 
   std::vector<Feature> new_features(corners.cbegin(), corners.cend());
-  //  for (const CvPoint2 &corner : corners) {
-  //    new_features.emplace_back(corner);
-  //  }
   return new_features;
 }
 

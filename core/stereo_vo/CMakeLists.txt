@@ -8,7 +8,7 @@ find_package(catkin REQUIRED COMPONENTS
     roscpp nodelet image_transport message_filters
     sensor_msgs visualization_msgs cv_bridge image_geometry
     dynamic_reconfigure eigen_conversions message_generation
-    kr_math rviz_helper
+    kr_math rviz_helper std_msgs geometry_msgs
     )
 
 find_package(OpenCV)
@@ -38,12 +38,12 @@ include_directories(
 
 add_library(${PROJECT_NAME}
     src/stereo_vo.cpp
-    src/feature_detector.cpp
-    src/utils.cpp
-    src/keyframe.cpp
-    src/feature.cpp
-    src/tracker.cpp
-    src/point3d.cpp
+#    src/feature_detector.cpp
+#    src/utils.cpp
+#    src/keyframe.cpp
+#    src/feature.cpp
+#    src/tracker.cpp
+#    src/point3d.cpp
     #src/optimizer.cpp
     )
 target_link_libraries(${PROJECT_NAME}

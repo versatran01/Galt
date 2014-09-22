@@ -38,10 +38,10 @@ include_directories(
 
 add_library(${PROJECT_NAME}
     src/stereo_vo.cpp
-#    src/feature_detector.cpp
-#    src/utils.cpp
-#    src/keyframe.cpp
-#    src/feature.cpp
+    src/frame.cpp
+    src/detector.cpp
+    src/feature.cpp
+    src/utils.cpp
 #    src/tracker.cpp
 #    src/point3d.cpp
     #src/optimizer.cpp
@@ -62,7 +62,7 @@ target_link_libraries(${PROJECT_NAME}
     )
 
 add_executable(${PROJECT_NAME}_node
-    src/main.cpp
+    src/stereo_vo_main.cpp
     src/stereo_vo_node.cpp
     )
 target_link_libraries(${PROJECT_NAME}_node

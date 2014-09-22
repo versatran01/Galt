@@ -16,7 +16,11 @@ namespace galt {
 
 namespace stereo_vo {
 
-StereoVoNode::StereoVoNode(const ros::NodeHandle& nh) : nh_(nh), it_(nh) {
+StereoVoNode::StereoVoNode(const ros::NodeHandle& nh,
+                           const ros::NodeHandle& pnh)
+    : nh_(nh), pnh_(pnh), it_(nh), tf_listener_(core_) {
+  pnh_.param<std::string>("parent_frame_id", parent_frame_id_, "world");
+  pnh_.param<std::string>("frame_id", frame_id_, "stereo_vo");
   SubscribeStereoTopics("image_rect", "camera_info", "raw");
   cfg_server_.setCallback(boost::bind(&StereoVoNode::ConfigCb, this, _1, _2));
 }
@@ -32,10 +36,10 @@ void StereoVoNode::SubscribeStereoTopics(const std::string& image_topic,
   using namespace ros::names;
   std::string left("left");
   std::string right("right");
-  sub_l_image_.subscribe(it_, resolve(append(left, image_topic)), 1, hints);
-  sub_l_cinfo_.subscribe(nh_, resolve(append(left, cinfo_topic)), 1);
-  sub_r_image_.subscribe(it_, resolve(append(right, image_topic)), 1, hints);
-  sub_r_cinfo_.subscribe(nh_, resolve(append(right, cinfo_topic)), 1);
+  sub_l_image_.subscribe(it_, append(left, image_topic), 1, hints);
+  sub_l_cinfo_.subscribe(nh_, append(left, cinfo_topic), 1);
+  sub_r_image_.subscribe(it_, append(right, image_topic), 1, hints);
+  sub_r_cinfo_.subscribe(nh_, append(right, cinfo_topic), 1);
 }
 
 /*
@@ -74,11 +78,15 @@ void StereoVoNode::OdometryCb(const nav_msgs::OdometryConstPtr& odom_msg) {
 }
 */
 
-void StereoVoNode::ConfigCb(const StereoVoDynConfig& config, int level) {
+void StereoVoNode::ConfigCb(StereoVoDynConfig& config, int level) {
   if (level < 0) {
     ROS_INFO("%s: %s", nh_.getNamespace().c_str(),
              "Initializing dynamic reconfigure server");
   }
+  if (!(config.klt_win_size % 2)) {
+    config.klt_win_size++;
+  }
+  config_ = config;
   stereo_vo_.set_config(config);
 }
 
@@ -103,12 +111,8 @@ void StereoVoNode::StereoCb(const ImageConstPtr& l_image_msg,
     return;
   }
 
-  // Initialize stereo visual odometry if not
-  //  if (!stereo_vo_.init()) {
-  //    stereo_vo_.Initialize(stereo_image, stereo_model_);
-  //    return;
-  //  }
-  //  stereo_vo_.I
+  stereo_vo_.Iterate(stereo_image, l_image_msg->header.stamp);
+
   //  publish points and pose
   //  if (!frame_id_.empty()) {
   //    PublishPointCloud(l_image_msg->header.stamp);
@@ -194,17 +198,26 @@ void StereoVoNode::PublishTrajectory(const geometry_msgs::Pose& pose,
 }
 */
 
-CvStereoImage FromImage(const ImageConstPtr& l_image_msg,
-                        const ImageConstPtr& r_image_msg) {
+CvStereoImage StereoVoNode::FromImage(const ImageConstPtr& l_image_msg,
+                                      const ImageConstPtr& r_image_msg) {
   cv::Mat l_image_rect =
       cv_bridge::toCvCopy(l_image_msg, sensor_msgs::image_encodings::MONO8)
           ->image;
   cv::Mat r_image_rect =
       cv_bridge::toCvCopy(r_image_msg, sensor_msgs::image_encodings::MONO8)
           ->image;
+  // For now this will only correct right image's mean to match the left one
+  if (config_.proc_image) {
+    ProcessStereoImage(r_image_rect, l_image_rect);
+  }
   return {l_image_rect, r_image_rect};
 }
 
-}  // namespace stereo_vo
+void ProcessStereoImage(const cv::Mat& l_image, cv::Mat& r_image) {
+  const cv::Scalar l_mean = cv::mean(l_image);
+  const cv::Scalar r_mean = cv::mean(r_image);
+  r_image.convertTo(r_image, -1, 1, l_mean[0] - r_mean[0]);
+}
 
+}  // namespace stereo_vo
 }  // namespace galt

@@ -3,23 +3,23 @@
 namespace galt {
 namespace stereo_vo {
 
-Id Feature::feature_count = 0;
+Id Feature::counter = 0;
 
-std::vector<CvPoint2> ExtractCorners(const std::vector<Feature>& features) {
-  std::vector<CvPoint2> corners;
-  for (const Feature& feature : features) corners.push_back(feature.p_pixel());
-  return corners;
+void ExtractCorners(const std::vector<Feature>& features,
+                    std::vector<CvPoint2>& corners) {
+  std::for_each(features.cbegin(), features.cend(), [&](const Feature& f) {
+    corners.emplace_back(f.px.x, f.px.y);
+  });
 }
 
-std::vector<Id> ExtractIds(const std::vector<Feature>& features) {
-  std::vector<Id> ids;
-  for (const Feature& feature : features) ids.push_back(feature.id());
-  return ids;
+void ExtractIds(const std::vector<Feature>& features, std::vector<Id>& ids) {
+  std::for_each(features.cbegin(), features.cend(),
+                [&](const Feature& f) { ids.emplace_back(f.id); });
 }
 
 void MakeFeaturesOld(std::vector<Feature>& features) {
   std::for_each(features.begin(), features.end(),
-                [](Feature& feature) { feature.set_init(false); });
+                [](Feature& f) { f.fresh = false; });
 }
 
 }  // namespace stereo_vo

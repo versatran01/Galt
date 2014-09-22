@@ -36,7 +36,7 @@ using message_filters::sync_policies::ExactTime;
 
 class StereoVoNode {
  public:
-  StereoVoNode(const ros::NodeHandle& nh);
+  StereoVoNode(const ros::NodeHandle& nh, const ros::NodeHandle& pnh);
 
  private:
   using CinfoSubscriberFilter = message_filters::Subscriber<CameraInfo>;
@@ -54,26 +54,29 @@ class StereoVoNode {
                 const ImageConstPtr& r_image_msg,
                 const CameraInfoConstPtr& r_cinfo_msg);
 
-  void ConfigCb(const StereoVoDynConfig& config, int level);
+  void ConfigCb(StereoVoDynConfig& config, int level);
 
-  ros::NodeHandle nh_;                              ///< Private nodehandle
-  image_transport::ImageTransport it_;              ///< Private image transport
-  image_transport::SubscriberFilter sub_l_image_;   ///< Left image subscriber
-  image_transport::SubscriberFilter sub_r_image_;   ///< Right image subscriber
-  CinfoSubscriberFilter sub_l_cinfo_;               ///< Left cinfo subscriber
-  CinfoSubscriberFilter sub_r_cinfo_;               ///< Right cinfo subscriber
-  boost::shared_ptr<ExactSync> exact_sync_;         ///< Exact time sync policy
+  CvStereoImage FromImage(const ImageConstPtr& l_image_msg,
+                          const ImageConstPtr& r_image_msg);
+  ros::NodeHandle nh_, pnh_;
+  std::string parent_frame_id_;
+  std::string frame_id_;
+  image_transport::ImageTransport it_;
+  image_transport::SubscriberFilter sub_l_image_;
+  image_transport::SubscriberFilter sub_r_image_;
+  CinfoSubscriberFilter sub_l_cinfo_;
+  CinfoSubscriberFilter sub_r_cinfo_;
+  boost::shared_ptr<ExactSync> exact_sync_;
   dynamic_reconfigure::Server<StereoVoDynConfig> cfg_server_;
+  StereoVoDynConfig config_;
   stereo_vo::StereoVo stereo_vo_;
-  //  std::string frame_id_;
-  //  ros::Subscriber sub_odom_;
+  tf2::BufferCore core_;
+  tf2_ros::TransformListener tf_listener_;
   //  ros::Publisher pub_point_;
   //  ros::Publisher pub_pose_;
   //  visualization_msgs::Marker traj_;
   //  kr::rviz_helper::TfPublisher tf_pub_;
   //  kr::rviz_helper::TrajectoryVisualizer traj_viz_;
-  //  tf2::BufferCore core_;
-  //  tf2_ros::TransformListener tf_listener_;
 
   /// Visualize point cloud of triangulated points
   //  void PublishPointCloud(const ros::Time& time,
@@ -88,8 +91,7 @@ class StereoVoNode {
   //                         const std::string& frame_id);
 };
 
-CvStereoImage FromImage(const ImageConstPtr& l_image_msg,
-                        const ImageConstPtr& r_image_msg);
+void ProcessStereoImage(const cv::Mat& l_image, cv::Mat& r_image);
 
 }  // namespace stereo_vo
 }  // namespace galt

@@ -21,6 +21,7 @@
 
 #include <sam_estimator/common.hpp> //  must include after gstam
 #include <stereo_vo/FeatureMsg.h>
+#include <image_geometry/stereo_camera_model.h>
 
 #include <memory>
 #include <stdexcept>
@@ -51,14 +52,30 @@ class SamEstimator {
   /// Check if the graph is initialized.
   bool IsInitialized() const { return meas_index_ >= kNumInitPoses; }
   
-  /// Set camera calibration.
-  void SetCalibration(double fx, double fy, double cx, double cy, double b);
-  
+  /// Set camera calib.
+  void SetCameraModel(const image_geometry::StereoCameraModel& model);
+    
   /// Set camera pose in body.
   void SetSensorPose(const kr::Posed& cam_pose);
   
+  /// Triangulated points from last frame.
+  const std::vector<gtsam::Point3>& triangulated_points() const {
+    return triangulated_points_;
+  }
+  
+  /// Last optimized pose
+  const gtsam::Pose3 current_pose() const {
+    return current_pose_;
+  }
+  
 private:
       
+  /// Triangulate a point.
+  bool triangulate(const geometry_msgs::Point& left,
+                   const geometry_msgs::Point& right,
+                   const kr::Posed &odom_pose, gtsam::Point3 &output_point,
+                   kr::mat3d& covariance);
+  
   static constexpr int kNumInitPoses = 2;
   
   void PerformUpdate();
@@ -70,8 +87,13 @@ private:
   gtsam::NonlinearFactorGraph graph_;
   gtsam::Values estimates_;
   gtsam::ISAM2 isam_;
+  gtsam::Pose3 current_pose_;
   gtsam::Cal3_S2Stereo::shared_ptr calib_;
-  gtsam::Pose3 cam_pose_in_body_;
+  image_geometry::StereoCameraModel model_;
+  kr::Posed cam_pose_in_body_;
+  
+  std::set<unsigned long> current_ids_;
+  std::vector<gtsam::Point3> triangulated_points_;
   
   typedef gtsam::GenericProjectionFactor<gtsam::Pose3, 
       gtsam::Point3, gtsam::Cal3_S2> ProjectionFactor;

@@ -6,10 +6,11 @@
     <!--Node-->
     <include file="$(find stereo_vo)/launch/stereo_vo.launch">
       <arg name="stereo" value="$(arg stereo)"/>
+      <arg name="cell_size" value="50"/>
     </include>
 
     <!--Rosbag-->
-    <arg name="bagfile" default="/home/chao/Workspace/bag/mrsl/mrsl_stereo.bag"/>
+    <arg name="bagfile" default="/home/chao/Workspace/bag/mrsl/mrsl5.bag"/>
     <node pkg="rosbag" type="play" name="player" args="$(arg bagfile)">
     </node>
 

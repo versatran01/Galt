@@ -1,17 +1,11 @@
-#include "stereo_vo/keyframe.h"
-#include "stereo_vo/feature.h"
-#include "stereo_vo/utils.h"
+#include "stereo_vo/frame.h"
+
+#include <opencv2/video/video.hpp>
 
 namespace galt {
 namespace stereo_vo {
 
 Id KeyFrame::counter = 0;
-
-KeyFrame::KeyFrame() : id_(counter++) {}
-
-KeyFrame::KeyFrame(const CvStereoImage &stereo_image) : KeyFrame() {
-  stereo_image_ = stereo_image;
-}
 
 /*
 size_t Frame::RemoveById(const std::set<Id> &ids_to_remove, bool force) {

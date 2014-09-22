@@ -24,7 +24,7 @@ void WindowedOptimizer::Optimize(std::deque<FramePtr>& key_frames,
   std::set<size_t> l_set;
   for (const FramePtr& frame_ptr : key_frames) {
     // Add camera initial pose estimate
-    const Frame& frame = *frame_ptr;
+    const KeyFrame& frame = *frame_ptr;
     const size_t x = frame.id();
     const Matrix3 mat3 = frame.pose().q.conjugate().matrix().cast<double>();
     const Rot3 rot3(mat3);
@@ -77,7 +77,7 @@ void WindowedOptimizer::Optimize(std::deque<FramePtr>& key_frames,
 
   // Put resulting poses back to key frames
   for (const FramePtr& frame_ptr : key_frames) {
-    Frame& frame = *frame_ptr;
+    KeyFrame& frame = *frame_ptr;
     const size_t x = frame.id();
     Pose3 pose = result.at<Pose3>(Symbol('x', x));
     //    pose.translation().print();
@@ -132,7 +132,7 @@ void IncrementalOptimizer::Optimize(std::deque<FramePtr>& key_frames,
 
   //  take the most recent key frame
   const FramePtr& frame_ptr = key_frames.back();
-  Frame& frame = *frame_ptr;
+  KeyFrame& frame = *frame_ptr;
 
   //  pose estimate and symbol for this frame
   const gtsam::Matrix3 mat3 =
@@ -302,7 +302,7 @@ void G2OOptimizer::Optimize(std::deque<FramePtr>& key_frames,
   /// @todo: move this elsewhere
   std::map<Id, bool> point_singleton;
   for (const FramePtr& ptr : key_frames) {
-    const Frame& frame = *ptr;
+    const KeyFrame& frame = *ptr;
     for (const Feature& feat : frame.features()) {
       auto ite = point_singleton.find(feat.id());
       if (ite == point_singleton.end()) {
@@ -324,7 +324,7 @@ void G2OOptimizer::Optimize(std::deque<FramePtr>& key_frames,
   for (auto kf_ite = key_frames.rbegin(); kf_ite != key_frames.rend();
        kf_ite++, kf_count++) {
 
-    const Frame& frame = *(*kf_ite);
+    const KeyFrame& frame = *(*kf_ite);
     const KrPose& pose = frame.pose();
     const bool in_window = (kf_count < window_size);
 

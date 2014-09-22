@@ -1,38 +1,167 @@
 #include "stereo_vo/stereo_vo.h"
-#include <stereo_vo/Feature.h>
-//#include "stereo_vo/feature.h"
-//#include "stereo_vo/keyframe.h"
-//#include "stereo_vo/utils.h"
+#include "stereo_vo/feature.h"
+#include "stereo_vo/frame.h"
+#include "stereo_vo/utils.h"
 
 #include <image_geometry/stereo_camera_model.h>
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/video/video.hpp"
-#include "opencv2/calib3d/calib3d.hpp"
 
 namespace galt {
 namespace stereo_vo {
 
 using image_geometry::StereoCameraModel;
 
-void StereoVo::Initialize(const CvStereoImage& stereo_image,
-                          const StereoCameraModel& model) {
+void StereoVo::Initialize(const CvStereoImage &stereo_image,
+                          const StereoCameraModel &model) {
   ROS_INFO("Initializing stereo_vo");
 
   model_ = model;
 
-  // Add the first stereo image as first keyframe
-  //  FramePtr curr_frame = boost::make_shared<Frame>(stereo_image);
-  // AddKeyFrame(curr_frame);
-  // AddKeyFrame(iamges, corners);
+  if (!InitializePose()) {
+    ROS_WARN_THROTTLE(1, "Failed to initialize first pose");
+    return;
+  }
 
-  // Save frame for next iteration
-  // prev_frame_ = curr_frame;
+  if (!AddKeyFrame(w_T_c(), stereo_image, tracked_features_)) {
+    ROS_WARN_THROTTLE(1, "Failed to add the first frame as key frame");
+    return;
+  }
 
-  //  CheckEverything();
-  //  ROS_WARN("Passed check everything for initializing");
+  prev_stereo_ = stereo_image;
 
   init_ = true;
   ROS_INFO_STREAM("StereoVo initialized, baseline: " << model_.baseline());
+}
+
+void StereoVo::Iterate(const CvStereoImage &stereo_image,
+                       const ros::Time &time) {
+
+  TrackTemporal(prev_stereo_.first, stereo_image.first, tracked_features_);
+
+  Display(stereo_image, tracked_features_, key_frames_.back());
+
+  if (ShouldAddKeyFrame()) {
+    AddKeyFrame(w_T_c(), stereo_image, tracked_features_);
+    PublishStereoFeatures(key_frames_.back(), time);
+  }
+
+  prev_stereo_ = stereo_image;
+}
+
+bool StereoVo::InitializePose() {
+  // For now just initialize to identity, later will use tf2 to listen to a
+  // transform
+  ROS_INFO("First camera pose initialized to:");
+  std::cout << w_T_c_.matrix() << std::endl;
+  return true;
+}
+
+bool StereoVo::ShouldAddKeyFrame() const {
+  // For now simply add a key frame if tracked features is less than 20
+  return (tracked_features_.size() < 30);
+}
+
+bool StereoVo::AddKeyFrame(const Sophus::SE3d &w_T_f,
+                           const CvStereoImage &stereo_image,
+                           std::vector<Feature> &features) {
+  // Detect new corners based on current feature distribution
+  std::vector<CvPoint2> l_corners =
+      detector_.AddFeatures(stereo_image.first, features);
+  std::vector<CvPoint2> r_corners;
+  // Track new corners from left to right so that we can triangulate them
+  // Mis-tracked corners will be removed from this step
+  TrackSpatial(stereo_image.first, stereo_image.second, l_corners, r_corners);
+  // Triangulate left and right corner to get point in world
+  // Do this later
+
+  if (l_corners.empty()) {
+    ROS_WARN("No new corners detected");
+    return false;
+  }
+  // Add corners to features
+  features.insert(features.end(), l_corners.cbegin(), l_corners.cend());
+  // Add a key frame
+  key_frames_.emplace_back(w_T_f, stereo_image, features, r_corners);
+  ROS_INFO("new corners added: %d", (int)l_corners.size());
+
+  return true;
+}
+
+void StereoVo::TrackSpatial(const cv::Mat &image1, const cv::Mat &image2,
+                            std::vector<CvPoint2> &l_corners,
+                            std::vector<CvPoint2> &r_corners) {
+  std::vector<uchar> status;
+  OpticalFlow(image1, image2, l_corners, r_corners, status);
+  PruneByStatus(status, l_corners);
+  PruneByStatus(status, r_corners);
+  ROS_ASSERT_MSG(l_corners.size() == r_corners.size(),
+                 "Corners size mismatch after PruneByStatus1");
+  status.clear();
+  FindFundamentalMat(l_corners, r_corners, status);
+  PruneByStatus(status, l_corners);
+  PruneByStatus(status, r_corners);
+  ROS_ASSERT_MSG(l_corners.size() == r_corners.size(),
+                 "Corners size mismatch after PruneByStatus2");
+}
+
+void StereoVo::OpticalFlow(const cv::Mat &image1, const cv::Mat &image2,
+                           const std::vector<CvPoint2> &points1,
+                           std::vector<CvPoint2> &points2,
+                           std::vector<uchar> &status) {
+  if (points1.empty()) {
+    ROS_WARN("OpticalFlow() called with no points");
+    return;
+  }
+  int win_size = config_.klt_win_size;
+  int max_level = config_.klt_max_level;
+  const static cv::TermCriteria term_criteria(
+      cv::TermCriteria::COUNT + cv::TermCriteria::EPS, 10, 0.005);
+  cv::calcOpticalFlowPyrLK(image1, image2, points1, points2, status,
+                           cv::noArray(), cv::Size(win_size, win_size),
+                           max_level, term_criteria);
+  ROS_ASSERT_MSG(points1.size() == points2.size(),
+                 "Corners size mismatch during OpticalFlow()");
+}
+
+void StereoVo::FindFundamentalMat(const std::vector<CvPoint2> &points1,
+                                  const std::vector<CvPoint2> &points2,
+                                  std::vector<uchar> &status) {
+  if (points1.empty()) {
+    ROS_WARN("FindFundamentalMat() called with no points");
+    return;
+  }
+  cv::findFundamentalMat(points1, points2, cv::FM_RANSAC, 0.5, 0.999, status);
+}
+
+void StereoVo::TrackTemporal(const cv::Mat &image1, const cv::Mat &image2,
+                             std::vector<Feature> &features) {
+  std::vector<uchar> status;
+  std::vector<CvPoint2> corners2;
+  std::vector<CvPoint2> corners1;
+  ExtractCorners(features, corners1);
+
+  // Track and remove mismatches
+  OpticalFlow(image1, image2, corners1, corners2, status);
+  PruneByStatus(status, features);
+  PruneByStatus(status, corners1);
+  PruneByStatus(status, corners2);
+  ROS_ASSERT_MSG(corners1.size() == corners2.size(),
+                 "Corners size mismatch in OpticalFlow()");
+  status.clear();
+
+  // Find fundamental matrix to reject outliers in tracking
+  FindFundamentalMat(corners1, corners2, status);
+  PruneByStatus(status, features);
+  PruneByStatus(status, corners2);
+  ROS_ASSERT_MSG(features.size() == corners2.size(),
+                 "Corners size mismatch in FindFundamentalMat()");
+
+  std::transform(features.begin(), features.end(), corners2.begin(),
+                 features.begin(), [](Feature &f, const CvPoint2 &c) {
+    f.px = c;
+    return f;
+  });
 }
 
 /*
@@ -48,7 +177,7 @@ bool StereoVo::ShouldAddKeyFrame() const {
   }
 
   const KeyFramePtr prev_key_frame = key_frames_.back();
-  
+
 //  const KrPose &diff = pose().difference(prev_key_frame->pose());
 //  if (diff.p().norm() > config_.kf_dist_thresh) {
 //    ROS_INFO("Distance: %f", diff.p().norm());
@@ -70,7 +199,7 @@ bool StereoVo::ShouldAddKeyFrame() const {
 /*
 void StereoVo::AddKeyFrame(const CvStereoImage& stereo_image) {
   const bool first_frame = key_frames_.empty();
-  
+
   //  capture the current pose and create new key frame
   const KrPose current_pose = pose();
   KeyFramePtr ptr = std::make_shared<KeyFrame>(stereo_image);
@@ -192,33 +321,6 @@ void StereoVo::AddKeyFrame(const CvStereoImage& stereo_image) {
 //                 "TrackSpatial Dimension mismatch");
 //}
 
-// void StereoVo::OpticalFlow(const cv::Mat &image1, const cv::Mat &image2,
-//                           const std::vector<CvPoint2> &points1,
-//                           std::vector<CvPoint2> &points2,
-//                           std::vector<uchar> &status) {
-//  if (points1.empty()) {
-//    ROS_WARN("OpticalFlow() called with no points");
-//    return;
-//  }
-//  int win_size = config_.klt_win_size;
-//  int max_level = config_.klt_max_level;
-//  static cv::TermCriteria term_criteria(
-//      cv::TermCriteria::COUNT + cv::TermCriteria::EPS, 10, 0.005);
-//  cv::calcOpticalFlowPyrLK(image1, image2, points1, points2, status,
-//                           cv::noArray(), cv::Size(win_size, win_size),
-//                           max_level, term_criteria);
-//}
-
-// void StereoVo::FindFundamentalMat(const std::vector<CvPoint2> &points1,
-//                                  const std::vector<CvPoint2> &points2,
-//                                  std::vector<uchar> &status) {
-//  if (points1.empty()) {
-//    ROS_WARN("FindFundamentalMat() called with no points");
-//    return;
-//  }
-//  cv::findFundamentalMat(points1, points2, cv::FM_RANSAC, 0.5, 0.999, status);
-//}
-
 /*
 void StereoVo::Iterate(const CvStereoImage& stereo_image) {
   if (!prev_left_image_.empty()) {
@@ -232,31 +334,31 @@ void StereoVo::Iterate(const CvStereoImage& stereo_image) {
   }
   */
 
-  /*
-  cv::Mat debug_image;
-  cv::cvtColor(stereo_image.first, debug_image, CV_GRAY2RGB);
-  //  draw the tracked features
-  for (const Feature& f : temporal_tracker_.features()) {
-    cv::circle(debug_image, f.p_pixel(), 3, cv::Scalar(255, 0, 0), 1);
-  }
-  cv::imshow("derp derp", debug_image);
-  cv::waitKey(1);
-  */
+/*
+cv::Mat debug_image;
+cv::cvtColor(stereo_image.first, debug_image, CV_GRAY2RGB);
+//  draw the tracked features
+for (const Feature& f : temporal_tracker_.features()) {
+  cv::circle(debug_image, f.p_pixel(), 3, cv::Scalar(255, 0, 0), 1);
+}
+cv::imshow("derp derp", debug_image);
+cv::waitKey(1);
+*/
 
-  //  ransac PnP
-  /*
-  EstimatePose();
+//  ransac PnP
+/*
+EstimatePose();
 
-  //  add keyframe: extract features, match, triangulate, insert into map
-  if (ShouldAddKeyFrame()) {
-    AddKeyFrame(stereo_image);
-  }
+//  add keyframe: extract features, match, triangulate, insert into map
+if (ShouldAddKeyFrame()) {
+  AddKeyFrame(stereo_image);
+}
 
-  /// @todo: do visualization
-  Display(stereo_image.first, spatial_tracker_.features(),
-          temporal_tracker_.features());
+/// @todo: do visualization
+Display(stereo_image.first, spatial_tracker_.features(),
+        temporal_tracker_.features());
 
-  prev_left_image_ = stereo_image.first;
+prev_left_image_ = stereo_image.first;
 }
 */
 
@@ -294,12 +396,12 @@ void StereoVo::EstimatePose() {
                      model_.left().fullIntrinsicMatrix(), std::vector<double>(),
                      rvec, tvec, false, 300, config_.pnp_ransac_error,
                      min_inliers, inliers);
-  
+
   //  throw away outliers
   std::set<Id> erased_ids = temporal_tracker_.RetainInliers(inliers);
   for (const Id& id : erased_ids) {
     points_.erase(id);
-  } 
+  }
 
   const vec3 r(rvec.at<double>(0, 0), rvec.at<double>(1, 0),
                rvec.at<double>(2, 0));
@@ -368,57 +470,6 @@ void StereoVo::TrackTemporal(const FramePtr &frame1, const FramePtr &frame2,
   } else {
     TrackTemporal(frame1->l_image(), frame2->l_image(), frame1->features(),
                   frame2->features(), key_frame);
-  }
-}
-*/
-/*
-void StereoVo::TrackTemporal(const cv::Mat &image1, const cv::Mat &image2,
-                             const std::vector<Feature> &features1,
-                             std::vector<Feature> &features2,
-                             const FramePtr &key_frame) {
-  std::vector<CvPoint2> corners2;
-  std::vector<uchar> status;
-  std::set<Id> ids_to_remove;
-
-  std::vector<Id> ids = ExtractIds(features1);
-  std::vector<CvPoint2> corners1 = ExtractCorners(features1);
-
-  // Track and remove mismatches
-  OpticalFlow(image1, image2, corners1, corners2, status);
-  const size_t num_in = corners1.size();
-  const size_t num_out = std::count(status.begin(), status.end(), uchar(1));
-  PruneByStatus(status, ids, ids_to_remove);
-  PruneByStatus(status, corners1);
-  PruneByStatus(status, corners2);
-  status.clear();
-
-  // Find fundamental matrix to reject outliers in tracking
-  FindFundamentalMat(corners1, corners2, status);
-  const size_t num_in2 = corners1.size();
-  const size_t num_out2 = std::count(status.begin(), status.end(), uchar(1));
-  if (num_out2 == 0) {
-    ROS_WARN("Fundamental mat found no inliers, ignoring it.");
-  } else {
-    PruneByStatus(status, ids, ids_to_remove);
-    PruneByStatus(status, corners2);
-  }
-
-  if (corners2.empty()) {
-    ROS_WARN("Corners2 is empty! (%lu, %lu) and (%lu, %lu)", num_in, num_out,
-             num_in2, num_out2);
-  }
-
-  // Verify that ids is of the same dimension as points_tracked
-  ROS_ASSERT_MSG(ids.size() == corners2.size(),
-                 "TrackSpatial Dimension mismatch");
-
-  // Remove singlet observations from previous keyframe as required
-  key_frame->RemoveById(ids_to_remove);
-
-  auto it_pts = corners2.cbegin();
-  for (auto it_id = ids.cbegin(), ite_id = ids.cend(); it_id != ite_id;
-       ++it_id, ++it_pts) {
-    features2.emplace_back(*it_id, *it_pts, false);
   }
 }
 */
@@ -588,6 +639,41 @@ void StereoVo::NukeOutliers() {
   }
 }
 */
+void StereoVo::PublishStereoFeatures(const KeyFrame &keyframe,
+                                     const ros::Time &time) const {
+  StereoFeaturesStamped stereo_features;
+  stereo_features.header.frame_id = "stereo_vo";
+  stereo_features.header.stamp = time;
+  stereo_features.image_id = keyframe.id();
+  const std::vector<Feature> &features = keyframe.features();
+  auto fit = std::find_if(features.cbegin(), features.cend(),
+                          [](const Feature &f) { return f.fresh; });
+  for (auto fit_beg = features.cbegin(); fit_beg != fit; ++fit_beg) {
+    FeatureMsg l_feature;
+    const Feature &f = *fit_beg;
+    l_feature.id = f.id;
+    l_feature.point.x = f.px.x;
+    l_feature.point.y = f.px.y;
+    l_feature.fresh = f.fresh;
+    stereo_features.left.push_back(l_feature);
+  }
+
+  for (const CvPoint2 &c : keyframe.r_corners()) {
+    const Feature &f = *fit++;
+    FeatureMsg l_feature;
+    FeatureMsg r_feature;
+    l_feature.id = r_feature.id = f.id;
+    l_feature.fresh = r_feature.fresh = f.fresh;
+    l_feature.point.x = f.px.x;
+    l_feature.point.y = f.px.y;
+    r_feature.point.x = c.x;
+    r_feature.point.y = c.y;
+    stereo_features.left.push_back(l_feature);
+    stereo_features.right.push_back(r_feature);
+  }
+
+  pub_features_.publish(stereo_features);
+}
 
 }  // namespace stereo_vo
 }  // namespace galt

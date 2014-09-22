@@ -3,7 +3,7 @@
 
 #include "stereo_vo/common.h"
 #include "stereo_vo/feature.h"
-#include "stereo_vo/keyframe.h"
+#include "stereo_vo/frame.h"
 
 #include <algorithm>
 #include <deque>
@@ -39,6 +39,7 @@ void PruneByStatus(const std::vector<U> &status, std::vector<T> &objects,
     }
   }
 }
+*/
 
 template <typename T, typename U>
 void PruneByStatus(const std::vector<U> &status, std::vector<T> &objects) {
@@ -53,25 +54,30 @@ void PruneByStatus(const std::vector<U> &status, std::vector<T> &objects) {
     }
   }
 }
-*/
 
-void Display(const cv::Mat &image,
-             const std::vector<Feature> &keyframe_features,
-             const std::vector<Feature> &tracked_features);
+void Display(const CvStereoImage &image,
+             const std::vector<Feature> &tracked_features,
+             const KeyFrame &keyframe);
+void Display(const cv::Mat &l_image_prev, const cv::Mat &r_image_prev,
+             const cv::Mat &l_image, const cv::Mat &r_image,
+             const cv::vector<Feature> &keyframe_features,
+             const cv::vector<CvPoint2> &r_corners,
+             const cv::vector<Feature> &tracked_features);
+void DrawCorners(cv::Mat &image, const std::vector<CvPoint2> &corners,
+                 const cv::Scalar &color,
+                 const CvPoint2 &offset = CvPoint2(0, 0));
 void DrawFeatures(cv::Mat &image, const std::vector<Feature> &features,
-                  const cv::Scalar &color);
+                  cv::Scalar color, const CvPoint2 &offset = CvPoint2(0, 0));
 void DrawCorrespondence(cv::Mat &image, const std::vector<Feature> &features1,
                         const std::vector<Feature> &features2,
-                        const cv::Scalar &color);
-void AnnotateFeatureCounts(cv::Mat &image, const std::vector<Feature> &features,
-                           const cv::Scalar &color, int quadrant);
-/*
-void Display(const FramePtr &frame, const FramePtr &key_frame);
-void Display(const CvStereoImage &stereo_image,
-             const std::vector<Feature> &tracked_features,
-             const FramePtr &key_frame);
-             */
-
+                        const cv::Scalar &color, const CvPoint2 &offset);
+void DrawStereoMatch(cv::Mat &image, const std::vector<Feature> &features,
+                     const std::vector<CvPoint2> &corners,
+                     const cv::Scalar &color,
+                     const CvPoint2 &offset = CvPoint2(0, 0));
+// void AnnotateFeatureCounts(cv::Mat &image, const std::vector<Feature>
+// &features,
+//                           const cv::Scalar &color, int quadrant);
 }  // namespace stereo_vo
 }  // namespace galt
 

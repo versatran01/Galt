@@ -16,11 +16,11 @@ class FeatureDetector {
  public:
   const static int border_ = 25;
 
-  FeatureDetector() : cell_size_(40) {}
+  FeatureDetector() : cell_size_(50) {}
 
   void set_cell_size(int cell_size) { cell_size_ = cell_size; }
-  std::vector<Feature> AddFeatures(const cv::Mat& image,
-                                   const std::vector<Feature>& features) const;
+  std::vector<CvPoint2> AddFeatures(const cv::Mat& image,
+                                    std::vector<Feature>& features) const;
 
  private:
   int Discretize(scalar_t value) {
@@ -29,12 +29,12 @@ class FeatureDetector {
 
   Grid CreateGrid(const std::vector<Feature>& features) const;
   void DetectCorners(const cv::Mat& image, const Grid& grid,
-                     std::vector<CvPoint2>* corners) const;
+                     std::vector<CvPoint2>& corners) const;
 
   int cell_size_;
 };
 
-void CornerSubPix(const cv::Mat& image, std::vector<CvPoint2>* corners);
+void CornerSubPix(const cv::Mat& image, std::vector<CvPoint2>& corners);
 bool IsCloseToImageBorder(const CvPoint2& point, const cv::Mat& image,
                           int border);
 }  // namespace stereo_vo

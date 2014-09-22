@@ -1,62 +1,29 @@
 #ifndef GALT_STEREO_VO_FEATURE_H_
 #define GALT_STEREO_VO_FEATURE_H_
 
-#include <memory>
-#include <functional>
-#include <cstdint>
-
 #include <stereo_vo/common.h>
-#include <image_geometry/stereo_camera_model.h>
 
 namespace galt {
 namespace stereo_vo {
 
-/**
- * @brief The Feature class
- * A feature is just a pixel on the image picked out by corner detector. Each
- * feature will have its unique id.
- */
-class Feature {
+struct Feature {
  public:
-  static Id feature_count;
+  static Id counter;
 
-  /**
-   * @brief Feature Default constructor
-   */
   Feature() = default;
+  Feature(const CvPoint2& px) : Feature(counter++, px, true) {}
+  Feature(const Id& id, const CvPoint2& px, const bool& fresh = true)
+      : id(id), px(px), fresh(fresh) {}
 
-  /**
-   * @brief Feature Constructor Create a feature
-   * @param id Unique id of this feature
-   * @param p_pixel Pixel position of this feature
-   * @param init If this feature is newly detected
-   */
-  Feature(const Id& id, const CvPoint2& p_pixel, const bool& init = true)
-      : id_(id), p_pixel_(p_pixel), init_(init) {}
-
-  /**
-   * @brief Feature Constructor Create a newly detected feautre
-   * @param p_pixel Pixel position of this feature
-   */
-  Feature(const CvPoint2& p_pixel) : Feature(feature_count++, p_pixel, true) {}
-
-  const Id& id() const { return id_; }
-  void set_id(const Id& id) { id_ = id; }
-
-  const CvPoint2& p_pixel() const { return p_pixel_; }
-  void set_p_pixel(const CvPoint2& p_pixel) { p_pixel_ = p_pixel; }
-
-  const bool& init() const { return init_; }
-  void set_init(const bool& init) { init_ = init; }
-
- private:
-  Id id_;             ///< id of this feature
-  CvPoint2 p_pixel_;  ///< pixel position
-  bool init_;         ///< true if this feature was newly added
+  Id id;
+  CvPoint2 px;
+  bool fresh;
+  int level;
 };
 
-std::vector<CvPoint2> ExtractCorners(const std::vector<Feature>& features);
-std::vector<Id> ExtractIds(const std::vector<Feature>& features);
+void ExtractCorners(const std::vector<Feature>& features,
+                    std::vector<CvPoint2>& corners);
+void ExtractIds(const std::vector<Feature>& features, std::vector<Id>* ids);
 void MakeFeaturesOld(std::vector<Feature>& features);
 
 }  // namespace stereo_vo

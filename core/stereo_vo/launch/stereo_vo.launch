@@ -2,11 +2,14 @@
     <arg name="stereo" default="mv_stereo"/>
     <arg name="output" default="screen"/>
 
+    <arg name="cell_size" default="40"/>
+
     <node pkg="stereo_image_proc" type="stereo_image_proc"
         name="stereo_image_proc" ns="$(arg stereo)">
     </node>
 
     <node pkg="stereo_vo" type="stereo_vo_node" name="stereo_vo"
         output="$(arg output)" ns="$(arg stereo)">
+        <param name="cell_size" type="int" value="$(arg cell_size)"/>
     </node>
 </launch>

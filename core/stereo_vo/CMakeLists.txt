@@ -8,7 +8,7 @@ find_package(catkin REQUIRED COMPONENTS
     roscpp nodelet image_transport message_filters
     sensor_msgs visualization_msgs cv_bridge image_geometry
     dynamic_reconfigure eigen_conversions message_generation
-    kr_math rviz_helper std_msgs geometry_msgs
+    kr_math rviz_helper std_msgs geometry_msgs sophus
     )
 
 find_package(OpenCV)

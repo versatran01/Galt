@@ -31,14 +31,10 @@
     </include>
 
     <!-- Stereo VO -->
-    <node pkg="stereo_image_proc" type="stereo_image_proc"
-        name="stereo_image_proc" ns="/mv_stereo">
-    </node>
-    <node name="stereo_vo" pkg="stereo_vo" type="stereo_vo_node"
-        output="screen" ns="/mv_stereo">
-        <rosparam file="$(find galt_setup)/profiles/$(arg profile)/stereo_vo.yml"/>
-        <remap from="~odometry" to="/gps_kf/odometry"/>
-    </node>
+    <include file="$(find stereo_vo)/launch/stereo_vo.launch">
+        <arg name="stereo" value="mv_stereo"/>
+        <arg name="cell_size" value="45"/>
+    </include>
 
     <!--
     <node pkg="viso2_ros" type="stereo_odometer" name="stereo_odometer" output="screen">

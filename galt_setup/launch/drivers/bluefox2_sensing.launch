@@ -1,0 +1,41 @@
+<!--
+  Name: bluefox2_sensing.launch
+  Triggers:
+    * bluefox2 (3x)
+
+  Brief: Launch three Matrix-Vision bluefox2 MLC usb cameras.
+
+  Topics you should record:
+    * /mv_29900189/camera_info
+    * /mv_29900130/image_raw
+    * /mv_30000334/camera_info
+    * /mv_30000334/image_raw
+    * /mv_30000337/camera_info
+    * /mv_30000337/image_raw
+-->
+<launch>
+    <!--Camera settings-->
+    <arg name="camera1" default="29900189"/>
+    <arg name="camera3" default="30000334"/>
+    <arg name="camera2" default="30000337"/>
+    <arg name="fps" default="5"/>
+    <arg name="trigger" default="0"/>
+
+    <include file="$(find bluefox2)/launch/single_node.launch">
+        <arg name="serial" value="$(arg camera1)"/>
+        <arg name="fps" value="10"/>
+        <arg name="auto_fix_expose" value="true"/>
+    </include>
+
+    <include file="$(find bluefox2)/launch/single_node.launch">
+        <arg name="serial" value="$(arg camera2)"/>
+        <arg name="fps" value="5"/>
+        <arg name="auto_fix_expose" value="true"/>
+    </include>
+
+    <include file="$(find bluefox2)/launch/single_node.launch">
+        <arg name="serial" value="$(arg camera3)"/>
+        <arg name="fps" value="5"/>
+        <arg name="auto_fix_expose" value="true"/>
+    </include>
+</launch>

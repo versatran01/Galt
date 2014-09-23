@@ -36,7 +36,22 @@
         <arg name="cell_size" value="45"/>
     </include>
 
+    <!-- Record to CSV -->
+    <node name="graph_recorder" pkg="graph_recorder"
+      type="graph_recorder"
+      output="screen">
+      <param name="output"
+        type="string"
+        value="$(arg bagfile_home)/csv/$(arg bagfile)"/>
+
+        <!-- input topics that will be recorded -->
+        <remap from="~gps_odom" to="/gps_kf/odometry"/>
+        <remap from="~vo_pose" to="/mv_stereo/stereo_vo/pose"/>
+        <remap from="~vo_features" to="/mv_stereo/stereo_vo/features"/>
+    </node>
+
     <!-- Launch sam_estimator -->
+    <!--
     <node name="sam_estimator" pkg="sam_estimator" type="sam_estimator"
       output="screen">
       <remap from="~left_info" to="/mv_stereo/left/camera_info"/>
@@ -44,5 +59,6 @@
       <remap from="~features" to="/mv_stereo/stereo_vo/features"/>
       <remap from="~odometry_in" to="/gps_kf/odometry"/>
     </node>
+  -->
 
 </launch>

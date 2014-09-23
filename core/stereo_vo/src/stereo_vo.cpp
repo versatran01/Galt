@@ -131,7 +131,7 @@ void StereoVo::FindFundamentalMat(const std::vector<CvPoint2> &points1,
     ROS_WARN("FindFundamentalMat() called with no points");
     return;
   }
-  cv::findFundamentalMat(points1, points2, cv::FM_RANSAC, 0.5, 0.999, status);
+  cv::findFundamentalMat(points1, points2, cv::FM_RANSAC, 0.5, 0.9999, status);
 }
 
 void StereoVo::TrackTemporal(const cv::Mat &image1, const cv::Mat &image2,

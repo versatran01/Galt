@@ -39,7 +39,7 @@ class SamEstimatorNode {
   
 private:
   
-  constexpr static int kROSQueueSize = 100;
+  constexpr static int kROSQueueSize = 300;
 
   SamEstimator::Ptr estimator_;
     

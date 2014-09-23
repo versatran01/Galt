@@ -42,6 +42,8 @@ SamEstimatorNode::SamEstimatorNode(const ros::NodeHandle &nh) :
   sub_r_info_.subscribe(nh_, "right_info", kROSQueueSize);
   sync_info_ = make_shared<message_filters::Synchronizer<InfoTimeSyncPolicy>>(
                   InfoTimeSyncPolicy(kROSQueueSize), sub_l_info_, sub_r_info_);
+  sync_info_->registerCallback(boost::bind(&SamEstimatorNode::camInfoCallback,
+                                           this,_1,_2));
   
   ROS_INFO("Subscribing to ~features and ~odometry_in");
   ROS_INFO("Subscribing to ~left_info and ~right_info");
@@ -64,12 +66,14 @@ SamEstimatorNode::odomFeaturesCallback(
     const nav_msgs::OdometryConstPtr& odom_msg,
     const stereo_vo::StereoFeaturesStampedConstPtr &feat_msg) {
   
+  ROS_INFO("odomFeaturesCallback");
+  
   //  extract odometry pose
   const kr::Posed odom_pose(odom_msg->pose.pose);
   kr::mat<double,6,6> odom_cov_in;
   for (int i=0; i < 6; i++) {
     for (int j=0; j < 6; j++) {
-      odom_cov_in(i,j) = odom_msg->pose.covariance[(i*6) + 6];
+      odom_cov_in(i,j) = odom_msg->pose.covariance[(i*6) + j];
     }
   }
   //  swap order of parameters for gtsam
@@ -83,7 +87,7 @@ SamEstimatorNode::odomFeaturesCallback(
   try {
     /// @todo: don't hard-code these strings
     const geometry_msgs::TransformStamped transform = core_.lookupTransform(
-        "stereo", "imu", ros::Time(0));
+        "imu", "stereo", ros::Time(0));
     const geometry_msgs::Vector3& t = transform.transform.translation;
     const geometry_msgs::Quaternion& r = transform.transform.rotation;
     const kr::vec3d p(t.x, t.y, t.z);
@@ -163,11 +167,11 @@ SamEstimatorNode::camInfoCallback(
     const sensor_msgs::CameraInfoConstPtr& r_info) {
   
   model_.fromCameraInfo(l_info,r_info);
-  ROS_INFO("Initialized baseline: %f", model_.baseline());
+  ROS_WARN("Initialized baseline: %f", model_.baseline());
   estimator_->SetCameraModel(model_);
   sub_l_info_.unsubscribe();
   sub_r_info_.unsubscribe();
-  sync_info_.reset();
+  //sync_info_.reset();
 } 
 
 }  // namespace sam_estimator

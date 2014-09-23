@@ -71,7 +71,7 @@ class SamEstimator {
 private:
       
   /// Triangulate a point.
-  bool triangulate(const geometry_msgs::Point& left,
+  bool Triangulate(const geometry_msgs::Point& left,
                    const geometry_msgs::Point& right,
                    const kr::Posed &odom_pose, gtsam::Point3 &output_point,
                    kr::mat3d& covariance);

@@ -60,9 +60,11 @@ void SamEstimator::AddFrame(const kr::Posed& pose,
     const Pose3 p3increment = static_cast<Pose3>(inc_pose);
     
     //  insert GPS/IMU data as 'fake odometry'
-    graph_.add(BetweenFactor<Pose3>(PrevPoseKey(),
-                                    CurPoseKey(),
-                                    p3increment, odom_noise_model));
+//    graph_.add(BetweenFactor<Pose3>(PrevPoseKey(),
+//                                    CurPoseKey(),
+//                                    p3increment, odom_noise_model));
+    graph_.add(PriorFactor<Pose3>(CurPoseKey(), static_cast<Pose3>(pose), 
+                                  odom_noise_model));
     //  initial guess
     estimates_.insert(CurPoseKey(), static_cast<Pose3>(pose));
   }
@@ -83,7 +85,7 @@ void SamEstimator::AddFrame(const kr::Posed& pose,
         ProjectionFactor factor(point, pixel_noise, CurPoseKey(),
                                 Symbol('l', f.id), single_calib, 
                                 static_cast<Pose3>(cam_pose_in_body_));
-        graph_.add(factor);   
+        //graph_.add(factor);   
       } else {
         ROS_WARN("Ignoring feature %u, it was not triangulated", f.id); 
       }
@@ -100,13 +102,13 @@ void SamEstimator::AddFrame(const kr::Posed& pose,
       const stereo_vo::FeatureMsg& f_right = *ite;
       
       if (current_ids_.find(f_left.id) == current_ids_.end()) {
-        ROS_INFO("New feature: %u", f_left.id);
+        //ROS_INFO("New feature: %u", f_left.id);
         
         //  insert initial estimate here
         gtsam::Point3 tri_point;
         kr::mat3d tri_cov;
-        if (triangulate(f_left.point,f_right.point,pose,tri_point,tri_cov)) {
-          ROS_INFO("Point was triangulated");
+        if (Triangulate(f_left.point,f_right.point,pose,tri_point,tri_cov)) {
+          //ROS_INFO("Point was triangulated");
           triangulated_points_.push_back(tri_point);
           estimates_.insert(Symbol('l', f_left.id), tri_point);
           current_ids_.insert(f_left.id);
@@ -115,7 +117,11 @@ void SamEstimator::AddFrame(const kr::Posed& pose,
           ProjectionFactor factor(point, pixel_noise, CurPoseKey(),
                                   Symbol('l', f_left.id), single_calib, 
                                   static_cast<Pose3>(cam_pose_in_body_));
-          graph_.add(factor);   
+          graph_.add(factor);
+          
+          PriorFactor<Point3> prior(Symbol('l', f_left.id), tri_point, 
+                             noiseModel::Gaussian::Covariance(tri_cov));
+          graph_.add(prior);
         }
       }
     }
@@ -123,7 +129,7 @@ void SamEstimator::AddFrame(const kr::Posed& pose,
   
   if (IsInitialized()) {
     //  start optimization after a certain number of poses are collected
-    //PerformUpdate();
+    PerformUpdate();
   } else {
     //  input pose
     current_pose_ = static_cast<gtsam::Pose3>(pose);
@@ -133,7 +139,7 @@ void SamEstimator::AddFrame(const kr::Posed& pose,
   meas_index_++;
 }
 
-bool SamEstimator::triangulate(
+bool SamEstimator::Triangulate(
                           const geometry_msgs::Point& left,
                           const geometry_msgs::Point& right,
                           const kr::Posed& odom_pose,
@@ -154,7 +160,7 @@ bool SamEstimator::triangulate(
   //  triangulate in the left camera frame
   kr::vec3d position;
   double ratio;
-  kr::triangulate(left_cam_pose, vleft,
+  /*const double depth =*/ kr::triangulate(left_cam_pose, vleft,
                   right_cam_pose, vright,
                   position, ratio);
   //  convert back to world
@@ -163,12 +169,12 @@ bool SamEstimator::triangulate(
   
   /// @todo:  generate a covariance estimate
   covariance.setIdentity();
-  covariance *= 0.3;
+  covariance *= 1.0;
   
   output_point = Point3(position[0], position[1], position[2]);
   
   /// @todo: make this ratio an option
-  return (ratio < 1e4);
+  return (ratio < 1e3);// && (depth > 0);
 }
 
 

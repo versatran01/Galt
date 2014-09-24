@@ -36,7 +36,6 @@ void StereoVo::Initialize(const CvStereoImage &stereo_image,
 
 void StereoVo::Iterate(const CvStereoImage &stereo_image,
                        const ros::Time &time) {
-
   TrackTemporal(prev_stereo_.first, stereo_image.first, tracked_features_);
 
   Display(stereo_image, tracked_features_, key_frames_.back());
@@ -73,7 +72,6 @@ bool StereoVo::AddKeyFrame(const Sophus::SE3d &w_T_f,
   // Mis-tracked corners will be removed from this step
   TrackSpatial(stereo_image.first, stereo_image.second, l_corners, r_corners);
   // Triangulate left and right corner to get point in world
-  // Do this later
 
   if (l_corners.empty()) {
     ROS_WARN("No new corners detected");
@@ -157,6 +155,7 @@ void StereoVo::TrackTemporal(const cv::Mat &image1, const cv::Mat &image2,
   ROS_ASSERT_MSG(features.size() == corners2.size(),
                  "Corners size mismatch in FindFundamentalMat()");
 
+  // Modify tracked features position
   std::transform(features.begin(), features.end(), corners2.begin(),
                  features.begin(), [](Feature &f, const CvPoint2 &c) {
     f.px = c;

@@ -10,8 +10,8 @@
     </include>
 
     <!--Rosbag-->
-    <arg name="bagfile" default="/home/chao/Workspace/bag/mrsl/mrsl5.bag"/>
-    <node pkg="rosbag" type="play" name="player" args="$(arg bagfile)">
+    <arg name="bagfile" default="/home/chao/Workspace/bag/mrsl/mrsl1.bag"/>
+    <node pkg="rosbag" type="play" name="player" args="$(arg bagfile) -r 0.2">
     </node>
 
     <!--Disparity-->

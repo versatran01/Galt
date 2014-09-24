@@ -57,7 +57,6 @@ class StereoVo {
   bool ShouldAddKeyFrame() const;
   void PublishStereoFeatures(const KeyFrame &keyframe,
                              const ros::Time &time) const;
-  //  void EstimatePose();
 
   bool init_;
   StereoCameraModel model_;

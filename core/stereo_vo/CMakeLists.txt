@@ -69,6 +69,14 @@ target_link_libraries(${PROJECT_NAME}_node
     ${PROJECT_NAME}
     )
 
+add_executable(test_detector
+    test/test_detector.cpp
+    )
+target_link_libraries(test_detector
+    ${OpenCV_LIBRARIES}
+    ${PROJECT_NAME}
+    )
+
 add_dependencies(${PROJECT_NAME}
     ${catkin_EXPORTED_TARGETS}
     ${PROJECT_NAME}_gencfg

@@ -107,8 +107,7 @@ bool StereoVo::AddKeyFrame(const KrPose &pose,
       ite_r = r_corners.erase(ite_r);
     }
   }
-  
-  features.insert(features.end(), l_corners.cbegin(), l_corners.cend());
+
   // Add a key frame
   key_frames_.emplace_back(pose, stereo_image, features, r_corners);
   ROS_INFO("new corners added: %lu", l_corners.size());

@@ -70,6 +70,15 @@ class SamEstimator {
   
 private:
       
+  struct CandidateEdge {
+    unsigned int pose_id;
+    unsigned int landmark_id;
+    kr::vec2d measurement;
+    kr::vec3d estimate;
+  };
+  
+  std::map<unsigned int, CandidateEdge> candidates_;
+  
   /// Triangulate a point.
   bool Triangulate(const geometry_msgs::Point& left,
                    const geometry_msgs::Point& right,

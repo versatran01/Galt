@@ -5,14 +5,13 @@
 #include "stereo_vo/feature.h"
 #include "stereo_vo/detector.h"
 #include "stereo_vo/frame.h"
-//#include "stereo_vo/point3d.h"
-//#include "stereo_vo/tracker.h"
 
 #include <vector>
 #include <deque>
 
 #include <image_geometry/stereo_camera_model.h>
 #include <sophus/se3.hpp>
+#include <kr_math/base_types.hpp>
 
 #include "opencv2/core/core.hpp"
 
@@ -33,7 +32,7 @@ class StereoVo {
     detector_.set_cell_size(config_.cell_size);
   }
   bool init() const { return init_; }
-  const Sophus::SE3d &w_T_c() const { return w_T_c_; }
+  const KrPose &w_T_c() const { return w_T_c_; }
 
   void Initialize(const CvStereoImage &stereo_image,
                   const StereoCameraModel &model);
@@ -41,7 +40,7 @@ class StereoVo {
 
  private:
   bool InitializePose();
-  bool AddKeyFrame(const Sophus::SE3d &w_T_f, const CvStereoImage &stereo_image,
+  bool AddKeyFrame(const KrPose& pose, const CvStereoImage &stereo_image,
                    std::vector<Feature> &features);
   void TrackSpatial(const cv::Mat &image1, const cv::Mat &image2,
                     std::vector<CvPoint2> &l_corners,
@@ -57,12 +56,17 @@ class StereoVo {
   bool ShouldAddKeyFrame() const;
   void PublishStereoFeatures(const KeyFrame &keyframe,
                              const ros::Time &time) const;
-  //  void EstimatePose();
+ 
+  /// Triangulate left and right observations into 3d space.
+  bool TriangulatePoint(const CvPoint2& lp, ///< Left point in pixels.
+                        const CvPoint2& rp, ///< Right point in pixels.
+                        kr::vec3<scalar_t>& p3d,    ///< Output point in camera.
+                        kr::mat3<scalar_t>& sigma); ///< Covariance.
 
   bool init_;
   StereoCameraModel model_;
   StereoVoDynConfig config_;
-  Sophus::SE3d w_T_c_;
+  KrPose w_T_c_;
   FeatureDetector detector_;
   std::deque<KeyFrame> key_frames_;
   std::vector<Feature> tracked_features_;
@@ -70,12 +74,6 @@ class StereoVo {
 
   ros::NodeHandle pnh_;
   ros::Publisher pub_features_;
-
-  //  std::vector<KeyFramePtr> key_frames_;
-  //  Tracker temporal_tracker_;
-  //  Tracker spatial_tracker_;
-  //  cv::Mat prev_left_image_;
-  //  std::map<Id, Point3d> points_;
 };
 
 }  // namespace stereo_vo

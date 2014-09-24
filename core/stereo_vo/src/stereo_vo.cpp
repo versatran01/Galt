@@ -7,6 +7,8 @@
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/video/video.hpp"
 
+#include <kr_math/feature.hpp>
+
 namespace galt {
 namespace stereo_vo {
 
@@ -62,7 +64,7 @@ bool StereoVo::ShouldAddKeyFrame() const {
   return (tracked_features_.size() < 30);
 }
 
-bool StereoVo::AddKeyFrame(const Sophus::SE3d &w_T_f,
+bool StereoVo::AddKeyFrame(const KrPose &pose,
                            const CvStereoImage &stereo_image,
                            std::vector<Feature> &features) {
   // Detect new corners based on current feature distribution
@@ -72,18 +74,45 @@ bool StereoVo::AddKeyFrame(const Sophus::SE3d &w_T_f,
   // Track new corners from left to right so that we can triangulate them
   // Mis-tracked corners will be removed from this step
   TrackSpatial(stereo_image.first, stereo_image.second, l_corners, r_corners);
-  // Triangulate left and right corner to get point in world
-  // Do this later
 
   if (l_corners.empty()) {
     ROS_WARN("No new corners detected");
     return false;
   }
-  // Add corners to features
+  
+  // Triangulate and add corners to features
+  auto ite_l = l_corners.begin(), ite_r = r_corners.begin();
+  while (ite_l != l_corners.end()) {
+    const CvPoint2& lp = *ite_l;
+    const CvPoint2& rp = *ite_r;
+    
+    kr::vec3<scalar_t> p_cam;
+    kr::mat3<scalar_t> tri_cov;
+    if ( TriangulatePoint(lp,rp,p_cam,tri_cov) ) {
+      //  triangulation was good, create a fresh feature
+      //  first calculate world coordinates
+      kr::vec3<scalar_t> p_world = pose.transformFromBody(p_cam);
+      
+      Feature new_feature(lp);
+      new_feature.p_cam = CvPoint3(p_cam[0],p_cam[1],p_cam[2]);
+      new_feature.p_world = CvPoint3(p_world[0],p_world[1],p_world[2]);
+      new_feature.p_cov_cam = tri_cov;
+      //ROS_INFO_STREAM("Triangulated cov: " << tri_cov);
+      
+      features.push_back(new_feature);
+      ite_l++;
+      ite_r++;
+    } else {
+      //  bad triangulatio, do not retain this corner
+      ite_l = l_corners.erase(ite_l);
+      ite_r = r_corners.erase(ite_r);
+    }
+  }
+  
   features.insert(features.end(), l_corners.cbegin(), l_corners.cend());
   // Add a key frame
-  key_frames_.emplace_back(w_T_f, stereo_image, features, r_corners);
-  ROS_INFO("new corners added: %d", (int)l_corners.size());
+  key_frames_.emplace_back(pose, stereo_image, features, r_corners);
+  ROS_INFO("new corners added: %lu", l_corners.size());
 
   return true;
 }
@@ -533,112 +562,42 @@ bool StereoVo::TriangulatePoint(const CvPoint2 &left, const CvPoint2 &right,
 }
 */
 
-/*
-void StereoVo::NukeOutliers() {
-
-  struct PointMetric {
-    scalar_t err_left_2;
-    int count;
-
-    scalar_t norm_err_left_2() const { return err_left_2 / count; }
-  };
-  std::map<Id, PointMetric> metrics;
-
-  const auto fx = model_.left().fx();
-  const auto fy = model_.left().fy();
-  const auto cx = model_.left().cx();
-  const auto cy = model_.left().cy();
-
-  //  consider all key frames
-  for (const FramePtr &ptr : key_frames_) {
-    const Frame &frame = *ptr;
-    const KrPose &pose = frame.pose();
-
-    for (const Feature &feat : frame.features()) {
-      const Point3d &p3d = point3ds_[feat.id()];
-      const CvPoint2 &p2d = feat.p_pixel();
-
-      //  project point
-      kr::vec3<scalar_t> p_cam(p3d.p_world().x, p3d.p_world().y,
-                               p3d.p_world().z);
-      p_cam = pose.transformToBody(p_cam);
-      p_cam /= p_cam[2];
-      //  apply camera model
-      p_cam[0] = fx * p_cam[0] + cx;
-      p_cam[1] = fy * p_cam[1] + cy;
-
-      //  reprojection error squared
-      auto err2 = (p_cam[0] - p2d.x) * (p_cam[0] - p2d.x) +
-                  (p_cam[1] - p2d.y) * (p_cam[1] - p2d.y);
-
-      auto ite = metrics.find(feat.id());
-      if (ite == metrics.end()) {
-        PointMetric pm;
-        pm.err_left_2 = err2;
-        pm.count = 1;
-        metrics[feat.id()] = pm;
-      } else {
-        PointMetric &pm = ite->second;
-        pm.err_left_2 += err2;
-        pm.count++;
-      }
-    }
+bool StereoVo::TriangulatePoint(const CvPoint2& lp,
+                                const CvPoint2& rp,
+                                kr::vec3<scalar_t> &p3d,
+                                kr::mat3<scalar_t> &sigma) {
+  //  convert to normalized coordinates
+  const double lfx = model_.left().fx(), lfy = model_.left().fy();
+  const double lcx = model_.left().cx(), lcy = model_.left().cy();
+  const double rfx = model_.right().fx(), rfy = model_.right().fy();
+  const double rcx = model_.right().cx(), rcy = model_.right().cy();
+  
+  const kr::vec2d v_left((lp.x-lcx)/lfx, (lp.y-lcy)/lfy);
+  const kr::vec2d v_right((rp.x-rcx)/rfx, (rp.y-rcy)/rfy);
+  
+  //  triangulate in the frame of the left camera
+  const kr::Posed left_pose;
+  const kr::Posed right_pose(kr::quatd(1,0,0,0),
+                             kr::vec3d(model_.baseline(),0,0));
+  kr::vec3d position;
+  double ratio;
+  const double depth = kr::triangulate(left_pose,v_left,
+                                       right_pose,v_right,position,ratio);
+  /// @todo: make the ratio an option
+  if (depth < 0 || ratio > 1e4) {
+    return false;
   }
-
-  struct Stats {
-    scalar_t mean;
-    scalar_t mean_squared;
-    int count;
-    Stats() {
-      mean = 0;
-      mean_squared = 0;
-      count = 0;
-    }
-    void add(scalar_t x) {
-      mean = (mean * count + x) / (count + 1);
-      mean_squared = (mean_squared * count + x * x) / (count + 1);
-      count++;
-    }
-    scalar_t variance() const { return mean_squared - mean * mean; }
-  };
-  std::map<int, Stats> sorted_stats;
-
-  //  calculate mean squared error
-  for (const std::pair<Id, PointMetric> &pair : metrics) {
-
-    Stats &stats = sorted_stats[pair.second.count];  //  organize by count
-
-    const auto err2 = pair.second.norm_err_left_2();
-    stats.add(err2);
-  }
-
-  for (const std::pair<int, Stats> &pair : sorted_stats) {
-    ROS_INFO("MSPE,STD (count = %i): %f, %f", pair.first, pair.second.mean,
-             std::sqrt(pair.second.variance()));
-  }
-
-  //  build a set of features to eliminate
-  std::set<Id> removables;
-  for (const std::pair<Id, PointMetric> &pair : metrics) {
-    if (pair.second.norm_err_left_2() > 100) {
-      removables.insert(pair.first);
-    }
-  }
-
-  if (!removables.empty()) {
-    ROS_INFO("Nuking %lu outliers", removables.size());
-  }
-
-  //  remove them
-  size_t erased=0;
-  for (FramePtr ptr : key_frames_) {
-    erased += ptr->RemoveById(removables, true);
-  }
-  if (erased) {
-   ROS_INFO("Erased %lu observations", erased);
-  }
+  p3d = position.cast<scalar_t>();
+  
+  //  calculate covariance on depth and 3D position
+  const double depth_sigma = 
+      kr::triangulationDepthSigma(depth, v_left, right_pose.p(), lfx);
+  const auto P = 
+      kr::triangulationCovariance(v_left, 1.0 / lfx, depth, depth_sigma);
+  sigma = P.cast<scalar_t>();
+  return true;
 }
-*/
+
 void StereoVo::PublishStereoFeatures(const KeyFrame &keyframe,
                                      const ros::Time &time) const {
   StereoFeaturesStamped stereo_features;

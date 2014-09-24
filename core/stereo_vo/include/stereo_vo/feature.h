@@ -17,6 +17,9 @@ struct Feature {
 
   Id id;
   CvPoint2 px;
+  CvPoint3 p_world; /// < Position world frame.
+  CvPoint3 p_cam;   /// < Position in camera frame.
+  kr::mat3<scalar_t> p_cov_cam; ///< Covariance in camera frame.
   bool fresh;
   int level;
 };

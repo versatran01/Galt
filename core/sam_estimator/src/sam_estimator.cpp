@@ -60,11 +60,11 @@ void SamEstimator::AddFrame(const kr::Posed& pose,
     const Pose3 p3increment = static_cast<Pose3>(inc_pose);
     
     //  insert GPS/IMU data as 'fake odometry'
-//    graph_.add(BetweenFactor<Pose3>(PrevPoseKey(),
-//                                    CurPoseKey(),
-//                                    p3increment, odom_noise_model));
-    graph_.add(PriorFactor<Pose3>(CurPoseKey(), static_cast<Pose3>(pose), 
-                                  odom_noise_model));
+    graph_.add(BetweenFactor<Pose3>(PrevPoseKey(),
+                                    CurPoseKey(),
+                                    p3increment, odom_noise_model));
+   // graph_.add(Factor<Pose3>(CurPoseKey(), static_cast<Pose3>(pose), 
+    //                              odom_noise_model));
     //  initial guess
     estimates_.insert(CurPoseKey(), static_cast<Pose3>(pose));
   }
@@ -85,9 +85,9 @@ void SamEstimator::AddFrame(const kr::Posed& pose,
         ProjectionFactor factor(point, pixel_noise, CurPoseKey(),
                                 Symbol('l', f.id), single_calib, 
                                 static_cast<Pose3>(cam_pose_in_body_));
-        //graph_.add(factor);   
+        graph_.add(factor);   
       } else {
-        ROS_WARN("Ignoring feature %u, it was not triangulated", f.id); 
+        //ROS_WARN("Ignoring feature %u, it was not triangulated", f.id); 
       }
     } else {
       //  new feature
@@ -102,16 +102,14 @@ void SamEstimator::AddFrame(const kr::Posed& pose,
       const stereo_vo::FeatureMsg& f_right = *ite;
       
       if (current_ids_.find(f_left.id) == current_ids_.end()) {
-        //ROS_INFO("New feature: %u", f_left.id);
         
         //  insert initial estimate here
         gtsam::Point3 tri_point;
         kr::mat3d tri_cov;
         if (Triangulate(f_left.point,f_right.point,pose,tri_point,tri_cov)) {
-          //ROS_INFO("Point was triangulated");
           triangulated_points_.push_back(tri_point);
           estimates_.insert(Symbol('l', f_left.id), tri_point);
-          current_ids_.insert(f_left.id);
+          //current_ids_.insert(f_left.id);
           
           Point2 point(f_left.point.x, f_left.point.y);
           ProjectionFactor factor(point, pixel_noise, CurPoseKey(),
@@ -126,9 +124,11 @@ void SamEstimator::AddFrame(const kr::Posed& pose,
       }
     }
   }
+  ROS_INFO("%lu points are triangulated", triangulated_points_.size());
   
   if (IsInitialized()) {
     //  start optimization after a certain number of poses are collected
+    ROS_INFO("Optimizing");
     PerformUpdate();
   } else {
     //  input pose
@@ -160,7 +160,7 @@ bool SamEstimator::Triangulate(
   //  triangulate in the left camera frame
   kr::vec3d position;
   double ratio;
-  /*const double depth =*/ kr::triangulate(left_cam_pose, vleft,
+  const double depth = kr::triangulate(left_cam_pose, vleft,
                   right_cam_pose, vright,
                   position, ratio);
   //  convert back to world
@@ -174,7 +174,7 @@ bool SamEstimator::Triangulate(
   output_point = Point3(position[0], position[1], position[2]);
   
   /// @todo: make this ratio an option
-  return (ratio < 1e3);// && (depth > 0);
+  return (ratio < 5e3) && (depth > 0);
 }
 
 

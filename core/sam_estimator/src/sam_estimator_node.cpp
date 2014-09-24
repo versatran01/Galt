@@ -16,6 +16,7 @@
 #include <sam_estimator/sam_estimator_node.hpp>
 #include <sam_estimator/sam_estimator.hpp>
 #include <nav_msgs/Odometry.h>
+#include <sensor_msgs/PointCloud.h>
 #include <memory>
 
 using std::make_shared;
@@ -24,7 +25,7 @@ namespace galt {
 namespace sam_estimator {
 
 SamEstimatorNode::SamEstimatorNode(const ros::NodeHandle &nh) : 
-  nh_(nh), tf_listener_(core_) {
+  nh_(nh), tf_listener_(core_), traj_viz_(nh_) {
   //  create an estimator
   estimator_ = make_shared<SamEstimator>();
   
@@ -41,12 +42,23 @@ SamEstimatorNode::SamEstimatorNode(const ros::NodeHandle &nh) :
   sub_r_info_.subscribe(nh_, "right_info", kROSQueueSize);
   sync_info_ = make_shared<message_filters::Synchronizer<InfoTimeSyncPolicy>>(
                   InfoTimeSyncPolicy(kROSQueueSize), sub_l_info_, sub_r_info_);
+  sync_info_->registerCallback(boost::bind(&SamEstimatorNode::camInfoCallback,
+                                           this,_1,_2));
   
   ROS_INFO("Subscribing to ~features and ~odometry_in");
   ROS_INFO("Subscribing to ~left_info and ~right_info");
   
   pub_odometry_ =
       nh_.advertise<nav_msgs::Odometry>("odometry", 1);
+  pub_points_ = 
+      nh_.advertise<sensor_msgs::PointCloud>("pointcloud", 1);
+  
+  traj_viz_.set_color(kr::rviz_helper::colors::BLUE);
+  traj_viz_.set_alpha(1);
+  traj_viz_.set_num_skip(12);
+  
+  /// @todo: make this an option
+  tf_pub_.set_child_frame_id("sam_estimator");
 }
 
 void 
@@ -54,12 +66,14 @@ SamEstimatorNode::odomFeaturesCallback(
     const nav_msgs::OdometryConstPtr& odom_msg,
     const stereo_vo::StereoFeaturesStampedConstPtr &feat_msg) {
   
+  ROS_INFO("odomFeaturesCallback");
+  
   //  extract odometry pose
   const kr::Posed odom_pose(odom_msg->pose.pose);
   kr::mat<double,6,6> odom_cov_in;
   for (int i=0; i < 6; i++) {
     for (int j=0; j < 6; j++) {
-      odom_cov_in(i,j) = odom_msg->pose.covariance[(i*6) + 6];
+      odom_cov_in(i,j) = odom_msg->pose.covariance[(i*6) + j];
     }
   }
   //  swap order of parameters for gtsam
@@ -73,7 +87,7 @@ SamEstimatorNode::odomFeaturesCallback(
   try {
     /// @todo: don't hard-code these strings
     const geometry_msgs::TransformStamped transform = core_.lookupTransform(
-        "imu", "stereo_left", ros::Time(0));
+        "imu", "stereo", ros::Time(0));
     const geometry_msgs::Vector3& t = transform.transform.translation;
     const geometry_msgs::Quaternion& r = transform.transform.rotation;
     const kr::vec3d p(t.x, t.y, t.z);
@@ -88,7 +102,62 @@ SamEstimatorNode::odomFeaturesCallback(
   
   estimator_->AddFrame(odom_pose,odom_cov,feat_msg->left,feat_msg->right);
   if (estimator_->IsInitialized()) {
-    /// @todo: get odom and send to rviz_helper
+    
+    //  publish odometry
+    nav_msgs::Odometry odo;
+    odo.header.stamp = odom_msg->header.stamp;
+    odo.header.frame_id = odom_msg->header.frame_id;
+    odo.child_frame_id = "sam_estimator";
+
+    //  current pose
+    gtsam::Pose3 pose = estimator_->current_pose();
+    odo.pose.pose = static_cast<geometry_msgs::Pose>(kr::Posed(pose));
+    
+    tf_pub_.PublishTransform(odo.pose.pose, odo.header);
+    traj_viz_.PublishTrajectory(odo.pose.pose, odo.header);
+    pub_odometry_.publish(odo);
+  }
+  
+  std::vector<gtsam::Point3> points = estimator_->triangulated_points();
+  if (!points.empty()) {
+    //  publish a point cloud also...
+    
+    sensor_msgs::PointCloud cloud;
+    cloud.header.stamp = odom_msg->header.stamp;
+    cloud.header.frame_id = odom_msg->header.frame_id;
+    sensor_msgs::ChannelFloat32 channel;
+    channel.name = "rgb";
+  
+    union {
+      uint8_t rgb[4];
+      float val;
+    } color;
+  
+    for (const gtsam::Point3& pt : points) {
+      //  find corresponding point 3d  
+      //if (!point3d.is_inlier()) {
+        color.rgb[0] = 255;
+        color.rgb[1] = 255;
+        color.rgb[2] = 0;
+        color.rgb[3] = 0;
+      //} else {
+//        color.rgb[0] = 0;
+//        color.rgb[1] = 255;
+//        color.rgb[2] = 255;
+//        color.rgb[3] = 0;
+      //}
+  
+      geometry_msgs::Point32 p32;
+      p32.x = pt.x();
+      p32.y = pt.y();
+      p32.z = pt.z();
+  
+      cloud.points.push_back(p32);
+      channel.values.push_back(color.val);
+    }
+  
+    cloud.channels.push_back(channel);
+    pub_points_.publish(cloud);
   }
 }
 
@@ -98,11 +167,11 @@ SamEstimatorNode::camInfoCallback(
     const sensor_msgs::CameraInfoConstPtr& r_info) {
   
   model_.fromCameraInfo(l_info,r_info);
-  ROS_INFO("Initialized baseline: %f", model_.baseline());
-  estimator_->SetCalibration(1,1,0,0,model_.baseline());
+  ROS_WARN("Initialized baseline: %f", model_.baseline());
+  estimator_->SetCameraModel(model_);
   sub_l_info_.unsubscribe();
   sub_r_info_.unsubscribe();
-  sync_info_.reset();
+  //sync_info_.reset();
 } 
 
 }  // namespace sam_estimator

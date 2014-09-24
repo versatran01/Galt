@@ -39,13 +39,14 @@ class SamEstimatorNode {
   
 private:
   
-  constexpr static int kROSQueueSize = 100;
+  constexpr static int kROSQueueSize = 300;
 
   SamEstimator::Ptr estimator_;
     
   //  ROS objects
   ros::NodeHandle nh_;
   ros::Publisher pub_odometry_;
+  ros::Publisher pub_points_;
 
   message_filters::Subscriber<nav_msgs::Odometry> sub_odom_;
   message_filters::Subscriber<stereo_vo::StereoFeaturesStamped> sub_features_;
@@ -75,6 +76,11 @@ private:
   
   void camInfoCallback(const sensor_msgs::CameraInfoConstPtr& l_info,
                        const sensor_msgs::CameraInfoConstPtr& r_info);
+  
+  //  rviz stuff
+  kr::rviz_helper::TfPublisher tf_pub_;
+  kr::rviz_helper::TrajectoryVisualizer traj_viz_;
+  //kr::rviz_helper::CovarianceVisualizer cov_viz_;
 };
 
 } //  namespace sam_estimator

@@ -22,7 +22,6 @@
         <arg name="left" value="$(arg left)"/>
         <arg name="right" value="$(arg right)"/>
         <arg name="auto_fix_expose" value="true"/>
-        <arg name="expose_us" value="80"/>
         <arg name="fps" value="25"/>
         <arg name="hdr" value="true"/>
         <arg name="trigger" value="1"/>

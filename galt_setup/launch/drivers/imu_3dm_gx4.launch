@@ -1,0 +1,24 @@
+<!--
+  Name: imu_3dm_gx4.launch
+  Triggers:
+    * imu_3dm_gx4
+
+  Brief: Launch the 3DM-GX4 IMU with the name 'imu'. The device is expected
+  to reside at /dev/ttyACM0. Data rate is set to 200Hz.
+
+  Topics you should record:
+    * /imu/imu
+    * /imu/magnetic_field
+    * /imu/pressure
+-->
+
+<launch>
+    <arg name="serial_id"
+        default="usb-Lord_Microstrain_Lord_Inertial_Sensor_0000__6234.21073-if00"/>
+    <include file="$(find imu_3dm_gx4)/launch/imu.launch">
+        <arg name="device" value="/dev/serial/by-id/$(arg serial_id)"/>
+        <arg name="baudrate" value="921600"/>
+        <arg name="imu_decimation" value="4"/>
+        <arg name="enable_filter" value="false"/>
+    </include>
+</launch>

@@ -14,6 +14,7 @@
  */
 
 #include <sam_estimator/sam_estimator.hpp>
+#include <kr_math/feature.hpp>
 #include <iostream>
 
 #include <ros/ros.h>
@@ -23,195 +24,196 @@ using namespace gtsam;
 namespace galt {
 namespace sam_estimator {
 
-/// gaussian noise model from NxN covariance matrix
-template <int N, typename T>
-static noiseModel::Gaussian::shared_ptr gaussianNoiseModel(const kr::mat<T,N,N>& m) {
-  return noiseModel::Gaussian::Covariance(m.template cast<double>());
-}
+SamEstimator::SamEstimator() : meas_index_(0), initialized_(false) {}
 
-/// initialize an isotropic covariance matrix
-template <int N>
-static kr::mat<double,N,N> isotropicMat(const double& std) {
-  kr::mat<double,N,N> mat;
-  mat.setZero();
-  for (int i=0; i < N; i++) {
-    mat(i,i) = std*std;
+void SamEstimator::AddFrame(const kr::Posed& pose, 
+                            const kr::mat<double,6,6>& pose_cov,
+                const std::vector<stereo_vo::FeatureMsg> &feat_left,
+                const std::vector<stereo_vo::FeatureMsg> &feat_right) {
+  
+  if (!calib_) {
+    return; //  waiting for calibration
   }
-  return mat;
-}
-
-SamEstimator::SamEstimator() : has_vo_pose_(false), rotation_set_(false), meas_index_(0), initialized_(false) {}
-
-void SamEstimator::AddImu(const ImuMeasurement &measurement) {
+  
+  //  gaussian model of noise is taken from GPS-KF
+  auto odom_noise_model = noiseModel::Gaussian::Covariance(pose_cov);
   if (!IsInitialized()) {
-    throw exception("Estimator must be initialized before calling AddImu");
-  }
-  imu_buffer_.push_back(measurement);
-}
-
-void SamEstimator::AddVo(const VoMeasurement& measurement) {
-  
-  //  convert to IMU frame
-  const auto iRc = Eigen::AngleAxisd(M_PI, kr::vec3d(0,1,0));
-  const auto iTc = Eigen::Vector3d(0.09,-0.045,0);
-  const kr::Posed iPc(kr::quatd(iRc.matrix()),iTc);  
-  const kr::Posed imu_vo_pose = measurement.pose.composeInBody(iPc);
-  
-  if (has_vo_pose_) {
-    //  convert into a relative measurement
-    const kr::Posed inc_pose = imu_vo_pose.expressedIn(last_vo_pose_);
-    VoMeasurement rec = measurement;
-    rec.pose = inc_pose;
-    vo_buffer_.push_back(rec);
-  }
-  last_vo_pose_ = imu_vo_pose;
-  has_vo_pose_ = true;
-  
-  //  run through queued measurements
-  while(ProcessQueues());
-}
-
-void SamEstimator::InitializeGraph(const kr::Posed& first_pose,
-                                   const Vector6& sigmas, Timestamp start_time) {
-  if (!initialized_) {
+    //  check difference
+    const kr::Posed diff = pose.expressedIn(previous_odom_);
+    if (diff.p().norm() < 0.3) { /// @todo: make this a parameter
+      //  wait until we've moved a bit for the first pose
+      return;
+    } else {
+      ROS_INFO("Inserting another init pose");
+    }
     
-    const Pose3 initial_pose = static_cast<gtsam::Pose3>(first_pose);
-    current_pose_ = initial_pose;
-    estimates_.insert(CurPoseKey(), current_pose_);
-
-    //  prior on pose
-    auto noise_model = noiseModel::Diagonal::Sigmas(sigmas);
-    graph_.add(PriorFactor<Pose3>(CurPoseKey(), current_pose_, noise_model));
+    //  add first pose
+    const Pose3 initial_pose = static_cast<gtsam::Pose3>(pose);
+    estimates_.insert(CurPoseKey(), initial_pose);
     
-    ROS_INFO("Graph is initialized");
-    initialized_ = true;
-    meas_index_++;
-  }
-}
-
-bool SamEstimator::ProcessQueues() {
-  //  determine which measurement to process next
-  bool have_imu = !imu_buffer_.empty();
-  bool have_vo = !vo_buffer_.empty();
-  
-  if (!have_imu && !have_vo) {
-    return false;
-  }
-  
-  const Timestamp imu_time = have_imu ? imu_buffer_.front().time :
-        std::numeric_limits<double>::infinity();
-  const Timestamp vo_time = have_vo ? vo_buffer_.front().time :
-        std::numeric_limits<double>::infinity();
-  
-  if (imu_time <= vo_time) {
-    HandleImu(imu_buffer_.front());
-    imu_buffer_.pop_front();
+    //  fixed prior factor 
+    graph_.add(PriorFactor<Pose3>(CurPoseKey(), initial_pose, odom_noise_model));
+    ROS_INFO("Adding initialization factor");
   } else {
-    HandleVo(vo_buffer_.front());
-    vo_buffer_.pop_front();
+    ROS_INFO("Adding between factors");
+    const kr::Posed inc_pose = pose.expressedIn(previous_odom_);
+    const Pose3 p3increment = static_cast<Pose3>(inc_pose);
+    
+    //  insert GPS/IMU data as 'fake odometry'
+    graph_.add(BetweenFactor<Pose3>(PrevPoseKey(),
+                                    CurPoseKey(),
+                                    p3increment, odom_noise_model));
+   // graph_.add(Factor<Pose3>(CurPoseKey(), static_cast<Pose3>(pose), 
+    //                              odom_noise_model));
+    //  initial guess
+    estimates_.insert(CurPoseKey(), static_cast<Pose3>(pose));
   }
   
-  return true;
+  triangulated_points_.clear();
+  
+  const auto pixel_noise = noiseModel::Isotropic::Sigma(2, 1.0);
+  gtsam::Cal3_S2::shared_ptr single_calib;  //  calib of left camera
+  single_calib.reset(new gtsam::Cal3_S2(calib_->calibration()));
+  
+  //  iterate through features
+  for (const stereo_vo::FeatureMsg& f : feat_left) {
+    //  old feature
+    if (!f.fresh) {
+      if (current_ids_.find(f.id) != current_ids_.end()) {
+        //  this point was triangulated and an estimate was inserted
+        Point2 point(f.point.x, f.point.y);
+        ProjectionFactor factor(point, pixel_noise, CurPoseKey(),
+                                Symbol('l', f.id), single_calib, 
+                                static_cast<Pose3>(cam_pose_in_body_));
+        graph_.add(factor);   
+      } else {
+        //ROS_WARN("Ignoring feature %u, it was not triangulated", f.id); 
+      }
+    } else {
+      //  new feature
+      //  find the right feature, lazy method for now
+      auto ite = std::find_if(feat_right.cbegin(), feat_right.cend(),
+                              [&](const stereo_vo::FeatureMsg& msg) -> bool {
+        return msg.id == f.id;
+      });
+      assert(ite != feat_right.end());  //  MUST have a match
+      
+      const stereo_vo::FeatureMsg& f_left = f;
+      const stereo_vo::FeatureMsg& f_right = *ite;
+      
+      if (current_ids_.find(f_left.id) == current_ids_.end()) {
+        
+        //  insert initial estimate here
+        gtsam::Point3 tri_point;
+        kr::mat3d tri_cov;
+        if (Triangulate(f_left.point,f_right.point,pose,tri_point,tri_cov)) {
+          triangulated_points_.push_back(tri_point);
+          estimates_.insert(Symbol('l', f_left.id), tri_point);
+          //current_ids_.insert(f_left.id);
+          
+          Point2 point(f_left.point.x, f_left.point.y);
+          ProjectionFactor factor(point, pixel_noise, CurPoseKey(),
+                                  Symbol('l', f_left.id), single_calib, 
+                                  static_cast<Pose3>(cam_pose_in_body_));
+          graph_.add(factor);
+          
+          PriorFactor<Point3> prior(Symbol('l', f_left.id), tri_point, 
+                             noiseModel::Gaussian::Covariance(tri_cov));
+          graph_.add(prior);
+        }
+      }
+    }
+  }
+  ROS_INFO("%lu points are triangulated", triangulated_points_.size());
+  
+  if (IsInitialized()) {
+    //  start optimization after a certain number of poses are collected
+    ROS_INFO("Optimizing");
+    PerformUpdate();
+  } else {
+    //  input pose
+    current_pose_ = static_cast<gtsam::Pose3>(pose);
+  }
+  
+  previous_odom_ = pose;
+  meas_index_++;
 }
 
-void SamEstimator::HandleImu(const ImuMeasurement& imu) {
-  //  last orientation read from filter
-  last_rotation_ = imu.wQb;
-  last_rotation_cov_ = imu.cov;
-  has_rotation_ = true;
+bool SamEstimator::Triangulate(
+                          const geometry_msgs::Point& left,
+                          const geometry_msgs::Point& right,
+                          const kr::Posed& odom_pose,
+                          gtsam::Point3& output_point,
+                          kr::mat3d& covariance) {
+
+  kr::vec2d vleft, vright;  
+  vleft[0] = (left.x - model_.left().cx()) / model_.left().fx();
+  vleft[1] = (left.y - model_.left().cy()) / model_.left().fy();
+  vright[0] = (right.x - model_.right().cx()) / model_.right().fx();
+  vright[1] = (right.y - model_.right().cy()) / model_.right().fy();
+
+  //  left camera pose is identity, right is shifted by baseline
+  const kr::Posed left_cam_pose;
+  kr::Posed right_cam_pose;
+  right_cam_pose.p()[0] += model_.baseline();
+  
+  //  triangulate in the left camera frame
+  kr::vec3d position;
+  double ratio;
+  const double depth = kr::triangulate(left_cam_pose, vleft,
+                  right_cam_pose, vright,
+                  position, ratio);
+  //  convert back to world
+  const kr::Posed cam_in_world = odom_pose.composeInBody(cam_pose_in_body_);
+  position = cam_in_world.transformFromBody(position);
+  
+  /// @todo:  generate a covariance estimate
+  covariance.setIdentity();
+  covariance *= 1.0;
+  
+  output_point = Point3(position[0], position[1], position[2]);
+  
+  /// @todo: make this ratio an option
+  return (ratio < 5e3) && (depth > 0);
 }
 
-void SamEstimator::HandleVo(const VoMeasurement& vo) {
-  if (!has_rotation_) {
-    return;
-  }
-  
-  const kr::Posed inc_pose = vo.pose;
-  const kr::quatd inc_rot = last_vo_rotation_.conjugate() * last_rotation_;
-  last_vo_rotation_ = last_rotation_;
-  
-  if (!rotation_set_) {
-    rotation_set_ = true;
-    return; //  wait until next one...
-  }
-  
-  const Pose3 inc_vo_pose = static_cast<gtsam::Pose3>(inc_pose);
-  const Pose3 previous_pose_ = current_pose_; //  last pose estimate
-  
-  //  some made up bullshit noise on the vo
-  Vector6 vo_noise_sigmas;
-  vo_noise_sigmas << 0.7,0.7,0.7,0.2,0.2,0.2;
-  const auto vo_noise = noiseModel::Diagonal::Sigmas(vo_noise_sigmas);
-  
-  graph_.add(BetweenFactor<Pose3>(PrevPoseKey(),
-                                  CurPoseKey(),
-                                  inc_vo_pose,
-                                  vo_noise));
-  //  more hacky crap
-  const Pose3 inc_rot_pose(Rot3(inc_rot),Point3(0,0,0));
-  
-  kr::mat<double,6,6> inc_rot_cov;
-  inc_rot_cov.setZero();
-  inc_rot_cov.block<3,3>(0,0) = last_rotation_cov_;
-  for (int i=0; i < 3; i++) {
-    inc_rot_cov(i+3,i+3) = 10000.0; //  huge variance on incorrect position
-  }
-  graph_.add(BetweenFactor<Pose3>(PrevPoseKey(),
-                                 CurPoseKey(),
-                                 inc_rot_pose,
-                                 gaussianNoiseModel(inc_rot_cov)));
-  
-  estimates_.insert(CurPoseKey(), previous_pose_);
-  
-  //  optimize
-  PerformUpdate();
-}
 
 void SamEstimator::PerformUpdate() {  
   //  perform ISAM2 update and reset the graph
   isam_.update(graph_, estimates_);
   
   estimates_ = isam_.calculateEstimate();
-  current_pose_ = estimates_.at<Pose3>(CurPoseKey());
+  const Pose3 optimized_pose = estimates_.at<Pose3>(CurPoseKey());
+  current_pose_ = optimized_pose;
   
   //  get variance
-  //gtsam::Marginals marginals(graph_,estimates_);
+  gtsam::Marginals marginals(graph_, estimates_);
   //current_marginals_ = marginals.marginalCovariance(CurPoseKey());
   
-  all_poses_.clear();
-  for (int i=0; i < meas_index_; i++) {
-    all_poses_.push_back(kr::Posed(estimates_.at<Pose3>(PoseKey(i))));
-  }
+//  all_poses_.clear();
+//  for (int i=0; i < meas_index_; i++) {
+//    all_poses_.push_back(kr::Posed(estimates_.at<Pose3>(PoseKey(i))));
+//  }
   
   estimates_.clear();
-  graph_.resize(0); 
-  
-  //  advance one index
-  meas_index_++;
+  graph_.resize(0);
 }
 
-gtsam::noiseModel::Diagonal::shared_ptr SamEstimator::BiasNoiseModel() const {
-  //  note: currently unused
-  Vector6 noise;
-  auto accel_var = config_.accel_bias_std*config_.accel_bias_std;
-  auto gyro_var = config_.gyro_bias_std*config_.gyro_bias_std;
-  noise << accel_var,accel_var,accel_var,gyro_var,gyro_var,gyro_var;
-  return noiseModel::Diagonal::Sigmas(noise);
+void 
+SamEstimator::SetCameraModel(const image_geometry::StereoCameraModel& model) {
+  model_ = model;
+  calib_.reset(new Cal3_S2Stereo(model.left().fx(),model.left().fy(),0,
+                                 model.left().cx(),model.left().cy(),
+                                 model.baseline()));  
+}
+
+void SamEstimator::SetSensorPose(const kr::Posed& cam_pose) {
+  cam_pose_in_body_ = static_cast<Pose3>(cam_pose);
 }
 
 gtsam::Symbol SamEstimator::PoseKey(int index) const {
   assert(index >= 0 && index <= meas_index_);
   return gtsam::Symbol('x', index);
-}
-
-gtsam::Symbol SamEstimator::VelKey(int index) const {
-  assert(index >= 0 && index <= meas_index_);
-  return gtsam::Symbol('v', index);  
-}
-
-gtsam::Symbol SamEstimator::BiasKey(int index) const {
-   assert(index >= 0 && index <= meas_index_);
-  return gtsam::Symbol('b', index);
 }
 
 }  // namespace sam_estimator

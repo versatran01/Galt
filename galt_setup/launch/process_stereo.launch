@@ -1,0 +1,27 @@
+<launch>
+  <!-- Bagfile launch options -->
+  <arg name="bagfile_home" default="$(env GALT_BAGFILES)"/>
+  <arg name="bagfile" default=""/>
+  <arg name="bagfile_start" default="0"/>
+  <arg name="bagfile_path" default="$(arg bagfile_home)/$(arg bagfile).bag"/>
+
+  <!-- Rosbag -->
+  <node name="playback" pkg="rosbag" type="play" output="log"
+        args="--clock -s $(arg bagfile_start) $(arg bagfile_path)"/>
+
+  <!-- Sensor profile to load -->
+  <arg name="profile"/>
+
+  <!-- Frame broadcaster -->
+  <include file="$(find iris_tf)/launch/node.launch">
+  </include>
+
+  <!-- Launch just stereo -->
+  <node pkg="stereo_image_proc" type="stereo_image_proc"
+        name="stereo_image_proc" ns="/mv_stereo">
+  </node>
+  <node name="stereo_vo" pkg="stereo_vo" type="stereo_vo_node"
+      output="screen" ns="/mv_stereo">
+      <rosparam file="$(find galt_setup)/profiles/$(arg profile)/stereo_vo.yml"/>
+  </node>
+</launch>

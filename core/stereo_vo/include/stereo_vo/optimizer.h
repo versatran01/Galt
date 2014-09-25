@@ -31,7 +31,7 @@
 
 #include <image_geometry/stereo_camera_model.h>
 #include "stereo_vo/common.h"
-#include "stereo_vo/keyframe.h"
+//#include "stereo_vo/keyframe.h"
 #include "stereo_vo/point3d.h"
 
 namespace galt {

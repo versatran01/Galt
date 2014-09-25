@@ -17,15 +17,18 @@
 #define GALT_SAM_ESTIMATOR_NODE_HPP_
 
 #include <sam_estimator/sam_estimator.hpp>
-#include <sam_estimator/visualizer.hpp>
 
 #include <ros/ros.h>
-#include <sensor_msgs/Imu.h>
-#include <sensor_msgs/LaserScan.h>
 #include <nav_msgs/Odometry.h>
-#include <geometry_msgs/PoseStamped.h>
+#include <stereo_vo/StereoFeaturesStamped.h>
+#include <message_filters/subscriber.h>
+#include <message_filters/time_synchronizer.h>
+#include <message_filters/sync_policies/approximate_time.h>
+#include <image_geometry/stereo_camera_model.h>
+#include <tf2/buffer_core.h>
+#include <tf2_ros/transform_listener.h>
 
-#include <laser_altimeter/Height.h>
+#include <rviz_helper/visualizer.h> //  for covariance and pose estimates
 
 namespace galt {
 namespace sam_estimator {
@@ -36,33 +39,51 @@ class SamEstimatorNode {
   
 private:
   
-  constexpr static int kROSQueueSize = 1;
+  constexpr static int kROSQueueSize = 300;
 
   SamEstimator::Ptr estimator_;
-  Visualizer::Ptr visualizer_;
     
   //  ROS objects
   ros::NodeHandle nh_;
-  ros::Subscriber sub_gps_;
-  ros::Subscriber sub_imu_;
-  ros::Subscriber sub_vo_;
-  ros::Subscriber sub_laser_height_;
   ros::Publisher pub_odometry_;
+  ros::Publisher pub_points_;
 
-  //  State
-  double init_height_;
-  double prev_imu_time_;
+  message_filters::Subscriber<nav_msgs::Odometry> sub_odom_;
+  message_filters::Subscriber<stereo_vo::StereoFeaturesStamped> sub_features_;
+    
+  typedef message_filters::sync_policies::ApproximateTime<
+    nav_msgs::Odometry, stereo_vo::StereoFeaturesStamped> TimeSyncPolicy;
+  //  time synchronized
+  std::shared_ptr<message_filters::Synchronizer<TimeSyncPolicy>> sync_;
+ 
+  message_filters::Subscriber<sensor_msgs::CameraInfo> sub_l_info_;
+  message_filters::Subscriber<sensor_msgs::CameraInfo> sub_r_info_;
   
-  //  ROS callbacks
-  void GpsCallback(const nav_msgs::OdometryConstPtr& odometry_msg);
-
-  void ImuCallback(const sensor_msgs::ImuConstPtr& imu_msg);
-
-  void VisualOdometryCallback(const geometry_msgs::PoseStampedConstPtr& pose_msg);
-
-  void LaserHeightCallback(const laser_altimeter::HeightConstPtr& height_msg);
+  typedef message_filters::sync_policies::ExactTime<
+    sensor_msgs::CameraInfo, sensor_msgs::CameraInfo> InfoTimeSyncPolicy;
+  std::shared_ptr<message_filters::Synchronizer<InfoTimeSyncPolicy>> sync_info_;
+  
+  //  camera model
+  image_geometry::StereoCameraModel model_;
+  
+  //  transforms
+  tf2::BufferCore core_;
+  tf2_ros::TransformListener tf_listener_;
+  
+  //  synchronized callbacks
+  void odomFeaturesCallback(const nav_msgs::OdometryConstPtr& odom_msg,
+                            const stereo_vo::StereoFeaturesStampedConstPtr& feat_msg);
+  
+  void camInfoCallback(const sensor_msgs::CameraInfoConstPtr& l_info,
+                       const sensor_msgs::CameraInfoConstPtr& r_info);
+  
+  //  rviz stuff
+  kr::rviz_helper::TfPublisher tf_pub_;
+  kr::rviz_helper::TrajectoryVisualizer traj_viz_;
+  //kr::rviz_helper::CovarianceVisualizer cov_viz_;
 };
-}
-}
+
+} //  namespace sam_estimator
+} //  namespace galt
 
 #endif

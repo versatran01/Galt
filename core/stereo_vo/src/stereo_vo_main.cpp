@@ -4,10 +4,11 @@
 
 int main(int argc, char** argv) {
   ros::init(argc, argv, "stereo_vo");
-  ros::NodeHandle nh("~");
+  ros::NodeHandle nh;
+  ros::NodeHandle pnh("~");
 
   try {
-    galt::stereo_vo::StereoVoNode stereo_vo_node(nh);
+    galt::stereo_vo::StereoVoNode stereo_vo_node(nh, pnh);
     ros::spin();
   }
   catch (const std::exception& e) {

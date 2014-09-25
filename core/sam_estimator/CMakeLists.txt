@@ -14,7 +14,10 @@ find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
   nav_msgs
   visualization_msgs
-  laser_altimeter
+  stereo_vo
+  rviz_helper
+  image_geometry
+  tf2
 )
 
 find_package(gtsam REQUIRED)
@@ -31,7 +34,6 @@ add_executable(${PROJECT_NAME}
   src/main.cpp
   src/sam_estimator.cpp
   src/sam_estimator_node.cpp
-  src/visualizer.cpp
 )
 
 target_link_libraries(${PROJECT_NAME}
@@ -43,7 +45,4 @@ target_link_libraries(${PROJECT_NAME}
 add_dependencies(${PROJECT_NAME}
   ${catkin_EXPORTED_TARGETS}
 )
-#  ${PROJECT_NAME}_gencfg
-#  ${PROJECT_NAME}_gencpp
-#  ${${PROJECT_NAME}_EXPORTED_TARGETS}
-#)
+

@@ -20,6 +20,8 @@
 #define KR_MATH_GTSAM_CONVERSIONS
 
 #include <sam_estimator/common.hpp> //  must include after gstam
+#include <stereo_vo/FeatureMsg.h>
+#include <image_geometry/stereo_camera_model.h>
 
 #include <memory>
 #include <stdexcept>
@@ -39,138 +41,78 @@ class SamEstimator {
  public:
   typedef std::shared_ptr<SamEstimator> Ptr;
   typedef std::runtime_error exception;
-  typedef double Timestamp;
-  
-  /**
-   * @brief Options supported by SamEstimator
-   * @todo Load these from ROS param in node class...
-   */
-  struct Configuration {
-    double accel_std;       /// Uncertainty on accelerometer
-    double gyro_std;        /// Gyroscope
-    double integration_std; /// Integration (see ImuFactor)
-    double accel_bias_std;  /// Accelerometer bias
-    double gyro_bias_std;   /// Gyroscope bias
-    
-    double gravity_mag;     /// Magnitude of gravitational acceleration
-    
-    double gps_time_delay;  /// Seconds of delay on GPS measurements
-    
-    Configuration() {
-      //  initialize defaults
-      accel_std = 1.0;
-      gyro_std = 1e-3;
-      integration_std = 1.0;
-      accel_bias_std = 0.01;
-      gyro_bias_std = 1e-3;
-      gravity_mag = 9.80665;
-      gps_time_delay = 0.0;
-    }
-  };
-  
-  /**
-   * @brief IMU measurement: acceleration + gyroscope
-   * @note Order: [ax,ay,az,wx,wy,wz]
-   */
-  struct ImuMeasurement {
-    kr::vec<double,6> z;  /// Accel and angular rates
-    kr::quatd wQb;        /// 3DOF orientation, corrected to geo. north
-    kr::mat3d cov;        /// Covariance on IMU measurement
-    Timestamp time;
-    Timestamp dt;         /// Time over which measurement is valid         
-  };
-  
-  /**
-   * @brief GPS/attitude measurement: orientation + cartesian position
-   * @note Order: [x,y,z,rot_x,rot_y,rot_z,vx,vy,vz]
-   */
-  //  NOTE: unused
-  struct GpsMeasurement {
-    kr::Posed pose;           /// 6 DOF pose
-    kr::vec3d vel;            /// [x,y,z] velocities
-    kr::mat<double,9,9> cov;  /// 9x9 covariance
-    Timestamp time;           /// Timestamp in seconds
-  };
-  
-  /**
-   * @brief Visual odometry measurement: relative position and orientation
-   * @note Order: [x,y,z,rot_x,rot_y,rot_z]
-   */
-  struct VoMeasurement {
-    kr::Posed pose;
-    kr::mat<double,6,6> cov;
-    Timestamp time;
-  };
   
   SamEstimator();
 
-  void AddImu(const ImuMeasurement& measurement);
-
-  void AddVo(const VoMeasurement &measurement);
+  /// Add a new frame with pose estimate and match stereo features    
+  void AddFrame(const kr::Posed& pose, const kr::mat<double,6,6>& pose_cov,
+                const std::vector<stereo_vo::FeatureMsg>& feat_left,
+                const std::vector<stereo_vo::FeatureMsg>& feat_right);
     
-  void Optimize();
+  /// Check if the graph is initialized.
+  bool IsInitialized() const { return meas_index_ >= kNumInitPoses; }
   
-  void InitializeGraph(const kr::Posed& first_pose, const gtsam::Vector6 &sigmas, Timestamp start_time);
-  
-  bool IsInitialized() const { return initialized_; }
-
-  const std::vector<kr::Posed>& AllPoses() const { return all_poses_; }
-  
-  Configuration& Config() { return config_; }
-  const Configuration& Config() const { return config_; }
+  /// Set camera calib.
+  void SetCameraModel(const image_geometry::StereoCameraModel& model);
     
-  const gtsam::Pose3& CurrentPose() const { return current_pose_; }
-  const gtsam::Matrix6& CurrentMarginals() const { return current_marginals_; }
+  /// Set camera pose in body.
+  void SetSensorPose(const kr::Posed& cam_pose);
+  
+  /// Triangulated points from last frame.
+  const std::vector<gtsam::Point3>& triangulated_points() const {
+    return triangulated_points_;
+  }
+  
+  /// Last optimized pose
+  const gtsam::Pose3 current_pose() const {
+    return current_pose_;
+  }
   
 private:
+      
+  struct CandidateEdge {
+    unsigned int pose_id;
+    unsigned int landmark_id;
+    kr::vec2d measurement;
+    kr::vec3d estimate;
+  };
   
-  bool ProcessQueues();
+  std::map<unsigned int, CandidateEdge> candidates_;
   
-  void HandleImu(const ImuMeasurement &imu);
+  /// Triangulate a point.
+  bool Triangulate(const geometry_msgs::Point& left,
+                   const geometry_msgs::Point& right,
+                   const kr::Posed &odom_pose, gtsam::Point3 &output_point,
+                   kr::mat3d& covariance);
   
-  void HandleVo(const VoMeasurement& vo);
-    
-  void AddImuFactor();
+  static constexpr int kNumInitPoses = 2;
   
   void PerformUpdate();
-  
-  gtsam::noiseModel::Diagonal::shared_ptr BiasNoiseModel() const;
-  
+    
   gtsam::Symbol PoseKey(int index) const;
-  gtsam::Symbol VelKey(int index) const;
-  gtsam::Symbol BiasKey(int index) const;
   gtsam::Symbol CurPoseKey() const { return PoseKey(meas_index_); }
-  gtsam::Symbol CurVelKey() const { return VelKey(meas_index_); }
-  gtsam::Symbol CurBiasKey() const { return BiasKey(meas_index_); }
   gtsam::Symbol PrevPoseKey() const { return PoseKey(meas_index_-1); }
-  gtsam::Symbol PrevVelKey() const { return VelKey(meas_index_-1); }
-  gtsam::Symbol PrevBiasKey() const { return BiasKey(meas_index_-1); }
   
   gtsam::NonlinearFactorGraph graph_;
   gtsam::Values estimates_;
   gtsam::ISAM2 isam_;
-  
   gtsam::Pose3 current_pose_;
-  gtsam::Matrix6 current_marginals_;
+  gtsam::Cal3_S2Stereo::shared_ptr calib_;
+  image_geometry::StereoCameraModel model_;
+  kr::Posed cam_pose_in_body_;
   
-  kr::Posed last_vo_pose_;
-  bool has_vo_pose_;
+  std::set<unsigned long> current_ids_;
+  std::vector<gtsam::Point3> triangulated_points_;
   
-  kr::quatd last_rotation_;
-  kr::mat3d last_rotation_cov_;
-  kr::quatd last_vo_rotation_;
-  bool rotation_set_;
-  bool has_rotation_{false};
-  
-  std::deque<ImuMeasurement> imu_buffer_;
-  std::deque<VoMeasurement> vo_buffer_;
-  
-  Configuration config_;
+  typedef gtsam::GenericProjectionFactor<gtsam::Pose3, 
+      gtsam::Point3, gtsam::Cal3_S2> ProjectionFactor;
+    
+  typedef gtsam::GenericStereoFactor<gtsam::Pose3, gtsam::Point3>
+    StereoProjectionFactor;
   
   int meas_index_;
   bool initialized_;
-  
-  std::vector<kr::Posed> all_poses_;
+  kr::Posed previous_odom_;
 };
 
 }  // namespace sam_estimator

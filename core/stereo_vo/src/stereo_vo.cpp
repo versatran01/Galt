@@ -25,7 +25,8 @@ void StereoVo::Initialize(const CvStereoImage &stereo_image,
     return;
   }
 
-  if (!AddKeyFrame(w_T_c(), stereo_image, tracked_features_)) {
+  if (!AddKeyFrame(w_T_c(), pose_covariance(), 
+                   stereo_image, tracked_features_)) {
     ROS_WARN_THROTTLE(1, "Failed to add the first frame as key frame");
     return;
   }
@@ -36,18 +37,20 @@ void StereoVo::Initialize(const CvStereoImage &stereo_image,
   ROS_INFO_STREAM("StereoVo initialized, baseline: " << model_.baseline());
 }
 
-void StereoVo::Iterate(const CvStereoImage &stereo_image,
+bool StereoVo::Iterate(const CvStereoImage &stereo_image,
                        const ros::Time &time) {
   TrackTemporal(prev_stereo_.first, stereo_image.first, tracked_features_);
 
   Display(stereo_image, tracked_features_, key_frames_.back());
 
-  if (ShouldAddKeyFrame()) {
-    AddKeyFrame(w_T_c(), stereo_image, tracked_features_);
+  const bool insert_kf = ShouldAddKeyFrame();
+  if (insert_kf) {
+    AddKeyFrame(w_T_c(), pose_covariance(), stereo_image, tracked_features_);
     PublishStereoFeatures(key_frames_.back(), time);
   }
 
   prev_stereo_ = stereo_image;
+  return insert_kf;
 }
 
 bool StereoVo::InitializePose() {
@@ -55,15 +58,32 @@ bool StereoVo::InitializePose() {
   // transform
   ROS_INFO("First camera pose initialized to:");
   std::cout << w_T_c_.matrix() << std::endl;
+  //  0 uncertainty
+  pose_covariance_.setZero();
   return true;
 }
 
 bool StereoVo::ShouldAddKeyFrame() const {
-  // For now simply add a key frame if tracked features is less than 20
+  // For now simply add a key frame if tracked features is less than 30
   return (tracked_features_.size() < 30);
 }
 
+/// @todo: move this (or something like it) to kr_vision
+template <typename Scalar>
+kr::mat3<Scalar> propagatePoseOnPoint(const kr::Pose<Scalar>& pose,
+                                       const kr::mat<Scalar,6,6>& poseCov,
+                                       const kr::vec3<Scalar>& pointWorld,
+                                       const kr::mat3<Scalar>& pointCov) {
+  const kr::mat3<Scalar>& wRb = pose.wRb();
+  kr::mat<Scalar,3,6> Jpose;
+  Jpose.template block<3,3>(0,0).setIdentity();
+  //  pointWorld should be in world frame already  
+  Jpose.template block<3,3>(0,3) = kr::skewSymmetric<Scalar>(-pointWorld);
+  return wRb*pointCov*wRb.transpose() + Jpose*poseCov*Jpose.transpose();
+}
+
 bool StereoVo::AddKeyFrame(const KrPose &pose,
+                           const kr::mat<scalar_t,6,6>& pose_cov,
                            const CvStereoImage &stereo_image,
                            std::vector<Feature> &features) {
   // Detect new corners based on current feature distribution
@@ -96,13 +116,15 @@ bool StereoVo::AddKeyFrame(const KrPose &pose,
       new_feature.p_cam = CvPoint3(p_cam[0],p_cam[1],p_cam[2]);
       new_feature.p_world = CvPoint3(p_world[0],p_world[1],p_world[2]);
       new_feature.p_cov_cam = tri_cov;
-      //ROS_INFO_STREAM("Triangulated cov: " << tri_cov);
+      new_feature.p_cov_world = 
+          propagatePoseOnPoint(pose, pose_cov,
+                               p_world, new_feature.p_cov_cam);
       
       features.push_back(new_feature);
       ite_l++;
       ite_r++;
     } else {
-      //  bad triangulatio, do not retain this corner
+      //  bad triangulation, do not retain this corner
       ite_l = l_corners.erase(ite_l);
       ite_r = r_corners.erase(ite_r);
     }

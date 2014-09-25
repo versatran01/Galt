@@ -72,7 +72,7 @@ class StereoVoNode {
   stereo_vo::StereoVo stereo_vo_;
   tf2::BufferCore core_;
   tf2_ros::TransformListener tf_listener_;
-  //  ros::Publisher pub_point_;
+  ros::Publisher pub_point_;
   //  ros::Publisher pub_pose_;
   //  visualization_msgs::Marker traj_;
   //  kr::rviz_helper::TfPublisher tf_pub_;
@@ -82,10 +82,9 @@ class StereoVoNode {
   //  void PublishPointCloud(const ros::Time& time,
   //                         const std::string& frame_id = "world") const;
 
-  //  void PublishPointCloud(const std::map<Id, Point3d>& point3ds,
-  //                         const std::deque<FramePtr>& key_frames,
-  //                         const ros::Time& time,
-  //                         const std::string& frame_id) const;
+  void PublishPointCloud(const ros::Time& time,
+                         const std::string& frame_id) const;
+  
   //  void PublishTrajectory(const geometry_msgs::Pose& pose, const ros::Time&
   // time,
   //                         const std::string& frame_id);

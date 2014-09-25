@@ -1,0 +1,15 @@
+<launch>
+    <include file="$(find bluefox2)/launch/single_node.launch">
+        <arg name="serial" value="25000855"/>
+        <arg name="auto_fix_expose" value="true"/>
+        <arg name="fps" value="20"/>
+        <arg name="view" value="true"/>
+    </include>
+
+    <include file="$(find bluefox2)/launch/single_node.launch">
+        <arg name="serial" value="29900189"/>
+        <arg name="auto_fix_expose" value="true"/>
+        <arg name="fps" value="10"/>
+        <arg name="view" value="true"/>
+    </include>
+</launch>

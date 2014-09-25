@@ -1,0 +1,15 @@
+<launch>
+    <include file="$(find flir_gige)/launch/node.launch">
+        <arg name="fps" value="25"/>
+        <arg name="calib_proc" value="true"/>
+        <arg name="view" value="true"/>
+        <arg name="image" value="image_calib"/>
+    </include>
+
+    <include file="$(find bluefox2)/launch/single_node.launch">
+        <arg name="serial" value="25000855"/>
+        <arg name="expose_us" value="300"/>
+        <arg name="fps" value="25"/>
+        <arg name="view" value="true"/>
+    </include>
+</launch>

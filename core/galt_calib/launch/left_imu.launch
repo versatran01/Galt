@@ -1,0 +1,12 @@
+<launch>
+    <include file="$(find bluefox2)/launch/single_node.launch">
+        <arg name="serial" value="25000855"/>
+        <arg name="expose_us" value="15000"/>
+        <arg name="fps" value="20"/>
+        <arg name="view" value="true"/>
+    </include>
+
+    <include file="$(find imu_3dm_gx4)/launch/imu.launch">
+        <arg name="imu_decimation" value="5"/>
+    </include>
+</launch>

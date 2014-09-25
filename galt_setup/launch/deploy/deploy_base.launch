@@ -20,7 +20,10 @@
     <!-- laser -->
     <include file="$(find galt_setup)/launch/drivers/hokuyo_eth.launch"/>
 
-    <!-- bluefox2 -->
+    <!-- camera -->
     <include file="$(find galt_setup)/launch/drivers/bluefox2_sensing.launch"/>
     <include file="$(find galt_setup)/launch/drivers/bluefox2_stereo.launch"/>
+
+    <!--thermal-->
+    <include file="$(find galt_setup)/launch/drivers/flir_gige.launch"/>
 </launch>

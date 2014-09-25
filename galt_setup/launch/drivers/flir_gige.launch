@@ -12,7 +12,7 @@
     * /flir_gige/spot
 -->
 <launch>
-    <include file="$(flir_gige)/launch/node.launch">
+    <include file="$(find flir_gige)/launch/node.launch">
         <arg name="fps" value="20"/>
         <arg name="raw" value="true"/>
     </include>

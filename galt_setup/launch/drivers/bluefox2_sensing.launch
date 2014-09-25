@@ -24,6 +24,7 @@
         <arg name="serial" value="$(arg camera1)"/>
         <arg name="fps" value="10"/>
         <arg name="auto_fix_expose" value="true"/>
+        <arg name="color" value="true"/>
         <arg name="trigger" value="$(arg trigger)"/>
     </include>
 

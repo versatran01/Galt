@@ -18,10 +18,6 @@
         /imu/imu
         /imu/magnetic_field
         /imu/pressure
-        /attitude_eskf/adjusted_field
-        /attitude_eskf/bias
-        /attitude_eskf/filtered_imu
-        /attitude_eskf/status
         /spectrometer/spectrum
         /ublox_gps/fix
         /ublox_gps/fix_velocity

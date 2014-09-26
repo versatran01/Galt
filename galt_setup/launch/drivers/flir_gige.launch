@@ -1,0 +1,19 @@
+<!--
+  Name: flir_gige.launch
+  Triggers:
+    * fir_gige
+
+  Brief: Launch the flir_gige node. Uses calibration file in:
+  galt_setup/calib/flir_a35.yml
+
+  Topics you should record:
+    * /flir_gige/image_raw
+    * /flir_gige/camera_info
+    * /flir_gige/spot
+-->
+<launch>
+    <include file="$(find flir_gige)/launch/node.launch">
+        <arg name="fps" value="20"/>
+        <arg name="raw" value="true"/>
+    </include>
+</launch>

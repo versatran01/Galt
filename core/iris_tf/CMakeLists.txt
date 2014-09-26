@@ -3,14 +3,13 @@ project(iris_tf)
 
 add_definitions("-std=c++11 -Wall")
 find_package(catkin REQUIRED COMPONENTS
-    roscpp
-    tf2 tf2_ros
+    tf2_ros
     )
 
 catkin_package(
     #INCLUDE_DIRS include
     #LIBRARIES iris_tf
-    #CATKIN_DEPENDS roscpp tf2 tf2_ros
+    CATKIN_DEPENDS tf2_ros
     #DEPENDS system_lib
     )
 

@@ -18,13 +18,12 @@
 <launch>
     <arg name="left" default="25000855"/>
     <arg name="right" default="25001110"/>
-    <arg name="expose_us" default="200"/>
     <include file="$(find bluefox2)/launch/stereo_node.launch">
         <arg name="left" value="$(arg left)"/>
         <arg name="right" value="$(arg right)"/>
-        <arg name="left_calib_url" value="package://bluefox2/calib/calib_$(arg left).yml"/>
-        <arg name="right_calib_url" value="package://bluefox2/calib/calib_$(arg right).yml"/>
-        <arg name="expose_us" value="$(arg expose_us)"/>
+        <arg name="auto_fix_expose" value="true"/>
+        <arg name="fps" value="25"/>
+        <arg name="hdr" value="true"/>
         <arg name="trigger" value="1"/>
     </include>
 </launch>

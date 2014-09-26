@@ -8,6 +8,7 @@
 #include "opencv2/video/video.hpp"
 
 #include <kr_math/feature.hpp>
+#include <kr_math/SO3.hpp>
 
 namespace galt {
 namespace stereo_vo {

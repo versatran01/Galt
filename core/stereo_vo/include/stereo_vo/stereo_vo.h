@@ -3,15 +3,15 @@
 
 #include "stereo_vo/common.h"
 #include "stereo_vo/feature.h"
-#include "stereo_vo/point3d.h"
-#include "stereo_vo/feature_detector.h"
-#include "stereo_vo/keyframe.h"
-#include "stereo_vo/tracker.h"
+#include "stereo_vo/detector.h"
+#include "stereo_vo/frame.h"
 
 #include <vector>
-#include <memory>
+#include <deque>
 
 #include <image_geometry/stereo_camera_model.h>
+#include <sophus/se3.hpp>
+#include <kr_math/base_types.hpp>
 
 #include "opencv2/core/core.hpp"
 
@@ -22,65 +22,58 @@ using image_geometry::StereoCameraModel;
 
 class StereoVo {
  public:
-  StereoVo() : init_(false), init_pose_(false) {}
+  StereoVo()
+      : init_(false),
+        pnh_("~"),
+        pub_features_(pnh_.advertise<StereoFeaturesStamped>("features", 1)) {}
 
   void set_config(const StereoVoDynConfig &config) {
     config_ = config;
     detector_.set_cell_size(config_.cell_size);
   }
-
   bool init() const { return init_; }
+  const KrPose &w_T_c() const { return w_T_c_; }
 
-  bool init_pose() const { return init_pose_; }
-  void set_init_pose(bool init_pose) { init_pose_ = init_pose; }
-
-  const KrPose &pose() const { return pose_; }
-  void set_pose(const KrPose &pose) { pose_ = pose; }
-
-  const std::map<Id, Point3d> &points() const { return points_; }
-
-  const std::vector<Feature> &features() const {
-    return temporal_tracker_.features();
-  }
-
-  /**
-   * @brief Initialize
-   * @param stereo_image
-   * @param model
-   */
   void Initialize(const CvStereoImage &stereo_image,
                   const StereoCameraModel &model);
-  /**
-   * @brief Iterate Do one iteration of stereo visual odometry
-   * @param stereo_image Incoming stereo image
-   */
-  void Iterate(const CvStereoImage &stereo_image);
+  void Iterate(const CvStereoImage &stereo_image, const ros::Time &time);
 
  private:
-  /// Add a key frame.
-  void AddKeyFrame(const CvStereoImage &stereo_image);
-
-  /// Check if a key frame should be added.
+  bool InitializePose();
+  bool AddKeyFrame(const KrPose& pose, const CvStereoImage &stereo_image,
+                   std::vector<Feature> &features);
+  void TrackSpatial(const cv::Mat &image1, const cv::Mat &image2,
+                    std::vector<CvPoint2> &l_corners,
+                    std::vector<CvPoint2> &r_corners);
+  void TrackTemporal(const cv::Mat &image1, const cv::Mat &image2,
+                     std::vector<Feature> &features);
+  void OpticalFlow(const cv::Mat &image1, const cv::Mat &image2,
+                   const std::vector<CvPoint2> &points1,
+                   std::vector<CvPoint2> &points2, std::vector<uchar> &status);
+  void FindFundamentalMat(const std::vector<CvPoint2> &points1,
+                          const std::vector<CvPoint2> &points2,
+                          std::vector<uchar> &status);
   bool ShouldAddKeyFrame() const;
+  void PublishStereoFeatures(const KeyFrame &keyframe,
+                             const ros::Time &time) const;
+ 
+  /// Triangulate left and right observations into 3d space.
+  bool TriangulatePoint(const CvPoint2& lp, ///< Left point in pixels.
+                        const CvPoint2& rp, ///< Right point in pixels.
+                        kr::vec3<scalar_t>& p3d,    ///< Output point in camera.
+                        kr::mat3<scalar_t>& sigma); ///< Covariance.
 
-  /**
-   * @brief Estimate pose with Ransac PnP.
-   */
-  void EstimatePose();
+  bool init_;
+  StereoCameraModel model_;
+  StereoVoDynConfig config_;
+  KrPose w_T_c_;
+  FeatureDetector detector_;
+  std::deque<KeyFrame> key_frames_;
+  std::vector<Feature> tracked_features_;
+  CvStereoImage prev_stereo_;
 
-  bool init_;                 ///< True if stereo_vo is initialized
-  bool init_pose_;            ///< True if initial pose is set
-  KrPose pose_;               ///< Pose initialized from gps_kf
-  StereoCameraModel model_;   ///< Stereo camera model
-  StereoVoDynConfig config_;  ///< Dynamic reconfigure config of stereo_vo
-  FeatureDetector detector_;  ///< Grid based feature detector
-  std::vector<KeyFramePtr> key_frames_;  ///< A deque of key frames in window
-
-  Tracker temporal_tracker_;  ///< Track features previous to current.
-  Tracker spatial_tracker_;   ///< Track features left to right.
-  cv::Mat prev_left_image_;   ///< Last left image.
-
-  std::map<Id, Point3d> points_;  ///< 3D points, keyed by unique ID.
+  ros::NodeHandle pnh_;
+  ros::Publisher pub_features_;
 };
 
 }  // namespace stereo_vo

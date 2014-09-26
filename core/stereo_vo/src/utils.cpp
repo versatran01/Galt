@@ -9,51 +9,91 @@
 
 namespace galt {
 namespace stereo_vo {
-
-void Display(const cv::Mat &image,
-             const std::vector<Feature> &keyframe_features,
-             const std::vector<Feature> &tracked_features) {
+void Display(const CvStereoImage &stereo_image,
+             const std::vector<Feature> &tracked_features,
+             const KeyFrame &key_frame) {
   cv::namedWindow("display",
                   CV_WINDOW_NORMAL | CV_WINDOW_KEEPRATIO | CV_GUI_EXPANDED);
+  Display(key_frame.l_image(), key_frame.r_image(), stereo_image.first,
+          stereo_image.second, key_frame.features(), key_frame.r_corners(),
+          tracked_features);
+}
+
+void Display(const cv::Mat &l_image_prev, const cv::Mat &r_image_prev,
+             const cv::Mat &l_image, const cv::Mat &r_image,
+             const cv::vector<Feature> &keyframe_features,
+             const cv::vector<CvPoint2> &r_corners,
+             const cv::vector<Feature> &tracked_features) {
+  int n_rows = l_image_prev.rows;
+  int n_cols = l_image_prev.cols;
+  cv::Mat display_gray(2 * n_rows, 2 * n_cols, CV_8UC1);
+
+  // Copy 2 frames 4 iamges on to one display
+  l_image_prev.copyTo((display_gray(cv::Rect(0, 0, n_cols, n_rows))));
+  r_image_prev.copyTo(display_gray(cv::Rect(n_cols, 0, n_cols, n_rows)));
+  l_image.copyTo(display_gray(cv::Rect(0, n_rows, n_cols, n_rows)));
+  r_image.copyTo(display_gray(cv::Rect(n_cols, n_rows, n_cols, n_rows)));
+
   // Convert to color
   cv::Mat display;
-  cv::cvtColor(image, display, CV_GRAY2BGR);
+  cv::cvtColor(display_gray, display, CV_GRAY2BGR);
 
-  // Draw tracked features
-  DrawFeatures(display, tracked_features, cv_color::GREEN);
+  // Draw stuff on display
+  DrawFeatures(display, keyframe_features, cv_color::GREEN);
+  DrawFeatures(display, tracked_features, cv_color::GREEN, CvPoint2(0, n_rows));
+  DrawCorners(display, r_corners, cv_color::ORANGE, CvPoint2(n_cols, 0));
+  DrawStereoMatch(display, keyframe_features, r_corners, cv_color::YELLOW,
+                  CvPoint2(n_cols, 0));
+
   DrawCorrespondence(display, keyframe_features, tracked_features,
-                     cv_color::YELLOW);
+                     cv_color::CYAN, CvPoint2(0, n_rows));
 
-  // Draw annotations
-  AnnotateFeatureCounts(display, keyframe_features, cv_color::RED, 1);
-  AnnotateFeatureCounts(display, tracked_features, cv_color::GREEN, 4);
-
-  // Display
+  // Show image
   cv::imshow("display", display);
   cv::waitKey(1);
 }
 
+void DrawStereoMatch(cv::Mat &image, const std::vector<Feature> &features,
+                     const std::vector<CvPoint2> &corners,
+                     const cv::Scalar &color, const CvPoint2 &offset) {
+  auto fit = std::find_if(features.cbegin(), features.cend(),
+                          [](const Feature &f) { return f.fresh; });
+  for (const CvPoint2 &c : corners) {
+    const Feature &f = *fit++;
+    cv::line(image, f.px, c + offset, color);
+  }
+}
+
+void DrawCorners(cv::Mat &image, const std::vector<CvPoint2> &corners,
+                 const cv::Scalar &color, const CvPoint2 &offset) {
+  std::for_each(corners.cbegin(), corners.cend(), [&](const CvPoint2 &c) {
+    cv::circle(image, c + offset, 1, color, 2);
+  });
+}
+
 void DrawFeatures(cv::Mat &image, const std::vector<Feature> &features,
-                  const cv::Scalar &color) {
-  std::for_each(features.cbegin(), features.cend(),
-                [&](const Feature &feature) {
-    cv::circle(image, feature.p_pixel(), 1, color, 2);
+                  cv::Scalar color, const CvPoint2 &offset) {
+  std::for_each(features.cbegin(), features.cend(), [&](const Feature &f) {
+    if (f.fresh) color = cv_color::RED;
+    cv::circle(image, f.px + offset, 1, color, 2);
   });
 }
 
 void DrawCorrespondence(cv::Mat &image, const std::vector<Feature> &features1,
                         const std::vector<Feature> &features2,
-                        const cv::Scalar &color) {
+                        const cv::Scalar &color, const CvPoint2 &offset) {
   for (const Feature &f1 : features1) {
     const auto it =
         std::find_if(features2.cbegin(), features2.cend(),
-                     [&f1](const Feature &f2) { return f1.id() == f2.id(); });
+                     [&f1](const Feature &f2) { return f1.id == f2.id; });
     if (it != features2.end()) {
-      cv::line(image, f1.p_pixel(), it->p_pixel(), color);
+      const Feature &f2 = *it;
+      cv::line(image, f1.px, f2.px + offset, color);
     }
   }
 }
 
+/*
 void AnnotateFeatureCounts(cv::Mat &image, const std::vector<Feature> &features,
                            const cv::Scalar &color, int quadrant) {
 
@@ -69,83 +109,7 @@ void AnnotateFeatureCounts(cv::Mat &image, const std::vector<Feature> &features,
   cv::putText(image, std::to_string(features.size()), positions[quadrant - 1],
               cv::FONT_HERSHEY_SIMPLEX, 1, color, 2);
 }
-
-/*
-void Display(const CvStereoImage &stereo_image,
-             const std::vector<Feature> &features, const FramePtr &key_frame)
-{
-  auto &l_image = stereo_image.first;
-  auto &r_image = stereo_image.second;
-  auto &l_image_prev = key_frame->l_image();
-  auto &r_image_prev = key_frame->r_image();
-  int n_rows = l_image.rows;
-  int n_cols = l_image.cols;
-  static cv::Mat display_gray(2 * n_rows, 2 * n_cols, CV_8UC1);
-
-  // Copy 2 frames 4 images on to one display
-  l_image_prev.copyTo(display_gray(cv::Rect(0, 0, n_cols, n_rows)));
-  r_image_prev.copyTo(display_gray(cv::Rect(n_cols, 0, n_cols, n_rows)));
-  l_image.copyTo(display_gray(cv::Rect(0, n_rows, n_cols, n_rows)));
-  r_image.copyTo(display_gray(cv::Rect(n_cols, n_rows, n_cols, n_rows)));
-
-  // Convert to color
-  cv::Mat display;
-  cv::cvtColor(display_gray, display, CV_GRAY2BGR);
-
-  // Add text annotation
-  double offset_x = 10.0, offset_y = 30.0;
-  auto font = cv::FONT_HERSHEY_SIMPLEX;
-  double scale = 1.0, thickness = 2.0;
-  auto text_color = cv_color::CYAN;
-  // Which frame?
-  cv::putText(display, "current frame", CvPoint2(offset_x, n_rows + offset_y),
-              font, scale, text_color, thickness);
-  // How many matching features?
-  std::ostringstream ss;
-  ss << "C/F: " << features.size() << "/" << key_frame->features().size();
-  cv::putText(display, ss.str(), CvPoint2(offset_x, n_rows * 2 - offset_y /
-2),
-              font, scale, text_color, thickness);
-  //  ss.str(std::string());
-  //  ss << "Features: " << key_frame.features().size();
-  //  cv::putText(display, ss.str(), CvPoint2(offset_x, n_rows - offset_y /
-2),
-  //              font, scale, cv_color::YELLOW, thickness);
-
-  // Draw currently tracked features on current frame and key frame
-  for (const Feature &feature : features) {
-    auto p = feature.p_pixel() + CvPoint2(0, n_rows);
-    auto color = cv_color::RED;
-    if (feature.init()) color = cv_color::MAGENTA;
-    cv::circle(display, p, 1, color, 2);
-    cv::circle(display, feature.p_pixel(), 1, color, 2);
-  }
-
-  // Draw key frame features on key frame left
-  const auto &kf_features = key_frame->features();
-  for (const Feature &feature : kf_features) {
-    auto color = cv_color::GREEN;
-    if (feature.init()) color = cv_color::ORANGE;
-    cv::circle(display, feature.p_pixel(), 1, color, 2);
-  }
-
-  // Draw lines between corresponding features
-  for (const Feature &feature : features) {
-    auto id = feature.id();
-    const auto it =
-        std::find_if(kf_features.cbegin(), kf_features.cend(),
-                     [id](const Feature &f) { return id == f.id(); });
-    if (it != kf_features.end()) {
-      const CvPoint2 &p1 = it->p_pixel();
-      const CvPoint2 &p2 = feature.p_pixel();
-      cv::line(display, p1, p2, cv_color::YELLOW);
-    }
-  }
-
-  // Display image
-  cv::imshow("display", display);
-  cv::waitKey(1);
-}
 */
+
 }  // namespace stereo_vo
 }  // namespace galt

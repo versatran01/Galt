@@ -28,12 +28,15 @@
 namespace galt {
 namespace stereo_vo {
 
-using namespace sensor_msgs;
-using namespace message_filters::sync_policies;
+using sensor_msgs::Image;
+using sensor_msgs::CameraInfo;
+using sensor_msgs::ImageConstPtr;
+using sensor_msgs::CameraInfoConstPtr;
+using message_filters::sync_policies::ExactTime;
 
 class StereoVoNode {
  public:
-  StereoVoNode(const ros::NodeHandle& nh);
+  StereoVoNode(const ros::NodeHandle& nh, const ros::NodeHandle& pnh);
 
  private:
   using CinfoSubscriberFilter = message_filters::Subscriber<CameraInfo>;
@@ -42,40 +45,42 @@ class StereoVoNode {
 
   void SubscribeStereoTopics(const std::string& image_topic,
                              const std::string& cinfo_topic,
-                             const image_transport::TransportHints& hints);
+                             const std::string& transport);
 
-  void OdometryCb(const nav_msgs::OdometryConstPtr& odom_msg);
+  //  void OdometryCb(const nav_msgs::OdometryConstPtr& odom_msg);
 
   void StereoCb(const ImageConstPtr& l_image_msg,
                 const CameraInfoConstPtr& l_cinfo_msg,
                 const ImageConstPtr& r_image_msg,
                 const CameraInfoConstPtr& r_cinfo_msg);
 
-  void ReconfigureCb(const StereoVoDynConfig& config, int level);
+  void ConfigCb(StereoVoDynConfig& config, int level);
 
-  ros::NodeHandle nh_;                              ///< Private nodehandle
-  image_transport::ImageTransport it_;              ///< Private image transport
-  image_transport::SubscriberFilter l_image_sub_;   ///< Left image subscriber
-  image_transport::SubscriberFilter r_image_sub_;   ///< Right image subscriber
-  CinfoSubscriberFilter l_cinfo_sub_;               ///< Left cinfo subscriber
-  CinfoSubscriberFilter r_cinfo_sub_;               ///< Right cinfo subscriber
-  ros::Subscriber odom_sub_;                        ///< Kf odometry subscriber
-  ros::Publisher point_pub_;                        ///< Publisher for points
-  ros::Publisher pose_pub_;                         ///< Publisher for pose
-  boost::shared_ptr<ExactSync> exact_sync_;         ///< Exact time sync policy
-  visualization_msgs::Marker traj_;                 ///< Trajectory marker
-  image_geometry::StereoCameraModel stereo_model_;  ///< Stereo camera model
-  kr::rviz_helper::TfPublisher tf_pub_;             ///< Transfrom publisher
-  kr::rviz_helper::TrajectoryVisualizer traj_viz_;  ///< Trajectory visualizer
-  std::string frame_id_;                            ///< Reference frame
-  StereoVo stereo_vo_;                              ///< Stereo visual odometry
+  CvStereoImage FromImage(const ImageConstPtr& l_image_msg,
+                          const ImageConstPtr& r_image_msg);
+  ros::NodeHandle nh_, pnh_;
+  std::string parent_frame_id_;
+  std::string frame_id_;
+  image_transport::ImageTransport it_;
+  image_transport::SubscriberFilter sub_l_image_;
+  image_transport::SubscriberFilter sub_r_image_;
+  CinfoSubscriberFilter sub_l_cinfo_;
+  CinfoSubscriberFilter sub_r_cinfo_;
+  boost::shared_ptr<ExactSync> exact_sync_;
+  dynamic_reconfigure::Server<StereoVoDynConfig> cfg_server_;
+  StereoVoDynConfig config_;
+  stereo_vo::StereoVo stereo_vo_;
   tf2::BufferCore core_;
   tf2_ros::TransformListener tf_listener_;
-  dynamic_reconfigure::Server<StereoVoDynConfig> cfg_server_;
+  //  ros::Publisher pub_point_;
+  //  ros::Publisher pub_pose_;
+  //  visualization_msgs::Marker traj_;
+  //  kr::rviz_helper::TfPublisher tf_pub_;
+  //  kr::rviz_helper::TrajectoryVisualizer traj_viz_;
 
   /// Visualize point cloud of triangulated points
-  void PublishPointCloud(const ros::Time& time,
-                         const std::string& frame_id = "world") const;
+  //  void PublishPointCloud(const ros::Time& time,
+  //                         const std::string& frame_id = "world") const;
 
   //  void PublishPointCloud(const std::map<Id, Point3d>& point3ds,
   //                         const std::deque<FramePtr>& key_frames,
@@ -85,6 +90,8 @@ class StereoVoNode {
   // time,
   //                         const std::string& frame_id);
 };
+
+void ProcessStereoImage(const cv::Mat& l_image, cv::Mat& r_image);
 
 }  // namespace stereo_vo
 }  // namespace galt

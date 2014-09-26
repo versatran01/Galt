@@ -1,27 +1,23 @@
 <launch>
-    <arg name="stereo_ns" default="/mv_stereo"/>
+    <arg name="stereo" default="mv_stereo"/>
     <arg name="disparity" default="false"/>
     <arg name="rviz" default="false"/>
 
-    <!--StereoVO Node-->
+    <!--Node-->
     <include file="$(find stereo_vo)/launch/stereo_vo.launch">
-      <arg name="stereo_ns" value="$(arg stereo_ns)"/>
+      <arg name="stereo" value="$(arg stereo)"/>
+      <arg name="cell_size" value="50"/>
     </include>
 
     <!--Rosbag-->
-    <arg name="bagfile_home" default="$(env GALT_BAGFILES)"/>
-    <arg name="bagfile" default=""/>
-    <arg name="bagfile_path" default="$(arg bagfile_home)/$(arg bagfile)"/>
-    <arg name="bagfile_start" default="0"/>
-
-    <node pkg="rosbag" type="play" name="player"
-        args="-s $(arg bagfile_start) -r 1 $(arg bagfile_path)">
+    <arg name="bagfile" default="/home/chao/Workspace/bag/mrsl/mrsl1.bag"/>
+    <node pkg="rosbag" type="play" name="player" args="$(arg bagfile) -r 0.2">
     </node>
 
     <!--Disparity-->
     <node if="$(arg disparity)"
         pkg="image_view" type="stereo_view" name="stereo_view"
-        args="stereo:=$(arg stereo_ns) image:=image_rect">
+        args="stereo:=$(arg stereo) image:=image_rect">
     </node>
 
     <!--Rviz-->

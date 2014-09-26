@@ -18,13 +18,23 @@ namespace stereo_vo {
 
 StereoVoNode::StereoVoNode(const ros::NodeHandle& nh,
                            const ros::NodeHandle& pnh)
-    : nh_(nh), pnh_(pnh), it_(nh), tf_listener_(core_) {
+    : nh_(nh), pnh_(pnh), it_(nh), tf_listener_(core_),
+      traj_viz_(pnh_), cov_viz_(pnh_) {
+  
   pnh_.param<std::string>("parent_frame_id", parent_frame_id_, "world");
   pnh_.param<std::string>("frame_id", frame_id_, "stereo_vo");
   SubscribeStereoTopics("image_rect", "camera_info", "raw");
   cfg_server_.setCallback(boost::bind(&StereoVoNode::ConfigCb, this, _1, _2));
   
   pub_point_ = pnh_.advertise<sensor_msgs::PointCloud>("points", 1);
+  
+  //  configure visualization tools
+  traj_viz_.set_color(kr::rviz_helper::colors::GREEN);
+  traj_viz_.set_alpha(1);
+  traj_viz_.set_num_skip(12);
+  cov_viz_.set_color(kr::rviz_helper::colors::GREEN);
+  cov_viz_.set_alpha(0.5);
+  tf_pub_.set_child_frame_id(frame_id_);
 }
 
 void StereoVoNode::SubscribeStereoTopics(const std::string& image_topic,
@@ -121,6 +131,7 @@ void StereoVoNode::StereoCb(const ImageConstPtr& l_image_msg,
     /// @todo: make frame_id a parameter...
     PublishPointCloud(l_image_msg->header.stamp, "stereo");
   }
+  PublishPoseAndViz(l_image_msg->header.stamp);
   
   //  publish points and pose
   //  if (!frame_id_.empty()) {
@@ -179,30 +190,24 @@ void StereoVoNode::PublishPointCloud(const ros::Time& time,
   pub_point_.publish(cloud);
 }
 
-/*
-void StereoVoNode::PublishPoseStamped(const geometry_msgs::Pose& pose,
-                                      const ros::Time& time,
-                                      const std::string& frame_id) const {
-  geometry_msgs::PoseStamped pose_stamped;
-  pose_stamped.header.stamp = time;
-  pose_stamped.header.frame_id = frame_id;
-  pose_stamped.pose = pose;
-  pose_pub_.publish(pose_stamped);
+void StereoVoNode::PublishPoseAndViz(const ros::Time& time) {
+  
+  geometry_msgs::PoseWithCovarianceStamped pose;
+  pose.header.stamp = time;
+  pose.header.frame_id = parent_frame_id_;
+  pose.pose.pose = static_cast<geometry_msgs::Pose>(stereo_vo_.w_T_c());
+  
+  const kr::mat<scalar_t,6,6> cur_cov = stereo_vo_.pose_covariance();
+  for (int i=0; i < 6; i++) {
+    for (int j=0; j < 6; j++) {
+      pose.pose.covariance[i*6 + j] = cur_cov(i,j);
+    }
+  }
+  
+  tf_pub_.PublishTransform(pose.pose.pose,parent_frame_id_,time);
+  cov_viz_.PublishCovariance(pose);
+  traj_viz_.PublishTrajectory(pose.pose.pose, pose.header);
 }
-
-void StereoVoNode::PublishTrajectory(const geometry_msgs::Pose& pose,
-                                     const ros::Time& time,
-                                     const std::string& frame_id) {
-  traj_.header.stamp = time;
-  traj_.header.frame_id = frame_id;
-  geometry_msgs::Point p;
-  p.x = pose.position.x;
-  p.y = pose.position.y;
-  p.z = pose.position.z;
-  traj_.points.push_back(p);
-  traj_pub_.publish(traj_);
-}
-*/
 
 CvStereoImage StereoVoNode::FromImage(const ImageConstPtr& l_image_msg,
                                       const ImageConstPtr& r_image_msg) {

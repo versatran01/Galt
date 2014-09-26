@@ -98,7 +98,7 @@ propagatePointsOnPose(const std::vector<CvPoint3>& p_world,
   
   for (size_t i=0; i < p_world.size(); i++) {
     //  jacobian of pose
-    const kr::vec3<double> p(p_world[i].x,p_world[i].y,p_world[i].z);
+    const kr::vec3<double> p(p_world[i].x, p_world[i].y, p_world[i].z);
     kr::mat<double,3,6> J;
     J.template block<3,3>(0,0).setIdentity();
     J.template block<3,3>(0,3) = kr::skewSymmetric<double>(-p);

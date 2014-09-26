@@ -70,6 +70,9 @@ class StereoVo {
                         kr::vec3<scalar_t>& p3d,    ///< Output point in camera.
                         kr::mat3<scalar_t>& sigma); ///< Covariance.
 
+  /// Set current pose w/ Ransac PnP and update current pose covariance.
+  void EstimatePose();
+  
   bool init_;
   StereoCameraModel model_;
   StereoVoDynConfig config_;

@@ -68,7 +68,7 @@ bool StereoVo::InitializePose() {
 
 bool StereoVo::ShouldAddKeyFrame() const {
   // For now simply add a key frame if tracked features is less than 30
-  return (tracked_features_.size() < 30);
+  return (tracked_features_.size() < 15);
 }
 
 /// @todo: move this (or something like it) to kr_vision
@@ -92,29 +92,32 @@ propagatePointsOnPose(const std::vector<CvPoint3>& p_world,
                       const std::vector<kr::mat3<Scalar>>& p_world_cov) {
   assert(p_world.size() == p_world_cov.size());
   assert(p_world.size() >= 2);
-  
-  kr::mat<Scalar,6,6> P;
+  /// @note: perform these operations as double to avoid problems inverting
+  kr::mat<double,6,6> P;
   P.setZero();
   
   for (size_t i=0; i < p_world.size(); i++) {
     //  jacobian of pose
-    const kr::vec3<Scalar> p(p_world[i].x,p_world[i].y,p_world[i].z);
-    kr::mat<Scalar,3,6> J;
+    const kr::vec3<double> p(p_world[i].x,p_world[i].y,p_world[i].z);
+    kr::mat<double,3,6> J;
     J.template block<3,3>(0,0).setIdentity();
-    J.template block<3,3>(0,3) = kr::skewSymmetric<Scalar>(-p);
+    J.template block<3,3>(0,3) = kr::skewSymmetric<double>(-p);
     
     //  compute inverse covariance of point
-    kr::mat3<Scalar> alpha;
+    kr::mat3<double> alpha;
     bool invertible;
-    p_world_cov[i].computeInverseWithCheck(alpha, invertible);
+    kr::mat3<double> sigma = p_world_cov[i].template cast<double>();
+    sigma.computeInverseWithCheck(alpha, invertible);
     if (invertible) {
       P.noalias() += J.transpose() * alpha * J;
+    } else {
+      ROS_INFO_STREAM("Matrix was not invertible: " << p_world_cov[i]);
     }
   }
   
   //  invert to obtain final covariance
-  const Eigen::FullPivLU<kr::mat<Scalar,6,6>> FPLU = P.fullPivLu();
-  return FPLU.inverse();
+  const Eigen::FullPivLU<kr::mat<double,6,6>> FPLU = P.fullPivLu();
+  return FPLU.inverse().cast<Scalar>();
 }
 
 bool StereoVo::AddKeyFrame(const KrPose &pose,
@@ -305,7 +308,7 @@ void StereoVo::EstimatePose() {
   if (inlier_points.size() >= 2) {
     pose_covariance_ = propagatePointsOnPose<scalar_t>(inlier_points, inlier_cov);
   }
-  ROS_INFO_STREAM("Pose covariance: " << pose_covariance());
+  //ROS_INFO_STREAM("Pose covariance: " << pose_covariance());
 }
 
 /*

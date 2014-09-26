@@ -22,7 +22,7 @@
     <arg name="bagfile_path" default="$(arg bagfile_home)/$(arg bagfile).bag"/>
     <arg name="profile" default="steadicam"/>
 
-    <include file="$(find galt_setup)/launch/process_gps_imu.launch">
+    <include file="$(find galt_setup)/launch/process/process_gps_imu.launch">
         <arg name="bagfile_home" value="$(arg bagfile_home)"/>
         <arg name="bagfile" value="$(arg bagfile)"/>
         <arg name="bagfile_start" value="$(arg bagfile_start)"/>

@@ -26,16 +26,16 @@
   <arg name="profile"/>
 
   <!-- Frame broadcaster -->
-  <include file="$(find iris_tf)/launch/node.launch">
+  <include file="$(find galt_setup)/profiles/$(arg profile)/tf.launch">
   </include>
 
   <!-- Laser Filter -->
-  <include file="$(find galt_setup)/launch/laser_filter.launch">
+  <include file="$(find galt_setup)/launch/process/laser_filter.launch">
     <arg name="filter" value="$(find galt_setup)/profiles/$(arg profile)/laser_filter.yml"/>
   </include>
 
   <!-- Laser Assembler -->
-  <include file="$(find galt_setup)/launch/laser_assembler.launch">
+  <include file="$(find galt_setup)/launch/process/laser_assembler.launch">
     <arg name="max_scans" value="4000"/>
   </include>
 

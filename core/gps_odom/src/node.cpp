@@ -141,7 +141,7 @@ void Node::gpsCallback(
 
   /// @todo: get rid of this scale factor for next data sets!
   /// This is only here because of mistake in ublox_gps
-  const double hackFactor = 9;
+  const double hackFactor = 1;
 
   //  generate covariance (6x6 with order: x,y,z,rot_x,rot_y,rot_z)
   kr::mat<double, 6, 6> poseCovariance;

@@ -78,6 +78,7 @@ class Node {
   GeographicLib::LocalCartesian refPoint_;
   double refHeight_;
   double currentDeclination_;
+  double gpsCovScaleFactor_;
 
   kr::rviz_helper::TfPublisher tfPub_;
   kr::rviz_helper::TrajectoryVisualizer trajViz_;

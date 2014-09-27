@@ -182,7 +182,7 @@ void Node::odoCallback(const nav_msgs::OdometryConstPtr &odometry) {
     //  take our output frame ID from the gps_odom
     worldFrameId_ = odometry->header.frame_id;
     positionKF_.initState(q, p, v);
-    positionKF_.initCovariance(1e-1, 1e-4, 0.8, 1.0, 5.0);
+    positionKF_.initCovariance(1e-1, 1e-4, 0.8, 0.2, 5.0);
   } else {
     if (!positionKF_.update(q, varQ, p, varP, v, varV)) {
       ROS_WARN("Warning: Kalman gain was singular in update");

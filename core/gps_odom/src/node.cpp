@@ -31,6 +31,10 @@ Node::Node()
   //  ID to place on outgoing odometry
   nh_.param<std::string>("world_frame_id", worldFrameId_, "world");
 
+  //  scale factor for GPS covariance
+  nh_.param<double>("gps_covariance_scale_factor",  gpsCovScaleFactor_, 1.0);
+  
+  ROS_INFO("Using a GPS covariance scale factor of %f", gpsCovScaleFactor_);
   refSet_ = false;
   currentDeclination_ = 0.0;
   trajViz_.set_color(kr::rviz_helper::colors::RED);
@@ -116,6 +120,10 @@ void Node::gpsCallback(
   double bEast, bNorth, bUp;
   magneticModel_->operator()(tYears, lat, lon, hWGS84, bEast, bNorth, bUp);
   currentDeclination_ = -std::atan2(bEast, bNorth);
+  const double degDec = currentDeclination_ * 180 / M_PI;
+  ROS_INFO_ONCE_NAMED("gps_odom_mag_dec", 
+                      "Magnetic declination set to %f degrees",
+                      degDec);
 
   //  calculate corrected yaw angle
   //  matrix composition is of the form wRb = Rz * Ry * Rx
@@ -139,21 +147,17 @@ void Node::gpsCallback(
   odometry.pose.pose.position.y = locY;
   odometry.pose.pose.position.z = (height->height - refHeight_);
 
-  /// @todo: get rid of this scale factor for next data sets!
-  /// This is only here because of mistake in ublox_gps
-  const double hackFactor = 1;
-
   //  generate covariance (6x6 with order: x,y,z,rot_x,rot_y,rot_z)
   kr::mat<double, 6, 6> poseCovariance;
   poseCovariance.setZero();
   for (int i = 0; i < 3; i++) {
     for (int j = 0; j < 3; j++) {
       poseCovariance(i, j) =
-          navSatFix->position_covariance[i * 3 + j] * hackFactor;
+          navSatFix->position_covariance[i * 3 + j] * gpsCovScaleFactor_;
     }
   }
   //  replace covariance w/ number from altimeter
-  poseCovariance(3, 3) = height->variance;
+  poseCovariance(2, 2) = height->variance;
 
   //  orientation: copy from IMU
   for (int i = 0; i < 3; i++) {
@@ -175,7 +179,7 @@ void Node::gpsCallback(
   for (int i = 0; i < 3; i++) {
     for (int j = 0; j < 3; j++) {
       velCovariance(i, j) =
-          navSatTwist->twist.covariance[(i * 6) + j] * hackFactor;
+          navSatTwist->twist.covariance[(i * 6) + j] * gpsCovScaleFactor_;
       velCovariance(i + 3, j + 3) = -1;  //  unsupported
     }
   }

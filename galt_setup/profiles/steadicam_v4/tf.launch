@@ -4,20 +4,20 @@
 
     <!--imu_stereo_left-->
     <node pkg="tf2_ros" type="static_transform_publisher"
-      name="imu_stereo_broadcaster"
-      args="-0.004305 -0.044038 -0.032479 0 0 0 1 stereo imu">
+        name="imu_stereo_broadcaster"
+        args="0.004305 0.044038 0.032479 0 0 0 1 imu stereo">
     </node>
 
     <!--stereo_left_color-->
     <node pkg="tf2_ros" type="static_transform_publisher"
-      name="stereo_color_broadcaster"
-      args="0.042979 0.001128 -0.002047 0 0 0 1 mv_29900189 stereo">
+        name="stereo_color_broadcaster"
+        args="-0.042979 -0.001128 0.002047 0 0 0 1 stereo mv_29900189">
     </node>
 
     <!--stereo_left_thermal-->
     <node pkg="tf2_ros" type="static_transform_publisher"
         name="stereo_thermal_broadcaster"
-        args="0.133046 0.000133 0.01294 0 0 0 1 thermal stereo">
+        args="-0.133046 -0.000133 -0.01294 0 0 0 1 stereo flir_gige">
     </node>
 
     <!--imu_laser-->
@@ -26,3 +26,5 @@
         args="0.07915 0.04241 0.03277 0.707107 0 0.707107 0 imu laser">
     </node>
 </launch>
+
+<!--args="0.042979 0.001128 -0.002047 0 0 0 1 stereomv_29900189 stereo"-->

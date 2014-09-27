@@ -116,9 +116,20 @@
   </node>
   -->
 
+  <!-- Thermal proc -->
+  <include file="$(find flir_gige)/launch/thermal_proc.launch">
+    <arg name="celcius_min" value="10"/>
+    <arg name="celcius_max" value="27.5"/>
+  </include>
+
   <!-- Img2pcl -->
   <include file="$(find img2pcl)/launch/node.launch">
     <arg name="camera" value="mv_29900189"/>
+  </include>
+
+  <include file="$(find img2pcl)/launch/node.launch">
+    <arg name="image" value="image_proc"/>
+    <arg name="camera" value="flir_gige"/>
   </include>
 
 </launch>

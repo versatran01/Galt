@@ -47,12 +47,12 @@ void Img2pclNode::CameraCb(const sensor_msgs::ImageConstPtr &image_msg,
   prev_time = curr_time;
 
   if (!srv_client_.call(srv)) {
-    ROS_WARN_THROTTLE(1, "Sercie call failed");
+    ROS_WARN_THROTTLE(1, "%s: Sercie call failed", nh_.getNamespace().c_str());
     return;
   }
 
   if (srv.response.cloud.data.empty()) {
-    ROS_WARN("Empty cloud");
+    ROS_WARN_THROTTLE(1, "%s: Empty cloud", nh_.getNamespace().c_str());
     return;
   }
 

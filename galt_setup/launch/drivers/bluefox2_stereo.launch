@@ -21,9 +21,9 @@
     <include file="$(find bluefox2)/launch/stereo_node.launch">
         <arg name="left" value="$(arg left)"/>
         <arg name="right" value="$(arg right)"/>
-        <arg name="auto_fix_expose" value="true"/>
+        <arg name="aec" value="2"/>
         <arg name="fps" value="25"/>
         <arg name="hdr" value="true"/>
-        <arg name="trigger" value="1"/>
+        <arg name="ctm" value="1"/>
     </include>
 </launch>

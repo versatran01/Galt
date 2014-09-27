@@ -33,7 +33,14 @@ void Node::initialize() {
 
   nh_.param("gyro_bias_drift_std", gyroBiasDriftStd_, 1.0e-3);
   nh_.param("accel_bias_drift_std", accelBiasDriftStd_, 1.0e-2);
-
+  
+  //  amount of time in seconds to wait before initializing filter
+  nh_.param("init_dead_time", initDeadTime_, 0.25);
+  
+  ROS_INFO("Gyro bias drift uncertainty: %f", gyroBiasDriftStd_);
+  ROS_INFO("Accel bias drift uncertainty: %f", accelBiasDriftStd_);
+  ROS_INFO("Initialization dead time: %f", initDeadTime_);
+  
   predictTime_ = ros::Time(0, 0);
   trajViz_.set_color(kr::rviz_helper::colors::CYAN);
   trajViz_.set_alpha(1);
@@ -177,7 +184,7 @@ void Node::odoCallback(const nav_msgs::OdometryConstPtr &odometry) {
     }
   }
 
-  if (!initialized_ && (odometry->header.stamp - firstTs).toSec() > 0.25) {
+  if (!initialized_ && (odometry->header.stamp - firstTs).toSec() > initDeadTime_) {
     initialized_ = true;
     //  take our output frame ID from the gps_odom
     worldFrameId_ = odometry->header.frame_id;

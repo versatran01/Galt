@@ -100,6 +100,10 @@
     <!-- filter inputs -->
     <remap from="~imu" to="/attitude_eskf/filtered_imu"/>
     <remap from="~gps_odom" to="/gps_odom/odometry"/>
+
+    <!-- Profile specific settings -->
+    <rosparam
+      file="$(find galt_setup)/profiles/$(arg profile)/gps_kf.yml"/>
   </node>
 
   <!-- Quadrotor UKF -->

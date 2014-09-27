@@ -46,6 +46,7 @@ class Node {
   ErrorStateKF<double> positionKF_;
   double gyroBiasDriftStd_;
   double accelBiasDriftStd_;
+  double initDeadTime_;
 
   bool initialized_{false};
 

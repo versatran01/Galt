@@ -45,7 +45,7 @@ void FeatureDetector::DetectCorners(const cv::Mat &image, const Grid &grid,
         std::vector<CvPoint2> new_corner;
         // Use good features to track for now, but switch to something else
         // later
-        cv::goodFeaturesToTrack(sub_image, new_corner, 1, 0.001,
+        cv::goodFeaturesToTrack(sub_image, new_corner, 1, 0.0001,
                                 cell_size_ / 3);
         if (!new_corner.empty()) {
           CvPoint2 &corner = new_corner.front();

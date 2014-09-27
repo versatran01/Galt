@@ -16,11 +16,12 @@
   <arg name="bagfile_home" default="$(env GALT_BAGFILES)"/>
   <arg name="bagfile" default=""/>
   <arg name="bagfile_start" default="0"/>
+  <arg name="bagfile_rate" default="1"/>
   <arg name="bagfile_path" default="$(arg bagfile_home)/$(arg bagfile).bag"/>
 
   <!-- Rosbag -->
   <node name="playback" pkg="rosbag" type="play" output="log"
-        args="--clock -s $(arg bagfile_start) $(arg bagfile_path)"/>
+        args="--clock -s $(arg bagfile_start) -r $(arg bagfile_rate) $(arg bagfile_path)"/>
 
   <!-- Sensor profile to load -->
   <arg name="profile"/>

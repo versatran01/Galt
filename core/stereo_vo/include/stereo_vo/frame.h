@@ -17,6 +17,7 @@ class KeyFrame {
            const std::vector<CvPoint2> &r_corners)
       : id_(id),
         w_T_f_(w_T_f),
+        pose_covariance_(kr::mat<scalar_t,6,6>::Zero()),
         stereo_image_(stereo_image),
         features_(features),
         r_corners_(r_corners) {}
@@ -27,6 +28,12 @@ class KeyFrame {
 
   const Id &id() const { return id_; }
   const KrPose &w_T_f() const { return w_T_f_; }
+  const kr::mat<scalar_t,6,6>& pose_covariance() const { 
+    return pose_covariance_; 
+  }
+  void set_pose_covariance(const kr::mat<scalar_t,6,6>& pose_cov) {
+    pose_covariance_ = pose_cov;
+  }
   const std::vector<Feature> &features() const { return features_; }
   const std::vector<CvPoint2> &r_corners() const { return r_corners_; }
   const CvStereoImage &stereo_image() const { return stereo_image_; }
@@ -36,6 +43,7 @@ class KeyFrame {
  private:
   Id id_;
   KrPose w_T_f_;
+  kr::mat<scalar_t,6,6> pose_covariance_;
   CvStereoImage stereo_image_;
   std::vector<Feature> features_;
   std::vector<CvPoint2> r_corners_;

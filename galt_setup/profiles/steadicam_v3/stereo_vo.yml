@@ -5,11 +5,11 @@ shi_min_distance: 40
 klt_max_level: 3
 klt_win_size: 21
 klt_ransac_thresh: 0.2
-kf_dist_thresh: 0.5
+kf_dist_thresh: 0.15
 kf_yaw_thresh: 45
 kf_size: 3
 kf_min_filled: 0.85
 pnp_ransac_error: 2.0
 pnp_ransac_inliers: 0.8
 pnp_motion_thresh: 3
-tri_max_eigenratio: 100000
+tri_max_eigenratio: 1000

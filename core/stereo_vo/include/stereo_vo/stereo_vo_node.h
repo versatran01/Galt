@@ -72,23 +72,18 @@ class StereoVoNode {
   stereo_vo::StereoVo stereo_vo_;
   tf2::BufferCore core_;
   tf2_ros::TransformListener tf_listener_;
-  //  ros::Publisher pub_point_;
-  //  ros::Publisher pub_pose_;
-  //  visualization_msgs::Marker traj_;
-  //  kr::rviz_helper::TfPublisher tf_pub_;
-  //  kr::rviz_helper::TrajectoryVisualizer traj_viz_;
+  ros::Publisher pub_point_;
 
-  /// Visualize point cloud of triangulated points
-  //  void PublishPointCloud(const ros::Time& time,
-  //                         const std::string& frame_id = "world") const;
+  kr::rviz_helper::TfPublisher tf_pub_;
+  kr::rviz_helper::TrajectoryVisualizer traj_viz_;
+  kr::rviz_helper::CovarianceVisualizer cov_viz_;
 
-  //  void PublishPointCloud(const std::map<Id, Point3d>& point3ds,
-  //                         const std::deque<FramePtr>& key_frames,
-  //                         const ros::Time& time,
-  //                         const std::string& frame_id) const;
-  //  void PublishTrajectory(const geometry_msgs::Pose& pose, const ros::Time&
-  // time,
-  //                         const std::string& frame_id);
+  /// Publish a coloured point cloud of all current features.
+  void PublishPointCloud(const ros::Time& time,
+                         const std::string& frame_id) const;
+  
+  /// Publish pose w/ covariance and rviz markers.
+  void PublishPoseAndViz(const ros::Time& time);
 };
 
 void ProcessStereoImage(const cv::Mat& l_image, cv::Mat& r_image);

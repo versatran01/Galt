@@ -19,6 +19,7 @@
     <arg name="bagfile_home" default="$(env GALT_BAGFILES)"/>
     <arg name="bagfile" default=""/>
     <arg name="bagfile_start" default="0"/>
+    <arg name="bagfile_rate" default="1"/>
     <arg name="bagfile_path" default="$(arg bagfile_home)/$(arg bagfile).bag"/>
     <arg name="profile" default="steadicam"/>
 
@@ -27,6 +28,7 @@
         <arg name="bagfile" value="$(arg bagfile)"/>
         <arg name="bagfile_start" value="$(arg bagfile_start)"/>
         <arg name="bagfile_path" value="$(arg bagfile_path)"/>
+        <arg name="bagfile_rate" value="$(arg bagfile_rate)"/>
         <arg name="profile" value="$(arg profile)"/>
     </include>
 

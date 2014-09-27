@@ -33,14 +33,21 @@ class StereoVo {
   }
   bool init() const { return init_; }
   const KrPose &w_T_c() const { return w_T_c_; }
+  
+  const kr::mat<scalar_t,6,6>& pose_covariance() const { 
+    return pose_covariance_; 
+  }
 
   void Initialize(const CvStereoImage &stereo_image,
                   const StereoCameraModel &model);
-  void Iterate(const CvStereoImage &stereo_image, const ros::Time &time);
+  bool Iterate(const CvStereoImage &stereo_image, const ros::Time &time);
 
+  const std::deque<KeyFrame>& key_frames() const { return key_frames_; }
+  
  private:
   bool InitializePose();
-  bool AddKeyFrame(const KrPose& pose, const CvStereoImage &stereo_image,
+  bool AddKeyFrame(const KrPose& pose, const kr::mat<scalar_t,6,6> &pose_cov, 
+                   const CvStereoImage &stereo_image,
                    std::vector<Feature> &features);
   void TrackSpatial(const cv::Mat &image1, const cv::Mat &image2,
                     std::vector<CvPoint2> &l_corners,
@@ -63,10 +70,14 @@ class StereoVo {
                         kr::vec3<scalar_t>& p3d,    ///< Output point in camera.
                         kr::mat3<scalar_t>& sigma); ///< Covariance.
 
+  /// Set current pose w/ Ransac PnP and update current pose covariance.
+  void EstimatePose();
+  
   bool init_;
   StereoCameraModel model_;
   StereoVoDynConfig config_;
   KrPose w_T_c_;
+  kr::mat<scalar_t,6,6> pose_covariance_;
   FeatureDetector detector_;
   std::deque<KeyFrame> key_frames_;
   std::vector<Feature> tracked_features_;

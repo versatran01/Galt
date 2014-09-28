@@ -10,7 +10,6 @@
 #include <deque>
 
 #include <image_geometry/stereo_camera_model.h>
-#include <sophus/se3.hpp>
 #include <kr_math/base_types.hpp>
 
 #include "opencv2/core/core.hpp"

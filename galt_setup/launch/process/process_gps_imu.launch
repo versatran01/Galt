@@ -107,15 +107,6 @@
       file="$(find galt_setup)/profiles/$(arg profile)/gps_kf.yml"/>
   </node>
 
-  <!-- Quadrotor UKF -->
-  <!--
-  <node name="quadrotor_ukf" pkg="quadrotor_ukf" type="quadrotor_ukf"
-    output="screen">
-    <remap from="~imu" to="/attitude_eskf/filtered_imu"/>
-    <remap from="~gps_odom" to="/gps_odom/odometry"/>
-  </node>
-  -->
-
   <!-- Thermal proc -->
   <include file="$(find flir_gige)/launch/thermal_proc.launch">
     <arg name="celcius_min" value="10"/>

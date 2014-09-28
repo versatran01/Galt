@@ -22,6 +22,7 @@
     <arg name="bagfile_rate" default="1"/>
     <arg name="bagfile_path" default="$(arg bagfile_home)/$(arg bagfile).bag"/>
     <arg name="profile" default="steadicam"/>
+    <arg name="mag_calib" default="philadelphia_generic"/>
 
     <include file="$(find galt_setup)/launch/process/process_gps_imu.launch">
         <arg name="bagfile_home" value="$(arg bagfile_home)"/>
@@ -30,6 +31,7 @@
         <arg name="bagfile_path" value="$(arg bagfile_path)"/>
         <arg name="bagfile_rate" value="$(arg bagfile_rate)"/>
         <arg name="profile" value="$(arg profile)"/>
+        <arg name="mag_calib" default="$(arg mag_calib)"/>
     </include>
 
     <!-- Stereo VO -->

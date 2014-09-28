@@ -2,4 +2,4 @@ noise_std:
   accel: [0.5,0.5,0.5]
   gyro: [0.01,0.01,0.01]
   mag: [0.2,0.2,0.2]
-  pressure: 0.15
+  pressure: 0.3

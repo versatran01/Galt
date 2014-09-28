@@ -1,0 +1,5 @@
+# The file name to which we want to save the point cloud
+string filename
+---
+# A flag indicating whether the point cloud has been saved successfully
+bool success

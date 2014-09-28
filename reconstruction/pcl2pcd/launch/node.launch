@@ -1,0 +1,11 @@
+<launch>
+    <!-- Node Settings -->
+    <!-- This node works under the namespace of the laser assembler -->
+    <arg name="assembler" default="assembler"/>
+    <arg name="output" default="screen"/>
+
+    <!-- Node -->
+    <node pkg="pcl2pcd" type="pcl2pcd_node" name="pcl2pcd"
+        ns="$(arg assembler)" output="$(arg output)">
+    </node>
+</launch>

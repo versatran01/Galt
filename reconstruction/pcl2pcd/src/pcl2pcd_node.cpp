@@ -34,7 +34,7 @@ bool Pcl2PcdNode::SaveToPcd(SaveToPcd::Request &req, SaveToPcd::Response &res) {
   pcl::fromROSMsg(cloud_ros_w, cloud_pcl_w);
   try {
     pcl::io::savePCDFile(req.filename, cloud_pcl_w);
-    ROS_INFO("Cloud saved to %s", req.filename.c_str());
+    ROS_INFO_STREAM("Cloud saved to" << req.filename.c_str());
   }
   catch (const std::exception &e) {
     ROS_ERROR("%s: %s", nh_.getNamespace().c_str(), e.what());

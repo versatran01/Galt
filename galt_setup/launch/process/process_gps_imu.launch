@@ -44,6 +44,7 @@
   <!-- Pcl2Pcd -->
   <include  file="$(find pcl2pcd)/launch/node.launch">
     <arg name="assembler" value="assembler"/>
+    <arg name="use_sim_time" value="true"/>
   </include>
 
   <!-- Magnetometer calibration to load -->

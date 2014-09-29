@@ -3,6 +3,10 @@
     <!-- This node works under the namespace of the laser assembler -->
     <arg name="assembler" default="assembler"/>
     <arg name="output" default="screen"/>
+    <arg name="use_sim_time" default="true"/>
+
+    <!-- Use simulation time -->
+    <param name="use_sim_time" type="bool" value="$(arg use_sim_time)"/>
 
     <!-- Node -->
     <node pkg="pcl2pcd" type="pcl2pcd_node" name="pcl2pcd"

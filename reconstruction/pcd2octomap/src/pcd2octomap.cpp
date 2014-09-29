@@ -60,9 +60,9 @@ int main(int argc, char ** argv) {
   octomap::OcTree tree(resolution);
   tree.setProbHit(probHit);
   tree.setProbMiss(probMiss);
-  tree.setOccupancyThres(0.5);  //  some arbitrary parameters
-  tree.setClampingThresMin(0.01);
-  tree.setClampingThresMax(0.99);
+  tree.setOccupancyThres(0.90);  //  some arbitrary parameters
+  tree.setClampingThresMin(0.001);
+  tree.setClampingThresMax(0.999);
   for (size_t i=0; i < cloud->points.size(); i++) {
     octomap::point3d end(cloud->points[i].x, cloud->points[i].y,
                         cloud->points[i].z);

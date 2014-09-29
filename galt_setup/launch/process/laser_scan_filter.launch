@@ -1,9 +1,9 @@
 <launch>
-    <arg name="ns" default="hokuyo"/>
+    <arg name="laser" default="hokuyo"/>
     <arg name="filter"/>
 
     <node pkg="laser_filters" type="scan_to_scan_filter_chain"
-        name="laser_filter" ns="$(arg ns)">
+        name="laser_scan_filter" ns="$(arg laser)">
         <rosparam command="load" file="$(arg filter)"/>
     </node>
 </launch>

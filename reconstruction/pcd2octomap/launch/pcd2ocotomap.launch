@@ -1,0 +1,10 @@
+<launch>
+  <arg name="input"/>
+
+  <node name="pcd2octomap" pkg="pcd2octomap" type="pcd2octomap"
+    output="screen">
+    <param name="input_path" type="string" value="$(arg input)"/>
+    <param name="output_path_ot" type="string" value="$(arg input).ot"/>
+    <param name="output_path_csv" type="string" value="$(arg input).csv"/>
+  </node>
+</launch>

@@ -43,6 +43,7 @@ int main(int argc, char ** argv) {
   
   ROS_INFO("Will process %s into %s with resolution %f", inputPath.c_str(),
            outputPathOT.c_str(), resolution);
+  ROS_INFO("Prob hit/miss: %f/%f", probHit, probMiss);
   
   pcl::PointCloud<pcl::PointWithViewpoint>::Ptr cloud;
   cloud.reset(new pcl::PointCloud<pcl::PointWithViewpoint>());
@@ -58,7 +59,10 @@ int main(int argc, char ** argv) {
   //  insert all points into an ocotomap
   octomap::OcTree tree(resolution);
   tree.setProbHit(probHit);
-  tree.setProbHit(probMiss);
+  tree.setProbMiss(probMiss);
+  tree.setOccupancyThres(0.5);  //  some arbitrary parameters
+  tree.setClampingThresMin(0.01);
+  tree.setClampingThresMax(0.99);
   for (size_t i=0; i < cloud->points.size(); i++) {
     octomap::point3d end(cloud->points[i].x, cloud->points[i].y,
                         cloud->points[i].z);
@@ -100,6 +104,7 @@ int main(int argc, char ** argv) {
   }
   outputStream << stringRep;
   outputStream.close();
+  ROS_INFO("Wrote to %s.", outputPathCSV.c_str());
   
   //  publish the octomap for visualization
   ROS_INFO("Publishing octomap on latched topic: %s", 

@@ -10,8 +10,32 @@ Pcl2PcdRviz::Pcl2PcdRviz(const ros::NodeHandle &nh, const ros::NodeHandle &pnh)
       sub_goal_(nh_.subscribe("/move_base_simple/goal", 1, &Pcl2PcdRviz::GoalCb,
                               this)),
       sub_pose_(nh_.subscribe("/initialpose", 1, &Pcl2PcdRviz::PoseCb, this)),
-      tf_listener_(core_) {
+      tf_listener_(core_),
+      save_srv_server_(
+          nh_.advertiseService("save_to_pcd", &Pcl2PcdRviz::SaveToPcd, this)) {
   pnh_.param<int>("queue_size", queue_size_, 1000);
+}
+
+bool Pcl2PcdRviz::SaveToPcd(SaveToPcd::Request &req, SaveToPcd::Response &res) {
+  if (clouds_.empty()) {
+    res.success = false;
+    ROS_INFO("No clouds to save");
+    return true;
+  }
+  ROS_INFO("Saveing %d clouds to %s", (int)clouds_.size(),
+           req.filename.c_str());
+  for (size_t i = 0; i < clouds_.size(); ++i) {
+    std::string file = req.filename + "_" + std::to_string(i) + ".pcd";
+    try {
+      pcl::io::savePCDFile(file, *(clouds_[i]));
+      ROS_INFO("Saved cloud %d to: %s", (int)i, file.c_str());
+    }
+    catch (const std::exception &e) {
+      ROS_ERROR("%s: %s", nh_.getNamespace().c_str(), e.what());
+    }
+  }
+  res.success = true;
+  return true;
 }
 
 void Pcl2PcdRviz::GoalCb(
@@ -23,7 +47,8 @@ void Pcl2PcdRviz::GoalCb(
     // Put into clouds if cloud is non-empty
     if (!cloud_->empty()) {
       clouds_.push_back(cloud_);
-      ROS_INFO_STREAM("Add collection " << clouds_.size() << " to clouds");
+      ROS_INFO("Add collection %d of %d points to clouds", (int)clouds_.size(),
+               (int)cloud_->size());
     }
   }
 }
@@ -36,6 +61,8 @@ void Pcl2PcdRviz::PoseCb(
                                &Pcl2PcdRviz::CloudCb, this);
     ROS_INFO_STREAM("Start recording point cloud " << (clouds_.size() + 1));
     cloud_.reset(new MyPointCloud);
+    cloud_->height = 1;
+    cloud_->is_dense = false;
   }
 }
 
@@ -59,6 +86,18 @@ void Pcl2PcdRviz::CloudCb(const sensor_msgs::PointCloud2ConstPtr &cloud_msg) {
   // Convert PointCloud2 to pcl PointCloud
   pcl::PointCloud<pcl::PointXYZ> cloud_xyz;
   pcl::fromROSMsg(*cloud_msg, cloud_xyz);
+
+  // Build cloud_xyz into a big cloud
+  BuildCloud(cloud_xyz, tf_stamped.transform.translation);
+}
+
+void Pcl2PcdRviz::BuildCloud(const pcl::PointCloud<pcl::PointXYZ> &cloud,
+                             const geometry_msgs::Vector3 &pos) {
+  cloud_->reserve(cloud_->size() + cloud.size());
+  cloud_->width += cloud.width;
+  for (const pcl::PointXYZ &p : cloud.points) {
+    cloud_->points.emplace_back(p.x, p.y, p.z, pos.x, pos.y, pos.z);
+  }
 }
 
 }  // namespace pcl2pcd

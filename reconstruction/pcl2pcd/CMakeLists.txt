@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(pcl2pcd)
 
+add_definitions(-Wall -std=c++11)
+
 find_package(catkin REQUIRED COMPONENTS
     roscpp laser_assembler message_generation
     pcl_conversions pcl_ros tf2_ros tf2

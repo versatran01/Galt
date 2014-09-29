@@ -8,6 +8,7 @@
 #include <pcl_ros/point_cloud.h>
 #include <tf2/buffer_core.h>
 #include <tf2_ros/transform_listener.h>
+#include <pcl2pcd/SaveToPcd.h>
 
 namespace pcl2pcd {
 
@@ -23,6 +24,11 @@ class Pcl2PcdRviz {
       const geometry_msgs::PoseWithCovarianceStampedConstPtr& pose_cov_stamped);
   void CloudCb(const sensor_msgs::PointCloud2ConstPtr& cloud_msg);
 
+  void BuildCloud(const pcl::PointCloud<pcl::PointXYZ>& cloud,
+                  const geometry_msgs::Vector3& pos);
+  bool SaveToPcd(pcl2pcd::SaveToPcd::Request& req,
+                 pcl2pcd::SaveToPcd::Response& res);
+
   ros::NodeHandle nh_, pnh_;
   ros::Subscriber sub_goal_;
   ros::Subscriber sub_pose_;
@@ -32,6 +38,7 @@ class Pcl2PcdRviz {
   int queue_size_;
   tf2::BufferCore core_;
   tf2_ros::TransformListener tf_listener_;
+  ros::ServiceServer save_srv_server_;
 };
 
 }  // namespace pcl2pcd

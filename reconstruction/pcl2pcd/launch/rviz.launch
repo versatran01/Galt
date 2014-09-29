@@ -1,8 +1,11 @@
 <launch>
     <arg name="laser" default="hokuyo"/>
+    <arg name="cloud" default="cloud_filtered"/>
     <arg name="output" default="screen"/>
+    <arg name="queue_size" default="1000"/>
 
     <node pkg="pcl2pcd" type="pcl2pcd_rviz" name="pcl2pcd_rviz"
         output="$(arg output)" ns="$(arg laser)">
+        <param name="queue_size" type="int" value="$(arg queue_size)"/>
     </node>
 </launch>

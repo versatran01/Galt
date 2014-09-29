@@ -3,7 +3,7 @@ project(pcl2pcd)
 
 find_package(catkin REQUIRED COMPONENTS
     roscpp laser_assembler message_generation
-    pcl_conversions pcl_ros
+    pcl_conversions pcl_ros tf2_ros tf2
     )
 
 add_service_files(FILES

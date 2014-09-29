@@ -25,14 +25,23 @@ include_directories(
     ${catkin_INCLUDE_DIRS}
     )
 
-add_executable(${PROJECT_NAME}_node
-    src/pcl2pcd_node.cpp
-    src/pcl2pcd_main.cpp
+add_executable(${PROJECT_NAME}_srv
+    src/pcl2pcd_srv.cpp
+    src/pcl2pcd_srv_main.cpp
     )
-target_link_libraries(${PROJECT_NAME}_node
+target_link_libraries(${PROJECT_NAME}_srv
     ${catkin_LIBRARIES}
     )
 
-add_dependencies(${PROJECT_NAME}_node
+add_executable(${PROJECT_NAME}_rviz
+    src/pcl2pcd_rviz.cpp
+    src/pcl2pcd_rviz_main.cpp
+    )
+target_link_libraries(${PROJECT_NAME}_rviz
+    ${catkin_LIBRARIES}
+    )
+
+
+add_dependencies(${PROJECT_NAME}_srv
     ${PROJECT_NAME}_gencpp
     )

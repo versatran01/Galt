@@ -1,10 +1,10 @@
-#include "pcl2pcd/pcl2pcd_node.hpp"
+#include "pcl2pcd/pcl2pcd_rviz.hpp"
 
 int main(int argc, char **argv) {
-  ros::init(argc, argv, "pcl2pcd");
+  ros::init(argc, argv, "pcl2pcd_rviz");
   ros::NodeHandle nh;
   try {
-    pcl2pcd::Pcl2PcdNode pcl2pcd_node(nh);
+    pcl2pcd::Pcl2PcdRviz pcl2pcd_rviz(nh);
     ros::spin();
   }
   catch (const std::exception &e) {

@@ -7,6 +7,13 @@ namespace pcl2pcd {
 
 using namespace pcl;
 
+bool Pcl2PcdNode::ResetTime(ResetTime::Request &req, ResetTime::Response &res) {
+  prev_stamp_ = ros::Time::now() + ros::Duration(req.time_offset);
+  res.success = true;
+  ROS_INFO("Set start time to %f", prev_stamp_.toSec());
+  return true;
+}
+
 bool Pcl2PcdNode::SaveToPcd(SaveToPcd::Request &req, SaveToPcd::Response &res) {
   const ros::Time curr_stamp = ros::Time::now();
   ROS_INFO("Assembling cloud from %f to %f", prev_stamp_.toSec(),
@@ -34,7 +41,7 @@ bool Pcl2PcdNode::SaveToPcd(SaveToPcd::Request &req, SaveToPcd::Response &res) {
   pcl::fromROSMsg(cloud_ros_w, cloud_pcl_w);
   try {
     pcl::io::savePCDFile(req.filename, cloud_pcl_w);
-    ROS_INFO_STREAM("Cloud saved to" << req.filename.c_str());
+    ROS_INFO_STREAM("Cloud saved to" << req.filename);
   }
   catch (const std::exception &e) {
     ROS_ERROR("%s: %s", nh_.getNamespace().c_str(), e.what());

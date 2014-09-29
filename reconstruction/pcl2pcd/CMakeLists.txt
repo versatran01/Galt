@@ -8,6 +8,7 @@ find_package(catkin REQUIRED COMPONENTS
 
 add_service_files(FILES
     SaveToPcd.srv
+    ResetTime.srv
     )
 
 generate_messages(DEPENDENCIES std_msgs)

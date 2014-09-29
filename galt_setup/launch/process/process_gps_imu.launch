@@ -37,6 +37,7 @@
 
   <include file="$(find galt_setup)/launch/process/laser_cloud_filter.launch">
     <arg name="filter" value="$(find galt_setup)/profiles/$(arg profile)/laser_filter.yml"/>
+    <arg name="target_frame" value="world"/>
   </include>
 
   <!-- Laser Assembler -->
@@ -46,8 +47,8 @@
   </include>
 
   <!-- Pcl2Pcd -->
-  <!--<include  file="$(find pcl2pcd)/launch/rviz.launch">-->
-  <!--</include>-->
+  <include file="$(find pcl2pcd)/launch/rviz.launch">
+  </include>
 
   <!-- Magnetometer calibration to load -->
   <arg name="mag_calib" default="philadelphia_generic"/>

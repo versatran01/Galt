@@ -28,7 +28,7 @@ int main(int argc, char ** argv) {
   ros::init(argc,argv,"pcd2octomap");
   ros::NodeHandle nh("~");
   
-  std::string inputPath,outputPathOT,outputPathCSV;
+  std::string inputPath,outputPathOT,outputPathCSV,worldFrameId;
   double resolution, maxRange;
   double probHit, probMiss;
   
@@ -39,6 +39,7 @@ int main(int argc, char ** argv) {
   nh.param("max_laser_range", maxRange, 20.0);
   nh.param("prob_hit", probHit, 0.7);
   nh.param("prob_miss", probMiss, 0.3);
+  nh.param("world_frame_id", worldFrameId, std::string("world"));
   
   ROS_INFO("Will process %s into %s with resolution %f", inputPath.c_str(),
            outputPathOT.c_str(), resolution);
@@ -106,7 +107,7 @@ int main(int argc, char ** argv) {
   ros::Publisher pubOctomap = nh.advertise<octomap_msgs::Octomap>("map",1,true);
   octomap_msgs::Octomap msg;
   msg.header.stamp = ros::Time::now();
-  msg.header.frame_id = "world";
+  msg.header.frame_id = worldFrameId;
   octomap_msgs::fullMapToMsg(tree,msg);
   pubOctomap.publish(msg);
   

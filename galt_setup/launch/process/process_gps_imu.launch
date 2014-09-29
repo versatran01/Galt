@@ -37,7 +37,14 @@
 
   <!-- Laser Assembler -->
   <include file="$(find galt_setup)/launch/process/laser_assembler.launch">
-    <arg name="max_scans" value="4000"/>
+    <arg name="max_scans" value="10000"/>
+    <arg name="ns" value="assembler"/>
+  </include>
+
+  <!-- Pcl2Pcd -->
+  <include  file="$(find pcl2pcd)/launch/node.launch">
+    <arg name="assembler" value="assembler"/>
+    <arg name="use_sim_time" value="true"/>
   </include>
 
   <!-- Magnetometer calibration to load -->
@@ -118,9 +125,9 @@
     <arg name="camera" value="mv_29900189"/>
   </include>
 
-  <include file="$(find img2pcl)/launch/node.launch">
-    <arg name="image" value="image_proc"/>
-    <arg name="camera" value="flir_gige"/>
-  </include>
+  <!--<include file="$(find img2pcl)/launch/node.launch">-->
+    <!--<arg name="image" value="image_proc"/>-->
+    <!--<arg name="camera" value="flir_gige"/>-->
+  <!--</include>-->
 
 </launch>

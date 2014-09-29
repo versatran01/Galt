@@ -1,12 +1,12 @@
 <launch>
-    <arg name="laser" default="/hokuyo/scan_filtered"/>
+    <arg name="scan" default="/hokuyo/scan_filtered"/>
     <arg name="max_scans" default="8000"/>
-    <arg name="ns" default="assembler"/>
+    <arg name="assembler" default="assembler"/>
     <arg name="fixed_frame" default="world"/>
 
     <node pkg="laser_assembler" type="laser_scan_assembler"
-        name="laser_assembler" ns="$(arg ns)">
-        <remap from="scan" to="$(arg laser)"/>
+        name="laser_scan_assembler" ns="$(arg assembler)">
+        <remap from="scan" to="$(arg scan)"/>
         <param name="max_scans" type="int" value="$(arg max_scans)"/>
         <param name="fixed_frame" type="string" value="$(arg fixed_frame)"/>
     </node>

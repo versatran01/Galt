@@ -1,9 +1,11 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(pcl2pcd)
 
+add_definitions(-Wall -std=c++11)
+
 find_package(catkin REQUIRED COMPONENTS
     roscpp laser_assembler message_generation
-    pcl_conversions pcl_ros
+    pcl_conversions pcl_ros tf2_ros tf2
     )
 
 add_service_files(FILES
@@ -25,14 +27,23 @@ include_directories(
     ${catkin_INCLUDE_DIRS}
     )
 
-add_executable(${PROJECT_NAME}_node
-    src/pcl2pcd_node.cpp
-    src/pcl2pcd_main.cpp
+add_executable(${PROJECT_NAME}_srv
+    src/pcl2pcd_srv.cpp
+    src/pcl2pcd_srv_main.cpp
     )
-target_link_libraries(${PROJECT_NAME}_node
+target_link_libraries(${PROJECT_NAME}_srv
     ${catkin_LIBRARIES}
     )
 
-add_dependencies(${PROJECT_NAME}_node
+add_executable(${PROJECT_NAME}_rviz
+    src/pcl2pcd_rviz.cpp
+    src/pcl2pcd_rviz_main.cpp
+    )
+target_link_libraries(${PROJECT_NAME}_rviz
+    ${catkin_LIBRARIES}
+    )
+
+
+add_dependencies(${PROJECT_NAME}_srv
     ${PROJECT_NAME}_gencpp
     )

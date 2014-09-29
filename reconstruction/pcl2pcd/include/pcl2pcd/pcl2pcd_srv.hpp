@@ -1,5 +1,5 @@
-#ifndef PCL2PCD_NODE_HPP_
-#define PCL2PCD_NODE_HPP_
+#ifndef PCL2PCD_SRV_HPP_
+#define PCL2PCD_SRV_HPP_
 
 #include <ros/ros.h>
 #include <laser_assembler/AssembleScans2.h>
@@ -8,15 +8,15 @@
 
 namespace pcl2pcd {
 
-class Pcl2PcdNode {
+class Pcl2PcdSrv {
  public:
-  Pcl2PcdNode(const ros::NodeHandle& nh)
+  Pcl2PcdSrv(const ros::NodeHandle& nh)
       : nh_(nh),
         prev_stamp_(0.0f),
         save_srv_server_(
-            nh_.advertiseService("save_to_pcd", &Pcl2PcdNode::SaveToPcd, this)),
+            nh_.advertiseService("save_to_pcd", &Pcl2PcdSrv::SaveToPcd, this)),
         reset_srv_server_(
-            nh_.advertiseService("reset_time", &Pcl2PcdNode::ResetTime, this)),
+            nh_.advertiseService("reset_time", &Pcl2PcdSrv::ResetTime, this)),
         srv_client_(nh_.serviceClient<laser_assembler::AssembleScans2>(
             "assemble_scans2")) {}
 
@@ -35,4 +35,4 @@ class Pcl2PcdNode {
 
 }  // namespace pcl2pcd
 
-#endif  // PCL2PCD_NODE_HPP_
+#endif  // PCL2PCD_SRV_HPP_

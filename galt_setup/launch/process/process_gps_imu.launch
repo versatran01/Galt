@@ -31,20 +31,23 @@
   </include>
 
   <!-- Laser Filter -->
-  <include file="$(find galt_setup)/launch/process/laser_filter.launch">
+  <include file="$(find galt_setup)/launch/process/laser_scan_filter.launch">
     <arg name="filter" value="$(find galt_setup)/profiles/$(arg profile)/laser_filter.yml"/>
   </include>
 
+  <include file="$(find galt_setup)/launch/process/laser_cloud_filter.launch">
+    <arg name="filter" value="$(find galt_setup)/profiles/$(arg profile)/laser_filter.yml"/>
+    <arg name="target_frame" value="world"/>
+  </include>
+
   <!-- Laser Assembler -->
-  <include file="$(find galt_setup)/launch/process/laser_assembler.launch">
+  <include file="$(find galt_setup)/launch/process/laser_scan_assembler.launch">
     <arg name="max_scans" value="10000"/>
-    <arg name="ns" value="assembler"/>
+    <arg name="assembler" value="assembler"/>
   </include>
 
   <!-- Pcl2Pcd -->
-  <include  file="$(find pcl2pcd)/launch/node.launch">
-    <arg name="assembler" value="assembler"/>
-    <arg name="use_sim_time" value="true"/>
+  <include file="$(find pcl2pcd)/launch/rviz.launch">
   </include>
 
   <!-- Magnetometer calibration to load -->

@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<package>
+    <name>pcl_merger</name>
+    <version>0.0.0</version>
+    <description>The pcl_merger package</description>
+
+    <maintainer email="quchao@seas.upenn.edu">chao</maintainer>
+
+    <license>private</license>
+
+    <buildtool_depend>catkin</buildtool_depend>
+
+    <build_depend>pcl_ros</build_depend>
+    <build_depend>roscpp</build_depend>
+    <build_depend>dynamic_reconfigure</build_depend>
+
+    <run_depend>pcl_ros</run_depend>
+    <run_depend>roscpp</run_depend>
+    <run_depend>dynamic_reconfigure</run_depend>
+
+</package>

@@ -1,15 +1,16 @@
 #ifndef PCL_MERGER_NODE_HPP_
 #define PCL_MERGER_NODE_HPP_
 
+#include "pcl_editor/pcl_editor.hpp"
+
 #include <ros/ros.h>
 #include <dynamic_reconfigure/server.h>
-#include <pcl_editor/MergerDynConfig.h>
 #include <pcl_ros/point_cloud.h>
 #include <pcl/visualization/pcl_visualizer.h>
 
-namespace pcl_editor {
+#include <pcl_editor/MergerDynConfig.h>
 
-typedef pcl::PointCloud<pcl::PointWithViewpoint> MyPointCloud;
+namespace pcl_editor {
 
 class PclMergerNode {
  public:
@@ -20,16 +21,14 @@ class PclMergerNode {
 
  private:
   void ConfigCb(MergerDynConfig& config, int level);
-  //  void SimpleVis(const MyPointCloud::Ptr& cloud);
 
   ros::NodeHandle nh_;
   dynamic_reconfigure::Server<pcl_editor::MergerDynConfig> cfg_server_;
+
   MyPointCloud::Ptr cloud1_, cloud2_, cloud_transformed_;
   boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer_;
 };
 
-bool LoadPcdFile(const std::string& pcd, const MyPointCloud::Ptr& cloud);
-
-}  // namespace pcl_merger
+}  // namespace pcl_editor
 
 #endif  // PCL_MERGER_NODE_HPP_

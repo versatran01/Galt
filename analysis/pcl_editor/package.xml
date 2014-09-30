@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package>
-    <name>pcl_merger</name>
+    <name>pcl_editor</name>
     <version>0.0.0</version>
-    <description>The pcl_merger package</description>
+    <description>The pcl_editor package</description>
 
     <maintainer email="quchao@seas.upenn.edu">chao</maintainer>
 
@@ -17,5 +17,4 @@
     <run_depend>pcl_ros</run_depend>
     <run_depend>roscpp</run_depend>
     <run_depend>dynamic_reconfigure</run_depend>
-
 </package>

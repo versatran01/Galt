@@ -1,12 +1,18 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(pcl_merger)
+project(pcl_editor)
 
-add_definitions(-Wall -std=c++11)
+add_definitions(-Wall -std=c++11 -Wno-deprecated)
 
 find_package(catkin REQUIRED COMPONENTS
     roscpp pcl_ros
     dynamic_reconfigure
     )
+
+find_package(PCL 1.7 REQUIRED)
+
+include_directories(${PCL_INCLUDE_DIRS})
+link_directories(${PCL_LIBRARY_DIRS})
+add_definitions(${PCL_DEFINITIONS})
 
 generate_dynamic_reconfigure_options(cfg/MergerDyn.cfg)
 
@@ -28,6 +34,7 @@ add_executable(pcl_merger_node
     )
 target_link_libraries(pcl_merger_node
     ${catkin_LIBRARIES}
+    ${PCL_LIBRARIES}
     )
 
 add_dependencies(pcl_merger_node

@@ -6,7 +6,7 @@
 
     <maintainer email="quchao@seas.upenn.edu">chao</maintainer>
 
-    <license>FUCK</license>
+    <license>private</license>
 
     <buildtool_depend>catkin</buildtool_depend>
 

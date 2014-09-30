@@ -1,0 +1,5 @@
+# The file name to which we want to save the point cloud
+string filename
+---
+# Number of points in the cloud
+bool success

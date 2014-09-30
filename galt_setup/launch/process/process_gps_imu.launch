@@ -31,13 +31,23 @@
   </include>
 
   <!-- Laser Filter -->
-  <include file="$(find galt_setup)/launch/process/laser_filter.launch">
+  <include file="$(find galt_setup)/launch/process/laser_scan_filter.launch">
     <arg name="filter" value="$(find galt_setup)/profiles/$(arg profile)/laser_filter.yml"/>
   </include>
 
+  <include file="$(find galt_setup)/launch/process/laser_cloud_filter.launch">
+    <arg name="filter" value="$(find galt_setup)/profiles/$(arg profile)/laser_filter.yml"/>
+    <arg name="target_frame" value="world"/>
+  </include>
+
   <!-- Laser Assembler -->
-  <include file="$(find galt_setup)/launch/process/laser_assembler.launch">
-    <arg name="max_scans" value="4000"/>
+  <include file="$(find galt_setup)/launch/process/laser_scan_assembler.launch">
+    <arg name="max_scans" value="10000"/>
+    <arg name="assembler" value="assembler"/>
+  </include>
+
+  <!-- Pcl2Pcd -->
+  <include file="$(find pcl2pcd)/launch/rviz.launch">
   </include>
 
   <!-- Magnetometer calibration to load -->
@@ -118,9 +128,9 @@
     <arg name="camera" value="mv_29900189"/>
   </include>
 
-  <include file="$(find img2pcl)/launch/node.launch">
-    <arg name="image" value="image_proc"/>
-    <arg name="camera" value="flir_gige"/>
-  </include>
+  <!--<include file="$(find img2pcl)/launch/node.launch">-->
+    <!--<arg name="image" value="image_proc"/>-->
+    <!--<arg name="camera" value="flir_gige"/>-->
+  <!--</include>-->
 
 </launch>

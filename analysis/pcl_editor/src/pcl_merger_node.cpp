@@ -1,4 +1,4 @@
-#include "pcl_merger/pcl_merger_node.hpp"
+#include "pcl_editor/pcl_merger_node.hpp"
 
 namespace pcl_merger {
 

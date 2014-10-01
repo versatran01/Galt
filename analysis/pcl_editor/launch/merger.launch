@@ -1,13 +1,15 @@
 <launch>
     <arg name="pcd1"
-        default="/home/chao/Dropbox/agriculture_state_of_art/Field\ Data/9.26.2014\ -\ Leaf\ Area/point_cloud/run1_t12_1.pcd"/>
+        default="/home/chao/Desktop/run2_0_t2.pcd"/>
     <arg name="pcd2"
-        default="/home/chao/Dropbox/agriculture_state_of_art/Field\ Data/9.26.2014\ -\ Leaf\ Area/point_cloud/run1_t12_2.pcd"/>
+        default="/home/chao/Desktop/run2_1_t2.pcd"/>
+    <arg name="pcd_merged" default="test.pcd"/>
 
-    <node pkg="pcl_merger" type="pcl_merger_node" name="pcl_merger"
+    <node pkg="pcl_editor" type="pcl_merger_node" name="pcl_merger"
         output="screen">
         <param name="pcd1" type="string" value="$(arg pcd1)"/>
         <param name="pcd2" type="string" value="$(arg pcd2)"/>
+        <param name="pcd_merged" type="string" value="$(arg pcd_merged)"/>
     </node>
 
     <node pkg="rqt_reconfigure" type="rqt_reconfigure" name="merger_reconfigure"

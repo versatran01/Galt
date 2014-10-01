@@ -3,7 +3,7 @@
         default="/home/chao/Desktop/run1_0.pcd"/>
     <arg name="pcd2"
         default="/home/chao/Desktop/run1_1.pcd"/>
-    <arg name="pcd_merged"/>
+    <arg name="pcd_merged" default="test.pcd"/>
 
     <node pkg="pcl_editor" type="pcl_merger_node" name="pcl_merger"
         output="screen">

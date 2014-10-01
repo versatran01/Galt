@@ -1,0 +1,14 @@
+<launch>
+    <arg name="pcd" default="/home/chao/Desktop/run1_0.pcd"/>
+    <arg name="pcd_cropped" default="test.pcd"/>
+
+    <node pkg="pcl_editor" type="pcl_cropper_node" name="pcl_cropper"
+        output="screen">
+        <param name="pcd" type="string" value="$(arg pcd)"/>
+        <param name="pcd_cropped" type="string" value="$(arg pcd_cropped)"/>
+    </node>
+
+    <node pkg="rqt_reconfigure" type="rqt_reconfigure" name="cropper_reconfigure"
+        output="screen">
+    </node>
+</launch>

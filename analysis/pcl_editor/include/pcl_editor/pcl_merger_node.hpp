@@ -1,35 +1,41 @@
 #ifndef PCL_MERGER_NODE_HPP_
 #define PCL_MERGER_NODE_HPP_
 
-#include <ros/ros.h>
-#include <dynamic_reconfigure/server.h>
+#include "pcl_editor/pcl_editor_base.hpp"
+
 #include <pcl_editor/MergerDynConfig.h>
-#include <pcl_ros/point_cloud.h>
-#include <pcl/visualization/pcl_visualizer.h>
 
 namespace pcl_editor {
 
-typedef pcl::PointCloud<pcl::PointWithViewpoint> MyPointCloud;
-
-class PclMergerNode {
+class PclMergerNode : public PclEditorBase<MergerDynConfig> {
  public:
-  PclMergerNode(const ros::NodeHandle& nh);
-  void View();
-  bool Ok() const { return !viewer_->wasStopped(); }
-  void SpinOnce() const { viewer_->spinOnce(100); }
+  typedef PclEditorBase<MergerDynConfig> super;
+
+  PclMergerNode(const ros::NodeHandle& nh)
+      : PclEditorBase(nh, "merger", 10),
+        cloud1_(new MyPointCloud),
+        cloud2_(new MyPointCloud),
+        id1_("cloud1"),
+        id2_("cloud2") {
+    // Load two pcd files to merge
+    std::string pcd1;
+    std::string pcd2;
+    nh.param<std::string>("pcd1", pcd1, std::string());
+    nh.param<std::string>("pcd2", pcd2, std::string());
+    if (!(LoadPcdFile(pcd1, *cloud1_) && LoadPcdFile(pcd2, *cloud2_))) {
+      throw std::runtime_error("Failed to load pcd files.");
+    }
+  }
+
+  virtual void InitializeViewer();
+  virtual void EditPointCloud();
+  virtual void SavePointCloud();
 
  private:
-  void ConfigCb(MergerDynConfig& config, int level);
-  //  void SimpleVis(const MyPointCloud::Ptr& cloud);
-
-  ros::NodeHandle nh_;
-  dynamic_reconfigure::Server<pcl_editor::MergerDynConfig> cfg_server_;
   MyPointCloud::Ptr cloud1_, cloud2_, cloud_transformed_;
-  boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer_;
+  std::string id1_, id2_;
 };
 
-bool LoadPcdFile(const std::string& pcd, const MyPointCloud::Ptr& cloud);
-
-}  // namespace pcl_merger
+}  // namespace pcl_editor
 
 #endif  // PCL_MERGER_NODE_HPP_

@@ -43,7 +43,9 @@ target_link_libraries(${PROJECT_NAME}_rviz
     ${catkin_LIBRARIES}
     )
 
-
 add_dependencies(${PROJECT_NAME}_srv
+    ${PROJECT_NAME}_gencpp
+    )
+add_dependencies(${PROJECT_NAME}_rviz
     ${PROJECT_NAME}_gencpp
     )

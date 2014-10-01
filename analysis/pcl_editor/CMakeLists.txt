@@ -28,23 +28,16 @@ include_directories(
     ${catkin_INCLUDE_DIRS}
     )
 
-add_library(${PROJECT_NAME}
-    src/pcl_editor.cpp
-    )
-target_link_libraries(${PROJECT_NAME}
-    ${PCL_LIBRARIES}
-    )
-
 add_executable(pcl_merger_node
     src/pcl_merger_main.cpp
     src/pcl_merger_node.cpp
     )
 target_link_libraries(pcl_merger_node
     ${catkin_LIBRARIES}
-    ${PROJECT_NAME}
+    ${PCL_LIBRARIES}
     )
 
-add_dependencies(${PROJECT_NAME}
+add_dependencies(pcl_merger_node
     ${catkin_EXPORTED_TARGETS}
     ${PROJECT_NAME}_gencfg
     )

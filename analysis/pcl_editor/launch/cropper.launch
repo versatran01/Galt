@@ -1,5 +1,5 @@
 <launch>
-    <arg name="pcd" default="/home/chao/Desktop/run1_0.pcd"/>
+    <arg name="pcd" default="/home/chao/Desktop/run2_1_t2.pcd"/>
     <arg name="pcd_cropped" default="test.pcd"/>
 
     <node pkg="pcl_editor" type="pcl_cropper_node" name="pcl_cropper"

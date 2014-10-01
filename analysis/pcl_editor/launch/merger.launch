@@ -1,8 +1,8 @@
 <launch>
     <arg name="pcd1"
-        default="/home/chao/Desktop/run1_0.pcd"/>
+        default="/home/chao/Desktop/run2_0_t2.pcd"/>
     <arg name="pcd2"
-        default="/home/chao/Desktop/run1_1.pcd"/>
+        default="/home/chao/Desktop/run2_1_t2.pcd"/>
     <arg name="pcd_merged" default="test.pcd"/>
 
     <node pkg="pcl_editor" type="pcl_merger_node" name="pcl_merger"

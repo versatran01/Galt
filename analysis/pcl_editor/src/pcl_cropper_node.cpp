@@ -10,6 +10,7 @@ void PclCropperNode::FilterByXYZ(MyPointCloud &cloud_filtered) {
   pass_x_.setInputCloud(cloud_);
   pass_x_.setFilterLimits(config_.x - config_.d_x, config_.x + config_.d_x);
   pass_x_.filter(*filter_x);
+
   // Filter by y
   MyPointCloud::Ptr filter_y(new MyPointCloud);
   pass_y_.setInputCloud(filter_x);

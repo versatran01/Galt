@@ -48,8 +48,18 @@ class PclEditorBase {
     viewer_->addCoordinateSystem();
     viewer_->initCameraParameters();
   }
-  virtual void EditPointCloud() {}
-  virtual void SavePointCloud() {}
+  virtual void EditPointCloud() { assert(false); }
+  virtual void SavePointCloud() { assert(false); }
+
+  void SaveToPcd(const std::string& pcd, const MyPointCloud& cloud) {
+    try {
+      pcl::io::savePCDFile(pcd, cloud);
+      ROS_INFO("Saved merged cloud to: %s", pcd.c_str());
+    }
+    catch (const std::exception& e) {
+      ROS_ERROR("%s: %s", nh_.getNamespace().c_str(), e.what());
+    }
+  }
 
   ros::NodeHandle nh_;
   PCLVisualizer::Ptr viewer_;
@@ -61,23 +71,24 @@ class PclEditorBase {
   void ConfigCb(ConfigType& config, int level) {
     config_ = config;
     // Initialize viewer
-    if (level == ConfigLevel::INIT) {
+    if (level == INIT) {
       ROS_INFO("Initialize reconfigure server for %s",
                nh_.getNamespace().c_str());
       InitializeViewer();
-      config.save = false;
+      config_.save = false;
     }
 
-    if (level <= ConfigLevel::EDIT) {
+    if (level <= EDIT) {
       EditPointCloud();
     }
 
-    if (level == ConfigLevel::SAVE) {
-      if (config.save) {
+    if (level == SAVE) {
+      if (config_.save) {
         SavePointCloud();
       }
-      config.save = false;
+      config_.save = false;
     }
+    config = config_;
   }
 
   ros::Rate rate_;
@@ -90,7 +101,7 @@ bool LoadPcdFile(const std::string& pcd, pcl::PointCloud<PointType>& cloud) {
     PCL_ERROR("Couldn't read file %s \n", pcd.c_str());
     return false;
   }
-  PCL_INFO("Loaded %zu points from %s", cloud.size(), pcd.c_str());
+  PCL_INFO("Loaded %zu points from %s \n", cloud.size(), pcd.c_str());
   return true;
 }
 

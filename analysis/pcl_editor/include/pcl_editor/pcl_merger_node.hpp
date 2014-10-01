@@ -7,9 +7,10 @@
 
 namespace pcl_editor {
 
-class PclMergerNode : public PclEditorBase<pcl_editor::MergerDynConfig> {
+class PclMergerNode : public PclEditorBase<MergerDynConfig> {
  public:
-  typedef PclEditorBase<pcl_editor::MergerDynConfig> super;
+  typedef PclEditorBase<MergerDynConfig> super;
+
   PclMergerNode(const ros::NodeHandle& nh)
       : PclEditorBase(nh, "merger", 10),
         cloud1_(new MyPointCloud),
@@ -26,9 +27,9 @@ class PclMergerNode : public PclEditorBase<pcl_editor::MergerDynConfig> {
     }
   }
 
-  virtual void InitializeViewer() override;
-  virtual void EditPointCloud() override;
-  virtual void SavePointCloud() override;
+  virtual void InitializeViewer();
+  virtual void EditPointCloud();
+  virtual void SavePointCloud();
 
  private:
   MyPointCloud::Ptr cloud1_, cloud2_, cloud_transformed_;

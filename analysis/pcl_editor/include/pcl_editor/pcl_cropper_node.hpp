@@ -1,30 +1,50 @@
 #ifndef PCL_CROPPER_NODE_HPP_
 #define PCL_CROPPER_NODE_HPP_
 
-#include "pcl_editor/pcl_editor.hpp"
+#include "pcl_editor/pcl_editor_base.hpp"
 
-#include <ros/ros.h>
-#include <dynamic_reconfigure/server.h>
+#include <pcl/filters/passthrough.h>
 #include <pcl_editor/CropperDynConfig.h>
 
 namespace pcl_editor {
 
-class PclCropperNode {
+class PclCropperNode : public PclEditorBase<CropperDynConfig> {
  public:
-  PclCropperNode(const ros::NodeHandle& nh);
+  typedef PclEditorBase<CropperDynConfig> super;
 
-  bool Ok() const { return !viewer_->wasStopped(); }
-  void SpinOnce() const { viewer_->spinOnce(100); }
+  PclCropperNode(const ros::NodeHandle& nh)
+      : PclEditorBase(nh, "cropper", 10),
+        cloud_(new MyPointCloud),
+        cloud_cropped_(new MyPointCloud),
+        id_("cloud"),
+        id_cropped_("cloud_cropped") {
+    // Load pcd file to crop
+    std::string pcd;
+    nh.param<std::string>("pcd", pcd, std::string());
+    if (!LoadPcdFile(pcd, *cloud_)) {
+      throw std::runtime_error("Failed to load pcd file.");
+    }
+    // These look like they are hacky
+    pass_x_.setFilterFieldName("x");
+    pass_y_.setFilterFieldName("y");
+    pass_z_.setFilterFieldName("z");
+  }
+
+  virtual void InitializeViewer();
+  virtual void EditPointCloud();
+  virtual void SavePointCloud();
 
  private:
-  void ConfigCb(CropperDynConfig& config, int level);
-
-  ros::NodeHandle nh_;
-  dynamic_reconfigure::Server<pcl_editor::CropperDynConfig> cfg_server_;
+  void FilterByXYZ(MyPointCloud& cloud_filtered);
 
   MyPointCloud::Ptr cloud_, cloud_cropped_;
-  pcl::visualization::PCLVisualizer::Ptr viewer_;
+  std::string id_, id_cropped_;
+  pcl::PassThrough<MyPoint> pass_x_;
+  pcl::PassThrough<MyPoint> pass_y_;
+  pcl::PassThrough<MyPoint> pass_z_;
 };
+
+void InitializeConfig(const MyPointCloud& cloud, CropperDynConfig& config);
 
 }  // namespace pcl_editor
 

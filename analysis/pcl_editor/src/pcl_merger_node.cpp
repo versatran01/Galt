@@ -12,10 +12,12 @@ void PclMergerNode::InitializeViewer() {
   // Add cloud1
   viewer_->addPointCloud<MyPoint>(cloud1_, id1_);
   viewer_->setPointCloudRenderingProperties(
-      visualization::PCL_VISUALIZER_POINT_SIZE, 1, id2_);
+      visualization::PCL_VISUALIZER_POINT_SIZE, 1, id1_);
   // Add cloud2 with a different color
   MyColorHandler single_color(cloud2_, 0, 255, 0);
   viewer_->addPointCloud<MyPoint>(cloud2_, single_color, id2_);
+  viewer_->setPointCloudRenderingProperties(
+      visualization::PCL_VISUALIZER_POINT_SIZE, 1, id2_);
 }
 
 void PclMergerNode::EditPointCloud() {
@@ -38,13 +40,7 @@ void PclMergerNode::SavePointCloud() {
   cloud_merged += *cloud_transformed_;
   ROS_INFO("Merging cloud, %zu + %zu = %zu", cloud1_->size(),
            cloud_transformed_->size(), cloud_merged.size());
-  try {
-    pcl::io::savePCDFile(config_.pcd_merged, cloud_merged);
-    ROS_INFO("Saved merged cloud to: %s", config_.pcd_merged.c_str());
-  }
-  catch (const std::exception& e) {
-    ROS_ERROR("%s: %s", nh_.getNamespace().c_str(), e.what());
-  }
+  SaveToPcd(config_.pcd_merged, cloud_merged);
 }
 
 }  // namespace pcl_editor

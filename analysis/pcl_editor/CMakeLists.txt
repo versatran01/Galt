@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(pcl_editor)
 
-add_definitions(-Wall -std=c++11 -Wno-deprecated)
+add_definitions(-Wall -Wno-deprecated -Wl,--as-needed)
 
 find_package(catkin REQUIRED COMPONENTS
     roscpp pcl_ros
@@ -14,7 +14,10 @@ include_directories(${PCL_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 
-generate_dynamic_reconfigure_options(cfg/MergerDyn.cfg)
+generate_dynamic_reconfigure_options(
+    cfg/MergerDyn.cfg
+    cfg/CropperDyn.cfg
+    )
 
 catkin_package(
     #  INCLUDE_DIRS include
@@ -33,6 +36,15 @@ add_executable(pcl_merger_node
     src/pcl_merger_node.cpp
     )
 target_link_libraries(pcl_merger_node
+    ${catkin_LIBRARIES}
+    ${PCL_LIBRARIES}
+    )
+
+add_executable(pcl_cropper_node
+    src/pcl_cropper_main.cpp
+    src/pcl_cropper_node.cpp
+    )
+target_link_libraries(pcl_cropper_node
     ${catkin_LIBRARIES}
     ${PCL_LIBRARIES}
     )

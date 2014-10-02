@@ -53,7 +53,6 @@ add_dependencies(pcl_merger_node
     ${catkin_EXPORTED_TARGETS}
     ${PROJECT_NAME}_gencfg
     )
-
 add_dependencies(pcl_cropper_node
     ${catkin_EXPORTED_TARGETS}
     ${PROJECT_NAME}_gencfg

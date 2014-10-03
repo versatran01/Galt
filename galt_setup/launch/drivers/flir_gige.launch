@@ -13,7 +13,8 @@
 -->
 <launch>
     <include file="$(find flir_gige)/launch/node.launch">
-        <arg name="fps" value="20"/>
+        <arg name="device" value="192.168.1.11"/>
+        <arg name="rate" value="30"/>
         <arg name="raw" value="true"/>
     </include>
 </launch>

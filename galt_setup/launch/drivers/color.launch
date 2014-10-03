@@ -17,5 +17,6 @@
         <arg name="camera" value="$(env GALT_COLOR_FRAME)"/>
         <arg name="aec" value="2"/>
         <arg name="ctm" value="0"/>
+        <arg name="color" value="true"/>
     </include>
 </launch>

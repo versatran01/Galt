@@ -1,0 +1,15 @@
+<!--
+  Name: laser.launch
+  Triggers:
+    * urg_node
+
+  Brief: Launch the hokuyo Smart-URG in ethernet configuration..
+
+  Topics you should record:
+    * /laser/scan
+-->
+
+<include file="$(find galt_setup)/launch/drivers/urg_eth.launch">
+    <arg name="device" value="$(env GALT_LASER_IP)"/>
+    <arg name="laser" value="$(env GALT_LASER_FRAME)"/>
+</include>

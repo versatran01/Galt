@@ -1,5 +1,5 @@
 <!--
-  Name: bluefox2_stereo.launch
+  Name: stereo.launch
   Triggers:
     * bluefox2 (2x)
 
@@ -9,19 +9,18 @@
     slave:  left  - grayscale - 752 x 480
 
   Topics you should record:
-    * /mv_stereo/left/image_raw
-    * /mv_stereo/left/camera_ino
-    * /mv_stereo/right/image_raw
-    * /mv_stereo/right/camera_info
+    * /stereo/left/image_raw
+    * /stereo/left/camera_ino
+    * /stereo/right/image_raw
+    * /stereo/right/camera_info
 -->
 
 <launch>
-    <arg name="left" default="25000855"/>
-    <arg name="right" default="25001110"/>
     <include file="$(find bluefox2)/launch/stereo_node.launch">
-        <arg name="left" value="$(arg left)"/>
-        <arg name="right" value="$(arg right)"/>
-        <arg name="rate" value="30"/>
+        <arg name="left" value="$(env GALT_STEREO_LEFT)"/>
+        <arg name="right" value="$(env GALT_STEREO_RIGHT)"/>
+        <arg name="rate" value="$(env GALT_STEREO_RATE)"/>
+        <arg name="camera" value="$(env GALT_STEREO_FRAME)"/>
         <arg name="aec" value="3"/>
         <arg name="hdr" value="false"/>
         <arg name="ctm" value="1"/>

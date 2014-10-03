@@ -1,5 +1,5 @@
 <!--
-  Name: ublox.launch
+  Name: gps.launch
   Triggers:
     * ublox_gps
 
@@ -7,22 +7,20 @@
   /dev/ttyUSB0. Ublox node itself fixes data rate at 5Hz.
 
   Topics you should record:
-    * /ublox_gps/fix
-    * /ublox_gps/fix_velocity
-    * /ublox_gps/navposllh
-    * /ublox_gps/navstatus
-    * /ublox_gps/navvelned
+    * /gps/fix
+    * /gps/fix_velocity
+    * /gps/navposllh
+    * /gps/navstatus
+    * /gps/navvelned
 -->
 
 <launch>
     <arg name="output" default="log"/>
-    <arg name="serial_id"
-        default="usb-u-blox_AG_-_www.u-blox.com_u-blox_7_-_GPS_GNSS_Receiver-if00"/>
 
     <include file="$(find ublox_gps)/launch/ublox_gps.launch">
+        <arg name="device" value="/dev/serial/by-id/$(env GALT_GPS_SERIAL)"/>
+        <arg name="frame_id" value="$(env GALT_GPS_FRAME)"/>
         <arg name="output" value="$(arg output)"/>
-        <arg name="device" value="/dev/serial/by-id/$(arg serial_id)"/>
-        <arg name="frame_id" value="gps"/>
         <arg name="baudrate" value="57600"/>
         <arg name="meas_rate" value="200"/>
         <arg name="dynamic_model" value="airborne1"/>

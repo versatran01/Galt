@@ -6,3 +6,4 @@
 * Setup and install scripts.
 * Hardware profile configuration files and TF launch files.
 * RViz profiles and RQT configs.
+* Bash scripts for different platforms.

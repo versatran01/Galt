@@ -21,23 +21,23 @@
     <arg name="ctm" default="0"/>
 
     <include file="$(find bluefox2)/launch/single_node.launch">
-        <arg name="serial" value="$(arg camera1)"/>
-        <arg name="fps" value="10"/>
+        <arg name="device" value="$(arg camera1)"/>
+        <arg name="rate" value="10"/>
         <arg name="color" value="true"/>
         <arg name="aec" value="2"/>
         <arg name="ctm" value="$(arg ctm)"/>
     </include>
 
     <include file="$(find bluefox2)/launch/single_node.launch">
-        <arg name="serial" value="$(arg camera2)"/>
-        <arg name="fps" value="5"/>
+        <arg name="device" value="$(arg camera2)"/>
+        <arg name="rate" value="5"/>
         <arg name="aec" value="2"/>
         <arg name="ctm" value="$(arg ctm)"/>
     </include>
 
     <include file="$(find bluefox2)/launch/single_node.launch">
-        <arg name="serial" value="$(arg camera3)"/>
-        <arg name="fps" value="5"/>
+        <arg name="device" value="$(arg camera3)"/>
+        <arg name="rate" value="5"/>
         <arg name="aec" value="2"/>
         <arg name="ctm" value="$(arg ctm)"/>
     </include>

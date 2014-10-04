@@ -27,7 +27,7 @@ export GALT_THERMAL_FRAME=thermal
 
 #IMU
 export GALT_IMU_SERIAL=usb-Lord_Microstrain_Lord_Inertial_Sensor_0000__6234.21073-if00
-export GALT_IMU_RATE=200
+export GALT_IMU_RATE=250
 export GALT_IMU_FRAME=imu
 
 #GPS

@@ -119,8 +119,8 @@
 
   <!-- Thermal proc -->
   <include file="$(find flir_gige)/launch/thermal_proc.launch">
-    <arg name="celcius_min" value="10"/>
-    <arg name="celcius_max" value="30"/>
+    <arg name="celsius_min" value="10"/>
+    <arg name="celsius_max" value="30"/>
   </include>
 
   <!-- Img2pcl -->

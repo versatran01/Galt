@@ -90,6 +90,13 @@
     <remap from="~fluid_pressure" to="/imu_covariance/pressure"/>
   </node>
 
+  <!-- Laser altimeter -->
+  <node name="laser_altimeter" pkg="laser_altimeter"
+    type="laser_altimeter" output="screen">
+    <remap from="~imu" to="/attitude_eskf/filtered_imu"/>
+    <remap from="~laser_scan" to="/hokuyo/scan_filtered"/>
+  </node>
+
   <!-- GPS Odometer -->
   <node name="gps_odom" pkg="gps_odom" type="gps_odom" output="screen">
     <!-- IMU w/ attitude estimate -->
@@ -119,8 +126,8 @@
 
   <!-- Thermal proc -->
   <include file="$(find flir_gige)/launch/thermal_proc.launch">
-    <arg name="celcius_min" value="10"/>
-    <arg name="celcius_max" value="30"/>
+    <arg name="celsius_min" value="10"/>
+    <arg name="celsius_max" value="30"/>
   </include>
 
   <!-- Img2pcl -->

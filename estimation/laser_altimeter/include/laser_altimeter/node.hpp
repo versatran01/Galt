@@ -24,6 +24,8 @@
 #include <sensor_msgs/LaserScan.h>
 #include <memory>
 #include <kr_math/base_types.hpp>
+#include <tf2/buffer_core.h>
+#include <tf2_ros/transform_listener.h>
 
 namespace galt {
 namespace laser_altimeter {
@@ -41,10 +43,14 @@ private:
   ros::Publisher pubHeight_;
   std::string worldFrameId_;
   
-  double angle_min_;
-  double angle_max_;
-  kr::quatd iQl_; /// laser to IMU rotation
-  kr::vec3d iPl_; /// position of laser in imu
+  double angleMin_;
+  double angleMax_;
+  
+  tf2::BufferCore tfCore_;
+  tf2_ros::TransformListener tfListener_;
+  
+  //kr::quatd iQl_; /// laser to IMU rotation
+  //kr::vec3d iPl_; /// position of laser in imu
 
   message_filters::Subscriber<sensor_msgs::Imu> subImu_;
   message_filters::Subscriber<sensor_msgs::LaserScan> subScan_;

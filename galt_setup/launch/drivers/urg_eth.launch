@@ -1,0 +1,31 @@
+<!--
+  Name: laser.launch
+  Triggers:
+    * urg_node
+
+  Brief: Launch the hokuyo LiDAR in ethernet configuration..
+
+  Topics you should record:
+    * /laser/scan
+-->
+<launch>
+    <!-- Common Interface -->
+    <arg name="device" default="192.168.0.10"/>
+
+    <!-- Laser Settings -->
+    <arg name="ip" default="$(arg device)"/>
+    <arg name="laser" default="laser"/>
+    <arg name="frame_id" default="$(arg laser)"/>
+    <arg name="calibrate_time" default="true"/>
+
+    <!-- Node Settings -->
+    <arg name="output" default="screen"/>
+
+    <!-- Node -->
+    <node name="urg_node" pkg="urg_node" type="urg_node" output="$(arg output)"
+        ns="$(arg laser)">
+        <param name="ip_address" type="string" value="$(arg ip)"/>
+        <param name="frame_id" type="string" value="$(arg frame_id)"/>
+        <param name="calibrate_time" type="bool" value="$(arg calibrate_time)"/>
+    </node>
+</launch>

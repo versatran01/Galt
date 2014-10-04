@@ -2,28 +2,32 @@
   Name: deploy_base.launch
   Author: Gareth
   Triggers:
-    * ublox
-    * imu_3dm_gx4
-    * kr_attitude_eskf (run mode, not calibrate)
-    * bluefox2 (3 sensing, 2 stereo)
+    * gps
+    * imu
+    * laser
+    * stereo
+    * color
+    * multi_spectral
+    * thermal
 
   Brief: Launch the base configuration of IRIS. This includes all devices
   which will be employed in all sensing modes.
 -->
 <launch>
     <!-- gps -->
-    <include file="$(find galt_setup)/launch/drivers/ublox.launch"/>
+    <include file="$(find galt_setup)/launch/drivers/gps.launch"/>
 
     <!-- imu -->
-    <include file="$(find galt_setup)/launch/drivers/imu_3dm_gx4.launch"/>
+    <include file="$(find galt_setup)/launch/drivers/imu.launch"/>
 
     <!-- laser -->
-    <include file="$(find galt_setup)/launch/drivers/hokuyo_eth.launch"/>
+    <include file="$(find galt_setup)/launch/drivers/laser.launch"/>
 
     <!-- camera -->
-    <include file="$(find galt_setup)/launch/drivers/bluefox2_sensing.launch"/>
-    <include file="$(find galt_setup)/launch/drivers/bluefox2_stereo.launch"/>
+    <include file="$(find galt_setup)/launch/drivers/stereo.launch"/>
+    <include file="$(find galt_setup)/launch/drivers/color.launch"/>
+    <include file="$(find galt_setup)/launch/drivers/multi_spectral.launch"/>
 
     <!--thermal-->
-    <include file="$(find galt_setup)/launch/drivers/flir_gige.launch"/>
+    <include file="$(find galt_setup)/launch/drivers/thermal.launch"/>
 </launch>

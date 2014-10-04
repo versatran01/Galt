@@ -1,0 +1,21 @@
+<!--
+  Name: thermal.launch
+  Triggers:
+    * fir_gige
+
+  Brief: Launch the flir_gige node. Uses calibration file in:
+  galt_setup/calib/flir_ax5.yml
+
+  Topics you should record:
+    * /thermal/image_raw
+    * /thermal/camera_info
+    * /thermal/spot
+-->
+<launch>
+    <include file="$(find flir_gige)/launch/node.launch">
+        <arg name="device" value="$(env GALT_THERMAL_IP)"/>
+        <arg name="rate" value="$(env GALT_THERMAL_RATE)"/>
+        <arg name="camera" value="$(env GALT_THERMAL_FRAME)"/>
+        <arg name="raw" value="true"/>
+    </include>
+</launch>

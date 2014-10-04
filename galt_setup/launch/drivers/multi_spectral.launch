@@ -1,0 +1,33 @@
+<!--
+  Name: multi_spectral.launch
+  Triggers:
+    * bluefox2 (2x)
+
+  Brief: Launch two Matrix-Vision bluefox2 MLC usb cameras.
+
+  Topics you should record:
+    * /spectral_670/camera_info
+    * /spectral_670/image_raw
+    * /spectral_800/camera_info
+    * /spectral_800/image_raw
+-->
+<launch>
+    <!--Camera Settings-->
+    <arg name="ctm" default="0"/>
+
+    <include file="$(find bluefox2)/launch/single_node.launch">
+        <arg name="device" value="$(env GALT_SPECTRAL_670_SERIAL)"/>
+        <arg name="rate" value="$(env GALT_SPECTRAL_RATE)"/>
+        <arg name="camera" value="$(env GALT_SPECTRAL_670_FRAME)"/>
+        <arg name="aec" value="2"/>
+        <arg name="ctm" value="$(arg ctm)"/>
+    </include>
+
+    <include file="$(find bluefox2)/launch/single_node.launch">
+        <arg name="device" value="$(env GALT_SPECTRAL_800_SERIAL)"/>
+        <arg name="rate" value="$(env GALT_SPECTRAL_RATE)"/>
+        <arg name="camera" value="$(env GALT_SPECTRAL_800_FRAME)"/>
+        <arg name="aec" value="2"/>
+        <arg name="ctm" value="$(arg ctm)"/>
+    </include>
+</launch>

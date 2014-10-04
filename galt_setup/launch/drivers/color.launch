@@ -1,0 +1,22 @@
+<!--
+  Name: color.launch
+  Triggers:
+    * bluefox2 (1x)
+
+  Brief: Launch one Matrix-Vision bluefox2 MLC usb camera.
+
+  Topics you should record:
+    * /color/camera_info
+    * /color/image_raw
+-->
+<launch>
+    <!--Camera Settings-->
+    <include file="$(find bluefox2)/launch/single_node.launch">
+        <arg name="device" value="$(env GALT_COLOR_SERIAL)"/>
+        <arg name="rate" value="$(env GALT_COLOR_RATE)"/>
+        <arg name="camera" value="$(env GALT_COLOR_FRAME)"/>
+        <arg name="aec" value="2"/>
+        <arg name="ctm" value="0"/>
+        <arg name="color" value="true"/>
+    </include>
+</launch>

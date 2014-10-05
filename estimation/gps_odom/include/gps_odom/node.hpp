@@ -30,6 +30,7 @@
 #include <GeographicLib/LocalCartesian.hpp>
 
 #include <pressure_altimeter/Height.h>
+#include <laser_altimeter/Height.h>
 #include <rviz_helper/visualizer.h>
 
 #include <memory>
@@ -40,6 +41,9 @@ class Node {
  public:
   Node();
 
+  /**
+   * @brief Create ROS subscribers and publishers.
+   */
   void initialize();
 
  private:
@@ -50,6 +54,7 @@ class Node {
   std::string worldFrameId_;
   ros::Publisher pubOdometry_;
   ros::Publisher pubRefPoint_;
+  ros::Subscriber subLaserHeight_;
 
   message_filters::Subscriber<sensor_msgs::Imu> subImu_;
   message_filters::Subscriber<sensor_msgs::NavSatFix> subFix_;
@@ -70,15 +75,22 @@ class Node {
       const sensor_msgs::ImuConstPtr &,
       const pressure_altimeter::HeightConstPtr &height);
 
+  void laserAltCallback(
+      const laser_altimeter::HeightConstPtr &laser_height);
+  
   //  geographic lib objects
   std::shared_ptr<GeographicLib::Geoid> geoid_;
   std::shared_ptr<GeographicLib::MagneticModel> magneticModel_;
 
-  bool refSet_;
+  bool refGpsSet_;
+  bool refLaserSet_;
   GeographicLib::LocalCartesian refPoint_;
-  double refHeight_;
+  double refPressureHeight_;
+  double refLaserHeight_;
   double currentDeclination_;
+  
   double gpsCovScaleFactor_;
+  bool shouldUseLaserInit_;
 
   kr::rviz_helper::TfPublisher tfPub_;
   kr::rviz_helper::TrajectoryVisualizer trajViz_;

@@ -106,6 +106,8 @@
     <remap from="~fix_velocity" to="/ublox_gps/fix_velocity"/>
     <!-- Altitude -->
     <remap from="~pressure_height" to="/pressure_altimeter/height"/>
+    <!-- Laser altitude -->
+    <remap from="~laser_height" to="/laser_altimeter/height"/>
     <!-- ID of world frame for GPS coordinates -->
     <param name="world_frame_id" type="string" value="world"/>
     <!-- Any other profile-specific parameters -->

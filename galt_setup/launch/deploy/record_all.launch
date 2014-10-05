@@ -1,6 +1,7 @@
 <launch>
+    <arg name="tag" default=""/>
     <node pkg="rosbag" type="record" name="recorder" output="screen"
-        args="
+        args="-o $(arg tag)
         /color/camera_info
         /color/image_raw
         /spectral_670/camera_info

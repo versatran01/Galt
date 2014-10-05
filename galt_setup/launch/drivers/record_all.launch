@@ -14,7 +14,7 @@
         /thermal/image_raw
         /thermal/camera_info
         /thermal/spot
-        /hokuyo/scan
+        /laser/scan
         /imu/imu
         /imu/magnetic_field
         /imu/pressure

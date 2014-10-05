@@ -33,9 +33,13 @@ Node::Node()
 
   //  scale factor for GPS covariance
   nh_.param<double>("gps_covariance_scale_factor",  gpsCovScaleFactor_, 1.0);
+  //  do we wait for laser altimeter to initialize height?
+  nh_.param<bool>("laser_init", shouldUseLaserInit_, false);
   
   ROS_INFO("Using a GPS covariance scale factor of %f", gpsCovScaleFactor_);
-  refSet_ = false;
+  refGpsSet_ = false;
+  refLaserSet_ = false;
+  refLaserHeight_ = 0;
   currentDeclination_ = 0.0;
   trajViz_.set_color(kr::rviz_helper::colors::RED);
   trajViz_.set_alpha(1);
@@ -51,6 +55,9 @@ void Node::initialize() {
   subFixTwist_.subscribe(nh_, "fix_velocity", kROSQueueSize);
   subHeight_.subscribe(nh_, "pressure_height", kROSQueueSize);
 
+  subLaserHeight_ = nh_.subscribe("laser_height",1,
+                                  &Node::laserAltCallback,this);
+  
   syncGps_ = std::make_shared<SynchronizerGPS>(
       TimeSyncGPS(kROSQueueSize), subFix_, subFixTwist_, subImu_, subHeight_);
   syncGps_->registerCallback(
@@ -68,6 +75,13 @@ void Node::gpsCallback(
     const sensor_msgs::ImuConstPtr &imu,
     const pressure_altimeter::HeightConstPtr &height) {
 
+  if (shouldUseLaserInit_ && !refLaserSet_) {
+    //  we are waiting for laser initialization height
+    ROS_INFO_THROTTLE(5.0, 
+                      "gps_odom has not yet received laser initialization");
+    return;
+  }
+  
   const double lat = navSatFix->latitude;
   const double lon = navSatFix->longitude;
   const double hWGS84 = navSatFix->altitude;
@@ -102,10 +116,10 @@ void Node::gpsCallback(
       lat, lon, hWGS84, GeographicLib::Geoid::ELLIPSOIDTOGEOID);
 
   //  generate linear coordinates
-  if (!refSet_) {
+  if (!refGpsSet_) {
     refPoint_ = GeographicLib::LocalCartesian(lat, lon, 0);
-    refHeight_ = height->height;
-    refSet_ = true;
+    refPressureHeight_ = height->height;
+    refGpsSet_ = true;
 
     //  publish only once
     sensor_msgs::NavSatFix refFix = *navSatFix;
@@ -145,7 +159,8 @@ void Node::gpsCallback(
   odometry.pose.pose.orientation.z = wQb.z();
   odometry.pose.pose.position.x = locX;
   odometry.pose.pose.position.y = locY;
-  odometry.pose.pose.position.z = (height->height - refHeight_);
+  odometry.pose.pose.position.z = 
+      (height->height - refPressureHeight_ + refLaserHeight_);
 
   //  generate covariance (6x6 with order: x,y,z,rot_x,rot_y,rot_z)
   kr::mat<double, 6, 6> poseCovariance;
@@ -183,8 +198,6 @@ void Node::gpsCallback(
       velCovariance(i + 3, j + 3) = -1;  //  unsupported
     }
   }
-  //  scale up z covariance on GPS velocity
-  // velCovariance(2, 2) *= 10;
 
   //  copy covariance to output
   for (int i = 0; i < 6; i++) {
@@ -200,6 +213,16 @@ void Node::gpsCallback(
   tfPub_.PublishTransform(odometry.pose.pose, odometry.header);
   trajViz_.PublishTrajectory(odometry.pose.pose.position, odometry.header);
   covViz_.PublishCovariance(odometry);
+}
+
+void Node::laserAltCallback(const laser_altimeter::HeightConstPtr &laserHeight) {
+  if (shouldUseLaserInit_) {
+    refLaserHeight_ = laserHeight->max;
+    refLaserSet_ = true;
+    ROS_INFO_ONCE_NAMED("gps_odom_ref_height",
+                        "Initialized gps_odom w/ laser height: %f", 
+                        refLaserHeight_);
+  }
 }
 
 }  //  namespace gps_odom

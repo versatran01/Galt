@@ -2,27 +2,28 @@
     <arg name="tag" default=""/>
     <node pkg="rosbag" type="record" name="recorder" output="screen"
         args="-o $(arg tag)
-        /color/camera_info
-        /color/image_raw
-        /spectral_670/camera_info
-        /spectral_670/image_raw
-        /spectral_800/camera_info
-        /spectral_800/image_raw
-        /stereo/left/image_raw
-        /stereo/left/camera_info
-        /stereo/right/image_raw
-        /stereo/right/camera_info
-        /thermal/image_raw
-        /thermal/camera_info
-        /thermal/spot
-        /laser/scan
-        /imu/imu
-        /imu/magnetic_field
-        /imu/pressure
+        /$(env GALT_COLOR_FRAME)/camera_info
+        /$(env GALT_COLOR_FRAME)/image_raw
+        /$(env GALT_SPECTRAL_670_FRAME)/camera_info
+        /$(env GALT_SPECTRAL_670_FRAME)/image_raw
+        /$(env GALT_SPECTRAL_800_FRAME)/camera_info
+        /$(env GALT_SPECTRAL_800_FRAME)/image_raw
+        /$(env GALT_STEREO_FRAME)/left/image_raw
+        /$(env GALT_STEREO_FRAME)/left/camera_info
+        /$(env GALT_STEREO_FRAME)/right/image_raw
+        /$(env GALT_STEREO_FRAME)/right/camera_info
+        /$(env GALT_THERMAL_FRAME)/image_raw
+        /$(env GALT_THERMAL_FRAME)/camera_info
+        /$(env GALT_THERMAL_FRAME)/spot
+        /$(env GALT_LASER_FRAME)/scan
+        /$(env GALT_IMU_FRAME)/imu
+        /$(env GALT_IMU_FRAME)/magnetic_field
+        /$(env GALT_IMU_FRAME)/pressure
+        /$(env GALT_GPS_FRAME)/fix
+        /$(env GALT_GPS_FRAME)/fix_velocity
+        /$(env GALT_GPS_FRAME)/navposllh
+        /$(env GALT_GPS_FRAME)/navstatus
+        /$(env GALT_GPS_FRAME)/navvelned
         /spectrometer/spectrum
-        /gps/fix
-        /gps/fix_velocity
-        /gps/navposllh
-        /gps/navstatus
-        /gps/navvelned"/>
+        "/>
 </launch>

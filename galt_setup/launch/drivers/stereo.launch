@@ -21,6 +21,7 @@
         <arg name="right" value="$(env GALT_STEREO_RIGHT)"/>
         <arg name="rate" value="$(env GALT_STEREO_RATE)"/>
         <arg name="camera" value="$(env GALT_STEREO_FRAME)"/>
+        <arg name="expose_us" value="10000"/>
         <arg name="aec" value="3"/>
         <arg name="hdr" value="false"/>
         <arg name="ctm" value="1"/>

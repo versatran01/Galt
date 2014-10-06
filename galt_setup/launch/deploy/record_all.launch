@@ -1,5 +1,5 @@
 <launch>
-    <arg name="tag" default=""/>
+    <arg name="tag" default="galt"/>
     <node pkg="rosbag" type="record" name="recorder" output="screen"
         args="-o $(arg tag)
         /$(env GALT_COLOR_FRAME)/camera_info

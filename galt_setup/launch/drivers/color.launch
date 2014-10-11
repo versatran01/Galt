@@ -15,6 +15,7 @@
         <arg name="device" value="$(env GALT_COLOR_SERIAL)"/>
         <arg name="rate" value="$(env GALT_COLOR_RATE)"/>
         <arg name="camera" value="$(env GALT_COLOR_FRAME)"/>
+        <arg name="calib_url" value="$(en GALT_CAMERA_CALIB_DIR)/calib_$(arg device).yml"/>
         <arg name="aec" value="2"/>
         <arg name="ctm" value="0"/>
         <arg name="color" value="true"/>

@@ -11,6 +11,7 @@
     * /thermal/camera_info
     * /thermal/spot
 -->
+
 <launch>
     <include file="$(find flir_gige)/launch/node.launch">
         <arg name="device" value="$(env GALT_THERMAL_IP)"/>

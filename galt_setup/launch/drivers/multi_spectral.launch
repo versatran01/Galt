@@ -14,13 +14,14 @@
 <launch>
     <!--Camera Settings-->
     <arg name="ctm" default="0"/>
+    <arg name="aec" default="2"/>
 
     <include file="$(find bluefox2)/launch/single_node.launch">
         <arg name="device" value="$(env GALT_SPECTRAL_670_SERIAL)"/>
         <arg name="rate" value="$(env GALT_SPECTRAL_RATE)"/>
         <arg name="camera" value="$(env GALT_SPECTRAL_670_FRAME)"/>
-        <arg name="calib_url" value="$(env GALT_CAMERA_CALIB_DIR)/calib_$(arg device).yml"/>
-        <arg name="aec" value="2"/>
+        <arg name="calib_url" value="$(env GALT_CAMERA_CALIB_DIR)/calib_$(env GALT_SPECTRAL_670_SERIAL).yml"/>
+        <arg name="aec" value="$(arg aec)"/>
         <arg name="ctm" value="$(arg ctm)"/>
     </include>
 
@@ -28,8 +29,8 @@
         <arg name="device" value="$(env GALT_SPECTRAL_800_SERIAL)"/>
         <arg name="rate" value="$(env GALT_SPECTRAL_RATE)"/>
         <arg name="camera" value="$(env GALT_SPECTRAL_800_FRAME)"/>
-        <arg name="calib_url" value="$(env GALT_CAMERA_CALIB_DIR)/calib_$(arg device).yml"/>
-        <arg name="aec" value="2"/>
+        <arg name="calib_url" value="$(env GALT_CAMERA_CALIB_DIR)/calib_$(env GALT_SPECTRAL_800_SERIAL).yml"/>
+        <arg name="aec" value="$(arg aec)"/>
         <arg name="ctm" value="$(arg ctm)"/>
     </include>
 </launch>

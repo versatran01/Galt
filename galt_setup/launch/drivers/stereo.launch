@@ -4,9 +4,9 @@
     * bluefox2 (2x)
 
   Brief: Launch the Matrix-Vision bluefox2 MLC usb camera in a
-    stereo setup. The two cameras are expected to be
-    master: right - grayscale - 752 x 480
-    slave:  left  - grayscale - 752 x 480
+    stereo setup. The two cameras are expected to be two grayscale
+    camera with 752 x 480 resolution, and they should be software
+    synchronized.
 
   Topics you should record:
     * /stereo/left/image_raw
@@ -16,14 +16,19 @@
 -->
 
 <launch>
+    <arg name="left" default="$(env GALT_STEREO_LEFT)"/>
+    <arg name="right" value="$(env GALT_STEREO_RIGHT)"/>
+
     <include file="$(find bluefox2)/launch/stereo_node.launch">
-        <arg name="left" value="$(env GALT_STEREO_LEFT)"/>
-        <arg name="right" value="$(env GALT_STEREO_RIGHT)"/>
+        <arg name="left" default="$(arg left)"/>
+        <arg name="right" default="$(arg right)"/>
         <arg name="rate" value="$(env GALT_STEREO_RATE)"/>
         <arg name="camera" value="$(env GALT_STEREO_FRAME)"/>
-        <arg name="expose_us" value="10000"/>
-        <arg name="aec" value="3"/>
-        <arg name="hdr" value="false"/>
-        <arg name="ctm" value="1"/>
+        <arg name="left_calib_url" default="$(env GALT_CAMERA_CALIB_DIR)/calib_$(arg left).yml"/>
+        <arg name="right_calib_url" default="$(env GALT_CAMERA_CALIB_DIR)/calib_$(arg right).yml"/>
+        <arg name="expose_us" default="10000"/>
+        <arg name="aec" default="3"/>
+        <arg name="hdr" default="false"/>
+        <arg name="ctm" default="1"/>
     </include>
 </launch>

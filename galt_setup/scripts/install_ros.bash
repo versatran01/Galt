@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # This file will install ros and all dependencies we need from it
 
@@ -15,7 +15,6 @@ fi
 if [[ -f "/opt/ros/indigo/setup.bash" ]] ; then
     echo "ROS already installed."
 else
-
     # Setup your sources.list
     sh -c 'echo "deb http://packages.ros.org/ros/ubuntu trusty main" > /etc/apt/sources.list.d/ros-latest.list'
 

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # This file will install all dependencies from apt-get
 PACAKGES=(

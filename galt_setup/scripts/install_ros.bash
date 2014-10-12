@@ -24,7 +24,6 @@ else
     # Installation
     apt-get update
     apt-get install ros-indigo-desktop-full
-    apt-cache search ros-indigo
 
     # Initialize rosdep
     rosdep init

@@ -4,12 +4,9 @@
 PACAKGES=(
 autojump
 bpython
-calibre
 clang
+clang-format-3.5
 cmake
-compiz
-compizconfig-settings-manager
-compiz-plugins
 curl
 dstat
 exuberant-ctags
@@ -18,6 +15,7 @@ gitg
 git-review
 guake
 htop
+libceres-dev
 meld
 pkg-config
 python-matplotlib

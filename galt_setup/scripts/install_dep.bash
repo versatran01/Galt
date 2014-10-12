@@ -21,6 +21,7 @@ echo "Done installing gtsam."
 
 # g2o
 echo "Installing g2o."
+sudo apt-get install libeigen3-dev libsuitesparse-dev libqt4-dev qt4-qmake libqglviewer-dev
 G2O=g2o
 cd ${TMP_DIR}
 git clone https://github.com/RainerKuemmerle/g2o

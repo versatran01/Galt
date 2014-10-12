@@ -15,7 +15,6 @@ echo "google repo installed to ${REPO_DIR}/repo."
 
 echo "now cloning Galt and dependencies."
 CLONE_DIR=~/Workspace/repo
-GALT_DIR=Galt
 NOUKA_DIR=nouka
 
 if [[ ! -d ${CLONE_DIR} ]]; then
@@ -24,10 +23,9 @@ if [[ ! -d ${CLONE_DIR} ]]; then
 fi
 
 cd ${CLONE_DIR}
-git clone https://github.com/gareth-cross/Galt.git
-echo "Galt cloned to ${CLONE_DIR}/${GALT_DIR}."
-
-mkdir ${NOUKA_DIR}
+if [[ ! -d ${NOUKA_DIR} ]]; then
+    mkdir ${NOUKA_DIR}
+fi
 cd ${NOUKA_DIR}
 repo init -u  https://github.com/versatran01/galt_repo.git
 repo sync

@@ -25,6 +25,7 @@ sudo apt-get install libeigen3-dev libsuitesparse-dev libqt4-dev qt4-qmake libqg
 G2O=g2o
 cd ${TMP_DIR}
 git clone https://github.com/RainerKuemmerle/g2o
+cd ${G2O}
 mkdir build
 cd build
 cmake ..

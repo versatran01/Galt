@@ -33,6 +33,7 @@
   <!-- Laser Filter -->
   <include file="$(find galt_setup)/launch/process/laser_scan_filter.launch">
     <arg name="filter" value="$(find galt_setup)/profiles/$(arg profile)/laser_filter.yml"/>
+    <arg name="laser" value="laser"/>
   </include>
 
   <include file="$(find galt_setup)/launch/process/laser_cloud_filter.launch">
@@ -94,7 +95,7 @@
   <node name="laser_altimeter" pkg="laser_altimeter"
     type="laser_altimeter" output="screen">
     <remap from="~imu" to="/attitude_eskf/filtered_imu"/>
-    <remap from="~laser_scan" to="/hokuyo/scan_filtered"/>
+    <remap from="~laser_scan" to="/laser/scan_filtered"/>
   </node>
 
   <!-- GPS Odometer -->
@@ -102,8 +103,8 @@
     <!-- IMU w/ attitude estimate -->
     <remap from="~imu" to="/attitude_eskf/filtered_imu"/>
     <!-- GPS inputs -->
-    <remap from="~fix" to="/ublox_gps/fix"/>
-    <remap from="~fix_velocity" to="/ublox_gps/fix_velocity"/>
+    <remap from="~fix" to="/gps/fix"/>
+    <remap from="~fix_velocity" to="/gps/fix_velocity"/>
     <!-- Altitude -->
     <remap from="~pressure_height" to="/pressure_altimeter/height"/>
     <!-- Laser altitude -->

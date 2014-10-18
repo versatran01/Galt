@@ -14,20 +14,12 @@
   which will be employed in all sensing modes.
 -->
 <launch>
-    <!-- gps -->
-    <include file="$(find galt_setup)/launch/drivers/gps.launch"/>
+    <!-- estimation -->
+    <include file="$(find galt_setup)/launch/deploy/deploy_estimation.launch"/>
 
-    <!-- imu -->
-    <include file="$(find galt_setup)/launch/drivers/imu.launch"/>
-
-    <!-- laser -->
-    <include file="$(find galt_setup)/launch/drivers/laser.launch"/>
-
-    <!-- camera -->
-    <include file="$(find galt_setup)/launch/drivers/stereo.launch"/>
-    <include file="$(find galt_setup)/launch/drivers/color.launch"/>
+    <!-- multi_spectral -->
     <include file="$(find galt_setup)/launch/drivers/multi_spectral.launch"/>
 
-    <!--thermal-->
+    <!-- thermal -->
     <include file="$(find galt_setup)/launch/drivers/thermal.launch"/>
 </launch>

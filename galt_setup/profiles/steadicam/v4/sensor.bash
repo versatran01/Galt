@@ -38,8 +38,11 @@ export GALT_IMU_RATE=250
 export GALT_IMU_FRAME=imu
 
 #GPS
-export GALT_GPS_SERIAL=usb-u-blox_AG_-_www.u-blox.com_u-blox_GNSS_receiver-if00
-export GALT_GPS_RATE=5
+export GALT_GPS_SERIAL=usb-u-blox_AG_-_www.u-blox.com_u-blox_7_-_GPS_GNSS_Receiver-if00
+export GALT_GPS_RATE=10
+export GALT_GPS_VERSION=7
+export GALT_GPS_ENABLE_PPP=false
+export GALT_GPS_ENABLE_GLONASS=false
 export GALT_GPS_FRAME=gps
 
 #Spectrometer

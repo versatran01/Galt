@@ -7,7 +7,7 @@
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/video/video.hpp"
 
-#include <kr_math/feature.hpp>
+#include <kr_vision/feature.hpp>
 #include <kr_math/SO3.hpp>
 
 namespace galt {

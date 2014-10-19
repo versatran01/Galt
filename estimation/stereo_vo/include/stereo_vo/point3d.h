@@ -2,7 +2,7 @@
 #define GALT_STEREO_VO_POINT_H_
 
 #include <stereo_vo/common.h>
-#include <kr_math/feature.hpp>
+#include <kr_vision/feature.hpp>
 #include <image_geometry/stereo_camera_model.h>
 
 namespace galt {

@@ -57,3 +57,5 @@ echo "Installing eBus SDK."
 bash ~/Workspace/repo/nouka/drivers/flir_gige/install/install.bash
 echo "Done installign eBus SDK."
 
+sudo usermod -a -G dialout galt
+

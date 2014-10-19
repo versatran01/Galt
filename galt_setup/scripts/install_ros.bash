@@ -50,5 +50,6 @@ ros-indigo-octomap-ros
 ros-indigo-octomap-msgs
 ros-indigo-octovis
 ros-indigo-octomap-rviz-plugins
+ros-indigo-urg-node
 )
 apt-get -y --force-yes install ${PACKAGES[@]}

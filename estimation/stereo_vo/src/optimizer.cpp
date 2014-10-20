@@ -26,6 +26,7 @@ void WindowedOptimizer::Optimize(std::deque<FramePtr>& key_frames,
     // Add camera initial pose estimate
     const KeyFrame& frame = *frame_ptr;
     const size_t x = frame.id();
+#warning This usage of matrix() is probably invalid now
     const Matrix3 mat3 = frame.pose().q.conjugate().matrix().cast<double>();
     const Rot3 rot3(mat3);
     const Point3 trans(frame.pose().p[0], frame.pose().p[1], frame.pose().p[2]);
@@ -135,6 +136,7 @@ void IncrementalOptimizer::Optimize(std::deque<FramePtr>& key_frames,
   KeyFrame& frame = *frame_ptr;
 
   //  pose estimate and symbol for this frame
+#warning This usage of matrix() is probably invalid now
   const gtsam::Matrix3 mat3 =
       frame.pose().q.conjugate().matrix().cast<double>();
   const gtsam::Rot3 rot3(mat3);
@@ -228,7 +230,7 @@ void IncrementalOptimizer::Optimize(std::deque<FramePtr>& key_frames,
     converted.p = kr::vec3<scalar_t>(updatedPose.translation().x(),
                                      updatedPose.translation().y(),
                                      updatedPose.translation().z());
-
+#warning This usage of matrix() is probably invalid now
     converted.q =
         kr::quat<scalar_t>(updatedPose.rotation().matrix().cast<scalar_t>())
             .conjugate();

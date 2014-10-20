@@ -18,22 +18,25 @@ namespace stereo_vo {
 
 StereoVoNode::StereoVoNode(const ros::NodeHandle& nh,
                            const ros::NodeHandle& pnh)
-    : nh_(nh), pnh_(pnh), it_(nh), tf_listener_(core_),
-      traj_viz_(pnh_), cov_viz_(pnh_) {
-  
+    : nh_(nh),
+      pnh_(pnh),
+      it_(nh),
+      tf_listener_(core_),
+      traj_viz_(pnh_),
+      cov_viz_(pnh_) {
   pnh_.param<std::string>("parent_frame_id", parent_frame_id_, "world");
   pnh_.param<std::string>("frame_id", frame_id_, "stereo_vo");
   SubscribeStereoTopics("image_rect", "camera_info", "raw");
   cfg_server_.setCallback(boost::bind(&StereoVoNode::ConfigCb, this, _1, _2));
-  
+
   pub_point_ = pnh_.advertise<sensor_msgs::PointCloud>("points", 1);
-  
+
   //  configure visualization tools
-  traj_viz_.set_color(kr::rviz_helper::colors::GREEN);
-  traj_viz_.set_alpha(1);
+  traj_viz_.SetColor(kr::viz::colors::GREEN);
+  traj_viz_.SetAlpha(1);
   traj_viz_.set_num_skip(12);
-  cov_viz_.set_color(kr::rviz_helper::colors::GREEN);
-  cov_viz_.set_alpha(0.5);
+  cov_viz_.SetColor(kr::viz::colors::GREEN);
+  cov_viz_.SetAlpha(0.5);
   tf_pub_.set_child_frame_id(frame_id_);
 }
 
@@ -123,7 +126,7 @@ void StereoVoNode::StereoCb(const ImageConstPtr& l_image_msg,
     return;
   }
 
-  const bool inserted_kf = 
+  const bool inserted_kf =
       stereo_vo_.Iterate(stereo_image, l_image_msg->header.stamp);
 
   //  publish any new points that were triangulated
@@ -132,7 +135,7 @@ void StereoVoNode::StereoCb(const ImageConstPtr& l_image_msg,
     PublishPointCloud(l_image_msg->header.stamp, "stereo");
   }
   PublishPoseAndViz(l_image_msg->header.stamp);
-  
+
   //  publish points and pose
   //  if (!frame_id_.empty()) {
   //    PublishPointCloud(l_image_msg->header.stamp);
@@ -148,7 +151,7 @@ void StereoVoNode::PublishPointCloud(const ros::Time& time,
                                      const std::string& frame_id) const {
   const std::deque<KeyFrame>& kfs = stereo_vo_.key_frames();
   const KeyFrame& kf = kfs.back();  //  latest keyframe
-  
+
   sensor_msgs::PointCloud cloud;
   cloud.header.stamp = time;
   cloud.header.frame_id = frame_id;
@@ -163,7 +166,7 @@ void StereoVoNode::PublishPointCloud(const ros::Time& time,
     t_max = std::max(t, t_max);
     t_min = std::min(t, t_min);
   }
-  
+
   union {
     uint8_t rgb[4];
     float val;
@@ -191,20 +194,23 @@ void StereoVoNode::PublishPointCloud(const ros::Time& time,
 }
 
 void StereoVoNode::PublishPoseAndViz(const ros::Time& time) {
-  
+
   geometry_msgs::PoseWithCovarianceStamped pose;
   pose.header.stamp = time;
   pose.header.frame_id = parent_frame_id_;
   pose.pose.pose = static_cast<geometry_msgs::Pose>(stereo_vo_.w_T_c());
-  
-  const kr::mat<scalar_t,6,6> cur_cov = stereo_vo_.pose_covariance();
-  for (int i=0; i < 6; i++) {
-    for (int j=0; j < 6; j++) {
-      pose.pose.covariance[i*6 + j] = cur_cov(i,j);
+
+  const kr::mat<scalar_t, 6, 6> cur_cov = stereo_vo_.pose_covariance();
+  for (int i = 0; i < 6; i++) {
+    for (int j = 0; j < 6; j++) {
+      pose.pose.covariance[i * 6 + j] = cur_cov(i, j);
     }
   }
-  
-  tf_pub_.PublishTransform(pose.pose.pose,parent_frame_id_,time);
+
+  std_msgs::Header header;
+  header.frame_id = parent_frame_id_;
+  header.stamp = time;
+  tf_pub_.PublishTransform(pose.pose.pose, header);
   cov_viz_.PublishCovariance(pose);
   traj_viz_.PublishTrajectory(pose.pose.pose, pose.header);
 }

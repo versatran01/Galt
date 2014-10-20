@@ -20,7 +20,8 @@
 #include <tf2_ros/transform_listener.h>
 #include <stereo_vo/StereoVoDynConfig.h>
 
-#include <rviz_helper/visualizer.h>
+#include <rviz_helper/marker_visualizer.hpp>
+#include <rviz_helper/tf_publisher.hpp>
 
 #include "stereo_vo/stereo_vo.h"
 #include "stereo_vo/common.h"
@@ -74,9 +75,9 @@ class StereoVoNode {
   tf2_ros::TransformListener tf_listener_;
   ros::Publisher pub_point_;
 
-  kr::rviz_helper::TfPublisher tf_pub_;
-  kr::rviz_helper::TrajectoryVisualizer traj_viz_;
-  kr::rviz_helper::CovarianceVisualizer cov_viz_;
+  kr::viz::TfPublisher tf_pub_;
+  kr::viz::TrajectoryVisualizer traj_viz_;
+  kr::viz::CovarianceVisualizer cov_viz_;
 
   /// Publish a coloured point cloud of all current features.
   void PublishPointCloud(const ros::Time& time,

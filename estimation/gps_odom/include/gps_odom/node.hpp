@@ -9,8 +9,10 @@
  *		  Author: gareth
  */
 
-#ifndef GPS_ODOM_NODE_HPP
-#define GPS_ODOM_NODE_HPP
+#ifndef GPS_ODOM_NODE_HPP_
+#define GPS_ODOM_NODE_HPP_
+
+#include <memory>
 
 #include <ros/ros.h>
 #include <ros/node_handle.h>
@@ -31,9 +33,8 @@
 
 #include <pressure_altimeter/Height.h>
 #include <laser_altimeter/Height.h>
-#include <rviz_helper/visualizer.h>
-
-#include <memory>
+#include "rviz_helper/marker_visualizer.hpp"
+#include "rviz_helper/tf_publisher.hpp"
 
 namespace gps_odom {
 
@@ -75,9 +76,8 @@ class Node {
       const sensor_msgs::ImuConstPtr &,
       const pressure_altimeter::HeightConstPtr &height);
 
-  void laserAltCallback(
-      const laser_altimeter::HeightConstPtr &laser_height);
-  
+  void laserAltCallback(const laser_altimeter::HeightConstPtr &laser_height);
+
   //  geographic lib objects
   std::shared_ptr<GeographicLib::Geoid> geoid_;
   std::shared_ptr<GeographicLib::MagneticModel> magneticModel_;
@@ -88,15 +88,15 @@ class Node {
   double refPressureHeight_;
   double refLaserHeight_;
   double currentDeclination_;
-  
+
   double gpsCovScaleFactor_;
   bool shouldUseLaserInit_;
 
-  kr::rviz_helper::TfPublisher tfPub_;
-  kr::rviz_helper::TrajectoryVisualizer trajViz_;
-  kr::rviz_helper::CovarianceVisualizer covViz_;
+  kr::viz::TfPublisher tfPub_;
+  kr::viz::TrajectoryVisualizer trajViz_;
+  kr::viz::CovarianceVisualizer covViz_;
 };
 
 }  //  namespace_gps_odom
 
-#endif  // GPS_ODOM_NODE_HPP
+#endif  // GPS_ODOM_NODE_HPP_

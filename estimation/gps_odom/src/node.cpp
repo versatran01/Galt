@@ -32,19 +32,19 @@ Node::Node()
   nh_.param<std::string>("world_frame_id", worldFrameId_, "world");
 
   //  scale factor for GPS covariance
-  nh_.param<double>("gps_covariance_scale_factor",  gpsCovScaleFactor_, 1.0);
+  nh_.param<double>("gps_covariance_scale_factor", gpsCovScaleFactor_, 1.0);
   //  do we wait for laser altimeter to initialize height?
   nh_.param<bool>("laser_init", shouldUseLaserInit_, false);
-  
+
   ROS_INFO("Using a GPS covariance scale factor of %f", gpsCovScaleFactor_);
   refGpsSet_ = false;
   refLaserSet_ = false;
   refLaserHeight_ = 0;
   currentDeclination_ = 0.0;
-  trajViz_.set_color(kr::rviz_helper::colors::RED);
-  trajViz_.set_alpha(1);
-  covViz_.set_color(kr::rviz_helper::colors::RED);
-  covViz_.set_alpha(0.5);
+  trajViz_.SetColor(kr::viz::colors::RED);
+  trajViz_.SetAlpha(1);
+  covViz_.SetColor(kr::viz::colors::RED);
+  covViz_.SetAlpha(0.5);
 }
 
 void Node::initialize() {
@@ -55,9 +55,9 @@ void Node::initialize() {
   subFixTwist_.subscribe(nh_, "fix_velocity", kROSQueueSize);
   subHeight_.subscribe(nh_, "pressure_height", kROSQueueSize);
 
-  subLaserHeight_ = nh_.subscribe("laser_height",1,
-                                  &Node::laserAltCallback,this);
-  
+  subLaserHeight_ =
+      nh_.subscribe("laser_height", 1, &Node::laserAltCallback, this);
+
   syncGps_ = std::make_shared<SynchronizerGPS>(
       TimeSyncGPS(kROSQueueSize), subFix_, subFixTwist_, subImu_, subHeight_);
   syncGps_->registerCallback(
@@ -77,11 +77,11 @@ void Node::gpsCallback(
 
   if (shouldUseLaserInit_ && !refLaserSet_) {
     //  we are waiting for laser initialization height
-    ROS_INFO_THROTTLE(5.0, 
+    ROS_INFO_THROTTLE(5.0,
                       "gps_odom has not yet received laser initialization");
     return;
   }
-  
+
   const double lat = navSatFix->latitude;
   const double lon = navSatFix->longitude;
   const double hWGS84 = navSatFix->altitude;
@@ -135,9 +135,8 @@ void Node::gpsCallback(
   magneticModel_->operator()(tYears, lat, lon, hWGS84, bEast, bNorth, bUp);
   currentDeclination_ = -std::atan2(bEast, bNorth);
   const double degDec = currentDeclination_ * 180 / M_PI;
-  ROS_INFO_ONCE_NAMED("gps_odom_mag_dec", 
-                      "Magnetic declination set to %f degrees",
-                      degDec);
+  ROS_INFO_ONCE_NAMED("gps_odom_mag_dec",
+                      "Magnetic declination set to %f degrees", degDec);
 
   //  calculate corrected yaw angle
   //  matrix composition is of the form wRb = Rz * Ry * Rx
@@ -159,7 +158,7 @@ void Node::gpsCallback(
   odometry.pose.pose.orientation.z = wQb.z();
   odometry.pose.pose.position.x = locX;
   odometry.pose.pose.position.y = locY;
-  odometry.pose.pose.position.z = 
+  odometry.pose.pose.position.z =
       (height->height - refPressureHeight_ + refLaserHeight_);
 
   //  generate covariance (6x6 with order: x,y,z,rot_x,rot_y,rot_z)
@@ -215,12 +214,13 @@ void Node::gpsCallback(
   covViz_.PublishCovariance(odometry);
 }
 
-void Node::laserAltCallback(const laser_altimeter::HeightConstPtr &laserHeight) {
+void Node::laserAltCallback(
+    const laser_altimeter::HeightConstPtr &laserHeight) {
   if (shouldUseLaserInit_) {
     refLaserHeight_ = laserHeight->max;
     refLaserSet_ = true;
     ROS_INFO_ONCE_NAMED("gps_odom_ref_height",
-                        "Initialized gps_odom w/ laser height: %f", 
+                        "Initialized gps_odom w/ laser height: %f",
                         refLaserHeight_);
   }
 }

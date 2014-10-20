@@ -9,8 +9,8 @@
  *		  Author: gareth
  */
 
-#ifndef GPS_KF_NODE_HPP
-#define GPS_KF_NODE_CPP
+#ifndef GPS_KF_NODE_HPP_
+#define GPS_KF_NODE_HPP_
 
 #include <ros/ros.h>
 #include <ros/node_handle.h>
@@ -18,9 +18,10 @@
 #include <sensor_msgs/Imu.h>
 #include <nav_msgs/Odometry.h>
 
-#include <gps_kf/error_state_kf.hpp>
+#include "gps_kf/error_state_kf.hpp"
 
-#include <rviz_helper/visualizer.h>
+#include "rviz_helper/marker_visualizer.hpp"
+#include "rviz_helper/tf_publisher.hpp"
 
 namespace gps_kf {
 
@@ -60,11 +61,11 @@ class Node {
   ros::Time predictTime_;
 
   std::string worldFrameId_;
-  kr::rviz_helper::TfPublisher tfPub_;
-  kr::rviz_helper::TrajectoryVisualizer trajViz_;
-  kr::rviz_helper::CovarianceVisualizer covViz_;
+  kr::viz::TfPublisher tfPub_;
+  kr::viz::TrajectoryVisualizer trajViz_;
+  kr::viz::CovarianceVisualizer covViz_;
 };
 
 }  //  namespace gps_kf
 
-#endif  //  GPS_KF_NODE_HPP
+#endif  //  GPS_KF_NODE_HPP_

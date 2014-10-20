@@ -256,7 +256,7 @@ bool ErrorStateKF<Scalar>::update(const kr::quat<Scalar> &qm,
   //  non-linear rotation residual on yaw axis
   const kr::quat<Scalar> dq = q_.conjugate() * qm;
   const Eigen::AngleAxis<Scalar> aa(dq);
-  const kr::vec3<Scalar> rpy = kr::getRPY(aa.matrix());
+  const kr::vec3<Scalar> rpy = kr::rotToEulerZYX(aa.matrix());
 
   // r.template block<3, 1>(6, 0) = aa.angle()*aa.axis();
   r(6, 0) = rpy[2];

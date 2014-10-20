@@ -15,10 +15,10 @@ catkin_init_workspace
 
 echo "Linking Galt and nouka"
 if [[ ! -L Galt ]]; then
-    ln -s ~/Workspace/repo/Galt .
+    ln -s ~/Workspace/repo/Galt/galt_setup .
 fi
 if [[ ! -L nouka ]]; then
-    ln -s ~/Workspace/repo/nouka .
+    ln -s ~/Workspace/repo/nouka/drivers .
 fi
 cd ${WS_DIR}
 catkin_make

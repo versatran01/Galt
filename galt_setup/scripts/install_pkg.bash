@@ -3,20 +3,16 @@
 # This file will install all dependencies from apt-get
 PACAKGES=(
 autojump
-bpython
-clang
-clang-format-3.5
 cmake
 curl
 dstat
-exuberant-ctags
 git
 gitg
 git-review
 guake
 htop
-libceres-dev
 meld
+openssh-server
 pkg-config
 python-matplotlib
 python-numpy
@@ -24,7 +20,6 @@ python-pip
 python-scipy
 tig
 tmux
-valgrind
 vim
 vim-gtk
 )

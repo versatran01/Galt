@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # This file will install all dependencies from apt-get
-PACAKGES=(
+PACKAGES=(
 autojump
 cmake
 curl
@@ -35,7 +35,7 @@ fi
 
 echo "Making sure all system software is up to date."
 apt-get update --force-yes
-apt-get -y upgrade --force-yes
+apt-get upgrade --force-yes
 
 #Intall packages
-apt-get -y --force-yes install ${PACKAGES[@]}
+apt-get install ${PACKAGES[@]}

@@ -10,7 +10,10 @@ find_package(catkin REQUIRED COMPONENTS
 
 find_package(OpenCV REQUIRED)
 
-add_service_files(FILES SaveToPcd.srv)
+add_service_files(FILES
+    SaveToPcd.srv
+    LoadFromPcd.srv
+    )
 
 generate_messages(DEPENDENCIES std_msgs)
 
@@ -21,7 +24,6 @@ include_directories(
     ${catkin_INCLUDE_DIRS}
     ${OpenCV_INCLUDE_DIRS}
     )
-
 
 add_executable(${PROJECT_NAME} src/ndvi_preview_node.cpp)
 target_link_libraries(${PROJECT_NAME}

@@ -1,0 +1,9 @@
+<launch>
+    <arg name="assembler_red" default="assembler_670"/>
+    <arg name="assembler_ir" default="assembler_800"/>
+
+    <node pkg="ndvi_preview" type="ndvi_cloud_node" name="ndvi_cloud" output="screen">
+        <remap from="~assemble_red" to="/$(arg assembler_red)/assemble_scans2"/>
+        <remap from="~assemble_ir" to="/$(arg assembler_ir)/assemble_scans2"/>
+    </node>
+</launch>

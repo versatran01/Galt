@@ -11,13 +11,13 @@
     <!--stereo_left_color-->
     <node pkg="tf2_ros" type="static_transform_publisher"
         name="stereo_color_broadcaster"
-        args="-0.042979 -0.001128 0.002047 0 0 0 1 stereo mv_29900189">
+        args="-0.042979 -0.001128 0.002047 0 0 0 1 stereo color">
     </node>
 
     <!--stereo_left_thermal-->
     <node pkg="tf2_ros" type="static_transform_publisher"
         name="stereo_thermal_broadcaster"
-        args="-0.133046 -0.000133 -0.01294 0 0 0 1 stereo flir_gige">
+        args="-0.133046 -0.000133 -0.01294 0 0 0 1 stereo thermal">
     </node>
 
     <!--imu_laser-->

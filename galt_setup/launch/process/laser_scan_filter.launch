@@ -1,5 +1,5 @@
 <launch>
-    <arg name="laser" default="hokuyo"/>
+    <arg name="laser" default="laser"/>
     <arg name="filter"/>
 
     <node pkg="laser_filters" type="scan_to_scan_filter_chain"

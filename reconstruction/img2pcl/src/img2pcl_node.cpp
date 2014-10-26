@@ -155,5 +155,5 @@ void ExtractInfoFromImage(const PointCloud<PointXYZ> pcl_cloud_in,
   pcl::toROSMsg(pcl_cloud_out, *ros_cloud_out);
 }
 
-}  // namespace thermal_map
+}  // namespace img2pcl
 }  // namespace galt

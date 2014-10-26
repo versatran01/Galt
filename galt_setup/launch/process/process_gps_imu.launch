@@ -135,12 +135,12 @@
 
   <!-- Img2pcl -->
   <include file="$(find img2pcl)/launch/node.launch">
-    <arg name="camera" value="mv_29900189"/>
+    <arg name="camera" value="color"/>
   </include>
 
   <include file="$(find img2pcl)/launch/node.launch">
     <arg name="image" value="image_proc"/>
-    <arg name="camera" value="flir_gige"/>
+    <arg name="camera" value="thermal"/>
   </include>
 
 </launch>

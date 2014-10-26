@@ -1,5 +1,6 @@
 <launch>
-    <arg name="cloud" default="/hokuyo/cloud_filtered"/>
+    <arg name="laser" default="laser"/>
+    <arg name="cloud" default="/$(arg laser)/cloud_filtered"/>
     <arg name="fix_frame" default="world"/>
     <arg name="max_clouds" default="8000"/>
     <arg name="assembler" default="assembler"/>

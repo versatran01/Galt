@@ -21,6 +21,10 @@ class NdviCloudNode {
   }
 
   bool SaveToPcd(SaveToPcd::Request &req, SaveToPcd::Response &res);
+  bool AssembleCloud2(laser_assembler::AssembleScans2 &srv,
+                      ros::ServiceClient &client);
+  bool SavePcdToDir(const sensor_msgs::PointCloud2 &cloud_ros,
+                    const std::string &dirname, const std::string &filename);
 
  private:
   ros::NodeHandle nh_;
@@ -28,10 +32,6 @@ class NdviCloudNode {
   ros::ServiceClient assemble_red_srv_client_;
   ros::ServiceClient assemble_ir_srv_client_;
 };
-
-bool AssembleCloud2(const ros::NodeHandle &nh,
-                    laser_assembler::AssembleScans2 &srv,
-                    ros::ServiceClient &client);
 
 }  // namespace ndvi
 

@@ -1,0 +1,6 @@
+# The directory name to which we want to load the two point clouds
+string dirname
+---
+# Number of points in the cloud
+bool success
+

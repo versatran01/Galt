@@ -143,4 +143,25 @@
     <arg name="camera" value="thermal"/>
   </include>
 
+  <include file="$(find img2pcl)/launch/node.launch">
+    <arg name="image" value="image_raw"/>
+    <arg name="camera" value="spectral_670"/>
+  </include>
+
+  <include file="$(find img2pcl)/launch/node.launch">
+    <arg name="image" value="image_raw"/>
+    <arg name="camera" value="spectral_800"/>
+  </include>
+
+  <!--Point cloud assembler-->
+  <include file="$(find galt_setup)/launch/process/point_cloud_assembler.launch">
+    <arg name="cloud" value="/spectral_670/cloud"/>
+    <arg name="assembler" value="assembler_670"/>
+  </include>
+
+  <include file="$(find galt_setup)/launch/process/point_cloud_assembler.launch">
+    <arg name="cloud" value="/spectral_800/cloud"/>
+    <arg name="assembler" value="assembler_800"/>
+  </include>
+
 </launch>

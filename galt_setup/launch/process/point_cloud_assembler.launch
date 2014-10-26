@@ -1,12 +1,12 @@
 <launch>
     <arg name="laser" default="laser"/>
     <arg name="cloud" default="/$(arg laser)/cloud_filtered"/>
-    <arg name="fix_frame" default="world"/>
+    <arg name="fixed_frame" default="world"/>
     <arg name="max_clouds" default="8000"/>
     <arg name="assembler" default="assembler"/>
 
-    <node pkg="laser_assembler" type="point_cloud_assembler"
-        name="ponit_cloud_assembler" ns="$(arg assembler)">
+    <node pkg="laser_assembler" type="point_cloud2_assembler"
+        name="point_cloud_assembler" ns="$(arg assembler)">
         <remap from="cloud" to="$(arg cloud)"/>
         <param name="max_clouds" type="int" value="$(arg max_clouds)"/>
         <param name="fixed_frame" type="string" value="$(arg fixed_frame)"/>

@@ -1,5 +1,5 @@
 <launch>
-    <arg name="laser" default="hokuyo"/>
+    <arg name="laser" default="laser"/>
     <arg name="target_frame" default="laser"/>
     <arg name="filter"/>
 

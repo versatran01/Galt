@@ -1,0 +1,15 @@
+<launch>
+  <!-- these values are initial made up values from hand measurement -->
+
+  <!-- imu_stereo_left, imu is parent, stereo is child -->
+  <node pkg="tf2_ros" type="static_transform_publisher"
+      name="imu_stereo_broadcaster"
+      args="0.0 0.0 0.0 0 0 0 1 imu stereo">
+  </node>
+
+  <!-- imu_laser, imu is parent, laser is child -->
+  <node pkg="tf2_ros" type="static_transform_publisher"
+      name="imu_laser_broadcaster"
+      args="0.0573 -0.0682 0.0103 0 -0.7071067 0 0.7071067 imu laser">
+  </node>
+</launch>

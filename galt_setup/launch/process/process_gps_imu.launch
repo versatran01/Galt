@@ -132,15 +132,4 @@
     <arg name="celsius_min" value="10"/>
     <arg name="celsius_max" value="30"/>
   </include>
-
-  <!-- Img2pcl -->
-  <include file="$(find img2pcl)/launch/node.launch">
-    <arg name="camera" value="mv_29900189"/>
-  </include>
-
-  <include file="$(find img2pcl)/launch/node.launch">
-    <arg name="image" value="image_proc"/>
-    <arg name="camera" value="flir_gige"/>
-  </include>
-
 </launch>

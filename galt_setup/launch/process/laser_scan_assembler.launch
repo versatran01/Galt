@@ -1,5 +1,6 @@
 <launch>
-    <arg name="scan" default="/hokuyo/scan_filtered"/>
+    <arg name="laser" default="laser"/>
+    <arg name="scan" default="/$(arg laser)/scan_filtered"/>
     <arg name="max_scans" default="8000"/>
     <arg name="assembler" default="assembler"/>
     <arg name="fixed_frame" default="world"/>

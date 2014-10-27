@@ -9,21 +9,21 @@ import camera_info_manager
 import fix_ublox
 
 
-def read_left_cinfo():
-    left_cinfo_manager = camera_info_manager.CameraInfoManager(
-        'mv_25000855', 'package://galt_setup/calib/calib_25000855.yml')
-    left_cinfo_manager.loadCameraInfo()
-    return left_cinfo_manager.getCameraInfo()
+#def read_left_cinfo():
+    #left_cinfo_manager = camera_info_manager.CameraInfoManager(
+        #'mv_25000855', 'package://galt_setup/calib/calib_25000855.yml')
+    #left_cinfo_manager.loadCameraInfo()
+    #return left_cinfo_manager.getCameraInfo()
 
 
-fixer = fix_ublox.UbloxFixer()
-left_cinfo = read_left_cinfo()
-left_image_name = '/mv_stereo/left/image_raw'
-left_cinfo_name = '/mv_stereo/left/camera_info'
-right_image_name = '/mv_stereo/right/image_raw'
-right_cinfo_name = '/mv_stereo/right/camera_info'
-flir_image_name = '/flir_gige/image_raw'
-flir_cinfo_name = '/flir_gige/camera_info'
+#fixer = fix_ublox.UbloxFixer()
+#left_cinfo = read_left_cinfo()
+#left_image_name = '/mv_stereo/left/image_raw'
+#left_cinfo_name = '/mv_stereo/left/camera_info'
+#right_image_name = '/mv_stereo/right/image_raw'
+#right_cinfo_name = '/mv_stereo/right/camera_info'
+#flir_image_name = '/flir_gige/image_raw'
+#flir_cinfo_name = '/flir_gige/camera_info'
 
 
 def fix_bag(input_bag, input_path, output_path):

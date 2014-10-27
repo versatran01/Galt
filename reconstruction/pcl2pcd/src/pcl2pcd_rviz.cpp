@@ -4,6 +4,8 @@
 
 namespace pcl2pcd {
 
+using namespace geometry_msgs;
+
 Pcl2PcdRviz::Pcl2PcdRviz(const ros::NodeHandle &nh, const ros::NodeHandle &pnh)
     : nh_(nh),
       pnh_(pnh),
@@ -38,11 +40,10 @@ bool Pcl2PcdRviz::SaveToPcd(SaveToPcd::Request &req, SaveToPcd::Response &res) {
   return true;
 }
 
-void Pcl2PcdRviz::GoalCb(
-    const geometry_msgs::PoseStampedConstPtr &pose_stamped) {
-  // This indicates when to start to assemble clouds
+void Pcl2PcdRviz::GoalCb(const PoseStampedConstPtr &) {
+  // This indicates when to stop to assemble clouds
   if (sub_cloud_) {
-    ROS_INFO("Stop recording point cloud");
+    ROS_INFO_STREAM("Stop recording point cloud" << clouds_.size());
     sub_cloud_.shutdown();
     // Put into clouds if cloud is non-empty
     if (!cloud_->empty()) {
@@ -53,9 +54,8 @@ void Pcl2PcdRviz::GoalCb(
   }
 }
 
-void Pcl2PcdRviz::PoseCb(
-    const geometry_msgs::PoseWithCovarianceStampedConstPtr &pose_cov_stamped) {
-  // This indicates when to stop to assemble clouds
+void Pcl2PcdRviz::PoseCb(const PoseWithCovarianceStampedConstPtr &) {
+  // This indicates when to start to assemble clouds
   if (!sub_cloud_) {
     sub_cloud_ = nh_.subscribe("cloud_filtered", queue_size_,
                                &Pcl2PcdRviz::CloudCb, this);

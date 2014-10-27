@@ -1,6 +1,5 @@
 <launch>
-    <arg name="laser" default="hokuyo"/>
-    <arg name="cloud" default="cloud_filtered"/>
+    <arg name="laser" default="laser"/>
     <arg name="output" default="screen"/>
     <arg name="queue_size" default="1000"/>
 

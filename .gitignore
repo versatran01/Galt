@@ -92,3 +92,4 @@ gen/*
 *.exe
 *.out
 *.app
+*.pcd

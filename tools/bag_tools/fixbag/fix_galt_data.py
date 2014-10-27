@@ -53,8 +53,8 @@ def process_in_and_out(input_path, output_path):
 
 
 def main():
-    input_path = '/media/chao/Seagate/test/'
-    output_path = '/media/chao/Seagate/test_fix/'
+    input_path = '/home/chao/Workspace/bag/biglerville/steadicam'
+    output_path = '/home/chao/Workspace/bag/biglerville/steadicam_fix'
     (input_path, output_path) = process_in_and_out(input_path, output_path)
     print("input path:", input_path)
     print("output path:", output_path)

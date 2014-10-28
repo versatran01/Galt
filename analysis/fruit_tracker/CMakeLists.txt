@@ -22,10 +22,10 @@ include_directories(
   include
   ${catkin_INCLUDE_DIRS}
 )
-
 add_executable(${PROJECT_NAME}
   src/main.cpp
   src/node.cpp
+  src/fruit_tracker.cpp
 )
 add_dependencies(${PROJECT_NAME}
   ${catkin_EXPORTED_TARGETS}

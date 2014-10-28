@@ -37,5 +37,4 @@ private:
 } //  namespace fruit_tracker
 } //  namespace galt
 
-
 #endif

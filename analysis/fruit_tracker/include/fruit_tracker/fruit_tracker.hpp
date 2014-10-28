@@ -1,8 +1,8 @@
 #ifndef FRUIT_TRACKER_HPP
 #define FRUIT_TRACKER_HPP
 
-#include <Eigen/Core>
 #include <opencv2/opencv.hpp>
+#include <vector>
 
 namespace galt {
 namespace fruit_tracker {
@@ -22,6 +22,9 @@ public:
   double imageRadius() const { return image_radius_; }
   void setImageRadius(double image_radius) { image_radius_ = image_radius; }
   
+  /// Calculate fruit matching score?
+  double matchingScore(const Fruit& fruit) const;
+  
 private:
   cv::Point2d image_position_;
   double image_area_;
@@ -33,9 +36,15 @@ class Tracker {
 public:
   Tracker() {}
   virtual ~Tracker() {}
+
+  void track(const cv::Mat& input);
   
 private:
+  std::vector<int> match(const std::vector<Fruit>& group1,
+                         const std::vector<Fruit>& group2);
   
+  std::vector<Fruit> tracked_fruits_;
+  cv::Mat previous_mat_;
 };
 
 } //  namespace fruit_tracker

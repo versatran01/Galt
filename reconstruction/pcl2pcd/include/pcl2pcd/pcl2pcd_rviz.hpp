@@ -19,11 +19,9 @@ class Pcl2PcdRviz {
  private:
   typedef pcl::PointCloud<pcl::PointWithViewpoint> MyPointCloud;
 
-  void GoalCb(const geometry_msgs::PoseStampedConstPtr& pose_stamped);
-  void PoseCb(
-      const geometry_msgs::PoseWithCovarianceStampedConstPtr& pose_cov_stamped);
+  void GoalCb(const geometry_msgs::PoseStampedConstPtr&);
+  void PoseCb(const geometry_msgs::PoseWithCovarianceStampedConstPtr&);
   void CloudCb(const sensor_msgs::PointCloud2ConstPtr& cloud_msg);
-
   void BuildCloud(const pcl::PointCloud<pcl::PointXYZ>& cloud,
                   const geometry_msgs::Vector3& pos);
   bool SaveToPcd(pcl2pcd::SaveToPcd::Request& req,

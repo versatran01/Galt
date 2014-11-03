@@ -19,7 +19,7 @@
         <arg name="rate" value="$(arg rate)"/>
         <arg name="camera" value="$(env GALT_COLOR_FRAME)"/>
         <arg name="calib_url" value="$(env GALT_CAMERA_CALIB_DIR)/calib_$(arg device).yml"/>
-        <arg name="expose_us" value="800"/>
+        <arg name="expose_us" value="5000"/>
         <arg name="aec" value="3"/>
         <arg name="ctm" value="0"/>
         <arg name="wbp" value="3"/>

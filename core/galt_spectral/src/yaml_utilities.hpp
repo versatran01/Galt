@@ -31,7 +31,6 @@ bool hasFields(const YAML::Node& node, const std::initializer_list<T>& keys) {
   }
   return true;
 }
-
 }
 
-#endif // YAML_UTILITIES_HPP
+#endif  // YAML_UTILITIES_HPP

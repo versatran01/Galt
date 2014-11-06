@@ -12,7 +12,7 @@
 #include <ros/ros.h>
 #include <gps_odom/node.hpp>
 
-int main(int argc, char ** argv) {
+int main(int argc, char** argv) {
   ros::init(argc, argv, "gps_odom");
   gps_odom::Node node;
   node.initialize();

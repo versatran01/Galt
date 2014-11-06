@@ -22,15 +22,15 @@ namespace galt {
  * @brief Describes the pose of a spectrometer effector in a camera frame.
  */
 class SpectrometerPose {
-public:
+ public:
   SpectrometerPose();
 
-  SpectrometerPose(const kr::vec3d &position, const kr::vec3d &direction,
+  SpectrometerPose(const kr::Vec3d &position, const kr::Vec3d &direction,
                    double fov, double squaredError);
 
-  const kr::vec3d &getPosition() const;
+  const kr::Vec3d &getPosition() const;
 
-  const kr::vec3d &getDirection() const;
+  const kr::Vec3d &getDirection() const;
 
   const double &getFov() const;
 
@@ -43,23 +43,24 @@ public:
    * @return Distance along the spectrometer direction to the plane, or
    *  std::numeric_limits::infinity() if the plane is perp. to the sensor.
    */
-  double distanceToPlane(const kr::vec3d &o, const kr::vec3d &n) const;
+  double distanceToPlane(const kr::Vec3d &o, const kr::Vec3d &n) const;
 
-private:
-  kr::vec3d position_;
-  kr::vec3d direction_;
+ private:
+  kr::Vec3d position_;
+  kr::Vec3d direction_;
   double fov_;
   double squaredError_;
 };
 
-} // namespace galt
+}  // namespace galt
 
 namespace YAML {
 
 /**
  * @brief Encodes SpectrometerPose to and from yaml.
  */
-template <> struct convert<galt::SpectrometerPose> {
+template <>
+struct convert<galt::SpectrometerPose> {
   static Node encode(const galt::SpectrometerPose &rhs);
   static bool decode(const Node &node, galt::SpectrometerPose &rhs);
 };
@@ -74,4 +75,4 @@ template <> struct convert<galt::SpectrometerPose> {
 YAML::Emitter &operator<<(YAML::Emitter &out,
                           const galt::SpectrometerPose &pose);
 
-#endif // GALT_SPECTRAL_SPECTROMETERPOSE_HPP_
+#endif  // GALT_SPECTRAL_SPECTROMETERPOSE_HPP_

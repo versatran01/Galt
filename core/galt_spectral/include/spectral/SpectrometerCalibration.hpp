@@ -28,15 +28,15 @@ struct SpectrometerCalibration {
    * @brief A sample collected during the calibration.
    */
   struct Sample {
-    double reflectance;         /// Known sample reflectance.
-    galt::Spectrum measurement; /// Measured spectra.
+    double reflectance;          /// Known sample reflectance.
+    galt::Spectrum measurement;  /// Measured spectra.
   };
 
-  std::string calibrationDate; /// Date of calibration.
+  std::string calibrationDate;  /// Date of calibration.
 
-  galt::Spectrum sourceSpectrum; /// Spectrum of source used in calibration.
+  galt::Spectrum sourceSpectrum;  /// Spectrum of source used in calibration.
 
-  std::vector<Sample> sampleSpectra; /// Samples collected during calibration.
+  std::vector<Sample> sampleSpectra;  /// Samples collected during calibration.
 };
 }
 
@@ -45,7 +45,8 @@ namespace YAML {
 /**
  * @brief Encodes SpectrometerCalibration to and from yaml.
  */
-template <> struct convert<galt::SpectrometerCalibration> {
+template <>
+struct convert<galt::SpectrometerCalibration> {
   static Node encode(const galt::SpectrometerCalibration &rhs);
   static bool decode(const Node &node, galt::SpectrometerCalibration &rhs);
 };
@@ -60,4 +61,4 @@ template <> struct convert<galt::SpectrometerCalibration> {
 YAML::Emitter &operator<<(YAML::Emitter &out,
                           const galt::SpectrometerCalibration &calib);
 
-#endif // GALT_SPECTRAL_SPECTROMETERCALIBRATION_HPP
+#endif  // GALT_SPECTRAL_SPECTROMETERCALIBRATION_HPP

@@ -14,7 +14,7 @@
  */
 
 #include <laser_altimeter/node.hpp>
-#include <laser_altimeter/Height.h> //  published message
+#include <laser_altimeter/Height.h>  //  published message
 #include <stdexcept>
 #include <memory>
 
@@ -36,28 +36,28 @@ Node::Node(const ros::NodeHandle &nh) : nh_(nh), tfListener_(tfCore_) {
   }
 
   //  load transform between laser and IMU
-//  if (nh.hasParam("laser_transform")) {
-//    nh_.param("laser_transform/orientation/w", iQl_.w(), 1.0);
-//    nh_.param("laser_transform/orientation/x", iQl_.x(), 0.0);
-//    nh_.param("laser_transform/orientation/y", iQl_.y(), 0.0);
-//    nh_.param("laser_transform/orientation/z", iQl_.z(), 0.0);
-//    nh_.param("laser_transform/position/x", iPl_[0], 0.0);
-//    nh_.param("laser_transform/position/y", iPl_[1], 0.0);
-//    nh_.param("laser_transform/position/z", iPl_[2], 0.0);
+  //  if (nh.hasParam("laser_transform")) {
+  //    nh_.param("laser_transform/orientation/w", iQl_.w(), 1.0);
+  //    nh_.param("laser_transform/orientation/x", iQl_.x(), 0.0);
+  //    nh_.param("laser_transform/orientation/y", iQl_.y(), 0.0);
+  //    nh_.param("laser_transform/orientation/z", iQl_.z(), 0.0);
+  //    nh_.param("laser_transform/position/x", iPl_[0], 0.0);
+  //    nh_.param("laser_transform/position/y", iPl_[1], 0.0);
+  //    nh_.param("laser_transform/position/z", iPl_[2], 0.0);
 
-//    ROS_INFO_STREAM("Loaded transform from yaml:\n" << iQl_.matrix());
-//  } else {
-//    ROS_WARN("No laser/imu transform provided - assuming identity");
-//    iQl_ = kr::quatd(1, 0, 0, 0);
-//    iPl_.setZero();
-//  }
+  //    ROS_INFO_STREAM("Loaded transform from yaml:\n" << iQl_.matrix());
+  //  } else {
+  //    ROS_WARN("No laser/imu transform provided - assuming identity");
+  //    iQl_ = kr::Quatd(1, 0, 0, 0);
+  //    iPl_.setZero();
+  //  }
   nh.param("world_frame_id", worldFrameId_, std::string("world"));
 
   //  min/max angles to use on lidar, default to [-inf, inf]
   nh.param("angle_min", angleMin_, -std::numeric_limits<double>::infinity());
   nh.param("angle_max", angleMax_, std::numeric_limits<double>::infinity());
   ROS_INFO("Min/max angles: %f, %f", angleMin_, angleMax_);
-  
+
   subImu_.subscribe(nh_, "imu", queue_size);
   subScan_.subscribe(nh_, "laser_scan", queue_size);
   sync_ = std::make_shared<Synchronizer>(TimeSyncPolicy(queue_size), subImu_,
@@ -73,13 +73,13 @@ void Node::syncCallback(const sensor_msgs::ImuConstPtr &imuMsg,
                         const sensor_msgs::LaserScanConstPtr &laserMsg) {
 
   //  IMU to world rotation
-  const kr::quatd wQi(imuMsg->orientation.w, imuMsg->orientation.x,
+  const kr::Quatd wQi(imuMsg->orientation.w, imuMsg->orientation.x,
                       imuMsg->orientation.y, imuMsg->orientation.z);
 
   const double ang_start = laserMsg->angle_min;
   const double ang_inc = laserMsg->angle_increment;
 
-  const kr::mat3d wRi = wQi.matrix();
+  const kr::Mat3d wRi = wQi.matrix();
 
   std::vector<double> heights;
   heights.reserve(laserMsg->ranges.size());
@@ -93,33 +93,34 @@ void Node::syncCallback(const sensor_msgs::ImuConstPtr &imuMsg,
   //  get laser to imu transform
   kr::Posed laser_to_imu;
   try {
-    const geometry_msgs::TransformStamped transform = tfCore_.lookupTransform(
-        "imu", "laser", ros::Time(0));
-    const geometry_msgs::Vector3& t = transform.transform.translation;
-    const geometry_msgs::Quaternion& r = transform.transform.rotation;
-    const kr::vec3d p(t.x, t.y, t.z);
-    const kr::quatd q(r.w, r.x, r.y, r.z);
+    const geometry_msgs::TransformStamped transform =
+        tfCore_.lookupTransform("imu", "laser", ros::Time(0));
+    const geometry_msgs::Vector3 &t = transform.transform.translation;
+    const geometry_msgs::Quaternion &r = transform.transform.rotation;
+    const kr::Vec3d p(t.x, t.y, t.z);
+    const kr::Quatd q(r.w, r.x, r.y, r.z);
     laser_to_imu.q() = q;
     laser_to_imu.p() = p;
-  } catch (const tf2::TransformException& e) {
+  }
+  catch (const tf2::TransformException &e) {
     ROS_WARN("%s", e.what());
   }
-  
+
   double angle = ang_start;
   for (const float &range : laserMsg->ranges) {
     if (range > laserMsg->range_min && range < laserMsg->range_max) {
       //  consider only angles in the specified range
       if (angle >= angleMin_ && angle <= angleMax_) {
         //  rotation from beam to laser
-        const Eigen::AngleAxisd lRotb(angle, kr::vec3d(0, 0, 1));
+        const Eigen::AngleAxisd lRotb(angle, kr::Vec3d(0, 0, 1));
 
-        const kr::vec3d v_b(range, 0, 0);           //  vector in the beam frame
-        const kr::vec3d v_l = lRotb.matrix() * v_b; //  laser frame
-        
-        const kr::vec3d v_i = laser_to_imu.transformToBody(v_l);  //  IMU frame
-        
+        const kr::Vec3d v_b(range, 0, 0);  //  vector in the beam frame
+        const kr::Vec3d v_l = lRotb.matrix() * v_b;  //  laser frame
+
+        const kr::Vec3d v_i = laser_to_imu.transformToBody(v_l);  //  IMU frame
+
         //  rotate the vector to world frame (without translating)
-        const kr::vec3d v_w = wRi * v_i;
+        const kr::Vec3d v_w = wRi * v_i;
 
 #ifdef DEBUG_PUB_CLOUD
         geometry_msgs::Point32 p32;
@@ -165,7 +166,7 @@ void Node::syncCallback(const sensor_msgs::ImuConstPtr &imuMsg,
   msg.header.frame_id = worldFrameId_;
   if (heights.empty()) {
     msg.max = msg.mean = 0;
-    msg.variance = -1; //  leave other fields zero
+    msg.variance = -1;  //  leave other fields zero
   } else {
     msg.max = max;
     msg.mean = mean;
@@ -174,5 +175,5 @@ void Node::syncCallback(const sensor_msgs::ImuConstPtr &imuMsg,
   pubHeight_.publish(msg);
 }
 
-} //  laser_altimeter
-} //  galt
+}  //  laser_altimeter
+}  //  galt

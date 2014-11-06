@@ -45,9 +45,9 @@ Node::Node(const ros::NodeHandle &nh) : nh_(nh) {
   }
 
   try {
-    accelStd_ = noiseStd["accel"].as<kr::vec3d>();
-    gyroStd_ = noiseStd["gyro"].as<kr::vec3d>();
-    fieldStd_ = noiseStd["mag"].as<kr::vec3d>();
+    accelStd_ = noiseStd["accel"].as<kr::Vec3d>();
+    gyroStd_ = noiseStd["gyro"].as<kr::Vec3d>();
+    fieldStd_ = noiseStd["mag"].as<kr::Vec3d>();
     pressureStd_ = noiseStd["pressure"].as<double>();
   }
   catch (std::exception &e) {
@@ -82,8 +82,8 @@ void Node::imuCallback(const sensor_msgs::ImuConstPtr &imuMsg) {
   pubImu_.publish(imu);
 }
 
-void
-Node::magneticFieldCallback(const sensor_msgs::MagneticFieldConstPtr &magMsg) {
+void Node::magneticFieldCallback(
+    const sensor_msgs::MagneticFieldConstPtr &magMsg) {
   sensor_msgs::MagneticField field = *magMsg;
   field.header.seq = 0;
   field.magnetic_field_covariance[0] = fieldStd_[0] * fieldStd_[0];
@@ -100,5 +100,5 @@ void Node::fluidPressureCallback(
   pubPressure_.publish(pressure);
 }
 
-} //  imu_covariance
-} //  galt
+}  //  imu_covariance
+}  //  galt

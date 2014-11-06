@@ -139,12 +139,12 @@ void Node::gpsCallback(
                       "Magnetic declination set to %f degrees", degDec);
 
   //  calculate corrected yaw angle
-  //  matrix composition is of the form wRb = Rz * Ry * Rx
+  //  Matrix composition is of the form wRb = Rz * Ry * Rx
   Eigen::AngleAxisd aa;
   aa.angle() = currentDeclination_;
   aa.axis() = Eigen::Vector3d(0.0, 0.0, 1.0);
 
-  kr::quatd wQb = kr::quatd(imu->orientation.w, imu->orientation.x,
+  kr::Quatd wQb = kr::Quatd(imu->orientation.w, imu->orientation.x,
                             imu->orientation.y, imu->orientation.z);
   wQb = aa * wQb;
 
@@ -162,7 +162,7 @@ void Node::gpsCallback(
       (height->height - refPressureHeight_ + refLaserHeight_);
 
   //  generate covariance (6x6 with order: x,y,z,rot_x,rot_y,rot_z)
-  kr::mat<double, 6, 6> poseCovariance;
+  kr::Mat<double, 6, 6> poseCovariance;
   poseCovariance.setZero();
   for (int i = 0; i < 3; i++) {
     for (int j = 0; j < 3; j++) {
@@ -188,7 +188,7 @@ void Node::gpsCallback(
 
   //  velocity covariance [x,y,z,rot_x,rot_y,rot_z]
   //  linear from GPS, no angular
-  kr::mat<double, 6, 6> velCovariance;
+  kr::Mat<double, 6, 6> velCovariance;
   velCovariance.setZero();
   for (int i = 0; i < 3; i++) {
     for (int j = 0; j < 3; j++) {

@@ -40,10 +40,11 @@ Spectrum::Spectrum(const std::vector<double> &wavelengths,
   }
 }
 
-Spectrum::Spectrum(const std::map<double,double>& data) : wavelengths_(), intensities_() {
+Spectrum::Spectrum(const std::map<double, double> &data)
+    : wavelengths_(), intensities_() {
   wavelengths_.reserve(data.size());
   intensities_.reserve(data.size());
-  for (const std::pair<double,double>& p : data) {
+  for (const std::pair<double, double> &p : data) {
     wavelengths_.push_back(p.first);
     intensities_.push_back(p.second);
   }
@@ -59,7 +60,7 @@ const std::vector<double> &Spectrum::getIntensities() const {
 
 std::size_t Spectrum::size() const { return wavelengths_.size(); }
 
-bool Spectrum::hasWavelengths(const std::vector<double>& wavelengths) const {
+bool Spectrum::hasWavelengths(const std::vector<double> &wavelengths) const {
   if (size() == wavelengths.size()) {
     if (std::equal(wavelengths_.begin(), wavelengths_.end(),
                    wavelengths.begin())) {
@@ -108,7 +109,7 @@ void Spectrum::resample(const std::vector<double> &wavelengths) {
         const double i1 = intensities_[I];
 
         val = (i1 - i0) * (lambda - x0) / (x1 - x0) + i0;
-      } else { //  (I == 0)
+      } else {  //  (I == 0)
         //  edge case: equal to first value
         if (wavelengths_.front() == lambda) {
           val = intensities_.front();
@@ -137,46 +138,45 @@ void Spectrum::multiply(const Spectrum &s) {
     }
     return;
   }
-  
+
   //  wavelengths are not equal, need to resample
   Spectrum rhs = s;
   rhs.resample(wavelengths_);
-  
-  for (size_t i=0; i < size(); i++) {
+
+  for (size_t i = 0; i < size(); i++) {
     intensities_[i] *= rhs.intensities_[i];
   }
 }
 
 void Spectrum::invert() {
-  for (size_t i=0; i < size(); i++) {
+  for (size_t i = 0; i < size(); i++) {
     intensities_[i] = 1 / intensities_[i];
   }
 }
 
 void Spectrum::scale(double s) {
-  for (size_t i=0; i < size(); i++) {
+  for (size_t i = 0; i < size(); i++) {
     intensities_[i] *= s;
   }
 }
 
 double Spectrum::integrate() const {
-  
+
   if (size() <= 1) {
     return 0.0;
   }
-  
-  double total=0.0;
-  for (size_t k=0; k < size() - 1; k++) {
+
+  double total = 0.0;
+  for (size_t k = 0; k < size() - 1; k++) {
     const double y0 = intensities_[k];
-    const double y1 = intensities_[k+1];
+    const double y1 = intensities_[k + 1];
     const double x0 = wavelengths_[k];
-    const double x1 = wavelengths_[k+1];
-    total += (y1+y0)*0.5*(x1-x0);
+    const double x1 = wavelengths_[k + 1];
+    total += (y1 + y0) * 0.5 * (x1 - x0);
   }
-  
+
   return total;
 }
-
 }
 
 YAML::Node YAML::convert<galt::Spectrum>::encode(const galt::Spectrum &rhs) {
@@ -187,42 +187,44 @@ YAML::Node YAML::convert<galt::Spectrum>::encode(const galt::Spectrum &rhs) {
 }
 
 //  TODO: Add exceptions here for missing fields
-bool YAML::convert<galt::Spectrum>::decode(const YAML::Node &node, galt::Spectrum &rhs) {
-  
-  const auto requiredFields = { "wavelengths", "intensities" };
+bool YAML::convert<galt::Spectrum>::decode(const YAML::Node &node,
+                                           galt::Spectrum &rhs) {
+
+  const auto requiredFields = {"wavelengths", "intensities"};
   if (!node.IsMap() || !galt::hasFields(node, requiredFields)) {
     ROS_WARN("Missing field!");
     return false;
   }
-  
+
   YAML::Node W = node["wavelengths"];
   YAML::Node I = node["intensities"];
   if (!W.IsSequence() || !I.IsSequence()) {
     ROS_WARN("Not a sequence!");
     return false;
   }
-  
+
   std::vector<double> wavelengths;
   std::vector<double> intensities;
-  
-  for (size_t element=0; element < W.size(); element++) {
+
+  for (size_t element = 0; element < W.size(); element++) {
     wavelengths.push_back(W[element].as<double>());
   }
-  for (size_t element=0; element < I.size(); element++) {
+  for (size_t element = 0; element < I.size(); element++) {
     intensities.push_back(I[element].as<double>());
   }
-  
+
   //  will throw if the data is invalid
-  rhs = galt::Spectrum(wavelengths,intensities);
+  rhs = galt::Spectrum(wavelengths, intensities);
   return true;
 }
 
-YAML::Emitter &operator<<(YAML::Emitter &out,
-                          const galt::Spectrum &spectrum) {
+YAML::Emitter &operator<<(YAML::Emitter &out, const galt::Spectrum &spectrum) {
   out << YAML::BeginMap;
-  out << YAML::Flow;    
-  out << YAML::Block << YAML::Key << "wavelengths" << YAML::Flow << YAML::Value << spectrum.getWavelengths();
-  out << YAML::Block << YAML::Key << "intensities" << YAML::Flow << YAML::Value << spectrum.getIntensities();
-  out << YAML::EndMap; 
+  out << YAML::Flow;
+  out << YAML::Block << YAML::Key << "wavelengths" << YAML::Flow << YAML::Value
+      << spectrum.getWavelengths();
+  out << YAML::Block << YAML::Key << "intensities" << YAML::Flow << YAML::Value
+      << spectrum.getIntensities();
+  out << YAML::EndMap;
   return out;
 }

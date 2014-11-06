@@ -19,35 +19,40 @@ namespace galt {
 SpectrometerPose::SpectrometerPose()
     : position_(0, 0, 0), direction_(0, 0, 0), fov_(0), squaredError_(0) {}
 
-SpectrometerPose::SpectrometerPose(const kr::vec3d &position,
-                                   const kr::vec3d &direction, double fov,
+SpectrometerPose::SpectrometerPose(const kr::Vec3d &position,
+                                   const kr::Vec3d &direction, double fov,
                                    double squaredError)
-    : position_(position), direction_(direction), fov_(fov),
+    : position_(position),
+      direction_(direction),
+      fov_(fov),
       squaredError_(squaredError) {}
 
-const kr::vec3d &SpectrometerPose::getPosition() const { return position_; }
+const kr::Vec3d &SpectrometerPose::getPosition() const { return position_; }
 
-const kr::vec3d &SpectrometerPose::getDirection() const { return direction_; }
+const kr::Vec3d &SpectrometerPose::getDirection() const { return direction_; }
 
 const double &SpectrometerPose::getFov() const { return fov_; }
 
-const double &SpectrometerPose::getSquaredError() const { return squaredError_; }
+const double &SpectrometerPose::getSquaredError() const {
+  return squaredError_;
+}
 
-double SpectrometerPose::distanceToPlane(const kr::vec3d &o,
-                                         const kr::vec3d &n) const {
-  const kr::vec3d del = o - position_;
+double SpectrometerPose::distanceToPlane(const kr::Vec3d &o,
+                                         const kr::Vec3d &n) const {
+  const kr::Vec3d del = o - position_;
 
-  const double num = (del[0]*n[0] + del[1]*n[1] + del[2]*n[2]);
-  const double den = (direction_[0]*n[0] + direction_[1]*n[1] + direction_[2]*n[2]);
+  const double num = (del[0] * n[0] + del[1] * n[1] + del[2] * n[2]);
+  const double den =
+      (direction_[0] * n[0] + direction_[1] * n[1] + direction_[2] * n[2]);
 
-  if (std::abs(den) < std::numeric_limits<double>::epsilon()*10) {
+  if (std::abs(den) < std::numeric_limits<double>::epsilon() * 10) {
     return std::numeric_limits<double>::infinity();
   }
 
   return num / den;
 }
 
-} // namespace galt
+}  // namespace galt
 
 YAML::Node YAML::convert<galt::SpectrometerPose>::encode(
     const galt::SpectrometerPose &rhs) {
@@ -59,25 +64,23 @@ YAML::Node YAML::convert<galt::SpectrometerPose>::encode(
   return node;
 }
 
-bool
-YAML::convert<galt::SpectrometerPose>::decode(const YAML::Node &node,
-                                              galt::SpectrometerPose &rhs) {
+bool YAML::convert<galt::SpectrometerPose>::decode(
+    const YAML::Node &node, galt::SpectrometerPose &rhs) {
 
-  const auto requiredFields = { "position", "direction", "fov",
-                                "squared_error" };
+  const auto requiredFields = {"position", "direction", "fov", "squared_error"};
   if (!node.IsMap() || !galt::hasFields(node, requiredFields)) {
     return false;
   }
 
   rhs = galt::SpectrometerPose(
-      node["position"].as<kr::vec3d>(), node["direction"].as<kr::vec3d>(),
+      node["position"].as<kr::Vec3d>(), node["direction"].as<kr::Vec3d>(),
       node["fov"].as<double>(), node["squared_error"].as<double>());
 
   return true;
 }
 
-YAML::Emitter& operator << (YAML::Emitter& out, 
-                            const galt::SpectrometerPose& pose) {
+YAML::Emitter &operator<<(YAML::Emitter &out,
+                          const galt::SpectrometerPose &pose) {
   out << YAML::Block;
   out << YAML::BeginMap;
   out << YAML::Key << "position" << YAML::Value << pose.getPosition();

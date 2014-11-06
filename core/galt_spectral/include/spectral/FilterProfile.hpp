@@ -21,8 +21,7 @@ namespace galt {
  * @brief Profile of a filter (transmission properties).
  */
 class FilterProfile {
-public:
- 
+ public:
   /**
    * @brief FilterProfile Construct a filter profile with empty parameters.
    */
@@ -79,7 +78,7 @@ public:
    */
   void setSpectrum(const galt::Spectrum &spectrum);
 
-private:
+ private:
   std::string name_;
   double center_;
   double fwhm_;
@@ -93,7 +92,8 @@ namespace YAML {
 /**
  * @brief Encodes FilterProfile to and from yaml.
  */
-template <> struct convert<galt::FilterProfile> {
+template <>
+struct convert<galt::FilterProfile> {
   static Node encode(const galt::FilterProfile &rhs);
   static bool decode(const Node &node, galt::FilterProfile &rhs);
 };
@@ -105,7 +105,7 @@ template <> struct convert<galt::FilterProfile> {
  * @param pose Filter profile to encode.
  * @return Emitter.
  */
-YAML::Emitter &operator<<(YAML::Emitter &out, 
+YAML::Emitter &operator<<(YAML::Emitter &out,
                           const galt::FilterProfile &profile);
 
-#endif // GALT_SPECTRAL_FILTERPROFILE_HPP_
+#endif  // GALT_SPECTRAL_FILTERPROFILE_HPP_

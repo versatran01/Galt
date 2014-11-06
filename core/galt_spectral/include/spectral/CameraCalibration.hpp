@@ -27,26 +27,26 @@ struct CameraCalibration {
    * @brief CameraCalibration constructor. Initializes defaults.
    */
   CameraCalibration();
-  
-  std::string cameraSerial;      /// Camera serial number or name.
-  int cameraExposure;            /// Camera exposure in microseconds.
-  std::string calibrationDate;   /// Date of calibration in ISO8601 format.
-  
-  double slope;                  /// Slope of the calibration.
-  double intercept;              /// Intercept of the calibration
-  double squaredError;           /// Mean square error in the calibration
-  
-  galt::SpectrometerPose spectrometerPose;  /// Pose at time of calibration.
-  galt::FilterProfile filterProfile;        /// Profile of the filter on the camera.
-};
 
+  std::string cameraSerial;     /// Camera serial number or name.
+  int cameraExposure;           /// Camera exposure in microseconds.
+  std::string calibrationDate;  /// Date of calibration in ISO8601 format.
+
+  double slope;         /// Slope of the calibration.
+  double intercept;     /// Intercept of the calibration
+  double squaredError;  /// Mean square error in the calibration
+
+  galt::SpectrometerPose spectrometerPose;  /// Pose at time of calibration.
+  galt::FilterProfile filterProfile;  /// Profile of the filter on the camera.
+};
 }
 
 namespace YAML {
 /**
  * @brief Encodes CameraCalibration to and from yaml.
  */
-template <> struct convert<galt::CameraCalibration> {
+template <>
+struct convert<galt::CameraCalibration> {
   static Node encode(const galt::CameraCalibration &rhs);
   static bool decode(const Node &node, galt::CameraCalibration &rhs);
 };
@@ -58,7 +58,7 @@ template <> struct convert<galt::CameraCalibration> {
  * @param pose Filter profile to encode.
  * @return Emitter.
  */
-YAML::Emitter &operator<<(YAML::Emitter &out, 
+YAML::Emitter &operator<<(YAML::Emitter &out,
                           const galt::CameraCalibration &calib);
 
-#endif // GALT_SPECTRAL_CAMERACALIBRATION_HPP_
+#endif  // GALT_SPECTRAL_CAMERACALIBRATION_HPP_

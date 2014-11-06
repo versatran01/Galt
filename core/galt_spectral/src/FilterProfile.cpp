@@ -20,8 +20,11 @@ FilterProfile::FilterProfile()
 FilterProfile::FilterProfile(const std::string &name, double center,
                              double fwhm, double minPeakTransmission,
                              const galt::Spectrum &spectrum)
-    : name_(name), center_(center), fwhm_(fwhm),
-      minPeakTransmission_(minPeakTransmission), spectrum_(spectrum) {}
+    : name_(name),
+      center_(center),
+      fwhm_(fwhm),
+      minPeakTransmission_(minPeakTransmission),
+      spectrum_(spectrum) {}
 
 const std::string &FilterProfile::getName() const { return name_; }
 
@@ -40,7 +43,8 @@ void FilterProfile::setSpectrum(const galt::Spectrum &spectrum) {
 }
 }
 
-YAML::Node YAML::convert<galt::FilterProfile>::encode(const galt::FilterProfile &rhs) {
+YAML::Node YAML::convert<galt::FilterProfile>::encode(
+    const galt::FilterProfile &rhs) {
   YAML::Node node;
   node["name"] = rhs.getName();
   node["center"] = rhs.getCenter();
@@ -51,32 +55,32 @@ YAML::Node YAML::convert<galt::FilterProfile>::encode(const galt::FilterProfile 
 }
 
 //  TODO: Add better error checking here
-bool YAML::convert<galt::FilterProfile>::decode(const YAML::Node &node, galt::FilterProfile &rhs) {
-  
-  const auto requiredFields = { "name", "center", "fwhm",
-                                "min_peak_transmission", "spectrum" };
+bool YAML::convert<galt::FilterProfile>::decode(const YAML::Node &node,
+                                                galt::FilterProfile &rhs) {
+
+  const auto requiredFields = {"name", "center", "fwhm",
+                               "min_peak_transmission", "spectrum"};
   if (!node.IsMap() || !galt::hasFields(node, requiredFields)) {
     return false;
   }
-  
-  rhs = galt::FilterProfile(node["name"].as<std::string>(),
-                            node["center"].as<double>(),
-                            node["fwhm"].as<double>(),
-                            node["min_peak_transmission"].as<double>(),
-                            node["spectrum"].as<galt::Spectrum>());
-  return true; 
+
+  rhs = galt::FilterProfile(
+      node["name"].as<std::string>(), node["center"].as<double>(),
+      node["fwhm"].as<double>(), node["min_peak_transmission"].as<double>(),
+      node["spectrum"].as<galt::Spectrum>());
+  return true;
 }
 
-YAML::Emitter &operator<<(YAML::Emitter &out,
-                          const galt::FilterProfile &filt) {
-  
+YAML::Emitter &operator<<(YAML::Emitter &out, const galt::FilterProfile &filt) {
+
   out << YAML::Block;
   out << YAML::BeginMap;
   out << YAML::Key << "name" << YAML::Value << filt.getName();
   out << YAML::Key << "center" << YAML::Value << filt.getCenter();
   out << YAML::Key << "fwhm" << YAML::Value << filt.getFwhm();
-  out << YAML::Key << "min_peak_transmission" << YAML::Value << filt.getMinPeakTransmission();
+  out << YAML::Key << "min_peak_transmission" << YAML::Value
+      << filt.getMinPeakTransmission();
   out << YAML::Key << "spectrum" << YAML::Value << filt.getSpectrum();
   out << YAML::EndMap;
-  return out; 
+  return out;
 }

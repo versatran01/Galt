@@ -31,26 +31,26 @@ namespace galt {
 namespace laser_altimeter {
 
 class Node {
-public:
+ public:
   /**
    * @brief Attaches required callbacks to node handle.
    * @param nh A private node handle.
    */
   Node(const ros::NodeHandle &nh);
 
-private:
+ private:
   ros::NodeHandle nh_;
   ros::Publisher pubHeight_;
   std::string worldFrameId_;
-  
+
   double angleMin_;
   double angleMax_;
-  
+
   tf2::BufferCore tfCore_;
   tf2_ros::TransformListener tfListener_;
-  
-  //kr::quatd iQl_; /// laser to IMU rotation
-  //kr::vec3d iPl_; /// position of laser in imu
+
+  // kr::quatd iQl_; /// laser to IMU rotation
+  // kr::vec3d iPl_; /// position of laser in imu
 
   message_filters::Subscriber<sensor_msgs::Imu> subImu_;
   message_filters::Subscriber<sensor_msgs::LaserScan> subScan_;
@@ -69,7 +69,7 @@ private:
                     const sensor_msgs::LaserScanConstPtr &);
 };
 
-} //  laser_altimeter
-} //  galt
+}  //  laser_altimeter
+}  //  galt
 
 #endif

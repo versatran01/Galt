@@ -55,16 +55,16 @@ void Node::imuCallback(const sensor_msgs::ImuConstPtr &imu) {
   }
   tfPub_.set_child_frame_id(imu->header.frame_id);
 
-  kr::vec3d accel;
-  kr::mat3d varAccel;
+  Eigen::Vector3d accel;
+  Eigen::Matrix3d varAccel;
   tf::vectorMsgToEigen(imu->linear_acceleration, accel);
 
-  kr::vec3d gyro;
-  kr::mat3d varGyro;
+  Eigen::Vector3d gyro;
+  Eigen::Matrix3d varGyro;
   tf::vectorMsgToEigen(imu->angular_velocity, gyro);
 
-  kr::quatd wQb;
-  kr::mat3d varRot;
+  Eigen::Quaterniond wQb;
+  Eigen::Matrix3d varRot;
   tf::quaternionMsgToEigen(imu->orientation, wQb);
 
   for (int i = 0; i < 3; i++) {
@@ -82,15 +82,17 @@ void Node::imuCallback(const sensor_msgs::ImuConstPtr &imu) {
   predictTime_ = imu->header.stamp;
 
   //  predict
-  kr::mat3d Qbg = kr::mat3d::Identity();
+  Eigen::Matrix3d Qbg;
+  Qbg.setIdentity();
   Qbg *= gyroBiasDriftStd_ * gyroBiasDriftStd_;
-  kr::mat3d Qba = kr::mat3d::Identity();
+  Eigen::Matrix3d Qba;
+  Qba.setIdentity();
   Qba *= accelBiasDriftStd_ * accelBiasDriftStd_;
   positionKF_.setBiasUncertainties(Qbg, Qba);
   positionKF_.predict(gyro, varGyro, accel, varAccel, delta);
 
   //  output covariance
-  const kr::mat<double, 15, 15> &P = positionKF_.getCovariance();
+  const Eigen::Matrix<double,15,15> &P = positionKF_.getCovariance();
   const auto &rotCov = P.block<3, 3>(0, 0);
   const auto &gBiasCov = P.block<3, 3>(3, 3);
   const auto &velCov = P.block<3, 3>(6, 6);
@@ -127,7 +129,7 @@ void Node::imuCallback(const sensor_msgs::ImuConstPtr &imu) {
   tf::vectorEigenToMsg(positionKF_.getVelocity(), odo.twist.twist.linear);
 
   //  subtract our bias estimate and propagate covariance
-  kr::vec3d angRate;
+  Eigen::Vector3d angRate;
   tf::vectorMsgToEigen(imu->angular_velocity, angRate);
   angRate.noalias() -= positionKF_.getGyroBias();
   varGyro.noalias() += gBiasCov;
@@ -169,13 +171,13 @@ void Node::odoCallback(const nav_msgs::OdometryConstPtr &odometry) {
 
   static ros::Time firstTs = odometry->header.stamp;
 
-  kr::vec3d p, v;
-  kr::quatd q;
+  Eigen::Vector3d p, v;
+  Eigen::Quaterniond q;
   tf::quaternionMsgToEigen(odometry->pose.pose.orientation, q);
   tf::pointMsgToEigen(odometry->pose.pose.position, p);
   tf::vectorMsgToEigen(odometry->twist.twist.linear, v);
 
-  kr::mat3d varP, varV, varQ;
+  Eigen::Matrix3d varP, varV, varQ;
   for (int i = 0; i < 3; i++) {
     for (int j = 0; j < 3; j++) {
       varP(i, j) = odometry->pose.covariance[(i * 6) + j];

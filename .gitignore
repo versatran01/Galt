@@ -10,6 +10,9 @@
 *.lo
 *.obj
 
+# Compiled python code
+*.pyc
+
 # CMAKE TEMPORARY FILES
 CMakeCache.txt
 CMakeFiles/

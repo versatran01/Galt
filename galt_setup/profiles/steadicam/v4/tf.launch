@@ -37,4 +37,10 @@
         name="stereo_spectral_800_broadcaster"
         args="-0.04241 0.04241 0 0 0 0 1 stereo spectral_800">
     </node>
+
+    <!-- vicon/world identity transform -->
+    <node pkg="tf2_ros" type="static_transform_publisher"
+        name="world_vicon_broadcaster"
+        args="0.0 0.0 0.0 0.0 0.0 0.0 1.0 vicon world">
+    </node>
 </launch>

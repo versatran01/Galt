@@ -35,6 +35,20 @@ void Node::imageCallback(const sensor_msgs::ImageConstPtr& image_msg,
   
   std::vector<Fruit> fruits;
   Fruit::detect(input,fruits);  /// @todo: do stuff with the fruit...
+  
+  static ros::Publisher pub = pnh_.advertise<sensor_msgs::Image>("something",1);
+  
+  sensor_msgs::Image outputImage;
+  outputImage.header.frame_id = "who_cares";
+  outputImage.header.stamp = image_msg->header.stamp;
+  outputImage.width = input.cols;
+  outputImage.height = input.rows;
+  outputImage.step = input.cols*3;
+  outputImage.encoding = "bgr8";
+  const size_t size = input.rows*input.cols*3;
+  outputImage.data.resize(size);
+  memcpy(&outputImage.data[0], input.ptr(), size);
+  pub.publish(outputImage);
 }
 
 } //  fruit_tracker

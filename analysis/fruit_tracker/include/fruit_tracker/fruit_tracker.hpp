@@ -11,7 +11,7 @@ class Fruit {
 public:
   Fruit() {}  /// @todo: add other constructors, etc...
   
-  static void detect(const cv::Mat& input, std::vector<Fruit>& output);
+  static void detect(cv::Mat input, std::vector<Fruit>& output);
   
   const cv::Point2d& imagePosition() const { return image_position_; }
   void setImagePosition(const cv::Point2d& vec) { image_position_ = vec; }

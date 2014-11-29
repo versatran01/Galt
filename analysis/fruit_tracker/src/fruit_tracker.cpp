@@ -1,12 +1,12 @@
 #include <fruit_tracker/fruit_tracker.hpp>
 #include <Eigen/Dense>
 
-#define BUILD_DEBUG
+//#define BUILD_DEBUG
 
 namespace galt {
 namespace fruit_tracker {
 
-void Fruit::detect(const cv::Mat& input, std::vector<Fruit>& output) {
+void Fruit::detect(cv::Mat input, std::vector<Fruit>& output) {
   
   cv::Mat hsv_input;
   cv::cvtColor(input,hsv_input,cv::COLOR_BGR2HSV);
@@ -63,16 +63,18 @@ void Fruit::detect(const cv::Mat& input, std::vector<Fruit>& output) {
       
       //  draw onto input image
 #ifdef BUILD_DEBUG
-      cv::circle(output_image,center,static_cast<int>(radius*1.2),cv::Scalar(0,0,255),2);
+      cv::circle(input,center,static_cast<int>(radius*1.2),cv::Scalar(0,0,255),2);
 #endif
     }
   }
   
+  hsv_input.copyTo(input);
+  
 #ifdef BUILD_DEBUG
-  cv::imshow("bgr", output_image);
-  cv::imshow("hsv", hsv_input);
-  cv::imshow("detect", detect);
-  cv::waitKey(1);
+  //cv::imshow("bgr", input);
+  //cv::imshow("hsv", hsv_input);
+  //cv::imshow("detect", detect);
+  //cv::waitKey(1);
 #endif
 }
 
@@ -115,12 +117,12 @@ void Tracker::track(const cv::Mat& input) {
         cv::circle(track_image,ite->imagePosition(),ite->imageRadius(),
                    cv::Scalar(255,0,0),2);
         
-        const Fruit& matched_fruit = 
-        cv::circle();
+        //const Fruit& matched_fruit = 
+        //cv::circle();
 #endif
         
         //  found a match, update positions...
-        ite++;
+        //ite++;
       }
     }
     
@@ -136,8 +138,8 @@ void Tracker::track(const cv::Mat& input) {
         //  draw new one in green
         cv::Point2d center = detections[i].imagePosition();
         center.x += input.cols;
-        cv::circle(track_image,center,detections[i].imageRadius(),
-                   cv::Scalar(0,255,0),2);
+//        cv::circle(track_image,center,detections[i].imageRadius(),
+//                   cv::Scalar(0,255,0),2);
       }
     }
     

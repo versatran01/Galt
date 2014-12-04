@@ -1,0 +1,7 @@
+<!-- Todo: make these parameters -->
+<launch>
+ <include file="$(find vicon)/launch/vicon.launch" output="log"/>
+ <include file="$(find vicon_odom)/launch/ViconOdom.launch" output="log">
+  <arg name="model" value="antares"/>
+ </include>
+</launch>

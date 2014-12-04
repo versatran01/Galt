@@ -45,9 +45,9 @@ Node::Node(const ros::NodeHandle &nh) : nh_(nh) {
   }
 
   try {
-    accelStd_ = noiseStd["accel"].as<kr::vec3d>();
-    gyroStd_ = noiseStd["gyro"].as<kr::vec3d>();
-    fieldStd_ = noiseStd["mag"].as<kr::vec3d>();
+    accelStd_ = noiseStd["accel"].as<Eigen::Vector3d>();
+    gyroStd_ = noiseStd["gyro"].as<Eigen::Vector3d>();
+    fieldStd_ = noiseStd["mag"].as<Eigen::Vector3d>();
     pressureStd_ = noiseStd["pressure"].as<double>();
   }
   catch (std::exception &e) {

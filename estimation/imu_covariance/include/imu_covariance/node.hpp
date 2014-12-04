@@ -42,9 +42,9 @@ private:
   ros::Publisher pubPressure_;
 
   //  standard deviations on noise for each sensor
-  kr::vec3d accelStd_;
-  kr::vec3d gyroStd_;
-  kr::vec3d fieldStd_;
+  Eigen::Vector3d accelStd_;
+  Eigen::Vector3d gyroStd_;
+  Eigen::Vector3d fieldStd_;
   double pressureStd_;
 
   void imuCallback(const sensor_msgs::ImuConstPtr &imuMsg);

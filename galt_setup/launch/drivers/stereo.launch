@@ -26,7 +26,7 @@
         <arg name="camera" value="$(env GALT_STEREO_FRAME)"/>
         <arg name="left_calib_url" default="$(env GALT_CAMERA_CALIB_DIR)/calib_$(arg left).yml"/>
         <arg name="right_calib_url" default="$(env GALT_CAMERA_CALIB_DIR)/calib_$(arg right).yml"/>
-        <arg name="expose_us" default="500"/>
+        <arg name="expose_us" default="5000"/>
         <arg name="aec" default="3"/>
         <arg name="hdr" default="true"/>
         <arg name="ctm" default="1"/>

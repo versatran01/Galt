@@ -144,7 +144,8 @@ void Node::gpsCallback(
   aa.angle() = currentDeclination_;
   aa.axis() = Eigen::Vector3d(0.0, 0.0, 1.0);
 
-  kr::quatd wQb = kr::quatd(imu->orientation.w, imu->orientation.x,
+  Eigen::Quaterniond wQb = Eigen::Quaterniond(imu->orientation.w, 
+                                              imu->orientation.x,
                             imu->orientation.y, imu->orientation.z);
   wQb = aa * wQb;
 
@@ -162,7 +163,7 @@ void Node::gpsCallback(
       (height->height - refPressureHeight_ + refLaserHeight_);
 
   //  generate covariance (6x6 with order: x,y,z,rot_x,rot_y,rot_z)
-  kr::mat<double, 6, 6> poseCovariance;
+  Eigen::Matrix<double,6,6> poseCovariance;
   poseCovariance.setZero();
   for (int i = 0; i < 3; i++) {
     for (int j = 0; j < 3; j++) {
@@ -188,7 +189,7 @@ void Node::gpsCallback(
 
   //  velocity covariance [x,y,z,rot_x,rot_y,rot_z]
   //  linear from GPS, no angular
-  kr::mat<double, 6, 6> velCovariance;
+  Eigen::Matrix<double,6,6> velCovariance;
   velCovariance.setZero();
   for (int i = 0; i < 3; i++) {
     for (int j = 0; j < 3; j++) {

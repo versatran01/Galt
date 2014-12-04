@@ -73,13 +73,13 @@ void Node::syncCallback(const sensor_msgs::ImuConstPtr &imuMsg,
                         const sensor_msgs::LaserScanConstPtr &laserMsg) {
 
   //  IMU to world rotation
-  const kr::quatd wQi(imuMsg->orientation.w, imuMsg->orientation.x,
+  const Eigen::Quaterniond wQi(imuMsg->orientation.w, imuMsg->orientation.x,
                       imuMsg->orientation.y, imuMsg->orientation.z);
 
   const double ang_start = laserMsg->angle_min;
   const double ang_inc = laserMsg->angle_increment;
 
-  const kr::mat3d wRi = wQi.matrix();
+  const Eigen::Matrix3d wRi = wQi.matrix();
 
   std::vector<double> heights;
   heights.reserve(laserMsg->ranges.size());
@@ -97,8 +97,8 @@ void Node::syncCallback(const sensor_msgs::ImuConstPtr &imuMsg,
         "imu", "laser", ros::Time(0));
     const geometry_msgs::Vector3& t = transform.transform.translation;
     const geometry_msgs::Quaternion& r = transform.transform.rotation;
-    const kr::vec3d p(t.x, t.y, t.z);
-    const kr::quatd q(r.w, r.x, r.y, r.z);
+    const Eigen::Vector3d p(t.x, t.y, t.z);
+    const Eigen::Quaterniond q(r.w, r.x, r.y, r.z);
     laser_to_imu.q() = q;
     laser_to_imu.p() = p;
   } catch (const tf2::TransformException& e) {
@@ -111,15 +111,15 @@ void Node::syncCallback(const sensor_msgs::ImuConstPtr &imuMsg,
       //  consider only angles in the specified range
       if (angle >= angleMin_ && angle <= angleMax_) {
         //  rotation from beam to laser
-        const Eigen::AngleAxisd lRotb(angle, kr::vec3d(0, 0, 1));
+        const Eigen::AngleAxisd lRotb(angle, Eigen::Vector3d(0, 0, 1));
 
-        const kr::vec3d v_b(range, 0, 0);           //  vector in the beam frame
-        const kr::vec3d v_l = lRotb.matrix() * v_b; //  laser frame
+        const Eigen::Vector3d v_b(range, 0, 0);           //  vector in the beam frame
+        const Eigen::Vector3d v_l = lRotb.matrix() * v_b; //  laser frame
         
-        const kr::vec3d v_i = laser_to_imu.transformToBody(v_l);  //  IMU frame
+        const Eigen::Vector3d v_i = laser_to_imu.transformToBody(v_l);  //  IMU frame
         
         //  rotate the vector to world frame (without translating)
-        const kr::vec3d v_w = wRi * v_i;
+        const Eigen::Vector3d v_w = wRi * v_i;
 
 #ifdef DEBUG_PUB_CLOUD
         geometry_msgs::Point32 p32;

@@ -1,6 +1,8 @@
 <launch>
     <!--These transformations are acquired by kalibr and verified by cad drawings-->
     <!--static_transform_publisher x y z qx qy qz qw frame_id child_frame_id-->
+    <!--the vecotr (x,y,z) is a vector pointing from frame_id to child_frame_id expressed in framed_id-->
+    <!--the quaternion (qw,qx,qy,qz) is the rotation of child_frame_id in frame_id-->
 
     <!-- If true, broadcast vicon frame -->
     <arg name="vicon" default="false"/>

@@ -8,8 +8,7 @@
     <arg name="odom_topic" default="/vicon/antares/odom"/>
 
     <!-- rosbag -->
-    <node pkg="rosbag" name="player" type="play" output="screen"
-        args="$(arg bag)">
+    <node pkg="rosbag" name="player" type="play" output="log" args="$(arg bag)">
     </node>
 
     <!-- odom2tf -->     
@@ -20,10 +19,18 @@
     <!-- transforms -->
     <include file="$(find galt_setup)/$(arg profile)/tf.launch">
         <arg name="vicon" value="true"/>
+        <arg name="static_broadcaster" value="$(arg platform)"/>
     </include>
 
     <!-- laser pipeline -->
-    <include file="$(find galt_setup)/launch/process/laser_pipeline.launch">
-        <arg name="filter" value="$(find galt_setup)/$(arg profile)/laser_filter.yml"/>
+    <include file="$(find galt_setup)/launch/process/laser/laser_pipeline.launch">
+        <arg name="plugin" value="$(find galt_setup)/$(arg profile)/laser_filter.yml"/>
+        <arg name="target_frame" value="laser"/>
+        <arg name="fixed_frame" value="vicon"/>
     </include>
-</launch>
+
+    <!-- img2pcl -->
+<!--     <include file="$(find img2pcl)/launch/node.launch">
+        <arg name="camera" value="color"/>
+    </include>    
+ --></launch>

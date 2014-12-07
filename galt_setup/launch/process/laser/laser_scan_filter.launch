@@ -1,0 +1,14 @@
+<!-- This launch file filters laser scan by a filter -->
+<!-- Output topic name: /<laser>/scan_filtered, type: LaserScan -->
+<launch>
+    <!-- namespace of the laser node -->
+    <arg name="laser" default="laser"/>
+    <!-- path to the filter config yaml file -->
+    <arg name="plugin"/>
+
+    <!-- Node -->
+    <node pkg="laser_filters" type="scan_to_scan_filter_chain"
+        name="laser_scan_filter" ns="$(arg laser)">
+        <rosparam command="load" file="$(arg plugin)"/>
+    </node>
+</launch>

@@ -25,7 +25,7 @@ class Img2pclNode {
   Img2pclNode(const ros::NodeHandle &nh, const ros::NodeHandle &pnh);
 
  private:
-  constexpr static double kDelay = 0.05;
+  constexpr static double kDelay = 0.1;
 
   void CameraCb(const sensor_msgs::ImageConstPtr &image_msg,
                 const sensor_msgs::CameraInfoConstPtr &cinfo_msg);

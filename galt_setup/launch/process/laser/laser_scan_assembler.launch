@@ -1,0 +1,23 @@
+<!-- This launch file subscribe to a LaserScan message and assemble it to a
+PointCloud2 upon use requeset -->
+<launch>
+    <arg name="output" default="screen"/>
+    <!-- namespace of the laser node -->
+    <arg name="laser" default="laser"/>
+    <!-- namespace of the assembler node, under <laser> -->
+    <arg name="assembler" default="assembler"/>
+    <!-- scan topic name  -->
+    <arg name="scan" default="/$(arg laser)/scan_filtered"/>
+    <arg name="max_scans" default="8000"/>
+    <!-- frame of the converted cloud -->
+    <arg name="fixed_frame" default="world"/>
+
+    <!-- Node -->
+    <node pkg="laser_assembler" type="laser_scan_assembler"
+        name="laser_scan_assembler" ns="$(arg laser)/$(arg assembler)"
+        output="$(arg output)">
+        <remap from="scan" to="$(arg scan)"/>
+        <param name="max_scans" type="int" value="$(arg max_scans)"/>
+        <param name="fixed_frame" type="string" value="$(arg fixed_frame)"/>
+    </node>
+</launch>

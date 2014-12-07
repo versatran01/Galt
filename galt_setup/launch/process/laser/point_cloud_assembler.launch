@@ -1,12 +1,20 @@
+<!-- This launch file subscribe to a PointCloud2 message and assemble it to a 
+PointCloud2 upon use requeset -->
 <launch>
+    <arg name="output" default="screen"/>
+    <!-- namespace of the laser node -->
     <arg name="laser" default="laser"/>
+    <!-- namespace of the assembler node, under <laser> -->
+    <arg name="assembler" default="assembler"/>
+    <!-- cloud topic name -->
     <arg name="cloud" default="/$(arg laser)/cloud_filtered"/>
+    <!-- frame of the converted cloud -->
     <arg name="fixed_frame" default="world"/>
     <arg name="max_clouds" default="8000"/>
-    <arg name="assembler" default="assembler"/>
 
+    <!-- Node -->
     <node pkg="laser_assembler" type="point_cloud2_assembler"
-        name="point_cloud_assembler" ns="$(arg assembler)">
+        name="point_cloud_assembler" ns="$(arg laser)/$(arg assembler)">
         <remap from="cloud" to="$(arg cloud)"/>
         <param name="max_clouds" type="int" value="$(arg max_clouds)"/>
         <param name="fixed_frame" type="string" value="$(arg fixed_frame)"/>

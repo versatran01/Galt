@@ -1,0 +1,8 @@
+<launch>
+    <arg name="output" default="screen"/>
+    <arg name="topic"/>
+
+    <node pkg="odom2tf" type="odom2tf_node" name="odom2tf_node" output="$(arg output)">
+        <remap from="~odom" to="$(arg topic)"/>
+    </node>
+</launch>

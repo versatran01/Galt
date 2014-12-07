@@ -1,0 +1,29 @@
+<!-- This launch file is only for a demo -->
+<launch>
+    <arg name="platform" default="steadicam"/>
+    <arg name="version" default="v4"/>
+    <arg name="profile" default="profiles/$(arg platform)/$(arg version)"/>
+
+    <arg name="bag" default="/home/chao/Workspace/bag/mrsl_vicon.bag"/>
+    <arg name="odom_topic" default="/vicon/antares/odom"/>
+
+    <!-- rosbag -->
+    <node pkg="rosbag" name="player" type="play" output="screen"
+        args="$(arg bag)">
+    </node>
+
+    <!-- odom2tf -->     
+    <include file="$(find odom2tf)/launch/odom2tf.launch">
+        <arg name="topic" value="$(arg odom_topic)"/>
+    </include>
+
+    <!-- transforms -->
+    <include file="$(find galt_setup)/$(arg profile)/tf.launch">
+        <arg name="vicon" value="true"/>
+    </include>
+
+    <!-- laser pipeline -->
+    <include file="$(find galt_setup)/launch/process/laser_pipeline.launch">
+        <arg name="filter" value="$(find galt_setup)/$(arg profile)/laser_filter.yml"/>
+    </include>
+</launch>

@@ -1,0 +1,13 @@
+<!-- This launch file will launch the launch files that are related to laser scan processing -->
+<launch>
+    <arg name="filter"/>
+
+    <!-- laser cloud filter -->
+    <include file="$(find galt_setup)/launch/process/laser/laser_cloud_filter.launch">
+        <arg name="filter" value="$(arg filter)"/>
+    </include>
+
+    <!-- point cloud assembler -->
+    <include file="$(find galt_setup)/launch/process/laser/point_cloud_assembler.launch">
+    </include>
+</launch>

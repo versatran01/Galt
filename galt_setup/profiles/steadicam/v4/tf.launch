@@ -43,9 +43,9 @@
     </node>
 
     <!--vicon transforms-->
-        <!--imu/antares model transform-->
-        <node if="$(arg vicon)" pkg="tf2_ros" type="static_transform_publisher"
-            name="imu_antares_broadcaster"
-            args="0 0 0 0.5 -0.5 0.5 0.5 antares imu">
-        </node>
+    <!--imu/antares model transform-->
+    <node if="$(arg vicon)" pkg="tf2_ros" type="static_transform_publisher"
+        name="imu_antares_broadcaster"
+        args="0 0 0 -0.5 0.5 -0.5 0.5 antares imu">
+    </node>
 </launch>

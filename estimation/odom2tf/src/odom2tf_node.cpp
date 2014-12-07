@@ -8,7 +8,6 @@ Odom2tfNode::Odom2tfNode(const ros::NodeHandle &nh, const ros::NodeHandle &pnh)
 }
 
 void Odom2tfNode::OdomCallback(const nav_msgs::OdometryConstPtr &odom_msg) {
-  ROS_INFO_THROTTLE(1, "inside OdomCallback");
   PublishTransform(odom_msg->pose.pose, odom_msg->header,
                    odom_msg->child_frame_id);
 }

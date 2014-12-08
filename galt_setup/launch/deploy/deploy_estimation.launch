@@ -13,7 +13,7 @@
 -->
 <launch>
    <arg name="vicon" default="false"/>
-   
+
     <!-- gps -->
     <include file="$(find galt_setup)/launch/drivers/gps.launch"/>
 

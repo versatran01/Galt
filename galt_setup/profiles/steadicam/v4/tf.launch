@@ -1,54 +1,61 @@
+<!-- These transformations are acquired by kalibr and verified by cad drawings -->
+<!-- static_transform_publisher x y z qx qy qz qw frame_id child_frame_id -->
+<!-- the vecotr (x,y,z) is a vector pointing from frame_id to child_frame_id expressed in framed_id -->
+<!-- the quaternion (qw,qx,qy,qz) is the rotation of child_frame_id in frame_id -->
+<!-- vicon transforms -->
+<!-- If use with vicon, a related node should publish a transform from vicon to base_link -->
+<!-- A typical tf tree with vicon: vicon(map) -> base_link -> imu -> laser -->
+<!-- A typical tf tree with gpskf: world(map) -> base_link -> imu -> laser -->
 <launch>
-    <!--These transformations are acquired by kalibr and verified by cad drawings-->
-    <!--static_transform_publisher x y z qx qy qz qw frame_id child_frame_id-->
-    <!--the vecotr (x,y,z) is a vector pointing from frame_id to child_frame_id expressed in framed_id-->
-    <!--the quaternion (qw,qx,qy,qz) is the rotation of child_frame_id in frame_id-->
-
-    <!-- If true, broadcast vicon frame -->
-    <arg name="vicon" default="false"/>
-
+    <!-- namespace for all static broadcaster -->
     <arg name="static_broadcaster" default="broadcaster"/>
+    <arg name="base_link" default="base_link"/>
+    <arg name="imu" default="imu"/>
+    <arg name="laser" default="laser"/>
+    <arg name="stereo" default="stereo"/>
+    <arg name="color" default="color"/>
+
+    <!-- base_link: the center of the vicon model -->
+    <!-- imu/base_link model transform -->
+    <node pkg="tf2_ros" type="static_transform_publisher"
+        name="base_link_imu_broadcaster" ns="$(arg static_broadcaster)"
+        args="0.0069 0.0318 0.0153 -0.5 0.5 -0.5 0.5 $(arg base_link) $(arg imu)">
+    </node>
 
     <!--imu_stereo_left-->
     <node pkg="tf2_ros" type="static_transform_publisher"
         name="imu_stereo_broadcaster" ns="$(arg static_broadcaster)"
-        args="0.004305 0.044038 0.032479 0 0 0 1 imu stereo">
+        args="0.004305 0.044038 0.032479 0 0 0 1 $(arg imu) $(arg stereo)">
     </node>
 
     <!--stereo_left_color-->
     <node pkg="tf2_ros" type="static_transform_publisher"
         name="stereo_color_broadcaster" ns="$(arg static_broadcaster)"
-        args="-0.042979 -0.001128 0.002047 0 0 0 1 stereo color">
-    </node>
-
-    <!--stereo_left_thermal-->
-    <node pkg="tf2_ros" type="static_transform_publisher"
-        name="stereo_thermal_broadcaster" ns="$(arg static_broadcaster)"
-        args="-0.133046 -0.000133 -0.01294 0 0 0 1 stereo thermal">
+        args="-0.042979 -0.001128 0.002047 0 0 0 1 $(arg stereo) $(arg color)">
     </node>
 
     <!--imu_laser-->
     <node pkg="tf2_ros" type="static_transform_publisher"
         name="imu_laser_broadcaster" ns="$(arg static_broadcaster)"
-        args="0.07915 0.04241 0.03277 0.707107 0 0.707107 0 imu laser">
+        args="0.07915 0.04241 0.03277 0.707107 0 0.707107 0 $(arg imu) $(arg laser)">
     </node>
+
+    <!--stereo_left_thermal-->
+    <!-- <node pkg="tf2_ros" type="static_transform_publisher" -->
+        <!--name="stereo_thermal_broadcaster" ns="$(arg static_broadcaster)"-->
+        <!--args="-0.133046 -0.000133 -0.01294 0 0 0 1 stereo thermal">-->
+    <!--</node>-->
 
     <!--stereo_spectral_670-->
-    <node pkg="tf2_ros" type="static_transform_publisher"
-        name="stereo_spectral_670_broadcaster" ns="$(arg static_broadcaster)"
-        args="0 0.04241 0 0 0 0 1 stereo spectral_670">
-    </node>
+    <!--<node pkg="tf2_ros" type="static_transform_publisher"-->
+        <!--name="stereo_spectral_670_broadcaster" ns="$(arg static_broadcaster)"-->
+        <!--args="0 0.04241 0 0 0 0 1 stereo spectral_670">-->
+    <!--</node>-->
 
     <!--stereo_spectral_800-->
-    <node pkg="tf2_ros" type="static_transform_publisher"
-        name="stereo_spectral_800_broadcaster" ns="$(arg static_broadcaster)"
-        args="-0.04241 0.04241 0 0 0 0 1 stereo spectral_800">
-    </node>
+    <!--<node pkg="tf2_ros" type="static_transform_publisher"-->
+        <!--name="stereo_spectral_800_broadcaster" ns="$(arg static_broadcaster)"-->
+        <!--args="-0.04241 0.04241 0 0 0 0 1 stereo spectral_800">-->
+    <!--</node>-->
 
-    <!--vicon transforms-->
-    <!--imu/antares model transform-->
-    <node if="$(arg vicon)" pkg="tf2_ros" type="static_transform_publisher"
-        name="imu_antares_broadcaster" ns="$(arg static_broadcaster)"
-        args="0.0069 0.0318 0.0153 -0.5 0.5 -0.5 0.5 antares imu">
-    </node>
 </launch>

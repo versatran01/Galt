@@ -56,24 +56,27 @@ void Img2pclNode::CameraCb(const sensor_msgs::ImageConstPtr &image_msg,
     return;
   }
 
+  // Convert ros PointCloud2 to pcl PointCloud<T>
+  const sensor_msgs::PointCloud2 &cloud_ros_w = srv.response.cloud;
   // Transform world cloud msg to camera frame pcl point cloud
   geometry_msgs::TransformStamped tf_stamped;
-  if (!GetLatestTransfrom(image_msg->header.frame_id, "world", &tf_stamped)) {
+  if (!GetLatestTransfrom(image_msg->header.frame_id,
+                          cloud_ros_w.header.frame_id, &tf_stamped)) {
     return;
   }
 
-  // Convert ros PointCloud2 to pcl PointCloud<T>
-  const sensor_msgs::PointCloud2 &cloud_ros_w = srv.response.cloud;
-  PointCloud<PointXYZ> cloud_pcl_c;
+  PointCloud<PointXYZ> cloud_pcl_c, cloud_pcl_w;
   TransformCloud(cloud_ros_w, tf_stamped.transform, image_msg->header.frame_id,
                  &cloud_pcl_c);
+  pcl::fromROSMsg(cloud_ros_w, cloud_pcl_w);
 
   // Back project pcl PointCloud<T> on to image and modify rgb/intensity value
   const cv::Mat image =
       cv_bridge::toCvShare(image_msg, image_msg->encoding)->image;
-  sensor_msgs::PointCloud2 cloud_ros_c;
-  ExtractInfoFromImage(cloud_pcl_c, image, camera_model_, &cloud_ros_c);
-  pub_cloud_.publish(cloud_ros_c);
+  sensor_msgs::PointCloud2 cloud_ros_w_rgb;
+  ExtractInfoFromImage(cloud_pcl_w, cloud_pcl_c, image, camera_model_,
+                       &cloud_ros_w_rgb);
+  pub_cloud_.publish(cloud_ros_w_rgb);
 }
 
 bool Img2pclNode::GetLatestTransfrom(
@@ -104,25 +107,20 @@ void TransformCloud(const sensor_msgs::PointCloud2 &src_ros_cloud,
   tgt_pcl_cloud->header.frame_id = tgt_frame;
 }
 
-void ExtractInfoFromImage(const PointCloud<PointXYZ> pcl_cloud_in,
+void ExtractInfoFromImage(const pcl::PointCloud<PointXYZ> &pcl_cloud_in1,
+                          const pcl::PointCloud<PointXYZ> &pcl_cloud_in2,
                           const cv::Mat &image,
                           const image_geometry::PinholeCameraModel &model,
-                          sensor_msgs::PointCloud2 *ros_cloud_out) {
+                          sensor_msgs::PointCloud2 *ros_cloud_out1) {
+  ROS_ASSERT_MSG(pcl_cloud_in1.size() == pcl_cloud_in2.size(),
+                 "point size mismatch");
   // Back project point in camera frame onto image frame
   std::vector<cv::Point3f> cam_pts;
   std::vector<cv::Point2f> img_pts;
-  CloudToPoints3(pcl_cloud_in, &cam_pts);
+  CloudToPoints3(pcl_cloud_in2, &cam_pts);
   cv::Mat zeros = cv::Mat::zeros(1, 3, CV_64FC1);
   cv::projectPoints(cam_pts, zeros, zeros, model.fullIntrinsicMatrix(),
                     model.distortionCoeffs(), img_pts);
-  /*
-  cv::Mat disp(image.clone());
-  for (const auto &p : img_pts) {
-    cv::circle(disp, p, 1, cv::Scalar(255, 0, 0), 1);
-  }
-  cv::imshow("image", disp);
-  cv::waitKey(1);
-  */
 
   // Convert grayscale image to color
   cv::Mat color;
@@ -133,15 +131,15 @@ void ExtractInfoFromImage(const PointCloud<PointXYZ> pcl_cloud_in,
   }
   // Construct a new point cloud, super hacky, will need to refactor this shit
   PointCloud<PointXYZRGB> pcl_cloud_out;
-  pcl::copyPointCloud(pcl_cloud_in, pcl_cloud_out);
+  pcl::copyPointCloud(pcl_cloud_in1, pcl_cloud_out);
   pcl_cloud_out.points.clear();
-  for (size_t i = 0; i < pcl_cloud_in.points.size(); ++i) {
+  for (size_t i = 0; i < pcl_cloud_in1.points.size(); ++i) {
     cv::Point2i pixel_rounded(img_pts[i].x, img_pts[i].y);
     if (IsInsideImage(pixel_rounded, image.cols, image.rows)) {
       PointXYZRGB point;
-      point.x = pcl_cloud_in.points[i].x;
-      point.y = pcl_cloud_in.points[i].y;
-      point.z = pcl_cloud_in.points[i].z;
+      point.x = pcl_cloud_in1.points[i].x;
+      point.y = pcl_cloud_in1.points[i].y;
+      point.z = pcl_cloud_in1.points[i].z;
       const uchar *p = image.ptr<uchar>(pixel_rounded.y);
       const int col = pixel_rounded.x;
       point.r = p[3 * col + 2];
@@ -152,7 +150,7 @@ void ExtractInfoFromImage(const PointCloud<PointXYZ> pcl_cloud_in,
   }
   // Overwrite width with new point size
   pcl_cloud_out.width = pcl_cloud_out.points.size();
-  pcl::toROSMsg(pcl_cloud_out, *ros_cloud_out);
+  pcl::toROSMsg(pcl_cloud_out, *ros_cloud_out1);
 }
 
 }  // namespace img2pcl

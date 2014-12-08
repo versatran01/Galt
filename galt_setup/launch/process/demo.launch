@@ -1,5 +1,6 @@
 <!-- This launch file is only for a demo -->
 <launch>
+    <!-- platform -->
     <arg name="platform" default="steadicam"/>
     <arg name="version" default="v4"/>
     <arg name="profile" default="profiles/$(arg platform)/$(arg version)"/>
@@ -8,7 +9,7 @@
     <arg name="odom_topic" default="/vicon/antares/odom"/>
 
     <!-- rosbag -->
-    <node pkg="rosbag" name="player" type="play" output="log" args="$(arg bag)">
+    <node pkg="rosbag" name="player" type="play" output="log" args="-r 0.5 $(arg bag)">
     </node>
 
     <!-- odom2tf -->     
@@ -30,7 +31,7 @@
     </include>
 
     <!-- img2pcl -->
-<!--     <include file="$(find img2pcl)/launch/node.launch">
+    <include file="$(find img2pcl)/launch/node.launch">
         <arg name="camera" value="color"/>
     </include>    
- --></launch>
+</launch>

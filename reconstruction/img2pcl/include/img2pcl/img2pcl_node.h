@@ -25,7 +25,7 @@ class Img2pclNode {
   Img2pclNode(const ros::NodeHandle &nh, const ros::NodeHandle &pnh);
 
  private:
-  constexpr static double kDelay = 0.1;
+  constexpr static double kDelay = 0.0;
 
   void CameraCb(const sensor_msgs::ImageConstPtr &image_msg,
                 const sensor_msgs::CameraInfoConstPtr &cinfo_msg);
@@ -63,10 +63,11 @@ void TransformCloud(const sensor_msgs::PointCloud2 &src_ros_cloud,
                     const std::string &tgt_frame,
                     pcl::PointCloud<pcl::PointXYZ> *tgt_pcl_cloud);
 
-void ExtractInfoFromImage(const pcl::PointCloud<pcl::PointXYZ> pcl_cloud_in,
+void ExtractInfoFromImage(const pcl::PointCloud<pcl::PointXYZ> &pcl_cloud_in1,
+                          const pcl::PointCloud<pcl::PointXYZ> &pcl_cloud_in2,
                           const cv::Mat &image,
                           const image_geometry::PinholeCameraModel &model,
-                          sensor_msgs::PointCloud2 *ros_cloud_out);
+                          sensor_msgs::PointCloud2 *ros_cloud_out1);
 
 }  // namespace thermal_map
 }  // namespace galt

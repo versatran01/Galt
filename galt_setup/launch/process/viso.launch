@@ -2,9 +2,9 @@
     <!-- Arguments -->
     <arg name="test" default="true"/>
     <arg name="output" default="screen"/>
-    <arg name="bagfile" default="/home/chao/Workspace/bag/steadicam_vicon.bag"/>
+    <arg name="bagfile" default="/home/chao/Workspace/bag/mrsl_st20.bag"/>
     <arg name="view" default="false"/>
-    <arg name="camera" default="stereo"/>
+    <arg name="stereo" default="stereo"/>
     <!-- platform -->
     <arg name="platform" default="steadicam"/>
     <arg name="version" default="v4"/>
@@ -30,17 +30,23 @@
 
     <!-- stereo_image_proc -->
     <node pkg="stereo_image_proc" type="stereo_image_proc"
-        name="stereo_image_proc" ns="$(arg camera)">
+        name="stereo_image_proc" ns="$(arg stereo)">
     </node>
 
     <!-- stereo_image_view -->
-    <node pkg="image_view" type="stereo_view" name="stereo_view" output="screen">
+    <node if="$(arg view)" pkg="image_view" type="stereo_view"
+        name="stereo_view" output="screen">
         <remap from="image" to="image_rect"/>
-    </node> 
+    </node>
 
     <!-- viso2_ros -->
     <node pkg="viso2_ros" type="stereo_odometer" name="stereo_odometer"
-        output="$(arg output)" ns="$(arg camera)">
+        output="$(arg output)" ns="$(arg stereo)">
         <param name="max_features" type="int" value="3"/>
+    </node>
+
+    <!-- elas_ros -->
+    <node pkg="elas_ros" type="elas_ros" name="elas" output="$(arg output)"
+        ns="$(arg stereo)">
     </node>
 </launch>

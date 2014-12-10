@@ -14,12 +14,13 @@
 #include <geometry_msgs/Vector3Stamped.h>
 #include <eigen_conversions/eigen_msg.h>
 #include <viso_kf/Vector3WithCovarianceStamped.h>
+#include <kr_math/pose.hpp>
 
 using ::viso_kf::Vector3WithCovarianceStamped;
 
 namespace viso_kf {
 
-Node::Node() : nh_("~"), trajViz_(nh_), covViz_(nh_) {}
+Node::Node() : nh_("~"), tfListener_(tfCore_), trajViz_(nh_), covViz_(nh_) {}
 
 void Node::initialize() {
   //  configure topics
@@ -171,11 +172,25 @@ void Node::odoCallback(const nav_msgs::OdometryConstPtr &odometry) {
 
   static ros::Time firstTs = odometry->header.stamp;
 
-  Eigen::Vector3d p;
-  Eigen::Quaterniond q;
-  tf::quaternionMsgToEigen(odometry->pose.pose.orientation, q);
-  tf::pointMsgToEigen(odometry->pose.pose.position, p);
-
+  //  do conversion here:
+  kr::Pose<double> imu_in_child;
+  try {
+    /// @todo: don't hardcode this...
+    const geometry_msgs::TransformStamped transform = tfCore_.lookupTransform(
+        odometry->child_frame_id, "imu", ros::Time(0));
+    const geometry_msgs::Vector3& t = transform.transform.translation;
+    const geometry_msgs::Quaternion& r = transform.transform.rotation;
+    const Eigen::Vector3d p(t.x, t.y, t.z);
+    const Eigen::Quaterniond q(r.w, r.x, r.y, r.z);
+    imu_in_child.q() = q;
+    imu_in_child.p() = p;
+  }
+  catch (const tf2::TransformException& e) {
+    ROS_WARN("%s", e.what());
+  }
+  kr::Pose<double> odomPose(odometry->pose.pose);
+  odomPose = odomPose.composeInBody(imu_in_child);
+  
   Eigen::Matrix3d varP, varQ;
   for (int i = 0; i < 3; i++) {
     for (int j = 0; j < 3; j++) {
@@ -189,10 +204,10 @@ void Node::odoCallback(const nav_msgs::OdometryConstPtr &odometry) {
     initialized_ = true;
     //  take our output frame ID from the gps_odom
     worldFrameId_ = odometry->header.frame_id;
-    positionKF_.initState(q, p, Eigen::Vector3d(0,0,0));
+    positionKF_.initState(odomPose.q(), odomPose.p(), Eigen::Vector3d(0,0,0));
     positionKF_.initCovariance(1e-2, 1e-4, 0.25, 0.2, 0.5);
   } else {
-    if (!positionKF_.update(q, varQ, p, varP)) {
+    if (!positionKF_.update(odomPose.q(), varQ, odomPose.p(), varP)) {
       ROS_WARN("Warning: Kalman gain was singular in update");
     }
   }

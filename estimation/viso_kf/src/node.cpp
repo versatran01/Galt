@@ -102,10 +102,29 @@ void Node::imuCallback(const sensor_msgs::ImuConstPtr &imu) {
   odo.child_frame_id = worldFrameId_;
   //  NOTE: angular velocity is still in body frame, but we use worldFrameId_
   //  anyways
-  tf::pointEigenToMsg(positionKF_.getPosition(), odo.pose.pose.position);
-  tf::quaternionEigenToMsg(positionKF_.getOrientation(),
-                           odo.pose.pose.orientation);
-
+  
+  const kr::Pose<double> imuToWorld(positionKF_.getOrientation(), 
+                                    positionKF_.getPosition());
+  
+  kr::Pose<double> baseToImu;
+  try {
+    //  oh god what does this even do???
+    //  hard-code ALL the things!
+    const geometry_msgs::TransformStamped transform =
+        tfCore_.lookupTransform("imu", "base_link", ros::Time(0));
+    const geometry_msgs::Vector3 &t = transform.transform.translation;
+    const geometry_msgs::Quaternion &r = transform.transform.rotation;
+    const Eigen::Vector3d p(t.x, t.y, t.z);
+    const Eigen::Quaterniond q(r.w, r.x, r.y, r.z);
+    baseToImu.q() = q;
+    baseToImu.p() = p;
+  }
+  catch (const tf2::TransformException &e) {
+    ROS_WARN("%s", e.what());
+  }
+  kr::Pose<double> baseToWorld = imuToWorld.composeInBody(baseToImu);
+  odo.pose.pose = static_cast<geometry_msgs::Pose>(baseToWorld);
+  
   geometry_msgs::PoseStamped pose;
   pose.pose = odo.pose.pose;
   pose.header = odo.header;

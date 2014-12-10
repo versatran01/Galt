@@ -74,8 +74,7 @@ public:
    * @return True if the update succeeds, false if the kalman gain is singular.
    */
   bool update(const quat &qm, const mat3 &varQ,
-              const vec3 &pm, const mat3 &varP,
-              const vec3 &vm, const mat3 &varV);
+              const vec3 &pm, const mat3 &varP);
 
   /**
    * @brief Orientation, transformation from body to world.
@@ -242,53 +241,45 @@ template <typename Scalar>
 bool ErrorStateKF<Scalar>::update(const ErrorStateKF<Scalar>::quat &qm,
                                   const ErrorStateKF<Scalar>::mat3 &varQ,
                                   const ErrorStateKF<Scalar>::vec3 &pm,
-                                  const ErrorStateKF<Scalar>::mat3 &varP,
-                                  const ErrorStateKF<Scalar>::vec3 &vm,
-                                  const ErrorStateKF<Scalar>::mat3 &varV) {
+                                  const ErrorStateKF<Scalar>::mat3 &varP) {
   //  form the measurement jacobian
-  Eigen::Matrix<Scalar, 7, 15> H;
+  Eigen::Matrix<Scalar, 6, 15> H;
   H.setZero();
 
-  //  position and velocity
-  H.template block<3, 3>(0, 12).setIdentity();
-  H.template block<3, 3>(3, 6).setIdentity();
-
-  //  orientation
-  // H.template block<3, 3>(6, 0).setIdentity();
-  H(6, 2) = 1;
+  //  orientation and position
+  H.template block<3, 3>(0, 0).setIdentity();
+  H.template block<3, 3>(3, 12).setIdentity();
 
   // residual
-  Eigen::Matrix<Scalar,7,1> r;
+  Eigen::Matrix<Scalar,6,1> r;
 
   //  non-linear rotation residual on yaw axis
   const quat dq = q_.conjugate() * qm;
   const Eigen::AngleAxis<Scalar> aa(dq);
   const vec3 rpy = kr::rotToEulerZYX(aa.matrix());
 
-  // r.template block<3, 1>(6, 0) = aa.angle()*aa.axis();
-  r(6, 0) = rpy[2];
-
-  //  linear pos/velocity
-  r.template block<3, 1>(0, 0) = pm - p_;
-  r.template block<3, 1>(3, 0) = vm - v_;
+  //  angles
+  r(0, 0) = rpy[0];
+  r(1, 0) = rpy[1];
+  r(2, 0) = rpy[2];
+  //  linear pos
+  r.template block<3, 1>(3, 0) = pm - p_;
 
   //  measurement covariance
-  Eigen::Matrix<Scalar,7,7> R;
+  Eigen::Matrix<Scalar,6,6> R;
   R.setZero();
-  R.template block<3, 3>(0, 0) = varP;
-  R.template block<3, 3>(3, 3) = varV;
-  // R.template block<3, 3>(6, 6) = varQ;
-  R(6, 6) = varQ(2, 2);
+  R.template block<3, 3>(0, 0) = varQ;
+  R.template block<3, 3>(3, 3) = varP;
 
   //  kalman update
-  Eigen::Matrix<Scalar,7,7> S = H * P_ * H.transpose() + R;
+  Eigen::Matrix<Scalar,6,6> S = H * P_ * H.transpose() + R;
   auto LU = S.fullPivLu();
   if (!LU.isInvertible()) {
     return false;
   }
   S = LU.inverse();
 
-  const Eigen::Matrix<Scalar,15,7> K = P_ * H.transpose() * S;
+  const Eigen::Matrix<Scalar,15,6> K = P_ * H.transpose() * S;
   const Eigen::Matrix<Scalar,15,1> dx = K * r;
 
   P_ = (Eigen::Matrix<Scalar, 15, 15>::Identity() - K * H) * P_;

@@ -29,7 +29,7 @@ void Node::initialize() {
   pubPose_ = nh_.advertise<geometry_msgs::PoseStamped>("pose", 1);
 
   subImu_ = nh_.subscribe("imu", 1, &Node::imuCallback, this);
-  subOdometry_ = nh_.subscribe("gps_odom", 1, &Node::odoCallback, this);
+  subOdometry_ = nh_.subscribe("viso_odom", 1, &Node::odoCallback, this);
 
   nh_.param("gyro_bias_drift_std", gyroBiasDriftStd_, 1.0e-3);
   nh_.param("accel_bias_drift_std", accelBiasDriftStd_, 1.0e-2);
@@ -51,7 +51,7 @@ void Node::initialize() {
 
 void Node::imuCallback(const sensor_msgs::ImuConstPtr &imu) {
   if (!initialized_) {
-    return;  //  wait for first GPS
+    return;  //  wait for first visual odometry
   }
   tfPub_.set_child_frame_id(imu->header.frame_id);
 
@@ -171,18 +171,16 @@ void Node::odoCallback(const nav_msgs::OdometryConstPtr &odometry) {
 
   static ros::Time firstTs = odometry->header.stamp;
 
-  Eigen::Vector3d p, v;
+  Eigen::Vector3d p;
   Eigen::Quaterniond q;
   tf::quaternionMsgToEigen(odometry->pose.pose.orientation, q);
   tf::pointMsgToEigen(odometry->pose.pose.position, p);
-  tf::vectorMsgToEigen(odometry->twist.twist.linear, v);
 
-  Eigen::Matrix3d varP, varV, varQ;
+  Eigen::Matrix3d varP, varQ;
   for (int i = 0; i < 3; i++) {
     for (int j = 0; j < 3; j++) {
       varP(i, j) = odometry->pose.covariance[(i * 6) + j];
       varQ(i, j) = odometry->pose.covariance[(i + 3) * 6 + j + 3];
-      varV(i, j) = odometry->twist.covariance[(i * 6) + j];
     }
   }
 
@@ -191,10 +189,10 @@ void Node::odoCallback(const nav_msgs::OdometryConstPtr &odometry) {
     initialized_ = true;
     //  take our output frame ID from the gps_odom
     worldFrameId_ = odometry->header.frame_id;
-    positionKF_.initState(q, p, v);
-    positionKF_.initCovariance(1e-1, 1e-4, 0.8, 0.2, 5.0);
+    positionKF_.initState(q, p, Eigen::Vector3d(0,0,0));
+    positionKF_.initCovariance(1e-2, 1e-4, 0.25, 0.2, 0.5);
   } else {
-    if (!positionKF_.update(q, varQ, p, varP, v, varV)) {
+    if (!positionKF_.update(q, varQ, p, varP)) {
       ROS_WARN("Warning: Kalman gain was singular in update");
     }
   }

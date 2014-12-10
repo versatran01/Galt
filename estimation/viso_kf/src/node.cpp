@@ -19,7 +19,7 @@ using ::viso_kf::Vector3WithCovarianceStamped;
 
 namespace viso_kf {
 
-Node::Node() : nh_("~"), trajViz_(nh_), covViz_(nh_) {}
+Node::Node() : nh_("~") {}
 
 void Node::initialize() {
   //  configure topics
@@ -29,7 +29,7 @@ void Node::initialize() {
   pubPose_ = nh_.advertise<geometry_msgs::PoseStamped>("pose", 1);
 
   subImu_ = nh_.subscribe("imu", 1, &Node::imuCallback, this);
-  subOdometry_ = nh_.subscribe("viso_odom", 1, &Node::odoCallback, this);
+  subOdometry_ = nh_.subscribe("odom", 1, &Node::odoCallback, this);
 
   nh_.param("gyro_bias_drift_std", gyroBiasDriftStd_, 1.0e-3);
   nh_.param("accel_bias_drift_std", accelBiasDriftStd_, 1.0e-2);
@@ -42,18 +42,12 @@ void Node::initialize() {
   ROS_INFO("Initialization dead time: %f", initDeadTime_);
 
   predictTime_ = ros::Time(0, 0);
-  trajViz_.SetColor(kr::viz::colors::CYAN);
-  trajViz_.SetAlpha(1);
-  trajViz_.set_num_skip(12);
-  covViz_.SetColor(kr::viz::colors::CYAN);  //  transparent cyan
-  covViz_.SetAlpha(0.5);
 }
 
 void Node::imuCallback(const sensor_msgs::ImuConstPtr &imu) {
   if (!initialized_) {
     return;  //  wait for first visual odometry
   }
-  tfPub_.set_child_frame_id(imu->header.frame_id);
 
   Eigen::Vector3d accel;
   Eigen::Matrix3d varAccel;
@@ -92,7 +86,7 @@ void Node::imuCallback(const sensor_msgs::ImuConstPtr &imu) {
   positionKF_.predict(gyro, varGyro, accel, varAccel, delta);
 
   //  output covariance
-  const Eigen::Matrix<double,15,15> &P = positionKF_.getCovariance();
+  const Eigen::Matrix<double, 15, 15> &P = positionKF_.getCovariance();
   const auto &rotCov = P.block<3, 3>(0, 0);
   const auto &gBiasCov = P.block<3, 3>(3, 3);
   const auto &velCov = P.block<3, 3>(6, 6);
@@ -114,9 +108,6 @@ void Node::imuCallback(const sensor_msgs::ImuConstPtr &imu) {
   pose.pose = odo.pose.pose;
   pose.header = odo.header;
   pubPose_.publish(pose);
-
-  tfPub_.PublishTransform(odo.pose.pose, odo.header);
-  trajViz_.PublishTrajectory(pose.pose.position, pose.header);
 
   //  top left 3x3 (filter) and bottom right 3x3 (from imu)
   for (int i = 0; i < 3; i++) {
@@ -143,7 +134,6 @@ void Node::imuCallback(const sensor_msgs::ImuConstPtr &imu) {
     }
   }
   pubOdometry_.publish(odo);
-  covViz_.PublishCovariance(odo);
 
   //  publish bias messages
   Vector3WithCovarianceStamped aBiasVector, gBiasVector;
@@ -168,7 +158,6 @@ void Node::imuCallback(const sensor_msgs::ImuConstPtr &imu) {
 }
 
 void Node::odoCallback(const nav_msgs::OdometryConstPtr &odometry) {
-
   static ros::Time firstTs = odometry->header.stamp;
 
   Eigen::Vector3d p;
@@ -189,7 +178,7 @@ void Node::odoCallback(const nav_msgs::OdometryConstPtr &odometry) {
     initialized_ = true;
     //  take our output frame ID from the gps_odom
     worldFrameId_ = odometry->header.frame_id;
-    positionKF_.initState(q, p, Eigen::Vector3d(0,0,0));
+    positionKF_.initState(q, p, Eigen::Vector3d(0, 0, 0));
     positionKF_.initCovariance(1e-2, 1e-4, 0.25, 0.2, 0.5);
   } else {
     if (!positionKF_.update(q, varQ, p, varP)) {

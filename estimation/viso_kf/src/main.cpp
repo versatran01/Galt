@@ -12,8 +12,8 @@
 #include <ros/ros.h>
 #include <viso_kf/node.hpp>
 
-int main(int argc, char ** argv) {
-  ros::init(argc,argv,"viso_kf");
+int main(int argc, char** argv) {
+  ros::init(argc, argv, "viso_kf");
   viso_kf::Node node;
   node.initialize();
   ros::spin();

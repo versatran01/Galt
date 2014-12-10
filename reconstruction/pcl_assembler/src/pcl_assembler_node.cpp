@@ -58,8 +58,8 @@ void PclAssemblerNode::PointCloud2Cb(
   voxel_filter.setInputCloud(pcl_pc_passed);
   voxel_filter.setLeafSize(leaf_size_, leaf_size_, leaf_size_);
   voxel_filter.filter(*pcl_pc_filtered);
-  ROS_INFO("%d: %d: %d", (int)pcl_pc->size(), (int)pcl_pc_passed->size(),
-           (int)pcl_pc_filtered->size());
+  //  ROS_INFO("%d: %d: %d", (int)pcl_pc->size(), (int)pcl_pc_passed->size(),
+  //           (int)pcl_pc_filtered->size());
   sensor_msgs::PointCloud2 pc2;
   if (do_assemble_) {
     // Transform point cloud to fixed_frame
@@ -73,7 +73,7 @@ void PclAssemblerNode::PointCloud2Cb(
       // Concatenate point clouds
       *pcl_pc_assembled_ += *pcl_pc_transformed;
     }
-    ROS_INFO("total: %d", (int)pcl_pc_assembled_->size());
+    //    ROS_INFO("total: %d", (int)pcl_pc_assembled_->size());
     pcl::toROSMsg(*pcl_pc_assembled_, pc2);
   } else {
     // Only downsample, so just publish voxel filtered

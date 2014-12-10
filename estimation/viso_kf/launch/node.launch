@@ -1,0 +1,11 @@
+<launch>
+    <arg name="output" default="screen"/>
+    <arg name="stereo" default="stereo"/>
+    <arg name="odom" default="odom"/>
+    <arg name="imu" default="imu"/>
+
+    <node pkg="viso_kf" type="viso_kf" name="viso_kf" output="$(arg output)">
+        <remap from="~odom" to="/$(arg stereo)/$(arg odom)"/>
+        <remap from="~imu" to="/$(arg imu)/imu"/>
+    </node> 
+</launch>

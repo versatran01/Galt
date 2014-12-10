@@ -43,7 +43,12 @@
     <node pkg="viso2_ros" type="stereo_odometer" name="stereo_odometer"
         output="$(arg output)" ns="$(arg stereo)">
         <param name="max_features" type="int" value="3"/>
+        <remap from="~odometry" to="odom"/>
     </node>
+
+    <!-- viso_kf -->
+    <include file="$(find viso_kf)/launch/node.launch">
+    </include>
 
     <!-- pcl_assembler -->
     <include file="$(find pcl_assembler)/launch/node.launch">

@@ -20,9 +20,6 @@
 
 #include "viso_kf/error_state_kf.hpp"
 
-#include "rviz_helper/marker_visualizer.hpp"
-#include "rviz_helper/tf_publisher.hpp"
-
 namespace viso_kf {
 
 class Node {
@@ -61,9 +58,6 @@ class Node {
   ros::Time predictTime_;
 
   std::string worldFrameId_;
-  kr::viz::TfPublisher tfPub_;
-  kr::viz::TrajectoryVisualizer trajViz_;
-  kr::viz::CovarianceVisualizer covViz_;
 };
 
 }  //  namespace viso_kf

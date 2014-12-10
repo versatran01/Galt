@@ -14,16 +14,17 @@
  * @note See: "A Multi-State Constraint Kalman Filter for Vision-aided Inertial
  *Navigation", Mourikis and Roumeliotis
  */
-template <typename Scalar> class ErrorStateKF {
-public:
+template <typename Scalar>
+class ErrorStateKF {
+ public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-  
+
   //  Types
   typedef Eigen::Quaternion<Scalar> quat;
-  typedef Eigen::Matrix<Scalar,3,1> vec3;
-  typedef Eigen::Matrix<Scalar,3,3> mat3;
-  typedef Eigen::Matrix<Scalar,15,15> mat15;
-  
+  typedef Eigen::Matrix<Scalar, 3, 1> vec3;
+  typedef Eigen::Matrix<Scalar, 3, 3> mat3;
+  typedef Eigen::Matrix<Scalar, 15, 15> mat15;
+
   /**
    * @brief Construct new instance of ESKF.
    * @note Initializes orientation to identity and all other state variables
@@ -48,8 +49,7 @@ public:
    * @param p
    * @param v
    */
-  void initState(const quat &wQb, const vec3 p,
-                 const vec3 &v);
+  void initState(const quat &wQb, const vec3 p, const vec3 &v);
 
   /**
    * @brief Run the prediction step of the filter.
@@ -59,9 +59,8 @@ public:
    * @param varA Covariance of body-frame linear acceleration.
    * @param dt Time step (seconds).
    */
-  void predict(const vec3 &wbody, const mat3 &varW,
-               const vec3 &abody, const mat3 &varA,
-               Scalar dt);
+  void predict(const vec3 &wbody, const mat3 &varW, const vec3 &abody,
+               const mat3 &varA, Scalar dt);
 
   /**
    * @brief Run the update step of the filter, with a velocity measurement.
@@ -73,8 +72,8 @@ public:
    * @param varV Covariance on velocity.
    * @return True if the update succeeds, false if the kalman gain is singular.
    */
-  bool update(const quat &qm, const mat3 &varQ,
-              const vec3 &pm, const mat3 &varP);
+  bool update(const quat &qm, const mat3 &varQ, const vec3 &pm,
+              const mat3 &varP);
 
   /**
    * @brief Orientation, transformation from body to world.
@@ -118,8 +117,7 @@ public:
    * @param bg Gyro bias drift rate covariance, rad^2/s^4.
    * @param ba Accelerometer bias drift rate covariance, m^2/s^6.
    */
-  void setBiasUncertainties(const mat3 &bg,
-                            const mat3 &ba) {
+  void setBiasUncertainties(const mat3 &bg, const mat3 &ba) {
     Qbg_ = bg;
     Qba_ = ba;
   }
@@ -130,22 +128,24 @@ public:
    */
   void setGravity(Scalar g) { g_ = g; }
 
-private:
-  quat q_;  /// Orientation
-  vec3 bg_; /// Gyro bias
-  vec3 v_;  /// Velocity
-  vec3 ba_; /// Accelerometer bias
-  vec3 p_;  /// Position
+ private:
+  quat q_;   /// Orientation
+  vec3 bg_;  /// Gyro bias
+  vec3 v_;   /// Velocity
+  vec3 ba_;  /// Accelerometer bias
+  vec3 p_;   /// Position
 
-  mat15 P_; /// State covariance
+  mat15 P_;  /// State covariance
 
-  mat3 Qbg_; /// Gyro bias drift rate uncertainty
-  mat3 Qba_; /// Accel bias drift rate uncertainty
+  mat3 Qbg_;  /// Gyro bias drift rate uncertainty
+  mat3 Qba_;  /// Accel bias drift rate uncertainty
 
-  Scalar g_; /// Gravity constant
+  Scalar g_;  /// Gravity constant
 };
 
-template <typename Scalar> ErrorStateKF<Scalar>::ErrorStateKF() : g_(9.80665) {
+template <typename Scalar>
+ErrorStateKF<Scalar>::ErrorStateKF()
+    : g_(9.80665) {
   q_.setIdentity();
   bg_.setZero();
   v_.setZero();
@@ -183,16 +183,15 @@ template <typename Scalar>
 void ErrorStateKF<Scalar>::predict(const ErrorStateKF<Scalar>::vec3 &wbody,
                                    const ErrorStateKF<Scalar>::mat3 &varW,
                                    const ErrorStateKF<Scalar>::vec3 &abody,
-                                   const ErrorStateKF<Scalar>::mat3 &varA, 
+                                   const ErrorStateKF<Scalar>::mat3 &varA,
                                    Scalar dt) {
 
-  const vec3 ah = abody - ba_; //  corrected inputs
+  const vec3 ah = abody - ba_;  //  corrected inputs
   const vec3 wh = wbody - bg_;
-  const mat3 wRb = q_.matrix(); //  current orientation
+  const mat3 wRb = q_.matrix();  //  current orientation
 
   //  integrate state forward w/ euler equations
-  const quat dq =
-      q_ * quat(0, wh[0] * 0.5, wh[1] * 0.5, wh[2] * 0.5);
+  const quat dq = q_ * quat(0, wh[0] * 0.5, wh[1] * 0.5, wh[2] * 0.5);
   q_.w() += dq.w() * dt;
   q_.x() += dq.x() * dt;
   q_.y() += dq.y() * dt;
@@ -224,13 +223,13 @@ void ErrorStateKF<Scalar>::predict(const ErrorStateKF<Scalar>::vec3 &wbody,
   Q.template block<3, 3>(6, 6) = varA;
   Q.template block<3, 3>(9, 9) = Qba_;
 
-  Eigen::Matrix<Scalar,15,12> G;
+  Eigen::Matrix<Scalar, 15, 12> G;
   G.setZero();
 
   //  angular vel. variance on error state angle
   G.template block<3, 3>(0, 0) = mat3::Identity() * -1;
   G.template block<3, 3>(3, 3).setIdentity();
-  G.template block<3, 3>(6, 6) = -wRb; //  acceleration on linear velocity
+  G.template block<3, 3>(6, 6) = -wRb;  //  acceleration on linear velocity
   G.template block<3, 3>(9, 9).setIdentity();
 
   //  integrate covariance forward
@@ -251,7 +250,7 @@ bool ErrorStateKF<Scalar>::update(const ErrorStateKF<Scalar>::quat &qm,
   H.template block<3, 3>(3, 12).setIdentity();
 
   // residual
-  Eigen::Matrix<Scalar,6,1> r;
+  Eigen::Matrix<Scalar, 6, 1> r;
 
   //  non-linear rotation residual on yaw axis
   const quat dq = q_.conjugate() * qm;
@@ -266,21 +265,21 @@ bool ErrorStateKF<Scalar>::update(const ErrorStateKF<Scalar>::quat &qm,
   r.template block<3, 1>(3, 0) = pm - p_;
 
   //  measurement covariance
-  Eigen::Matrix<Scalar,6,6> R;
+  Eigen::Matrix<Scalar, 6, 6> R;
   R.setZero();
   R.template block<3, 3>(0, 0) = varQ;
   R.template block<3, 3>(3, 3) = varP;
 
   //  kalman update
-  Eigen::Matrix<Scalar,6,6> S = H * P_ * H.transpose() + R;
+  Eigen::Matrix<Scalar, 6, 6> S = H * P_ * H.transpose() + R;
   auto LU = S.fullPivLu();
   if (!LU.isInvertible()) {
     return false;
   }
   S = LU.inverse();
 
-  const Eigen::Matrix<Scalar,15,6> K = P_ * H.transpose() * S;
-  const Eigen::Matrix<Scalar,15,1> dx = K * r;
+  const Eigen::Matrix<Scalar, 15, 6> K = P_ * H.transpose() * S;
+  const Eigen::Matrix<Scalar, 15, 1> dx = K * r;
 
   P_ = (Eigen::Matrix<Scalar, 15, 15>::Identity() - K * H) * P_;
 
@@ -295,4 +294,4 @@ bool ErrorStateKF<Scalar>::update(const ErrorStateKF<Scalar>::quat &qm,
   return true;
 }
 
-#endif // ERROR_STATE_KF_HPP
+#endif  // ERROR_STATE_KF_HPP

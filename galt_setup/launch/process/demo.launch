@@ -47,4 +47,10 @@
     <include file="$(find img2pcl)/launch/node.launch">
         <arg name="camera" value="color"/>
     </include>
+
+    <!-- pcl_assembler -->
+    <include file="$(find pcl_assembler)/launch/node.launch">
+        <arg name="source" value="$(arg stereo)"/>
+        <arg name="topic" value="points2"/>
+    </include>
 </launch>

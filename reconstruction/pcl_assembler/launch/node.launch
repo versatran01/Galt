@@ -1,0 +1,12 @@
+<launch>
+    <arg name="output" default="screen"/>
+    <arg name="fixed_frame" default="world"/>
+    <arg name="source"/>
+    <arg name="topic"/>
+
+    <node pkg="pcl_assembler" type="pcl_assembler_node" name="pcl_assembler"
+        ns="$(arg source)" output="$(arg output)">
+        <remap from="cloud_in" to="$(arg topic)"/>
+        <param name="fixed_frame" type="string" value="$(arg fixed_frame)"/>
+    </node>
+</launch>

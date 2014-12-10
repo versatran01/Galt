@@ -1,5 +1,14 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(pcl_assembler)
 
-find_package(catkin REQUIRED)
+add_definitions(-Wall)
+find_package(catkin REQUIRED COMPONENTS
+    roscpp sensor_msgs tf2 tf2_ros pcl_conversions pcl_ros
+    )
 
+catkin_package()
+
+include_directories(include ${catkin_INCLUDE_DIRS})
+
+add_executable(pcl_assembler_node src/pcl_assembler_node.cpp)
+target_link_libraries(pcl_assembler_node ${catkin_LIBRARIES})

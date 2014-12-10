@@ -17,8 +17,11 @@
 
 #include <sensor_msgs/Imu.h>
 #include <nav_msgs/Odometry.h>
+#include <tf2/buffer_core.h>
+#include <tf2_ros/transform_listener.h>
 
 #include "viso_kf/error_state_kf.hpp"
+#include <rviz_helper/tf_publisher.hpp>
 
 namespace viso_kf {
 
@@ -56,8 +59,11 @@ class Node {
   ros::Subscriber subImu_;
   ros::Subscriber subOdometry_;
   ros::Time predictTime_;
+  tf2::BufferCore tfCore_;
+  tf2_ros::TransformListener tfListener_;
 
   std::string worldFrameId_;
+  kr::viz::TfPublisher tfPub_;
 };
 
 }  //  namespace viso_kf

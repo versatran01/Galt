@@ -50,6 +50,7 @@
 
     <!-- pcl_assembler -->
     <include file="$(find pcl_assembler)/launch/node.launch">
+        <arg name="fixed_frame" value="vicon"/>
         <arg name="source" value="$(arg stereo)"/>
         <arg name="topic" value="points2"/>
     </include>

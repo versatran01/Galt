@@ -1,12 +1,20 @@
 <launch>
     <arg name="output" default="screen"/>
     <arg name="fixed_frame" default="world"/>
+    <arg name="assemble" default="true"/>
+    <arg name="leaf_size" default="0.05"/>
+    <arg name="min_z" default="0.5"/>
+    <arg name="max_z" default="10.0"/>
     <arg name="source"/>
     <arg name="topic"/>
 
     <node pkg="pcl_assembler" type="pcl_assembler_node" name="pcl_assembler"
         ns="$(arg source)" output="$(arg output)">
         <remap from="cloud_in" to="$(arg topic)"/>
+        <param name="assemble" type="bool" value="$(arg assemble)"/>
         <param name="fixed_frame" type="string" value="$(arg fixed_frame)"/>
+        <param name="leaf_size" type="double" value="$(arg leaf_size)"/>
+        <param name="min_z" type="double" value="$(arg min_z)"/>
+        <param name="max_z" type="double" value="$(arg max_z)"/>
     </node>
 </launch>

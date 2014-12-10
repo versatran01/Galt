@@ -3,7 +3,7 @@ project(pcl_assembler)
 
 add_definitions(-Wall)
 find_package(catkin REQUIRED COMPONENTS
-    roscpp sensor_msgs tf2 tf2_ros pcl_conversions pcl_ros
+    roscpp sensor_msgs tf2 tf2_ros pcl_conversions pcl_ros eigen_conversions
     )
 
 catkin_package()

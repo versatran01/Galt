@@ -45,8 +45,10 @@
         <param name="max_features" type="int" value="3"/>
     </node>
 
-    <!-- elas_ros -->
-    <node pkg="elas_ros" type="elas_ros" name="elas" output="$(arg output)"
-        ns="$(arg stereo)">
-    </node>
+    <!-- pcl_assembler -->
+    <include file="$(find pcl_assembler)/launch/node.launch">
+        <arg name="fixed_frame" value="odom"/>
+        <arg name="source" value="$(arg stereo)"/>
+        <arg name="topic" value="points2"/>
+    </include>
 </launch>

@@ -49,7 +49,7 @@ void Node::imuCallback(const sensor_msgs::ImuConstPtr &imu) {
   if (!initialized_) {
     return;  //  wait for first visual odometry
   }
-  tfPub_.set_child_frame_id("imu");
+  //tfPub_.set_child_frame_id("imu");
 
   Eigen::Vector3d accel;
   Eigen::Matrix3d varAccel;
@@ -155,6 +155,7 @@ void Node::imuCallback(const sensor_msgs::ImuConstPtr &imu) {
     }
   }
   pubOdometry_.publish(odo);
+  tfPub_.set_child_frame_id("base_link");
   tfPub_.PublishTransform(odo.pose.pose, odo.header);
 
   //  publish bias messages

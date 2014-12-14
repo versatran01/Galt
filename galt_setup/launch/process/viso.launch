@@ -10,7 +10,7 @@
     <arg name="version" default="v4"/>
     <arg name="profile" default="profiles/$(arg platform)/$(arg version)"/>
 
-    <param name="/use_sim_time" value="true"/>
+    <param if="$(arg test)" name="/use_sim_time" value="true"/>
 
     <!-- rosbag -->
     <node if="$(arg test)" pkg="rosbag" type="play" name="player"

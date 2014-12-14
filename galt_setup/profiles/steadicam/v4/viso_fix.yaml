@@ -1,0 +1,45 @@
+data_palyback: false
+
+# IMU parameters
+# 3DM-GX4
+core:
+    core_fixed_bias: false
+    core_noise_acc: 1.0e-03
+    core_noise_accbias: 0.039e-02
+    core_noise_gyr: 8.73e-05
+    core_noise_gyrbias: 4.8e-05
+
+pose_sensor:
+    pose_absolute_measurements: true
+    pose_use_fixed_covariance: true
+    pose_measurement_world_sensor: false
+
+    pose_fixed_p_ic: true
+    pose_fixed_q_ic: true
+    pose_fixed_p_wv: false
+    pose_fixed_q_wv: false
+
+    pose_fixed_scale: true
+    pose_noise_scale: 0.0
+    pose_noise_p_wv: 0.0
+    pose_noise_q_wv: 0.0
+    pose_noise_p_ic: 0.0
+    pose_noise_q_ic: 0.0
+    pose_delay: 0.02
+    pose_noise_meas_p: 0.01
+    pose_noise_meas_q: 0.02
+    pose_initial_scale: 1
+
+# q_ic is the quaternion representing the rotation of the camera in IMU frame.
+    init:
+        q_ic/w: 1.0
+        q_ic/x: 0.0
+        q_ic/y: 0.0
+        q_ic/z: 0.0
+
+# p_ic is the translation between the IMU and the camera in meters.
+        p_ic/x: 0.0
+        p_ic/y: 0.0
+        p_ic/z: 0.0
+
+

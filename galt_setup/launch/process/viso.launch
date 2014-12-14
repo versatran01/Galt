@@ -2,7 +2,7 @@
     <!-- Arguments -->
     <arg name="test" default="true"/>
     <arg name="output" default="screen"/>
-    <arg name="bagfile" default="/home/chao/Workspace/bag/mrsl_st20.bag"/>
+    <arg name="bagfile" default="/home/chao/Workspace/bag/mrsl_new.bag"/>
     <arg name="view" default="false"/>
     <arg name="stereo" default="stereo"/>
     <!-- platform -->
@@ -41,26 +41,18 @@
 
     <!-- viso2_ros -->
     <include file="$(find viso2_ros)/launch/stereo_odom.launch">
-        <arg name="max_features" value="3"/>
+        <arg name="max_features" value="4"/>
         <arg name="publish_tf" value="true"/>
         <arg name="visualize_matches" value="true"/>
     </include>
-
-    <!--<node pkg="viso2_ros" type="stereo_odometer" name="stereo_odometer"-->
-        <!--output="$(arg output)" ns="$(arg stereo)">-->
-        <!--<param name="max_features" type="int" value="3"/>-->
-        <!--<param name="publish_tf" type="bool" value="true"/>-->
-        <!--<remap from="~odometry" to="odom"/>-->
-    <!--</node>-->
 
     <!-- viso_kf -->
     <!--<include file="$(find viso_kf)/launch/node.launch">-->
     <!--</include>-->
 
     <!-- pcl_assembler -->
-    <!--<include file="$(find pcl_assembler)/launch/node.launch">-->
-        <!--<arg name="fixed_frame" value="odom"/>-->
-        <!--<arg name="source" value="$(arg stereo)"/>-->
-        <!--<arg name="topic" value="points2"/>-->
-    <!--</include>-->
+    <include file="$(find pcl_assembler)/launch/filter.launch">
+        <arg name="source" value="$(arg stereo)"/>
+        <arg name="topic" value="points2"/>
+    </include>
 </launch>

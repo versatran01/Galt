@@ -12,3 +12,6 @@ include_directories(include ${catkin_INCLUDE_DIRS})
 
 add_executable(pcl_assembler_node src/pcl_assembler_node.cpp)
 target_link_libraries(pcl_assembler_node ${catkin_LIBRARIES})
+
+add_executable(pcl_filter_node src/pcl_filter_node.cpp)
+target_link_libraries(pcl_filter_node ${catkin_LIBRARIES})

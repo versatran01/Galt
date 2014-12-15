@@ -1,4 +1,4 @@
-data_palyback: false
+data_palyback: true
 
 # IMU parameters
 # 3DM-GX4

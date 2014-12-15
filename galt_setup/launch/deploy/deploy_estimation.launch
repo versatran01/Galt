@@ -12,7 +12,7 @@
   which will be employed in all sensing modes.
 -->
 <launch>
-   <arg name="vicon" default="false"/>
+    <arg name="vicon" default="false"/>
 
     <!-- gps -->
     <include file="$(find galt_setup)/launch/drivers/gps.launch"/>
@@ -26,6 +26,9 @@
     <!-- camera -->
     <include file="$(find galt_setup)/launch/drivers/stereo.launch"/>
     <include file="$(find galt_setup)/launch/drivers/color.launch"/>
+
+    <!-- thermal -->
+    <include file="$(find galt_setup)/launch/drivers/thermal.launch"/>
 
     <!-- optional: vicon -->
     <group if="$(arg vicon)">

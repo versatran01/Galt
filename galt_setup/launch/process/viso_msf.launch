@@ -1,0 +1,62 @@
+<launch>
+    <!-- Arguments -->
+    <arg name="test" default="true"/>
+    <arg name="output" default="screen"/>
+    <arg name="bagfile" default="/home/chao/Workspace/bag/mrsl_new.bag"/>
+    <arg name="view" default="false"/>
+    <arg name="stereo" default="stereo"/>
+    <!-- platform -->
+    <arg name="platform" default="steadicam"/>
+    <arg name="version" default="v4"/>
+    <arg name="profile" default="profiles/$(arg platform)/$(arg version)"/>
+
+    <param if="$(arg test)" name="/use_sim_time" value="true"/>
+
+    <!-- rosbag -->
+    <node if="$(arg test)" pkg="rosbag" type="play" name="player"
+        args="--clock -r 0.5 $(arg bagfile)" output="log">
+    </node>
+
+    <!-- transform -->
+    <include file="$(find galt_setup)/profiles/steadicam/v4/tf.launch">
+    </include>
+
+    <!-- laser pipeline -->
+    <include file="$(find galt_setup)/launch/process/laser/laser_pipeline.launch">
+        <arg name="plugin" value="$(find galt_setup)/$(arg profile)/laser_filter.yml"/>
+        <arg name="target_frame" value="laser"/>
+        <arg name="fixed_frame" value="odom"/>
+    </include>
+
+    <!-- stereo_image_proc -->
+    <node pkg="stereo_image_proc" type="stereo_image_proc"
+        name="stereo_image_proc" ns="$(arg stereo)">
+    </node>
+
+    <!-- stereo_image_view -->
+    <node if="$(arg view)" pkg="image_view" type="stereo_view"
+        name="stereo_view" output="screen">
+        <remap from="image" to="image_rect"/>
+    </node>
+
+    <!-- viso2_ros -->
+    <include file="$(find viso2_ros)/launch/stereo_odom.launch">
+        <arg name="max_features" value="4"/>
+        <arg name="publish_tf" value="true"/>
+        <arg name="visualize_matches" value="true"/>
+    </include>
+
+    <!-- msf -->
+    <node name="msf_pose_sensor" pkg="msf_updates" type="pose_sensor"
+        clear_params="true" output="screen">
+        <remap from="msf_core/imu_state_input" to="/imu/imu"/>
+        <remap from="msf_updates/pose_with_covariance_input" to="/stereo/test"/>
+        <rosparam file="$(find galt_setup)/$(arg profile)/viso_fix.yaml"/>
+    </node>
+
+    <!-- pcl_assembler -->
+    <include file="$(find pcl_assembler)/launch/filter.launch">
+        <arg name="source" value="$(arg stereo)"/>
+        <arg name="topic" value="points2"/>
+    </include>
+</launch>

@@ -18,7 +18,6 @@
   <arg name="bagfile_start" default="0"/>
   <arg name="bagfile_rate" default="1"/>
   <arg name="bagfile_path" default="$(arg bagfile_home)/$(arg bagfile).bag"/>
-  <arg name="vicon" default="false"/>
 
   <!-- Rosbag -->
   <node name="playback" pkg="rosbag" type="play" output="log"
@@ -29,7 +28,6 @@
 
   <!-- Frame broadcaster -->
   <include file="$(find galt_setup)/profiles/$(arg profile)/tf.launch">
-    <arg name="vicon" value="$(arg vicon)"/>
   </include>
 
   <!-- Laser Filter -->

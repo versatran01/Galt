@@ -1,7 +1,8 @@
 <launch>
     <arg name="output" default="screen"/>
     <arg name="min_z" default="0.5"/>
-    <arg name="max_z" default="10.0"/>
+    <arg name="max_z" default="5.0"/>
+    <arg name="leaf_size" default="0.01"/>
     <arg name="source"/>
     <arg name="topic"/>
 
@@ -10,5 +11,6 @@
         <remap from="cloud_in" to="$(arg topic)"/>
         <param name="min_z" type="double" value="$(arg min_z)"/>
         <param name="max_z" type="double" value="$(arg max_z)"/>
+        <param name="leaf_size" type="double" value="$(arg leaf_size)"/>
     </node>
 </launch>

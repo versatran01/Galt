@@ -41,7 +41,7 @@
 
     <!-- viso2_ros -->
     <include file="$(find viso2_ros)/launch/stereo_odom.launch">
-        <arg name="max_features" value="4"/>
+        <arg name="max_features" value="2"/>
         <arg name="publish_tf" value="true"/>
         <arg name="visualize_matches" value="true"/>
     </include>
@@ -51,8 +51,9 @@
     <!--</include>-->
 
     <!-- pcl_assembler -->
-    <include file="$(find pcl_assembler)/launch/filter.launch">
-        <arg name="source" value="$(arg stereo)"/>
-        <arg name="topic" value="points2"/>
-    </include>
+    <!--<include file="$(find pcl_assembler)/launch/filter.launch">-->
+        <!--<arg name="source" value="$(arg stereo)"/>-->
+        <!--<arg name="topic" value="points2"/>-->
+        <!--<arg name="leaf_size" value="0.015"/>-->
+    <!--</include>-->
 </launch>

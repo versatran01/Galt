@@ -17,7 +17,7 @@ def process_data(data_dict):
         time = data_dict[key]['time']
         data = data_dict[key]['data']
         # plot all data
-        line = ax.plot(time, data)
+        line = ax.plot(time, data, label=key)
         color = plt.getp(line[0], 'color')
         average = np.mean(data)
         std = np.std(data)
@@ -31,6 +31,7 @@ def process_data(data_dict):
                 linewidth=2)
         print '{0} average: {1}, std: {2}'.format(key, average, std)
 
+    plt.legend()
     plt.grid()
     plt.show()
 

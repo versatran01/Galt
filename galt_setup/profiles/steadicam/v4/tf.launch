@@ -2,6 +2,9 @@
     <!--These transformations are acquired by kalibr and verified by cad drawings-->
     <!--static_transform_publisher x y z qx qy qz qw frame_id child_frame_id-->
 
+    <!-- If true, broadcast vicon frame -->
+    <arg name="vicon" default="false"/>
+
     <!--imu_stereo_left-->
     <node pkg="tf2_ros" type="static_transform_publisher"
         name="imu_stereo_broadcaster"
@@ -38,9 +41,12 @@
         args="-0.04241 0.04241 0 0 0 0 1 stereo spectral_800">
     </node>
 
-    <!-- vicon/world identity transform -->
-    <node pkg="tf2_ros" type="static_transform_publisher"
-        name="world_vicon_broadcaster"
-        args="0.0 0.0 0.0 0.0 0.0 0.0 1.0 vicon world">
-    </node>
+    <!-- Vicon transforms -->
+    <group if="$(arg vicon)">
+      <!-- imu/antares model transform -->
+      <node pkg="tf2_ros" type="static_transform_publisher"
+          name="imu_antares_broadcaster"
+          args="0.0254 0.0149 -0.0258 0.5 -0.5 0.5 0.5 imu antares">
+      </node>
+    </group>
 </launch>

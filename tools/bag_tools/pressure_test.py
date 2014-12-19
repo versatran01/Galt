@@ -5,6 +5,7 @@ import numpy as np
 import argparse as argp
 import matplotlib.pyplot as plt
 from collections import defaultdict
+from scipy.fftpack import fft
 
 
 def make_pair(x):
@@ -16,19 +17,28 @@ def process_data(data_dict):
     for key in data_dict:
         time = data_dict[key]['time']
         data = data_dict[key]['data']
+        num_points = len(data)
         # plot all data
-        line = ax.plot(time, data, label=key)
-        color = plt.getp(line[0], 'color')
+        # line = ax.plot(time, data, label=key)
+        # color = plt.getp(line[0], 'color')
         average = np.mean(data)
         std = np.std(data)
+        freq = 1.0/np.mean(np.diff(time))
+        yf = fft(data)
+        xf = np.linspace(0.0, freq/2, num_points/2)
+        ax.plot(xf[5:], 2.0/num_points * np.abs(yf[5:num_points/2]))
+
+        # fft
+        # fdata = fft(data)
+
         # plot average and variance
-        time_beg_to_end = (time[0], time[-1])
-        ax.plot(time_beg_to_end, make_pair(average), '--', color=color,
-                linewidth=4)
-        ax.plot(time_beg_to_end, make_pair(average + std), '-.', color=color,
-                linewidth=2)
-        ax.plot(time_beg_to_end, make_pair(average - std), '-.', color=color,
-                linewidth=2)
+        # time_beg_to_end = (time[0], time[-1])
+        # ax.plot(time_beg_to_end, make_pair(average), '--', color=color,
+        #         linewidth=4)
+        # ax.plot(time_beg_to_end, make_pair(average + std), '-.', color=color,
+        #         linewidth=2)
+        # ax.plot(time_beg_to_end, make_pair(average - std), '-.', color=color,
+        #         linewidth=2)
         print '{0} average: {1}, std: {2}'.format(key, average, std)
 
     plt.legend()

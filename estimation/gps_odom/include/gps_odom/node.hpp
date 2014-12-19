@@ -40,19 +40,14 @@ namespace gps_odom {
 
 class Node {
  public:
-  Node();
-
-  /**
-   * @brief Create ROS subscribers and publishers.
-   */
-  void initialize();
+  Node(const ros::NodeHandle &nh, const ros::NodeHandle &pnh);
 
  private:
   static constexpr int kROSQueueSize = 200;
 
-  ros::NodeHandle nh_;
+  ros::NodeHandle nh_, pnh_;
   std::string pkgPath_;
-  std::string worldFrameId_;
+  std::string fixedFrame_;
   ros::Publisher pubOdometry_;
   ros::Publisher pubRefPoint_;
   ros::Subscriber subLaserHeight_;

@@ -20,8 +20,9 @@
 
 namespace gps_odom {
 
-Node::Node()
-    : nh_("~"),
+Node::Node(const ros::NodeHandle &nh, const ros::NodeHandle &pnh)
+    : nh_(nh),
+      pnh_(pnh),
       pkgPath_(ros::package::getPath("gps_odom")),
       trajViz_(nh_),
       covViz_(nh_) {
@@ -29,34 +30,21 @@ Node::Node()
     ROS_WARN("Failed to find path for package");
   }
   //  ID to place on outgoing odometry
-  nh_.param<std::string>("world_frame_id", worldFrameId_, "world");
+  pnh_.param<std::string>("fixed_frame", fixedFrame_, "world");
 
   //  scale factor for GPS covariance
-  nh_.param<double>("gps_covariance_scale_factor", gpsCovScaleFactor_, 1.0);
+  pnh_.param<double>("gps_covariance_scale_factor", gpsCovScaleFactor_, 1.0);
   //  do we wait for laser altimeter to initialize height?
-  nh_.param<bool>("laser_init", shouldUseLaserInit_, false);
-
-  ROS_INFO("Using a GPS covariance scale factor of %f", gpsCovScaleFactor_);
-  refGpsSet_ = false;
-  refLaserSet_ = false;
-  refLaserHeight_ = 0;
-  currentDeclination_ = 0.0;
-  trajViz_.SetColor(kr::viz::colors::RED);
-  trajViz_.SetAlpha(1);
-  covViz_.SetColor(kr::viz::colors::RED);
-  covViz_.SetAlpha(0.5);
-}
-
-void Node::initialize() {
+  pnh_.param<bool>("laser_init", shouldUseLaserInit_, false);
 
   //  IMU and GPS are synchronized separately
-  subImu_.subscribe(nh_, "imu", kROSQueueSize);
-  subFix_.subscribe(nh_, "fix", kROSQueueSize);
-  subFixTwist_.subscribe(nh_, "fix_velocity", kROSQueueSize);
-  subHeight_.subscribe(nh_, "pressure_height", kROSQueueSize);
+  subFix_.subscribe(pnh_, "fix", kROSQueueSize);
+  subFixTwist_.subscribe(pnh_, "fix_velocity", kROSQueueSize);
 
+  subImu_.subscribe(pnh_, "imu", kROSQueueSize);
+  subHeight_.subscribe(pnh_, "pressure_height", kROSQueueSize);
   subLaserHeight_ =
-      nh_.subscribe("laser_height", 1, &Node::laserAltCallback, this);
+      pnh_.subscribe("laser_height", 1, &Node::laserAltCallback, this);
 
   syncGps_ = std::make_shared<SynchronizerGPS>(
       TimeSyncGPS(kROSQueueSize), subFix_, subFixTwist_, subImu_, subHeight_);
@@ -67,6 +55,16 @@ void Node::initialize() {
   pubOdometry_ = nh_.advertise<nav_msgs::Odometry>("odometry", 1);
   //  reference point on a latched topic
   pubRefPoint_ = nh_.advertise<sensor_msgs::NavSatFix>("reference", 1, true);
+
+  ROS_INFO("Using a GPS covariance scale factor of %f", gpsCovScaleFactor_);
+  refGpsSet_ = false;
+  refLaserSet_ = false;
+  refLaserHeight_ = 0;
+  currentDeclination_ = 0.0;
+  trajViz_.SetColor(kr::viz::colors::RED);
+  trajViz_.SetAlpha(1);
+  covViz_.SetColor(kr::viz::colors::RED);
+  covViz_.SetAlpha(0.5);
 }
 
 void Node::gpsCallback(
@@ -144,15 +142,15 @@ void Node::gpsCallback(
   aa.angle() = currentDeclination_;
   aa.axis() = Eigen::Vector3d(0.0, 0.0, 1.0);
 
-  Eigen::Quaterniond wQb = Eigen::Quaterniond(imu->orientation.w, 
-                                              imu->orientation.x,
-                            imu->orientation.y, imu->orientation.z);
+  Eigen::Quaterniond wQb =
+      Eigen::Quaterniond(imu->orientation.w, imu->orientation.x,
+                         imu->orientation.y, imu->orientation.z);
   wQb = aa * wQb;
 
   nav_msgs::Odometry odometry;
   odometry.header.stamp = navSatFix->header.stamp;
-  odometry.header.frame_id = worldFrameId_;
-  odometry.child_frame_id = worldFrameId_;
+  odometry.header.frame_id = fixedFrame_;
+  odometry.child_frame_id = fixedFrame_;
   odometry.pose.pose.orientation.w = wQb.w();
   odometry.pose.pose.orientation.x = wQb.x();
   odometry.pose.pose.orientation.y = wQb.y();
@@ -163,7 +161,7 @@ void Node::gpsCallback(
       (height->height - refPressureHeight_ + refLaserHeight_);
 
   //  generate covariance (6x6 with order: x,y,z,rot_x,rot_y,rot_z)
-  Eigen::Matrix<double,6,6> poseCovariance;
+  Eigen::Matrix<double, 6, 6> poseCovariance;
   poseCovariance.setZero();
   for (int i = 0; i < 3; i++) {
     for (int j = 0; j < 3; j++) {
@@ -189,7 +187,7 @@ void Node::gpsCallback(
 
   //  velocity covariance [x,y,z,rot_x,rot_y,rot_z]
   //  linear from GPS, no angular
-  Eigen::Matrix<double,6,6> velCovariance;
+  Eigen::Matrix<double, 6, 6> velCovariance;
   velCovariance.setZero();
   for (int i = 0; i < 3; i++) {
     for (int j = 0; j < 3; j++) {

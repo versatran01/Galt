@@ -1,0 +1,20 @@
+<launch>
+    <arg name="output" default="screen"/>
+    <arg name="gps" default="gps"/>
+    <arg name="imu" default="imu"/>
+    <arg name="config"/>
+    <arg name="fixed_frame" default="world"/>
+    <!-- todo: fix imu and height remap -->
+
+    <node name="gps_odom" pkg="gps_odom" type="gps_odom" output="$(arg output)"
+        ns="$(arg gps)">
+        <remap from="~imu" to="/attitude_eskf/filtered_imu"/>
+        <remap from="~pressure_height" to="/pressure_altimeter/height"/>
+        <remap from="~laser_height" to="/laser_altimeter/height"/>
+        <remap from="~fix" to="/gps/fix"/>
+        <remap from="~fix_velocity" to ="/gps/fix_velocity"/>
+        <param name="fixed_frame" type="string" value="$(arg fixed_frame)"/>
+        <!-- Any other profile-specific parameters -->
+        <rosparam command="load" file="$(arg config)"/>
+    </node>
+</launch>

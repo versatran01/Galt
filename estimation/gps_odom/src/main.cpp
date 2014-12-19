@@ -12,10 +12,14 @@
 #include <ros/ros.h>
 #include <gps_odom/node.hpp>
 
-int main(int argc, char ** argv) {
+int main(int argc, char** argv) {
   ros::init(argc, argv, "gps_odom");
-  gps_odom::Node node;
-  node.initialize();
-  ros::spin();
-  return 0;
+  ros::NodeHandle nh, pnh("~");
+  try {
+    gps_odom::Node node(nh, pnh);
+    ros::spin();
+  }
+  catch (const std::exception& e) {
+    ROS_ERROR("%s: %s", pnh.getNamespace().c_str(), e.what());
+  }
 }

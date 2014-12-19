@@ -16,6 +16,7 @@
     <arg name="platform" default="steadicam"/>
     <arg name="version" default="v4"/>
     <arg name="profile" default="$(arg platform)/$(arg version)"/>
+    <arg name="profile_path" default="$(find galt_setup)/profiles/$(arg profile)"/>
 
     <!-- Bag -->
     <arg name="bag_home" default="$(env GALT_BAGFILES)"/>
@@ -32,30 +33,21 @@
     </node>
 
     <!-- Frame broadcaster -->
-    <include file="$(find galt_setup)/profiles/$(arg profile)/tf.launch">
+    <include file="$(arg profile_path)/tf.launch">
     </include>
 
     <!-- Laser pipeline -->
     <include file="$(find galt_setup)/launch/process/laser/laser_pipeline.launch">
-        <arg name="plugin" value="$(find galt_setup)/profiles/$(arg profile)/laser_filter.yml"/>
+        <arg name="plugin" value="$(arg profile_path)/laser_filter.yml"/>
     </include>
 
     <!-- Magnetometer calibration to load -->
     <arg name="mag_calib" default="philadelphia_generic"/>
 
     <!-- IMU Covariance -->
-    <node pkg="imu_covariance" name="imu_covariance" type="imu_covariance"
-        output="screen">
-        <!-- Load settings from our profile -->
-        <param name="config_path"
-            type="string"
-            value="$(find galt_setup)/profiles/$(arg profile)/imu.yml"/>
-
-        <!-- Inputs from recorded IMU -->
-        <remap from="~imu_in" to="/imu/imu"/>
-        <remap from="~magnetic_field_in" to="/imu/magnetic_field"/>
-        <remap from="~pressure_in" to="/imu/pressure"/>
-    </node>
+    <include file="$(find galt_setup)/launch/process/filter/imu_covariance.launch">
+        <arg name="config" value="$(arg profile_path)/imu.yml"/>
+    </include>    
 
     <!-- Attitude Filter -->
     <node pkg="kr_attitude_eskf" name="attitude_eskf" type="kr_attitude_eskf"
@@ -67,8 +59,8 @@
             file="$(find galt_setup)/calib/magnetometer/$(arg mag_calib).yml"/>
 
         <!-- IMU data w/ proper covariance parameters -->
-        <remap from="~imu" to="/imu_covariance/imu"/>
-        <remap from="~magnetic_field" to="/imu_covariance/magnetic_field"/>
+        <remap from="~imu" to="/imu/imu_covariance/imu"/>
+        <remap from="~magnetic_field" to="/imu/imu_covariance/magnetic_field"/>
     </node>
 
     <!-- Barometric altimeter -->
@@ -77,7 +69,7 @@
         <!-- name of the frame in the header of the output -->
         <param name="world_frame_id" type="string" value="world"/>
         <!-- input topic -->
-        <remap from="~fluid_pressure" to="/imu_covariance/pressure"/>
+        <remap from="~fluid_pressure" to="/imu/imu_covariance/pressure"/>
     </node>
 
     <!-- Laser altimeter -->

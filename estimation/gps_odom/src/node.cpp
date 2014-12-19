@@ -38,8 +38,8 @@ Node::Node(const ros::NodeHandle &nh, const ros::NodeHandle &pnh)
   pnh_.param<bool>("laser_init", shouldUseLaserInit_, false);
 
   //  IMU and GPS are synchronized separately
-  subFix_.subscribe(pnh_, "fix", kROSQueueSize);
-  subFixTwist_.subscribe(pnh_, "fix_velocity", kROSQueueSize);
+  subFix_.subscribe(nh_, "fix", kROSQueueSize);
+  subFixTwist_.subscribe(nh_, "fix_velocity", kROSQueueSize);
 
   subImu_.subscribe(pnh_, "imu", kROSQueueSize);
   subHeight_.subscribe(pnh_, "pressure_height", kROSQueueSize);

@@ -24,7 +24,7 @@
     <arg name="bag_start" default="0"/>
     <arg name="bag_rate" default="1"/>
     <!-- <arg name="bag_path" default="$(arg bag_home)/$(arg bag).bag"/> -->
-    <arg name="bag_path" default="/home/chao/Workspace/bag/biglerville/steadicam/fruit_3_2014-10-24-13-10-13.bag"/>
+    <arg name="bag_path" default="/media/chao/Seagate/steadicam/fruit_2_2014-10-24-12-59-56.bag"/>
 
     <!-- Rosbag -->
     <node name="playback" pkg="rosbag" type="play" output="log"
@@ -88,7 +88,7 @@
     <node name="gps_kf" pkg="gps_kf" type="gps_kf" output="screen">
         <!-- filter inputs -->
         <remap from="~imu" to="/attitude_eskf/filtered_imu"/>
-        <remap from="~gps_odom" to="/gps/gps_odom/odometry"/>
+        <remap from="~gps_odom" to="/gps/odometry"/>
 
         <!-- Profile specific settings -->
         <rosparam

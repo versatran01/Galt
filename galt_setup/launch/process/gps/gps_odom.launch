@@ -11,8 +11,6 @@
         <remap from="~imu" to="/attitude_eskf/filtered_imu"/>
         <remap from="~pressure_height" to="/pressure_altimeter/height"/>
         <remap from="~laser_height" to="/laser_altimeter/height"/>
-        <remap from="~fix" to="/gps/fix"/>
-        <remap from="~fix_velocity" to ="/gps/fix_velocity"/>
         <param name="fixed_frame" type="string" value="$(arg fixed_frame)"/>
         <!-- Any other profile-specific parameters -->
         <rosparam command="load" file="$(arg config)"/>

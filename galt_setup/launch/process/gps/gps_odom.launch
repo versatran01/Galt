@@ -8,10 +8,11 @@
 
     <node name="gps_odom" pkg="gps_odom" type="gps_odom" output="$(arg output)"
         ns="$(arg gps)">
-        <remap from="~imu" to="/attitude_eskf/filtered_imu"/>
-        <remap from="~pressure_height" to="/pressure_altimeter/height"/>
-        <remap from="~laser_height" to="/laser_altimeter/height"/>
         <param name="fixed_frame" type="string" value="$(arg fixed_frame)"/>
+        
+        <remap from="~imu" to="/attitude_eskf/filtered_imu"/>
+        <remap from="~pressure_height" to="/altimeter/pressure_altimeter/height"/>
+        <remap from="~laser_height" to="/altimeter/laser_altimeter/height"/>
         <!-- Any other profile-specific parameters -->
         <rosparam command="load" file="$(arg config)"/>
     </node>

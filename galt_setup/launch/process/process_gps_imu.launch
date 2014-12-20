@@ -44,10 +44,24 @@
     <!-- Magnetometer calibration to load -->
     <arg name="mag_calib" default="biglerville_oct_ground"/>
 
-    <!-- IMU Covariance -->
+    <!-- IMU covariance -->
     <include file="$(find galt_setup)/launch/process/imu/imu_covariance.launch">
         <arg name="config" value="$(arg profile_path)/imu.yml"/>
     </include>    
+
+    <!-- Altimeter -->
+    <include file="$(find galt_setup)/launch/process/filter/laser_altimeter.launch">
+        <arg name="imu" value="/attitude_eskf/filtered_imu"/>
+    </include>
+
+    <include file="$(find galt_setup)/launch/process/filter/pressure_altimeter.launch">
+        <arg name="pressure" value="/imu/imu_covariance/pressure"/>
+    </include>
+
+    <!-- GPS odometer -->
+    <include file="$(find galt_setup)/launch/process/gps/gps_odom.launch">
+        <arg name="config" value="$(arg profile_path)/gps_odom.yml"/>
+    </include>
 
     <!-- Attitude Filter -->
     <node pkg="kr_attitude_eskf" name="attitude_eskf" type="kr_attitude_eskf"
@@ -62,27 +76,6 @@
         <remap from="~imu" to="/imu/imu_covariance/imu"/>
         <remap from="~magnetic_field" to="/imu/imu_covariance/magnetic_field"/>
     </node>
-
-    <!-- Barometric altimeter -->
-    <node name="pressure_altimeter" pkg="pressure_altimeter"
-        type="pressure_altimeter" output="screen">
-        <!-- name of the frame in the header of the output -->
-        <param name="world_frame_id" type="string" value="world"/>
-        <!-- input topic -->
-        <remap from="~fluid_pressure" to="/imu/imu_covariance/pressure"/>
-    </node>
-
-    <!-- Laser altimeter -->
-    <node name="laser_altimeter" pkg="laser_altimeter"
-        type="laser_altimeter" output="screen">
-        <remap from="~imu" to="/attitude_eskf/filtered_imu"/>
-        <remap from="~laser_scan" to="/laser/scan_filtered"/>
-    </node>
-
-    <!-- GPS odometer -->
-    <include file="$(find galt_setup)/launch/process/gps/gps_odom.launch">
-        <arg name="config" value="$(arg profile_path)/gps_odom.yml"/>
-    </include>
 
     <!-- GPS KF -->
     <node name="gps_kf" pkg="gps_kf" type="gps_kf" output="screen">

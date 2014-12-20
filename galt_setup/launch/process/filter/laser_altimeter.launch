@@ -1,0 +1,12 @@
+<launch>
+    <arg name="output" default="screen"/>
+    <arg name="scan" default="/laser/scan_filtered"/>
+    <arg name="altimeter" default="altimeter"/>
+    <arg name="imu"/>
+
+    <node name="laser_altimeter" pkg="laser_altimeter" type="laser_altimeter"
+        output="$(arg output)" ns="$(arg altimeter)">
+        <remap from="~imu" to="$(arg imu)"/>
+        <remap from="~scan" to="$(arg scan)"/>
+    </node>
+</launch>

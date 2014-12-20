@@ -14,7 +14,7 @@
  */
 
 #include <laser_altimeter/node.hpp>
-#include <laser_altimeter/Height.h> //  published message
+#include <laser_altimeter/Height.h>  //  published message
 #include <stdexcept>
 #include <memory>
 
@@ -27,62 +27,63 @@ using std::make_shared;
 namespace galt {
 namespace laser_altimeter {
 
-Node::Node(const ros::NodeHandle &nh) : nh_(nh), tfListener_(tfCore_) {
+Node::Node(const ros::NodeHandle &nh, const ros::NodeHandle &pnh)
+    : nh_(nh), pnh_(pnh), tfListener_(tfCore_) {
   //  determine queue size to use when synchronizing
   int queue_size;
-  nh.param("queue_size", queue_size, 200);
+  pnh_.param("queue_size", queue_size, 200);
   if (queue_size <= 0) {
     throw std::runtime_error("queue_size must be greater than zero");
   }
 
   //  load transform between laser and IMU
-//  if (nh.hasParam("laser_transform")) {
-//    nh_.param("laser_transform/orientation/w", iQl_.w(), 1.0);
-//    nh_.param("laser_transform/orientation/x", iQl_.x(), 0.0);
-//    nh_.param("laser_transform/orientation/y", iQl_.y(), 0.0);
-//    nh_.param("laser_transform/orientation/z", iQl_.z(), 0.0);
-//    nh_.param("laser_transform/position/x", iPl_[0], 0.0);
-//    nh_.param("laser_transform/position/y", iPl_[1], 0.0);
-//    nh_.param("laser_transform/position/z", iPl_[2], 0.0);
+  //  if (nh.hasParam("laser_transform")) {
+  //    nh_.param("laser_transform/orientation/w", iQl_.w(), 1.0);
+  //    nh_.param("laser_transform/orientation/x", iQl_.x(), 0.0);
+  //    nh_.param("laser_transform/orientation/y", iQl_.y(), 0.0);
+  //    nh_.param("laser_transform/orientation/z", iQl_.z(), 0.0);
+  //    nh_.param("laser_transform/position/x", iPl_[0], 0.0);
+  //    nh_.param("laser_transform/position/y", iPl_[1], 0.0);
+  //    nh_.param("laser_transform/position/z", iPl_[2], 0.0);
 
-//    ROS_INFO_STREAM("Loaded transform from yaml:\n" << iQl_.matrix());
-//  } else {
-//    ROS_WARN("No laser/imu transform provided - assuming identity");
-//    iQl_ = kr::quatd(1, 0, 0, 0);
-//    iPl_.setZero();
-//  }
-  nh.param("world_frame_id", worldFrameId_, std::string("world"));
+  //    ROS_INFO_STREAM("Loaded transform from yaml:\n" << iQl_.matrix());
+  //  } else {
+  //    ROS_WARN("No laser/imu transform provided - assuming identity");
+  //    iQl_ = kr::quatd(1, 0, 0, 0);
+  //    iPl_.setZero();
+  //  }
+  pnh_.param("fixed_frame", worldFrameId_, std::string("world"));
 
   //  min/max angles to use on lidar, default to [-inf, inf]
-  nh.param("angle_min", angleMin_, -std::numeric_limits<double>::infinity());
-  nh.param("angle_max", angleMax_, std::numeric_limits<double>::infinity());
+  pnh_.param("angle_min", angleMin_, -std::numeric_limits<double>::infinity());
+  pnh_.param("angle_max", angleMax_, std::numeric_limits<double>::infinity());
   ROS_INFO("Min/max angles: %f, %f", angleMin_, angleMax_);
-  
-  subImu_.subscribe(nh_, "imu", queue_size);
-  subScan_.subscribe(nh_, "laser_scan", queue_size);
+
+  subImu_.subscribe(pnh_, "imu", queue_size);
+  subScan_.subscribe(pnh_, "scan", queue_size);
   sync_ = std::make_shared<Synchronizer>(TimeSyncPolicy(queue_size), subImu_,
                                          subScan_);
 
   sync_->registerCallback(boost::bind(&Node::syncCallback, this, _1, _2));
 
   //  publish a height message
-  pubHeight_ = nh_.advertise<::laser_altimeter::Height>("height", 1);
+  pubHeight_ = pnh_.advertise<::laser_altimeter::Height>("height", 1);
 }
 
-void Node::syncCallback(const sensor_msgs::ImuConstPtr &imuMsg,
-                        const sensor_msgs::LaserScanConstPtr &laserMsg) {
+void Node::syncCallback(const sensor_msgs::ImuConstPtr &imu_msg,
+                        const sensor_msgs::LaserScanConstPtr &scan_msg) {
 
   //  IMU to world rotation
-  const Eigen::Quaterniond wQi(imuMsg->orientation.w, imuMsg->orientation.x,
-                      imuMsg->orientation.y, imuMsg->orientation.z);
+  const Eigen::Quaterniond wQi(imu_msg->orientation.w, imu_msg->orientation.x,
+                               imu_msg->orientation.y, imu_msg->orientation.z);
 
-  const double ang_start = laserMsg->angle_min;
-  const double ang_inc = laserMsg->angle_increment;
+  const double ang_start = scan_msg->angle_min;
+  const double ang_inc = scan_msg->angle_increment;
 
   const Eigen::Matrix3d wRi = wQi.matrix();
 
   std::vector<double> heights;
-  heights.reserve(laserMsg->ranges.size());
+  heights.reserve(scan_msg->ranges.size());
 
 #ifdef DEBUG_PUB_CLOUD
   sensor_msgs::PointCloud cloud;
@@ -93,31 +94,33 @@ void Node::syncCallback(const sensor_msgs::ImuConstPtr &imuMsg,
   //  get laser to imu transform
   kr::Posed laser_to_imu;
   try {
-    const geometry_msgs::TransformStamped transform = tfCore_.lookupTransform(
-        "imu", "laser", ros::Time(0));
-    const geometry_msgs::Vector3& t = transform.transform.translation;
-    const geometry_msgs::Quaternion& r = transform.transform.rotation;
+    const geometry_msgs::TransformStamped transform =
+        tfCore_.lookupTransform("imu", "laser", ros::Time(0));
+    const geometry_msgs::Vector3 &t = transform.transform.translation;
+    const geometry_msgs::Quaternion &r = transform.transform.rotation;
     const Eigen::Vector3d p(t.x, t.y, t.z);
     const Eigen::Quaterniond q(r.w, r.x, r.y, r.z);
     laser_to_imu.q() = q;
     laser_to_imu.p() = p;
-  } catch (const tf2::TransformException& e) {
+  }
+  catch (const tf2::TransformException &e) {
     ROS_WARN("%s", e.what());
   }
-  
+
   double angle = ang_start;
-  for (const float &range : laserMsg->ranges) {
-    if (range > laserMsg->range_min && range < laserMsg->range_max) {
+  for (const float &range : scan_msg->ranges) {
+    if (range > scan_msg->range_min && range < scan_msg->range_max) {
       //  consider only angles in the specified range
       if (angle >= angleMin_ && angle <= angleMax_) {
         //  rotation from beam to laser
         const Eigen::AngleAxisd lRotb(angle, Eigen::Vector3d(0, 0, 1));
 
-        const Eigen::Vector3d v_b(range, 0, 0);           //  vector in the beam frame
-        const Eigen::Vector3d v_l = lRotb.matrix() * v_b; //  laser frame
-        
-        const Eigen::Vector3d v_i = laser_to_imu.transformToBody(v_l);  //  IMU frame
-        
+        const Eigen::Vector3d v_b(range, 0, 0);  //  vector in the beam frame
+        const Eigen::Vector3d v_l = lRotb.matrix() * v_b;  //  laser frame
+
+        const Eigen::Vector3d v_i =
+            laser_to_imu.transformToBody(v_l);  //  IMU frame
+
         //  rotate the vector to world frame (without translating)
         const Eigen::Vector3d v_w = wRi * v_i;
 
@@ -161,11 +164,11 @@ void Node::syncCallback(const sensor_msgs::ImuConstPtr &imuMsg,
 
   //  publish
   ::laser_altimeter::Height msg;
-  msg.header.stamp = laserMsg->header.stamp;
+  msg.header.stamp = scan_msg->header.stamp;
   msg.header.frame_id = worldFrameId_;
   if (heights.empty()) {
     msg.max = msg.mean = 0;
-    msg.variance = -1; //  leave other fields zero
+    msg.variance = -1;  //  leave other fields zero
   } else {
     msg.max = max;
     msg.mean = mean;
@@ -174,5 +177,5 @@ void Node::syncCallback(const sensor_msgs::ImuConstPtr &imuMsg,
   pubHeight_.publish(msg);
 }
 
-} //  laser_altimeter
-} //  galt
+}  //  laser_altimeter
+}  //  galt

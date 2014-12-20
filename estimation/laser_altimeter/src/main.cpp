@@ -18,8 +18,12 @@
 
 int main(int argc, char **argv) {
   ros::init(argc, argv, "laser_altimeter");
-  ros::NodeHandle nh("~");
-  galt::laser_altimeter::Node node(nh);
+  ros::NodeHandle nh, pnh("~");
+  try {
+  galt::laser_altimeter::Node node(nh, pnh);
   ros::spin();
-  return 0;
+  }
+  catch (const std::exception& e) {
+   ROS_ERROR("%s: %s", pnh.getNamespace().c_str(), e.what()) ;
+  }
 }

@@ -25,8 +25,8 @@ Node::Node(const ros::NodeHandle &nh, const ros::NodeHandle &pnh)
   //  load settings
   std::string configPath;
   if (!pnh.hasParam("config")) {
-    ROS_ERROR("You must specify the config_path option");
-    throw std::invalid_argument("No config_path specified");
+    ROS_ERROR("You must specify the config option");
+    throw std::invalid_argument("No config specified");
   }
   pnh.getParam("config", configPath);
 

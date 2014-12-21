@@ -27,7 +27,7 @@
     <!--<node pkg="tf2_ros" type="static_transform_publisher"-->
         <!--name="base_link_imu_broadcaster" ns="$(arg static_broadcaster)"-->
         <!--args="0 0 0 0 0 0 1 $(arg base_link) $(arg imu)">-->
-    <!--</node>-->
+        <!--</node>-->
 
     <!--imu_stereo_left-->
     <node pkg="tf2_ros" type="static_transform_publisher"
@@ -51,18 +51,18 @@
     <!-- <node pkg="tf2_ros" type="static_transform_publisher" -->
         <!--name="stereo_thermal_broadcaster" ns="$(arg static_broadcaster)"-->
         <!--args="-0.133046 -0.000133 -0.01294 0 0 0 1 stereo thermal">-->
-    <!--</node>-->
+        <!--</node>-->
 
     <!--stereo_spectral_670-->
     <!--<node pkg="tf2_ros" type="static_transform_publisher"-->
         <!--name="stereo_spectral_670_broadcaster" ns="$(arg static_broadcaster)"-->
         <!--args="0 0.04241 0 0 0 0 1 stereo spectral_670">-->
-    <!--</node>-->
+        <!--</node>-->
 
     <!--stereo_spectral_800-->
     <!--<node pkg="tf2_ros" type="static_transform_publisher"-->
         <!--name="stereo_spectral_800_broadcaster" ns="$(arg static_broadcaster)"-->
         <!--args="-0.04241 0.04241 0 0 0 0 1 stereo spectral_800">-->
-    <!--</node>-->
+        <!--</node>-->
 
 </launch>

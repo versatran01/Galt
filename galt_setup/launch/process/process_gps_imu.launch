@@ -20,7 +20,7 @@
 
     <!-- Bag -->
     <arg name="bag_home" default="$(env GALT_BAGFILES)"/>
-    <arg name="bag" default=""/>
+    <arg name="bag"/>
     <arg name="bag_start" default="0"/>
     <arg name="bag_rate" default="1"/>
     <arg name="bag_path" default="$(arg bag_home)/$(arg bag).bag"/>

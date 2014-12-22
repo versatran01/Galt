@@ -17,6 +17,7 @@
     <arg name="version" default="v4"/>
     <arg name="profile" default="$(arg platform)/$(arg version)"/>
     <arg name="profile_path" default="$(find galt_setup)/profiles/$(arg profile)"/>
+    <arg name="vicon" default="false"/>
 
     <!-- Bag -->
     <arg name="bag_home" default="$(env GALT_BAGFILES)"/>
@@ -33,6 +34,7 @@
 
     <!-- Frame broadcaster -->
     <include file="$(arg profile_path)/tf.launch">
+      <arg name="vicon" value="$(arg vicon)"/>
     </include>
 
     <!-- Laser pipeline -->

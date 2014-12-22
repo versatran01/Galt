@@ -86,6 +86,7 @@ class Node {
 
   double gpsCovScaleFactor_;
   bool shouldUseLaserInit_;
+  bool shouldPublishTf_;
 
   kr::viz::TfPublisher tfPub_;
   kr::viz::TrajectoryVisualizer trajViz_;

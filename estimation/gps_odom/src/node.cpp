@@ -36,6 +36,7 @@ Node::Node(const ros::NodeHandle &nh, const ros::NodeHandle &pnh)
   pnh_.param<double>("gps_covariance_scale_factor", gpsCovScaleFactor_, 1.0);
   //  do we wait for laser altimeter to initialize height?
   pnh_.param<bool>("laser_init", shouldUseLaserInit_, false);
+  pnh_.param<bool>("publish_tf", shouldPublishTf_, false);
 
   //  IMU and GPS are synchronized separately
   subFix_.subscribe(nh_, "fix", kROSQueueSize);
@@ -207,8 +208,10 @@ void Node::gpsCallback(
   pubOdometry_.publish(odometry);
 
   //  publish tf stuff and trajectory visualizer
-  tfPub_.set_child_frame_id(imu->header.frame_id);
-  tfPub_.PublishTransform(odometry.pose.pose, odometry.header);
+  if (shouldPublishTf_) {
+    tfPub_.set_child_frame_id(imu->header.frame_id);
+    tfPub_.PublishTransform(odometry.pose.pose, odometry.header);
+  }
   trajViz_.PublishTrajectory(odometry.pose.pose.position, odometry.header);
   covViz_.PublishCovariance(odometry);
 }

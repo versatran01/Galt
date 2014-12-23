@@ -1,13 +1,11 @@
 <!--
   Name: process_gps_imu.launch
   Triggers:
-    * rosbag playback
-    * imu_covariance
+    * process_base.launch
     * kr_attitude_eskf
     * pressure_altimeter
     * gps_odom
     * gps_kf
-    * iris_tf
 
   Brief: Launch the GPS + IMU components of the post-processing suite.
 -->
@@ -26,29 +24,22 @@
     <arg name="bag_rate" default="1"/>
     <arg name="bag_path" default="$(arg bag_home)/$(arg bag).bag"/>
 
-    <!-- Rosbag -->
-    <node name="playback" pkg="rosbag" type="play" output="log"
-        args="--clock -s $(arg bag_start) -r $(arg bag_rate)
-        $(arg bag_path)">
-    </node>
-
-    <!-- Frame broadcaster -->
-    <include file="$(arg profile_path)/tf.launch">
-      <arg name="vicon" value="$(arg vicon)"/>
-    </include>
-
-    <!-- Laser pipeline -->
-    <include file="$(find galt_setup)/launch/process/laser/laser_pipeline.launch">
-        <arg name="plugin" value="$(arg profile_path)/laser_filter.yml"/>
+    <!-- process_base.launch -->
+    <include file="$(find galt_setup)/launch/process/process_base.launch">
+      <arg name="platform"     value="$(arg platform)"/>
+      <arg name="version"      value="$(arg version)"/>
+      <arg name="profile"      value="$(arg profile)"/>
+      <arg name="profile_path" value="$(arg profile_path)"/>
+      <arg name="vicon"        value="$(arg vicon)"/>
+      <arg name="bag_home"     value="$(arg bag_home)"/>
+      <arg name="bag"          value="$(arg bag)"/>
+      <arg name="bag_start"    value="$(arg bag_start)"/>
+      <arg name="bag_rate"     value="$(arg bag_rate)"/>
+      <arg name="bag_path"     value="$(arg bag_path)"/>
     </include>
 
     <!-- Magnetometer calibration to load -->
     <arg name="mag_calib"/>
-
-    <!-- IMU covariance -->
-    <include file="$(find galt_setup)/launch/process/imu/imu_covariance.launch">
-        <arg name="config" value="$(arg profile_path)/imu.yml"/>
-    </include>
 
     <!-- Altimeter -->
     <include file="$(find galt_setup)/launch/process/filter/laser_altimeter.launch">

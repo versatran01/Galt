@@ -13,7 +13,7 @@
     <include file="$(find galt_setup)/launch/process/laser/laser_scan_assembler.launch">
         <arg name="fixed_frame" value="$(arg fixed_frame)"/>
     </include>
-    
+
     <!-- laser cloud filter -->
     <include file="$(find galt_setup)/launch/process/laser/laser_cloud_filter.launch">
         <arg name="plugin" value="$(arg plugin)"/>
@@ -21,8 +21,7 @@
     </include>
 
     <!-- point cloud assembler -->
-<!--     <include file="$(find galt_setup)/launch/process/laser/point_cloud_assembler.launch">
-        <arg name="fixed_frame" value="$(arg fixed_frame)"/>
-    </include>
- -->
+    <!--<include file="$(find galt_setup)/launch/process/laser/point_cloud_assembler.launch">-->
+        <!--<arg name="fixed_frame" value="$(arg fixed_frame)"/>-->
+    <!--</include>-->
 </launch>

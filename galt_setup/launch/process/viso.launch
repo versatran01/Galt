@@ -1,6 +1,6 @@
 <launch>
     <!-- Arguments -->
-    <arg name="test" default="true"/>
+    <arg name="test" default="false"/>
     <arg name="output" default="screen"/>
     <arg name="bagfile" default="/home/chao/Workspace/bag/mrsl_new.bag"/>
     <arg name="view" default="false"/>
@@ -46,6 +46,11 @@
         <arg name="visualize_matches" value="true"/>
     </include>
 
+    <!-- img2pcl -->
+    <!--<include file="$(find img2pcl)/launch/node.launch">-->
+        <!--<arg name="camera" value="color"/>-->
+    <!--</include>-->
+
     <!-- viso_kf -->
     <!--<include file="$(find viso_kf)/launch/node.launch">-->
     <!--</include>-->
@@ -56,4 +61,5 @@
         <!--<arg name="topic" value="points2"/>-->
         <!--<arg name="leaf_size" value="0.015"/>-->
     <!--</include>-->
+
 </launch>

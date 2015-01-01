@@ -15,6 +15,7 @@
     <arg name="profile" default="$(arg platform)/$(arg version)"/>
     <arg name="profile_path" default="$(find galt_setup)/profiles/$(arg profile)"/>
     <arg name="vicon" default="false"/>
+    <arg name="include_laser" default="true"/>
 
     <!-- Bag parameters -->
     <arg name="bag_home" default="$(env GALT_BAGFILES)"/>
@@ -35,9 +36,11 @@
     </include>
 
     <!-- Laser pipeline -->
-    <include file="$(find galt_setup)/launch/process/laser/laser_pipeline.launch">
-        <arg name="plugin" value="$(arg profile_path)/laser_filter.yml"/>
-    </include>
+    <group if="$(arg include_laser)">
+      <include file="$(find galt_setup)/launch/process/laser/laser_pipeline.launch">
+          <arg name="plugin" value="$(arg profile_path)/laser_filter.yml"/>
+      </include>
+    </group>
 
     <!-- IMU covariance -->
     <include file="$(find galt_setup)/launch/process/imu/imu_covariance.launch">

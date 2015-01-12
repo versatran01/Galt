@@ -13,13 +13,8 @@
 
 #include <tf2_ros/transform_listener.h>
 #include <eigen_conversions/eigen_msg.h>
-#include <eigen3/Eigen/Geometry>
 
 #include <pcl_ros/point_cloud.h>
-#include <pcl/common/transforms.h>
-
-#include <opencv2/highgui/highgui.hpp>
-
 #include <boost/optional.hpp>
 
 namespace galt {
@@ -35,12 +30,6 @@ class Img2pclNode {
   void ConnectCb();
 
  private:
-  /**
-   * @brief GetLatestTransfrom Get latest transfrom from src to tgt
-   * @param frame_tgt The frame to which data should be transformed
-   * @param frame_src The frame in which data origniated
-   * @return transform stamped if not none
-   */
   boost::optional<geometry_msgs::TransformStamped> GetLatestTransfrom(
       const std::string &frame_tgt, const std::string &frame_src) const;
 

@@ -3,9 +3,11 @@
 #include <laser_assembler/AssembleScans2.h>
 #include <cv_bridge/cv_bridge.h>
 
+#include <pcl/common/transforms.h>
+#include <eigen3/Eigen/Geometry>
+
 #include <opencv2/core/core.hpp>
 #include <opencv2/calib3d/calib3d.hpp>
-#include <opencv2/highgui/highgui.hpp>
 
 namespace galt {
 namespace img2pcl {

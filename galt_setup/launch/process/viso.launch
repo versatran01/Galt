@@ -5,6 +5,7 @@
     <arg name="bagfile" default="/media/chao/Seagate/mrsl/mrsl_new.bag"/>
     <arg name="view" default="false"/>
     <arg name="stereo" default="stereo"/>
+
     <!-- platform -->
     <arg name="platform" default="steadicam"/>
     <arg name="version" default="v4"/>
@@ -26,7 +27,8 @@
     <include file="$(find galt_setup)/launch/process/laser/laser_pipeline.launch">
         <arg name="plugin" value="$(find galt_setup)/$(arg profile)/laser_filter.yml"/>
         <arg name="target_frame" value="laser"/>
-        <arg name="fixed_frame" value="odom"/>
+        <arg name="scan_filter" value="true"/>
+        <arg name="cloud_filter" value="true"/>
     </include>
 
     <!-- stereo_image_proc -->
@@ -44,22 +46,11 @@
     <include file="$(find viso2_ros)/launch/stereo_odom.launch">
         <arg name="max_features" value="2"/>
         <arg name="publish_tf" value="true"/>
-        <arg name="visualize_matches" value="true"/>
+        <arg name="visualize_matches" value="false"/>
     </include>
 
     <!-- img2pcl -->
     <include file="$(find img2pcl)/launch/node.launch">
         <arg name="camera" value="color"/>
     </include>
-
-    <!-- viso_kf -->
-    <!--<include file="$(find viso_kf)/launch/node.launch">-->
-    <!--</include>-->
-
-    <!-- pcl_assembler -->
-    <!--<include file="$(find pcl_assembler)/launch/filter.launch">-->
-        <!--<arg name="source" value="$(arg stereo)"/>-->
-        <!--<arg name="topic" value="points2"/>-->
-        <!--<arg name="leaf_size" value="0.015"/>-->
-    <!--</include>-->
 </launch>

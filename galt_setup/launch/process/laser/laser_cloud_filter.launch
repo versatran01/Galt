@@ -12,8 +12,7 @@
 
     <!-- Node -->
     <node pkg="laser_filters" type="scan_to_cloud_filter_chain"
-        name="laser_cloud_filter" ns="$(arg laser)"
-        output="$(arg output)">
+        name="laser_cloud_filter" ns="$(arg laser)" output="$(arg output)">
         <!-- params -->
         <rosparam command="load" file="$(arg plugin)"/>
         <param name="high_fidelity" value="$(arg high_fidelity)"/>

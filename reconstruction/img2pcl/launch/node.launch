@@ -1,14 +1,14 @@
 <launch>
     <!-- Node Settings -->
-    <arg name="camera" default="camera"/>
     <arg name="output" default="screen"/>
+    <arg name="camera" default="camera"/>
     <arg name="image" default="image_raw"/>
     <arg name="laser" default="laser"/>
-    <arg name="assembler" default="assembler"/>
+    <arg name="cloud2" default="cloud_filtered"/>
 
-    <node pkg="img2pcl" type="img2pcl_node" name="img2pcl"
-        ns="$(arg camera)" output="$(arg output)">
-        <param name="image" type="string" value="$(arg image)"/>
-        <remap from="assemble" to="/$(arg laser)/$(arg assembler)/assemble_scans2"/>
+    <node pkg="img2pcl" type="img2pcl_node" name="img2pcl" output="$(arg output)">
+        <remap from="~image" to="$(arg camera)/$(arg image)"/>
+        <remap from="~cloud2" to="$(arg laser)/$(arg cloud2)"/>
+        <param name="queue_size" type="int" value="1"/>
     </node>
 </launch>

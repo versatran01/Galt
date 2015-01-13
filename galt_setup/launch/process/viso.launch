@@ -19,6 +19,7 @@
 
     <!-- transform -->
     <include file="$(find galt_setup)/profiles/steadicam/v4/tf.launch">
+        <arg name="vicon" value="true"/>
     </include>
 
     <!-- laser pipeline -->

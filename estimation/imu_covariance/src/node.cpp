@@ -32,8 +32,8 @@ Node::Node(const ros::NodeHandle &nh, const ros::NodeHandle &pnh)
   stdNh.param<double>("linear_acceleration/z", accelStd_[2], 0.2);
 
   stdNh.param<double>("angular_velocity/x", gyroStd_[0], 0.1);
-  stdNh.param<double>("angular_velocity/y", gyroStd_[0], 0.1);
-  stdNh.param<double>("angular_velocity/z", gyroStd_[0], 0.1);
+  stdNh.param<double>("angular_velocity/y", gyroStd_[1], 0.1);
+  stdNh.param<double>("angular_velocity/z", gyroStd_[2], 0.1);
 
   stdNh.param<double>("magnetic_field/x", fieldStd_[0], 0.1);
   stdNh.param<double>("magnetic_field/y", fieldStd_[1], 0.1);
@@ -46,6 +46,7 @@ Node::Node(const ros::NodeHandle &nh, const ros::NodeHandle &pnh)
            gyroStd_[2]);
   ROS_INFO("magnetic field:      %f, %f, %f", fieldStd_[0], fieldStd_[1],
            fieldStd_[2]);
+  ROS_INFO("fluid pressure:      %f", pressureStd_);
 
   // inputs, subscribe to topics under imu namespace
   subImu_ = pnh_.subscribe("imu", kROSQueueSize, &Node::imuCallback, this);

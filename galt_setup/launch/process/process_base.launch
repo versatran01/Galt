@@ -1,0 +1,49 @@
+<!--
+  Name: process_base.launch
+  Triggers:
+    * rosbag playback
+    * imu_covariance
+    * iris_tf
+    * laser pipeline
+
+  Brief: Launch rosbag, imu_covariance and TF broadcaster.
+-->
+<launch>
+    <!-- Profile parameters -->
+    <arg name="platform" default="steadicam"/>
+    <arg name="version" default="v4"/>
+    <arg name="profile" default="$(arg platform)/$(arg version)"/>
+    <arg name="profile_path" default="$(find galt_setup)/profiles/$(arg profile)"/>
+    <arg name="vicon" default="false"/>
+    <arg name="include_laser" default="true"/>
+
+    <!-- Bag parameters -->
+    <arg name="bag_home" default="$(env GALT_BAGFILES)"/>
+    <arg name="bag"/>
+    <arg name="bag_start" default="0"/>
+    <arg name="bag_rate" default="1"/>
+    <arg name="bag_path" default="$(arg bag_home)/$(arg bag).bag"/>
+
+    <!-- Rosbag -->
+    <node name="playback" pkg="rosbag" type="play" output="log"
+        args="--clock -s $(arg bag_start) -r $(arg bag_rate)
+        $(arg bag_path)">
+    </node>
+
+    <!-- Frame broadcaster -->
+    <include file="$(arg profile_path)/tf.launch">
+      <arg name="vicon" value="$(arg vicon)"/>
+    </include>
+
+    <!-- Laser pipeline -->
+    <group if="$(arg include_laser)">
+      <include file="$(find galt_setup)/launch/process/laser/laser_pipeline.launch">
+          <arg name="plugin" value="$(arg profile_path)/laser_filter.yml"/>
+      </include>
+    </group>
+
+    <!-- IMU covariance -->
+    <include file="$(find galt_setup)/launch/process/imu/imu_covariance.launch">
+        <arg name="config" value="$(arg profile_path)/imu.yml"/>
+    </include>
+</launch>

@@ -20,14 +20,15 @@
 namespace galt {
 namespace imu_covariance {
 
-Node::Node(const ros::NodeHandle &nh) : nh_(nh) {
+Node::Node(const ros::NodeHandle &nh, const ros::NodeHandle &pnh)
+    : nh_(nh), pnh_(pnh) {
   //  load settings
   std::string configPath;
-  if (!nh.hasParam("config_path")) {
-    ROS_ERROR("You must specify the config_path option");
-    throw std::invalid_argument("No config_path specified");
+  if (!pnh.hasParam("config")) {
+    ROS_ERROR("You must specify the config option");
+    throw std::invalid_argument("No config specified");
   }
-  nh.getParam("config_path", configPath);
+  pnh.getParam("config", configPath);
 
   YAML::Node settings;
   try {
@@ -57,17 +58,18 @@ Node::Node(const ros::NodeHandle &nh) : nh_(nh) {
     throw std::runtime_error(ss.str());
   }
 
-  //  inputs
-  subImu_ = nh_.subscribe("imu_in", kROSQueueSize, &Node::imuCallback, this);
-  subMagneticField_ = nh_.subscribe("magnetic_field_in", kROSQueueSize,
+  // inputs, subscribe to topics under imu namespace
+  subImu_ = nh_.subscribe("imu", kROSQueueSize, &Node::imuCallback, this);
+  subMagneticField_ = nh_.subscribe("magnetic_field", kROSQueueSize,
                                     &Node::magneticFieldCallback, this);
-  subPressure_ = nh_.subscribe("pressure_in", kROSQueueSize,
+  subPressure_ = nh_.subscribe("pressure", kROSQueueSize,
                                &Node::fluidPressureCallback, this);
-  //  outputs
-  pubImu_ = nh_.advertise<sensor_msgs::Imu>("imu", 1);
+  // outputs, advertice topics with same names under imu/imu_covariance
+  // namespace
+  pubImu_ = pnh_.advertise<sensor_msgs::Imu>("imu", 1);
   pubMagneticField_ =
-      nh_.advertise<sensor_msgs::MagneticField>("magnetic_field", 1);
-  pubPressure_ = nh_.advertise<sensor_msgs::FluidPressure>("pressure", 1);
+      pnh_.advertise<sensor_msgs::MagneticField>("magnetic_field", 1);
+  pubPressure_ = pnh_.advertise<sensor_msgs::FluidPressure>("pressure", 1);
 }
 
 void Node::imuCallback(const sensor_msgs::ImuConstPtr &imuMsg) {
@@ -82,8 +84,8 @@ void Node::imuCallback(const sensor_msgs::ImuConstPtr &imuMsg) {
   pubImu_.publish(imu);
 }
 
-void
-Node::magneticFieldCallback(const sensor_msgs::MagneticFieldConstPtr &magMsg) {
+void Node::magneticFieldCallback(
+    const sensor_msgs::MagneticFieldConstPtr &magMsg) {
   sensor_msgs::MagneticField field = *magMsg;
   field.header.seq = 0;
   field.magnetic_field_covariance[0] = fieldStd_[0] * fieldStd_[0];
@@ -100,5 +102,5 @@ void Node::fluidPressureCallback(
   pubPressure_.publish(pressure);
 }
 
-} //  imu_covariance
-} //  galt
+}  //  imu_covariance
+}  //  galt

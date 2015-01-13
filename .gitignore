@@ -54,6 +54,7 @@ _*.pyc
 *.includes
 *.creator
 *.creator.user
+*.creator.user.*
 *.config
 *.files
 

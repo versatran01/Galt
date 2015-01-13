@@ -1,0 +1,14 @@
+<launch>
+    <arg name="output" default="screen"/>
+    <arg name="mag_calib"/>
+
+    <node pkg="kr_attitude_eskf" name="attitude_eskf" type="kr_attitude_eskf"
+        output="$(arg screen)" ns="$(arg filter)">
+        <param name="enable_magnetometer" type="bool" value="true"/>
+        <rosparam command="load" file="$(arg mag_calib)"/>
+
+        <!-- IMU data w/ proper covariance parameters -->
+        <remap from="~imu" to="/imu/imu_covariance/imu"/>
+        <remap from="~magnetic_field" to="/imu/imu_covariance/magnetic_field"/>
+    </node>
+</launch>

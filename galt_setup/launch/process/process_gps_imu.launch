@@ -19,23 +19,23 @@
 
     <!-- Bag -->
     <arg name="bag_home" default="$(env GALT_BAGFILES)"/>
-    <arg name="bag"/>
+    <arg name="bag" default=""/>
     <arg name="bag_start" default="0"/>
     <arg name="bag_rate" default="1"/>
     <arg name="bag_path" default="$(arg bag_home)/$(arg bag).bag"/>
 
     <!-- process_base.launch -->
     <include file="$(find galt_setup)/launch/process/process_base.launch">
-      <arg name="platform"     value="$(arg platform)"/>
-      <arg name="version"      value="$(arg version)"/>
-      <arg name="profile"      value="$(arg profile)"/>
-      <arg name="profile_path" value="$(arg profile_path)"/>
-      <arg name="vicon"        value="$(arg vicon)"/>
-      <arg name="bag_home"     value="$(arg bag_home)"/>
-      <arg name="bag"          value="$(arg bag)"/>
-      <arg name="bag_start"    value="$(arg bag_start)"/>
-      <arg name="bag_rate"     value="$(arg bag_rate)"/>
-      <arg name="bag_path"     value="$(arg bag_path)"/>
+        <arg name="platform"     value="$(arg platform)"/>
+        <arg name="version"      value="$(arg version)"/>
+        <arg name="profile"      value="$(arg profile)"/>
+        <arg name="profile_path" value="$(arg profile_path)"/>
+        <arg name="vicon"        value="$(arg vicon)"/>
+        <arg name="bag_home"     value="$(arg bag_home)"/>
+        <arg name="bag"          value="$(arg bag)"/>
+        <arg name="bag_start"    value="$(arg bag_start)"/>
+        <arg name="bag_rate"     value="$(arg bag_rate)"/>
+        <arg name="bag_path"     value="$(arg bag_path)"/>
     </include>
 
     <!-- Magnetometer calibration to load -->
@@ -56,13 +56,11 @@
     </include>
 
     <!-- Attitude Filter -->
-    <node pkg="kr_attitude_eskf" name="attitude_eskf" type="kr_attitude_eskf"
-        output="screen">
+    <node pkg="kr_attitude_eskf" name="attitude_eskf" type="kr_attitude_eskf" output="screen">
         <param name="enable_magnetometer" type="bool" value="true"/>
 
         <!-- Magnetometer calibration parameters -->
-        <rosparam
-            file="$(find galt_setup)/calib/magnetometer/$(arg mag_calib).yml"/>
+        <rosparam file="$(find galt_setup)/calib/magnetometer/$(arg mag_calib).yml"/>
 
         <!-- IMU data w/ proper covariance parameters -->
         <remap from="~imu" to="/imu/imu_covariance/imu"/>
@@ -76,7 +74,6 @@
         <remap from="~gps_odom" to="/gps/odometry"/>
 
         <!-- Profile specific settings -->
-        <rosparam
-            file="$(find galt_setup)/profiles/$(arg profile)/gps_kf.yml"/>
+        <rosparam file="$(find galt_setup)/profiles/$(arg profile)/gps_kf.yml"/>
     </node>
 </launch>

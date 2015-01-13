@@ -19,15 +19,14 @@
 
     <!-- Bag parameters -->
     <arg name="bag_home" default="$(env GALT_BAGFILES)"/>
-    <arg name="bag"/>
+    <arg name="bag" default=""/>
     <arg name="bag_start" default="0"/>
     <arg name="bag_rate" default="1"/>
     <arg name="bag_path" default="$(arg bag_home)/$(arg bag).bag"/>
 
     <!-- Rosbag -->
     <node name="playback" pkg="rosbag" type="play" output="log"
-        args="--clock -s $(arg bag_start) -r $(arg bag_rate)
-        $(arg bag_path)">
+        args="--clock -s $(arg bag_start) -r $(arg bag_rate) $(arg bag_path)">
     </node>
 
     <!-- Frame broadcaster -->
@@ -39,6 +38,8 @@
     <group if="$(arg include_laser)">
       <include file="$(find galt_setup)/launch/process/laser/laser_pipeline.launch">
           <arg name="plugin" value="$(arg profile_path)/laser_filter.yml"/>
+          <arg name="scan_filter" value="true"/>
+          <arg name="cloud_filter" value="true"/>
       </include>
     </group>
 

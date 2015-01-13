@@ -14,8 +14,8 @@
   </group>
 
   <node name="gps_odom" pkg="gps_odom" type="gps_odom" output="screen">
-    <remap from="~imu" to="/post/attitude_eskf/filtered_imu"/>
-    <remap from="~pressure" to="/imu/pressure"/>
+    <remap from="~imu" to="/attitude_eskf/filtered_imu"/>
+    <remap from="~pressure" to="/imu/imu_covariance/pressure"/>
     <remap from="~fix" to="/ublox_gps/fix"/>
     <remap from="~fix_velocity" to="/ublox_gps/fix_velocity"/>
 

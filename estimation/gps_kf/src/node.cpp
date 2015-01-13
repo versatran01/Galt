@@ -92,7 +92,7 @@ void Node::imuCallback(const sensor_msgs::ImuConstPtr &imu) {
   positionKF_.predict(gyro, varGyro, accel, varAccel, delta);
 
   //  output covariance
-  const Eigen::Matrix<double,15,15> &P = positionKF_.getCovariance();
+  const Eigen::Matrix<double, 15, 15> &P = positionKF_.getCovariance();
   const auto &rotCov = P.block<3, 3>(0, 0);
   const auto &gBiasCov = P.block<3, 3>(3, 3);
   const auto &velCov = P.block<3, 3>(6, 6);
@@ -168,7 +168,6 @@ void Node::imuCallback(const sensor_msgs::ImuConstPtr &imu) {
 }
 
 void Node::odoCallback(const nav_msgs::OdometryConstPtr &odometry) {
-
   static ros::Time firstTs = odometry->header.stamp;
 
   Eigen::Vector3d p, v;

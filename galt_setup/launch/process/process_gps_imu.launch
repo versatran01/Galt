@@ -47,7 +47,7 @@
     </include>
 
     <include file="$(find galt_setup)/launch/process/filter/pressure_altimeter.launch">
-        <arg name="pressure" value="/imu/imu_covariance/pressure"/>
+        <arg name="pressure" value="/imu/pressure_cov"/>
     </include>
 
     <!-- GPS odometer -->
@@ -58,13 +58,11 @@
     <!-- Attitude Filter -->
     <node pkg="kr_attitude_eskf" name="attitude_eskf" type="kr_attitude_eskf" output="screen">
         <param name="enable_magnetometer" type="bool" value="true"/>
-
         <!-- Magnetometer calibration parameters -->
         <rosparam file="$(find galt_setup)/calib/magnetometer/$(arg mag_calib).yml"/>
-
         <!-- IMU data w/ proper covariance parameters -->
-        <remap from="~imu" to="/imu/imu_covariance/imu"/>
-        <remap from="~magnetic_field" to="/imu/imu_covariance/magnetic_field"/>
+        <remap from="~imu" to="/imu/imu_cov"/>
+        <remap from="~magnetic_field" to="/imu/magnetic_field_cov"/>
     </node>
 
     <!-- GPS KF -->

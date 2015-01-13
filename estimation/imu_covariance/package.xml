@@ -1,24 +1,19 @@
 <?xml version="1.0"?>
-<package>
-  <name>imu_covariance</name>
-  <version>0.0.1</version>
-  <description>Package for appending covariance to IMU messages</description>
+<package format="2">
+    <name>imu_covariance</name>
+    <version>0.0.1</version>
+    <description>Package for appending covariance to IMU messages</description>
 
-  <maintainer email="gcross.code@icloud.com">gareth</maintainer>
-  <license>Proprietary</license>
+    <maintainer email="gcross.code@icloud.com">gareth</maintainer>
+    <license>Proprietary</license>
 
-  <buildtool_depend>catkin</buildtool_depend>
-  <build_depend>geometry_msgs</build_depend>
-  <build_depend>kr_math</build_depend>
-  <build_depend>roscpp</build_depend>
-  <build_depend>sensor_msgs</build_depend>
-  <build_depend>std_msgs</build_depend>
-  <run_depend>geometry_msgs</run_depend>
-  <run_depend>kr_math</run_depend>
-  <run_depend>roscpp</run_depend>
-  <run_depend>sensor_msgs</run_depend>
-  <run_depend>std_msgs</run_depend>
+    <buildtool_depend>catkin</buildtool_depend>
 
-  <export>
-  </export>
+    <depend>geometry_msgs</depend>
+    <depend>roscpp</depend>
+    <depend>sensor_msgs</depend>
+    <depend>std_msgs</depend>
+
+    <export>
+    </export>
 </package>

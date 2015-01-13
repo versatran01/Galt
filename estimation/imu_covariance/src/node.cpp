@@ -14,7 +14,6 @@
  */
 
 #include <imu_covariance/node.hpp>
-#include <kr_math/yaml.hpp>
 #include <sstream>
 
 namespace galt {
@@ -22,54 +21,44 @@ namespace imu_covariance {
 
 Node::Node(const ros::NodeHandle &nh, const ros::NodeHandle &pnh)
     : nh_(nh), pnh_(pnh) {
-  //  load settings
-  std::string configPath;
-  if (!pnh.hasParam("config")) {
-    ROS_ERROR("You must specify the config option");
+  if (!pnh.hasParam("noise_std")) {
+    ROS_ERROR("You must specify the covariance");
     throw std::invalid_argument("No config specified");
   }
-  pnh.getParam("config", configPath);
 
-  YAML::Node settings;
-  try {
-    settings = YAML::LoadFile(configPath);
-  }
-  catch (std::exception &e) {
-    std::stringstream ss;
-    ss << "Failed to load " << configPath;
-    ss << "\n" << e.what();
-    throw std::runtime_error(ss.str());
-  }
-  YAML::Node noiseStd = settings["noise_std"];
-  if (!noiseStd) {
-    throw std::invalid_argument("Config is missing the noise_std node");
-  }
+  ros::NodeHandle stdNh(pnh, "noise_std");
+  stdNh.param<double>("linear_acceleration/x", accelStd_[0], 0.2);
+  stdNh.param<double>("linear_acceleration/y", accelStd_[1], 0.2);
+  stdNh.param<double>("linear_acceleration/z", accelStd_[2], 0.2);
 
-  try {
-    accelStd_ = noiseStd["accel"].as<Eigen::Vector3d>();
-    gyroStd_ = noiseStd["gyro"].as<Eigen::Vector3d>();
-    fieldStd_ = noiseStd["mag"].as<Eigen::Vector3d>();
-    pressureStd_ = noiseStd["pressure"].as<double>();
-  }
-  catch (std::exception &e) {
-    std::stringstream ss;
-    ss << "Config has invalid setting.\n";
-    ss << e.what();
-    throw std::runtime_error(ss.str());
-  }
+  stdNh.param<double>("angular_velocity/x", gyroStd_[0], 0.1);
+  stdNh.param<double>("angular_velocity/y", gyroStd_[0], 0.1);
+  stdNh.param<double>("angular_velocity/z", gyroStd_[0], 0.1);
+
+  stdNh.param<double>("magnetic_field/x", fieldStd_[0], 0.1);
+  stdNh.param<double>("magnetic_field/y", fieldStd_[1], 0.1);
+  stdNh.param<double>("magnetic_field/z", fieldStd_[2], 0.1);
+
+  stdNh.param<double>("fluid_pressure", pressureStd_, 1.0);
+  ROS_INFO("linear acceleration: %f, %f, %f", accelStd_[0], accelStd_[1],
+           accelStd_[2]);
+  ROS_INFO("angular velocity:    %f, %f, %f", gyroStd_[0], gyroStd_[1],
+           gyroStd_[2]);
+  ROS_INFO("magnetic field:      %f, %f, %f", fieldStd_[0], fieldStd_[1],
+           fieldStd_[2]);
 
   // inputs, subscribe to topics under imu namespace
-  subImu_ = nh_.subscribe("imu", kROSQueueSize, &Node::imuCallback, this);
-  subMagneticField_ = nh_.subscribe("magnetic_field", kROSQueueSize,
-                                    &Node::magneticFieldCallback, this);
-  subPressure_ = nh_.subscribe("pressure", kROSQueueSize,
-                               &Node::fluidPressureCallback, this);
+  subImu_ = pnh_.subscribe("imu", kROSQueueSize, &Node::imuCallback, this);
+  subMagneticField_ = pnh_.subscribe("magnetic_field", kROSQueueSize,
+                                     &Node::magneticFieldCallback, this);
+  subPressure_ = pnh_.subscribe("pressure", kROSQueueSize,
+                                &Node::fluidPressureCallback, this);
   // outputs, advertice topics with same names under imu/imu_covariance
   // namespace
-  pubImu_ = pnh_.advertise<sensor_msgs::Imu>("imu", 1);
+  pubImu_ = pnh_.advertise<sensor_msgs::Imu>("imu_cov", 1);
   pubMagneticField_ =
-      pnh_.advertise<sensor_msgs::MagneticField>("magnetic_field", 1);
-  pubPressure_ = pnh_.advertise<sensor_msgs::FluidPressure>("pressure", 1);
+      pnh_.advertise<sensor_msgs::MagneticField>("magnetic_field_cov", 1);
+  pubPressure_ = pnh_.advertise<sensor_msgs::FluidPressure>("pressure_cov", 1);
 }
 
 void Node::imuCallback(const sensor_msgs::ImuConstPtr &imuMsg) {

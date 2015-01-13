@@ -72,7 +72,6 @@ Node::Node(const ros::NodeHandle &nh) : nh_(nh) {
 
 void Node::imuCallback(const sensor_msgs::ImuConstPtr &imuMsg) {
   sensor_msgs::Imu imu = *imuMsg;
-  imu.header.seq = 0;
   imu.linear_acceleration_covariance[0] = accelStd_[0] * accelStd_[0];
   imu.linear_acceleration_covariance[4] = accelStd_[1] * accelStd_[1];
   imu.linear_acceleration_covariance[8] = accelStd_[2] * accelStd_[2];
@@ -85,7 +84,6 @@ void Node::imuCallback(const sensor_msgs::ImuConstPtr &imuMsg) {
 void
 Node::magneticFieldCallback(const sensor_msgs::MagneticFieldConstPtr &magMsg) {
   sensor_msgs::MagneticField field = *magMsg;
-  field.header.seq = 0;
   field.magnetic_field_covariance[0] = fieldStd_[0] * fieldStd_[0];
   field.magnetic_field_covariance[4] = fieldStd_[1] * fieldStd_[1];
   field.magnetic_field_covariance[8] = fieldStd_[2] * fieldStd_[2];
@@ -95,7 +93,6 @@ Node::magneticFieldCallback(const sensor_msgs::MagneticFieldConstPtr &magMsg) {
 void Node::fluidPressureCallback(
     const sensor_msgs::FluidPressureConstPtr &pressureMsg) {
   sensor_msgs::FluidPressure pressure = *pressureMsg;
-  pressure.header.seq = 0;
   pressure.variance = pressureStd_ * pressureStd_;
   pubPressure_.publish(pressure);
 }

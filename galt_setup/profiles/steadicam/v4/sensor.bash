@@ -13,7 +13,7 @@ export GALT_COLOR_FRAME=color
 #Stereo camera
 export GALT_STEREO_LEFT=25000855
 export GALT_STEREO_RIGHT=25001110
-export GALT_STEREO_RATE=30
+export GALT_STEREO_RATE=20
 export GALT_STEREO_FRAME=stereo
 
 #Multi-spectral camera

@@ -1,137 +1,82 @@
 <!--
   Name: process_gps_imu.launch
   Triggers:
-    * rosbag playback
-    * imu_covariance
+    * process_base.launch
     * kr_attitude_eskf
     * pressure_altimeter
     * gps_odom
     * gps_kf
-    * iris_tf
 
   Brief: Launch the GPS + IMU components of the post-processing suite.
 -->
 <launch>
-  <!-- Bagfile launch options -->
-  <arg name="bagfile_home" default="$(env GALT_BAGFILES)"/>
-  <arg name="bagfile" default=""/>
-  <arg name="bagfile_start" default="0"/>
-  <arg name="bagfile_rate" default="1"/>
-  <arg name="bagfile_path" default="$(arg bagfile_home)/$(arg bagfile).bag"/>
-  <arg name="vicon" default="false"/>
+    <!-- Profile -->
+    <arg name="platform" default="steadicam"/>
+    <arg name="version" default="v4"/>
+    <arg name="profile" default="$(arg platform)/$(arg version)"/>
+    <arg name="profile_path" default="$(find galt_setup)/profiles/$(arg profile)"/>
+    <arg name="vicon" default="false"/>
 
-  <!-- Rosbag -->
-  <node name="playback" pkg="rosbag" type="play" output="log"
-        args="--clock -s $(arg bagfile_start) -r $(arg bagfile_rate) $(arg bagfile_path)"/>
+    <!-- Bag -->
+    <arg name="bag_home" default="$(env GALT_BAGFILES)"/>
+    <arg name="bag"/>
+    <arg name="bag_start" default="0"/>
+    <arg name="bag_rate" default="1"/>
+    <arg name="bag_path" default="$(arg bag_home)/$(arg bag).bag"/>
 
-  <!-- Sensor profile to load -->
-  <arg name="profile"/>
+    <!-- process_base.launch -->
+    <include file="$(find galt_setup)/launch/process/process_base.launch">
+      <arg name="platform"     value="$(arg platform)"/>
+      <arg name="version"      value="$(arg version)"/>
+      <arg name="profile"      value="$(arg profile)"/>
+      <arg name="profile_path" value="$(arg profile_path)"/>
+      <arg name="vicon"        value="$(arg vicon)"/>
+      <arg name="bag_home"     value="$(arg bag_home)"/>
+      <arg name="bag"          value="$(arg bag)"/>
+      <arg name="bag_start"    value="$(arg bag_start)"/>
+      <arg name="bag_rate"     value="$(arg bag_rate)"/>
+      <arg name="bag_path"     value="$(arg bag_path)"/>
+    </include>
 
-  <!-- Frame broadcaster -->
-  <include file="$(find galt_setup)/profiles/$(arg profile)/tf.launch">
-    <arg name="vicon" value="$(arg vicon)"/>
-  </include>
+    <!-- Magnetometer calibration to load -->
+    <arg name="mag_calib"/>
 
-  <!-- Laser Filter -->
-  <include file="$(find galt_setup)/launch/process/laser_scan_filter.launch">
-    <arg name="filter" value="$(find galt_setup)/profiles/$(arg profile)/laser_filter.yml"/>
-    <arg name="laser" value="laser"/>
-  </include>
+    <!-- Altimeter -->
+    <include file="$(find galt_setup)/launch/process/filter/laser_altimeter.launch">
+        <arg name="imu" value="/attitude_eskf/filtered_imu"/>
+    </include>
 
-  <include file="$(find galt_setup)/launch/process/laser_cloud_filter.launch">
-    <arg name="filter" value="$(find galt_setup)/profiles/$(arg profile)/laser_filter.yml"/>
-    <arg name="target_frame" value="world"/>
-  </include>
+    <include file="$(find galt_setup)/launch/process/filter/pressure_altimeter.launch">
+        <arg name="pressure" value="/imu/imu_covariance/pressure"/>
+    </include>
 
-  <!-- Laser Assembler -->
-  <include file="$(find galt_setup)/launch/process/laser_scan_assembler.launch">
-    <arg name="max_scans" value="10000"/>
-    <arg name="assembler" value="assembler"/>
-  </include>
+    <!-- GPS odometer -->
+    <include file="$(find galt_setup)/launch/process/gps/gps_odom.launch">
+        <arg name="config" value="$(arg profile_path)/gps_odom.yml"/>
+    </include>
 
-  <!-- Pcl2Pcd -->
-  <include file="$(find pcl2pcd)/launch/rviz.launch">
-  </include>
+    <!-- Attitude Filter -->
+    <node pkg="kr_attitude_eskf" name="attitude_eskf" type="kr_attitude_eskf"
+        output="screen">
+        <param name="enable_magnetometer" type="bool" value="true"/>
 
-  <!-- Magnetometer calibration to load -->
-  <arg name="mag_calib" default="philadelphia_generic"/>
+        <!-- Magnetometer calibration parameters -->
+        <rosparam
+            file="$(find galt_setup)/calib/magnetometer/$(arg mag_calib).yml"/>
 
-  <!-- IMU Covariance -->
-  <node pkg="imu_covariance" name="imu_covariance" type="imu_covariance"
-    output="screen">
-    <!-- Load settings from our profile -->
-    <param name="config_path"
-      type="string"
-      value="$(find galt_setup)/profiles/$(arg profile)/imu.yml"/>
+        <!-- IMU data w/ proper covariance parameters -->
+        <remap from="~imu" to="/imu/imu_covariance/imu"/>
+        <remap from="~magnetic_field" to="/imu/imu_covariance/magnetic_field"/>
+    </node>
 
-    <!-- Inputs from recorded IMU -->
-    <remap from="~imu_in" to="/imu/imu"/>
-    <remap from="~magnetic_field_in" to="/imu/magnetic_field"/>
-    <remap from="~pressure_in" to="/imu/pressure"/>
-  </node>
+    <!-- GPS KF -->
+    <node name="gps_kf" pkg="gps_kf" type="gps_kf" output="screen">
+        <!-- filter inputs -->
+        <remap from="~imu" to="/attitude_eskf/filtered_imu"/>
+        <remap from="~gps_odom" to="/gps/odometry"/>
 
-  <!-- Attitude Filter -->
-  <node pkg="kr_attitude_eskf" name="attitude_eskf" type="kr_attitude_eskf"
-    output="screen">
-    <param name="enable_magnetometer" type="bool" value="true"/>
-
-    <!-- Magnetometer calibration parameters -->
-    <rosparam
-      file="$(find galt_setup)/calib/magnetometer/$(arg mag_calib).yml"/>
-
-    <!-- IMU data w/ proper covariance parameters -->
-    <remap from="~imu" to="/imu_covariance/imu"/>
-    <remap from="~magnetic_field" to="/imu_covariance/magnetic_field"/>
-  </node>
-
-  <!-- Barometric altimeter -->
-  <node name="pressure_altimeter" pkg="pressure_altimeter"
-    type="pressure_altimeter" output="screen">
-    <!-- name of the frame in the header of the output -->
-    <param name="world_frame_id" type="string" value="world"/>
-    <!-- input topic -->
-    <remap from="~fluid_pressure" to="/imu_covariance/pressure"/>
-  </node>
-
-  <!-- Laser altimeter -->
-  <node name="laser_altimeter" pkg="laser_altimeter"
-    type="laser_altimeter" output="screen">
-    <remap from="~imu" to="/attitude_eskf/filtered_imu"/>
-    <remap from="~laser_scan" to="/laser/scan_filtered"/>
-  </node>
-
-  <!-- GPS Odometer -->
-  <node name="gps_odom" pkg="gps_odom" type="gps_odom" output="screen">
-    <!-- IMU w/ attitude estimate -->
-    <remap from="~imu" to="/attitude_eskf/filtered_imu"/>
-    <!-- GPS inputs -->
-    <remap from="~fix" to="/gps/fix"/>
-    <remap from="~fix_velocity" to="/gps/fix_velocity"/>
-    <!-- Altitude -->
-    <remap from="~pressure_height" to="/pressure_altimeter/height"/>
-    <!-- Laser altitude -->
-    <remap from="~laser_height" to="/laser_altimeter/height"/>
-    <!-- ID of world frame for GPS coordinates -->
-    <param name="world_frame_id" type="string" value="world"/>
-    <!-- Any other profile-specific parameters -->
-    <rosparam
-      file="$(find galt_setup)/profiles/$(arg profile)/gps_odom.yml"/>
-  </node>
-
-  <!-- GPS KF -->
-  <node name="gps_kf" pkg="gps_kf" type="gps_kf" output="screen">
-    <!-- filter inputs -->
-    <remap from="~imu" to="/attitude_eskf/filtered_imu"/>
-    <remap from="~gps_odom" to="/gps_odom/odometry"/>
-
-    <!-- Profile specific settings -->
-    <rosparam
-      file="$(find galt_setup)/profiles/$(arg profile)/gps_kf.yml"/>
-  </node>
-
-  <!-- Thermal proc -->
-  <include file="$(find flir_gige)/launch/thermal_proc.launch">
-    <arg name="celsius_min" value="10"/>
-    <arg name="celsius_max" value="30"/>
-  </include>
+        <!-- Profile specific settings -->
+        <rosparam
+            file="$(find galt_setup)/profiles/$(arg profile)/gps_kf.yml"/>
+    </node>
 </launch>

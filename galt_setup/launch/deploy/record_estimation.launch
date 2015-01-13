@@ -17,7 +17,5 @@
         /$(env GALT_GPS_FRAME)/navposllh
         /$(env GALT_GPS_FRAME)/navstatus
         /$(env GALT_GPS_FRAME)/navvelned
-        /vicon/antares
-	/antares/odom
-	"/>
+	    "/>
 </launch>

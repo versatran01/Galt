@@ -14,19 +14,15 @@
  */
 
 #include <imu_covariance/node.hpp>
-#include <memory>
 
-int main(int argc, char ** argv) {
+int main(int argc, char** argv) {
   ros::init(argc, argv, "imu_covariance");
-  ros::NodeHandle nh("~");
-  std::shared_ptr<galt::imu_covariance::Node> node;
+  ros::NodeHandle nh, pnh("~");
   try {
-    node.reset(new galt::imu_covariance::Node(nh));
-  } catch (std::exception& e) {
-    ROS_ERROR("Failed during initialization");
-    ROS_ERROR("Reason: %s", e.what());
-    return 1;
+    galt::imu_covariance::Node node(nh, pnh);
+    ros::spin();
   }
-  ros::spin();
-  return 0;
+  catch (const std::exception& e) {
+    ROS_ERROR("%s: %s", pnh.getNamespace().c_str(), e.what());
+  }
 }

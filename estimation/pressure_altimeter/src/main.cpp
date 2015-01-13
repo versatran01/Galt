@@ -15,10 +15,14 @@
 
 #include <pressure_altimeter/node.hpp>
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   ros::init(argc, argv, "pressure_altimeter");
-  ros::NodeHandle nh("~");
-  galt::pressure_altimeter::Node node(nh);
-  ros::spin();
-  return 0;
+  ros::NodeHandle nh, pnh("~");
+  try {
+    galt::pressure_altimeter::Node node(nh, pnh);
+    ros::spin();
+  }
+  catch (const std::exception& e) {
+    ROS_ERROR("%s: %s", pnh.getNamespace().c_str(), e.what());
+  }
 }

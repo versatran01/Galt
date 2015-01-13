@@ -27,9 +27,6 @@
     <include file="$(find galt_setup)/launch/drivers/stereo.launch"/>
     <include file="$(find galt_setup)/launch/drivers/color.launch"/>
 
-    <!-- thermal -->
-    <include file="$(find galt_setup)/launch/drivers/thermal.launch"/>
-
     <!-- optional: vicon -->
     <group if="$(arg vicon)">
         <include file="$(find galt_setup)/launch/deploy/vicon.launch"/>

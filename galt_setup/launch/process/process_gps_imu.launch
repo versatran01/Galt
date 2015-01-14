@@ -74,4 +74,9 @@
         <!-- Profile specific settings -->
         <rosparam file="$(find galt_setup)/profiles/$(arg profile)/gps_kf.yml"/>
     </node>
+
+    <!-- img2pcl -->
+    <include file="$(find img2pcl)/launch/node.launch">
+        <arg name="camera" value="color"/>
+    </include>
 </launch>

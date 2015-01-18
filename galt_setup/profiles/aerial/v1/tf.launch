@@ -1,21 +1,28 @@
 <launch>
-  <!-- these values are initial made up values from hand measurement -->
+    <!-- namespace for all static broadcaster -->
+    <arg name="vicon" default="false"/>
+    <arg name="static_broadcaster" default="broadcaster"/>
+    <arg name="base_link" default="base_link"/>
+    <arg name="imu" default="imu"/>
+    <arg name="laser" default="laser"/>
+    <arg name="stereo" default="stereo"/>
+    <arg name="color" default="color"/>
 
-  <!-- imu_stereo_left, imu is parent, stereo is child -->
-  <node pkg="tf2_ros" type="static_transform_publisher"
-      name="imu_stereo_broadcaster"
-      args="0.0 0.0 0.0 0 0 0 1 imu stereo">
-  </node>
+    <!-- imu_stereo_left, imu is parent, stereo is child -->
+    <node pkg="tf2_ros" type="static_transform_publisher"
+        name="imu_stereo_broadcaster" ns="$(arg static_broadcaster)"
+        args="0.0 0.0 0.0 0 0 0 1 $(arg imu) $(arg stereo)">
+    </node>
 
-  <!-- imu_laser, imu is parent, laser is child -->
-  <node pkg="tf2_ros" type="static_transform_publisher"
-      name="imu_laser_broadcaster"
-      args="0.0573 -0.0682 0.0103 0 -0.7071067 0 0.7071067 imu laser">
-  </node>
+    <!-- imu_laser, imu is parent, laser is child -->
+    <node pkg="tf2_ros" type="static_transform_publisher"
+        name="imu_laser_broadcaster" ns="$(arg static_broadcaster)"
+        args="0.0573 -0.0682 0.0103 0 -0.7071067 0 0.7071067 $(arg imu) $(arg laser)">
+    </node>
 
-  <!--stereo_left_color-->
-  <node pkg="tf2_ros" type="static_transform_publisher"
-        name="stereo_color_broadcaster"
-        args="-0.04 0.0 0.0 0 0 0 1 stereo color">
-  </node>
+    <!--stereo_left_color-->
+    <node pkg="tf2_ros" type="static_transform_publisher"
+        name="stereo_color_broadcaster" ns="$(arg static_broadcaster)"
+        args="-0.04 0.0 0.0 0 0 0 1 $(arg stereo) $(arg color)">
+    </node>
 </launch>

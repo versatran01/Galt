@@ -11,8 +11,8 @@
 -->
 <launch>
     <!-- Profile -->
-    <arg name="platform" default="steadicam"/>
-    <arg name="version" default="v4"/>
+    <arg name="platform" default="aerial"/>
+    <arg name="version" default="v1"/>
     <arg name="profile" default="$(arg platform)/$(arg version)"/>
     <arg name="profile_path" default="$(find galt_setup)/profiles/$(arg profile)"/>
     <arg name="vicon" default="false"/>

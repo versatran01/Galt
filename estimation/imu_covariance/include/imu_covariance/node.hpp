@@ -17,7 +17,6 @@
 #define GALT_IMU_COVARIANCE_NODE_HPP_
 
 #include <ros/ros.h>
-#include <kr_math/base_types.hpp>
 #include <sensor_msgs/Imu.h>
 #include <sensor_msgs/MagneticField.h>
 #include <sensor_msgs/FluidPressure.h>
@@ -38,9 +37,9 @@ class Node {
   ros::Publisher pubImu_, pubMagneticField_, pubPressure_;
 
   //  standard deviations on noise for each sensor
-  Eigen::Vector3d accelStd_;
-  Eigen::Vector3d gyroStd_;
-  Eigen::Vector3d fieldStd_;
+  double accelStd_[3];
+  double gyroStd_[3];
+  double fieldStd_[3];
   double pressureStd_;
 
   void imuCallback(const sensor_msgs::ImuConstPtr &imuMsg);

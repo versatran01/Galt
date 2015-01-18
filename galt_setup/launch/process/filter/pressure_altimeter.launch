@@ -1,8 +1,8 @@
 <launch>
+    <arg name="pressure"/>
     <arg name="output" default="screen"/>
     <arg name="fixed_frame" default="world"/>
     <arg name="altimeter" default="altimeter"/>
-    <arg name="pressure"/>
 
     <node name="pressure_altimeter" pkg="pressure_altimeter"
         type="pressure_altimeter" output="$(arg output)" ns="$(arg altimeter)">

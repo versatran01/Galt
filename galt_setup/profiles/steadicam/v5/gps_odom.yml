@@ -1,0 +1,2 @@
+gps_covariance_scale_factor: 1.0
+laser_init: true

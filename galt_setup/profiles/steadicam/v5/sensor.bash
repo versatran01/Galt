@@ -17,6 +17,7 @@ export GALT_STEREO_RATE=20
 export GALT_STEREO_FRAME=stereo
 
 #Laser
+export GALT_USE_LASER=true
 export GALT_LASER_IP=192.168.0.10
 export GALT_LASER_FRAME=laser
 

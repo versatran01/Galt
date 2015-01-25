@@ -14,12 +14,12 @@
   which will be employed in all sensing modes.
 -->
 <launch>
-    <!-- estimation -->
-    <include file="$(find galt_setup)/launch/deploy/deploy_estimation.launch"/>
+  <!-- estimation -->
+  <include file="$(find galt_setup)/launch/deploy/deploy_estimation.launch"/>
 
-    <!-- multi_spectral -->
-    <include file="$(find galt_setup)/launch/drivers/multi_spectral.launch"/>
+  <!-- multi_spectral -->
+  <include file="$(find galt_setup)/launch/drivers/multi_spectral.launch"/>
 
-    <!-- thermal -->
-    <include file="$(find galt_setup)/launch/drivers/thermal.launch"/>
+  <!-- thermal -->
+  <!--<include file="$(find galt_setup)/launch/drivers/thermal.launch"/>-->
 </launch>

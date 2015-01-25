@@ -1,7 +1,7 @@
 # This file will set the following environmental variable to be read by launch files.
 
 export GALT_PLATFORM_NAME=steadicam
-export GALT_PLATFORM_VER="v5"
+export GALT_PLATFORM_VER=v5
 
 export GALT_CAMERA_CALIB_DIR=package://galt_setup/profiles/${GALT_PLATFORM_NAME}/${GALT_PLATFORM_VER}/calib/camera
 
@@ -17,6 +17,7 @@ export GALT_STEREO_RATE=20
 export GALT_STEREO_FRAME=stereo
 
 #Laser
+export GALT_USE_LASER=true
 export GALT_LASER_IP=192.168.0.10
 export GALT_LASER_FRAME=laser
 

@@ -34,3 +34,4 @@ export GALT_GPS_ENABLE_PPP=false
 export GALT_GPS_ENABLE_GLONASS=false
 export GALT_GPS_FRAME=gps
 
+export GALT_USE_MULTISPECTRAL=false

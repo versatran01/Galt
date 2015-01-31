@@ -45,6 +45,7 @@ void Node::initialize() {
   trajViz_.SetColor(kr::viz::colors::CYAN);
   trajViz_.SetAlpha(1);
   trajViz_.set_num_skip(12);
+  trajViz_.SetScale(0.15);
   covViz_.SetColor(kr::viz::colors::CYAN);  //  transparent cyan
   covViz_.SetAlpha(0.5);
 }

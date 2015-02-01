@@ -18,5 +18,17 @@
     /$(env GALT_GPS_FRAME)/navposllh
     /$(env GALT_GPS_FRAME)/navstatus
     /$(env GALT_GPS_FRAME)/navvelned
+    /$(env GALT_SPECTRAL_530_FRAME)/camera_info
+    /$(env GALT_SPECTRAL_530_FRAME)/image_raw
+    /$(env GALT_SPECTRAL_570_FRAME)/camera_info
+    /$(env GALT_SPECTRAL_570_FRAME)/image_raw
+    /$(env GALT_SPECTRAL_670_FRAME)/camera_info
+    /$(env GALT_SPECTRAL_670_FRAME)/image_raw
+    /$(env GALT_SPECTRAL_690_FRAME)/camera_info
+    /$(env GALT_SPECTRAL_690_FRAME)/image_raw
+    /$(env GALT_SPECTRAL_700_FRAME)/camera_info
+    /$(env GALT_SPECTRAL_700_FRAME)/image_raw
+    /$(env GALT_SPECTRAL_800_FRAME)/camera_info
+    /$(env GALT_SPECTRAL_800_FRAME)/image_raw
     "/>
 </launch>

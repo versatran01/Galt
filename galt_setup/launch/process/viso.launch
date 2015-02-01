@@ -13,9 +13,6 @@
     <param if="$(arg test)" name="/use_sim_time" value="true"/>
 
     <!-- rosbag -->
-    <node if="$(arg test)" pkg="rosbag" type="play" name="player"
-        args="--clock -r 0.5 $(arg bagfile)" output="log">
-    </node>
 
     <!-- transform -->
     <include file="$(find galt_setup)/profiles/steadicam/v4/tf.launch">

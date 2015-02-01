@@ -1,34 +1,35 @@
 <!--
-  Name: deploy_base.launch
-  Author: Gareth
+  Name: deploy_estimation.launch
+  Author: Gareth, Chao
   Triggers:
     * gps
     * imu
-    * laser
     * stereo
     * color
+    * laser (optional)
 
   Brief: Launch the base configuration of IRIS. This includes all devices
   which will be employed in all sensing modes.
 -->
 <launch>
-    <arg name="vicon" default="false"/>
+  <arg name="vicon" default="false"/>
+  <arg name="laser" default="$(optenv GALT_USE_LASER true)"/>
 
-    <!-- gps -->
-    <include file="$(find galt_setup)/launch/drivers/gps.launch"/>
+  <!-- gps -->
+  <include file="$(find galt_setup)/launch/drivers/gps.launch"/>
 
-    <!-- imu -->
-    <include file="$(find galt_setup)/launch/drivers/imu.launch"/>
+  <!-- imu -->
+  <include file="$(find galt_setup)/launch/drivers/imu.launch"/>
 
-    <!-- laser -->
-    <include file="$(find galt_setup)/launch/drivers/laser.launch"/>
+  <!-- laser -->
+  <include if="$(arg laser)"
+      file="$(find galt_setup)/launch/drivers/laser.launch"/>
 
-    <!-- camera -->
-    <include file="$(find galt_setup)/launch/drivers/stereo.launch"/>
-    <include file="$(find galt_setup)/launch/drivers/color.launch"/>
+  <!-- camera -->
+  <include file="$(find galt_setup)/launch/drivers/stereo.launch"/>
+  <include file="$(find galt_setup)/launch/drivers/color.launch"/>
 
-    <!-- optional: vicon -->
-    <group if="$(arg vicon)">
-        <include file="$(find galt_setup)/launch/deploy/vicon.launch"/>
-    </group>
+  <!-- optional: vicon -->
+  <include if="$(arg vicon)"
+      file="$(find galt_setup)/launch/deploy/vicon.launch"/>
 </launch>

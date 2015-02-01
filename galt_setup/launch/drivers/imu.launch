@@ -13,12 +13,12 @@
 -->
 
 <launch>
-    <include file="$(find imu_3dm_gx4)/launch/imu.launch">
-        <arg name="device" value="/dev/serial/by-id/$(env GALT_IMU_SERIAL)"/>
-        <arg name="imu_rate" value="$(env GALT_IMU_RATE)"/>
-        <arg name="imu" value="$(env GALT_IMU_FRAME)"/>
-        <arg name="output" value="screen"/>
-        <arg name="baudrate" value="921600"/>
-        <arg name="enable_filter" value="false"/>
-    </include>
+  <include file="$(find imu_3dm_gx4)/launch/imu.launch">
+    <arg name="device" value="/dev/serial/by-id/$(env GALT_IMU_SERIAL)"/>
+    <arg name="imu_rate" value="$(env GALT_IMU_RATE)"/>
+    <arg name="imu" value="$(env GALT_IMU_FRAME)"/>
+    <arg name="output" value="screen"/>
+    <arg name="baudrate" value="921600"/>
+    <arg name="enable_filter" value="false"/>
+  </include>
 </launch>

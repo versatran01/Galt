@@ -15,7 +15,7 @@
     <arg name="profile" default="$(arg platform)/$(arg version)"/>
     <arg name="profile_path" default="$(find galt_setup)/profiles/$(arg profile)"/>
     <arg name="vicon" default="false"/>
-    <arg name="include_laser" default="true"/>
+    <arg name="include_laser" default="$(optenv GALT_USE_LASER true)"/>
 
     <!-- Bag parameters -->
     <arg name="bag_home" default="$(env GALT_BAGFILES)"/>

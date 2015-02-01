@@ -1,8 +1,8 @@
 noise_std:
     linear_acceleration:  # m/s^2
-        x: 0.5
-        y: 0.5
-        z: 0.5
+        x: 0.75
+        y: 0.75
+        z: 0.75
     angular_velocity:     # rad/s
         x: 0.01
         y: 0.01
@@ -11,4 +11,4 @@ noise_std:
         x: 0.2
         y: 0.2
         z: 0.2
-    pressure: 0.15        # Units milli-bar
+    pressure: 0.35          # Units milli-bar

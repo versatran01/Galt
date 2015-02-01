@@ -1,7 +1,8 @@
 <launch>
-    <arg name="tag" default="galt"/>
-    <node pkg="rosbag" type="record" name="recorder" output="screen"
-        args="-o $(arg tag)
+  <arg name="name" default="galt"/>
+  <arg name="platform" default="$(optenv GALT_PLATFORM_NAME)_$(optenv GALT_PLATFORM_VER)"/>
+  <arg name="tag" default="$(arg name)_$(arg platform)"/>
+  <node pkg="rosbag" type="record" name="recorder" output="screen" args="-o $(arg tag)
         /$(env GALT_COLOR_FRAME)/camera_info
         /$(env GALT_COLOR_FRAME)/image_raw
         /$(env GALT_STEREO_FRAME)/left/image_raw

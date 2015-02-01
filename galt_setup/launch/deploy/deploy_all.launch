@@ -1,25 +1,24 @@
 <!--
-  Name: deploy_base.launch
-  Author: Gareth
+  Name: deploy_all.launch
+  Author: Gareth, Chao
   Triggers:
     * gps
     * imu
-    * laser
     * stereo
     * color
-    * multi_spectral
-    * thermal
+    * multi_spectral (optional)
+    * laser (optional)
+    * thermal (optional)
 
   Brief: Launch the base configuration of IRIS. This includes all devices
   which will be employed in all sensing modes.
 -->
 <launch>
-    <!-- estimation -->
-    <include file="$(find galt_setup)/launch/deploy/deploy_estimation.launch"/>
+  <arg name="spectral" default="$(optenv GALT_USE_SPECTRAL true)"/>
+  <!-- estimation -->
+  <include file="$(find galt_setup)/launch/deploy/deploy_estimation.launch"/>
 
-    <!-- multi_spectral -->
-    <include file="$(find galt_setup)/launch/drivers/multi_spectral.launch"/>
-
-    <!-- thermal -->
-    <include file="$(find galt_setup)/launch/drivers/thermal.launch"/>
+  <!-- multi_spectral -->
+  <include if="$(arg spectral)"
+      file="$(find galt_setup)/launch/drivers/multi_spectral.launch"/>
 </launch>

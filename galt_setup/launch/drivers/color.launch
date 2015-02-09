@@ -20,7 +20,7 @@
     <arg name="camera" value="$(env GALT_COLOR_FRAME)"/>
     <arg name="calib_url" value="$(env GALT_CAMERA_CALIB_DIR)/mv_$(arg device).yaml"/>
     <arg name="expose_us" value="10000"/>
-    <arg name="aec" value="3"/>
+    <arg name="aec" value="1"/>
     <arg name="ctm" value="0"/>
     <arg name="wbp" value="3"/>
     <arg name="color" value="true"/>

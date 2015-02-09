@@ -22,7 +22,7 @@
 <launch>
   <!--Camera Settings-->
   <arg name="ctm" default="0"/>
-  <arg name="aec" default="2"/>
+  <arg name="aec" default="0"/>
   <arg name="jpeg_quality" default="50"/>
 
   <include file="$(find bluefox2)/launch/single_node.launch">

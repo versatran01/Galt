@@ -1,6 +1,7 @@
 <launch>
 
   <!-- temporary for debugging -->
+  <!--
   <include file="$(find galt_setup)/launch/process/process_base.launch">
     <arg name="bag" value="pennpark"/>
     <arg name="bag_rate" value="1"/>
@@ -9,11 +10,26 @@
     <arg name="vicon" value="false"/>
     <arg name="include_laser" value="false"/>
   </include>
+  -->
 
-  <!-- Camera to preview -->
-  <arg name="camera" default="color"/>
+  <!-- Camera to preview/adjust -->
+  <arg name="camera" default="mv_30000388"/>
+  <!-- Reflectance of the multispectral panel -->
+  <arg name="reflectance" default="0.48"/>
+  <!-- Size of selection region (pixels) -->
+  <arg name="selection_size" default="40"/>
+  <!-- Kp -->
+  <arg name="kp" default="6000"/>
+  <!-- # of frames to skip between adjustments -->
+  <arg name="skip_frames" default="3"/>
+
   <node name="spectral_meter" pkg="spectral_meter"
         type="spectral_meter_node" output="screen">
     <remap from="~image" to="/$(arg camera)/image_raw"/>
+    <param name="camera" type="string" value="$(arg camera)"/>
+    <param name="reflectance" type="double" value="$(arg reflectance)"/>
+    <param name="selection_size" type="int" value="$(arg selection_size)"/>
+    <param name="kp" type="double" value="$(arg kp)"/>
+    <param name="skip_frames" type="int" value="$(arg skip_frames)"/>
   </node>
 </launch>

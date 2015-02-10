@@ -183,7 +183,9 @@ void Node::updateExposure(double measured_mean) {
 
   ROS_INFO("Desired: %f, Measured: %f", target_reflectance_, measured_mean);
   ROS_INFO("Current: %i, Commanding: %i", expose_us_, expose_us);
-  callDynamicReconfigure(expose_us);
+  if (expose_us_ != expose_us) {
+    callDynamicReconfigure(expose_us);
+  }
   skip_frames_ = skip_frame_param_;
 }
 

@@ -22,14 +22,16 @@
   <arg name="kp" default="6000"/>
   <!-- # of frames to skip between adjustments -->
   <arg name="skip_frames" default="3"/>
+  <arg name="image_transport" default="compressed"/>
 
   <node name="spectral_meter" pkg="spectral_meter"
-        type="spectral_meter_node" output="screen">
+    type="spectral_meter_node" output="screen">
     <remap from="~image" to="/$(arg camera)/image_raw"/>
     <param name="camera" type="string" value="$(arg camera)"/>
     <param name="reflectance" type="double" value="$(arg reflectance)"/>
     <param name="selection_size" type="int" value="$(arg selection_size)"/>
     <param name="kp" type="double" value="$(arg kp)"/>
     <param name="skip_frames" type="int" value="$(arg skip_frames)"/>
+    <param name="image_transport" type="string" value="$(arg image_transport)"/>
   </node>
 </launch>

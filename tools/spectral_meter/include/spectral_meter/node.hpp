@@ -4,6 +4,7 @@
 #include <ros/node_handle.h>
 #include <image_transport/image_transport.h>
 #include <sensor_msgs/Image.h>
+
 #include <opencv2/opencv.hpp>
 #include <boost/optional.hpp>
 
@@ -11,10 +12,9 @@ namespace galt {
 namespace spectral_meter {
 
 class Node {
-public:
-
-  Node(const ros::NodeHandle& nh,
-       const ros::NodeHandle& pnh) : nh_(nh), pnh_(pnh), it_(pnh_) {}
+ public:
+  Node(const ros::NodeHandle& nh, const ros::NodeHandle& pnh)
+      : nh_(nh), pnh_(pnh), it_(pnh_) {}
 
   /// Register all ROS callbacks.
   void configure();
@@ -22,8 +22,7 @@ public:
   /// Display image and simple interface.
   void imageCallback(const sensor_msgs::ImageConstPtr& img);
 
-private:
-
+ private:
   /// Call the ros service.
   void callDynamicReconfigure(int expose_us);
 
@@ -31,8 +30,7 @@ private:
   void updateExposure(double measured_mean);
 
   /// Handle user mouse clicks
-  void mouseCallback(int event, int x, int y,
-                     int flags, void*);
+  void mouseCallback(int event, int x, int y, int flags, void*);
 
   /// Handle user mouse clicks (static)
   static void mouseCallbackStatic(int, int, int, int, void*);
@@ -41,7 +39,7 @@ private:
   ros::NodeHandle pnh_;
   image_transport::ImageTransport it_;
   image_transport::Subscriber sub_image_;
-  std::string camera_name_;
+  //  std::string camera_name_;
   double ui_scale_;
   int selection_size_;
   double target_reflectance_;
@@ -57,7 +55,7 @@ private:
   int skip_frames_{0};
 };
 
-} //  spectral_meter
-} //  galt
+}  //  spectral_meter
+}  //  galt
 
 #endif  //   GALT_SPECTRAL_METER_NODE_HPP

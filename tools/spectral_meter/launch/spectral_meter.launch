@@ -25,9 +25,9 @@
   <arg name="image_transport" default="compressed"/>
 
   <node name="spectral_meter" pkg="spectral_meter"
-    type="spectral_meter_node" output="screen">
-    <remap from="~image" to="/$(arg camera)/image_raw"/>
-    <param name="camera" type="string" value="$(arg camera)"/>
+    type="spectral_meter_node" ns="$(arg camera)" output="screen">
+    <remap from="~image" to="image_raw"/>
+    <!-- <param name="camera" type="string" value="$(arg camera)"/> -->
     <param name="reflectance" type="double" value="$(arg reflectance)"/>
     <param name="selection_size" type="int" value="$(arg selection_size)"/>
     <param name="kp" type="double" value="$(arg kp)"/>

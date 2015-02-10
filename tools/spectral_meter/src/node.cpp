@@ -7,22 +7,30 @@
 namespace galt {
 namespace spectral_meter {
 
-cv::Rect createRectAround(const cv::Point2i& center,
-                          double size,
+cv::Rect createRectAround(const cv::Point2i& center, double size,
                           const cv::Size& im_size) {
-  const int minx = std::floor(std::max(0.0, center.x - size/2));
-  const int maxx = std::ceil(std::min(im_size.width - 1., center.x + size/2));
-  const int miny = std::floor(std::max(0.0, center.y - size/2));
-  const int maxy = std::ceil(std::min(im_size.height - 1., center.y + size/2));
-  return cv::Rect(minx, miny, maxx-minx, maxy-miny);
+  const int minx = std::floor(std::max(0.0, center.x - size / 2));
+  const int maxx = std::ceil(std::min(im_size.width - 1., center.x + size / 2));
+  const int miny = std::floor(std::max(0.0, center.y - size / 2));
+  const int maxy =
+      std::ceil(std::min(im_size.height - 1., center.y + size / 2));
+  return cv::Rect(minx, miny, maxx - minx, maxy - miny);
 }
 
 const static std::string kWindowName = "spectral_meter (9000)";
 
 void Node::configure() {
-  sub_image_ = it_.subscribe("image", 1, &Node::imageCallback, this);
+  image_transport::TransportHints hints("raw", ros::TransportHints(), pnh_);
+  const auto resolved_image = pnh_.resolveName("image");
+  ROS_WARN("Subscribing to: %s, transport: %s", resolved_image.c_str(),
+           hints.getTransport().c_str());
+  // We need a fully resolved name here to subscribe to transport correctly
+  sub_image_ =
+      it_.subscribe(resolved_image, 1, &Node::imageCallback, this, hints);
+  ROS_WARN("Subscribed to: %s, transport: %s", sub_image_.getTopic().c_str(),
+           sub_image_.getTransport().c_str());
   pnh_.param("ui_scale", ui_scale_, 0.5);
-  pnh_.param<std::string>("camera", camera_name_, "color");
+  //  pnh_.param<std::string>("camera", camera_name_, "color");
   if (!pnh_.hasParam("reflectance")) {
     throw std::invalid_argument("Argument reflectance is required!");
   }
@@ -44,20 +52,19 @@ void Node::configure() {
   }
 
   //  retrieve current camera exposure
-  camera_topic_name_ = "/" + camera_name_;
-  expose_rosparam_name_ = camera_topic_name_ + "/expose_us";
+  camera_topic_name_ = nh_.getNamespace();
+  expose_rosparam_name_ = nh_.resolveName("expose_us");
   if (!nh_.getParamCached(expose_rosparam_name_, expose_us_)) {
     std::string err = "Failed to retrieve param " + expose_rosparam_name_;
     throw std::runtime_error(err);
   }
 
   cv::namedWindow(kWindowName, cv::WINDOW_AUTOSIZE);
-  cv::setMouseCallback(kWindowName,
-                       &Node::mouseCallbackStatic,
+  cv::setMouseCallback(kWindowName, &Node::mouseCallbackStatic,
                        reinterpret_cast<void*>(this));
 
   ROS_INFO("Spectral Meter 9000 - The Ultimate in Exposure Calibration");
-  ROS_INFO("\tConfiguring camera: %s",  camera_name_.c_str());
+  ROS_INFO("\tConfiguring camera: %s", expose_rosparam_name_.c_str());
   ROS_INFO("\tReflectance: %f", target_reflectance_);
   ROS_INFO("\tSelection size: %i", selection_size_);
 }
@@ -90,28 +97,28 @@ void Node::imageCallback(const sensor_msgs::ImageConstPtr& img) {
 
     //  clamp to at least one pixel
     const double box_size = std::max(selection_size_ * ui_scale_, 1.0);
-    const cv::Rect draw_rect = createRectAround(click_position_,
-                                               box_size,ui_size);
+    const cv::Rect draw_rect =
+        createRectAround(click_position_, box_size, ui_size);
     const int minretx = draw_rect.x;
-    const int maxretx = draw_rect.x+draw_rect.width;
+    const int maxretx = draw_rect.x + draw_rect.width;
     const int minrety = draw_rect.y;
-    const int maxrety = draw_rect.y+draw_rect.height;
+    const int maxrety = draw_rect.y + draw_rect.height;
 
     //  vertical lines
-    cv::line(ui_image,cv::Point2f(selx,0),
-             cv::Point2f(selx,minrety),line_color,2);
-    cv::line(ui_image,cv::Point2f(selx,maxrety),
-             cv::Point2f(selx,ui_size.height - 1),line_color,2);
+    cv::line(ui_image, cv::Point2f(selx, 0), cv::Point2f(selx, minrety),
+             line_color, 2);
+    cv::line(ui_image, cv::Point2f(selx, maxrety),
+             cv::Point2f(selx, ui_size.height - 1), line_color, 2);
 
     //  horizontal lines
-    cv::line(ui_image,cv::Point2f(0,sely),
-             cv::Point2f(minretx,sely),line_color,2);
-    cv::line(ui_image,cv::Point2f(maxretx,sely),
-             cv::Point2f(ui_size.width - 1,sely),line_color,2);
+    cv::line(ui_image, cv::Point2f(0, sely), cv::Point2f(minretx, sely),
+             line_color, 2);
+    cv::line(ui_image, cv::Point2f(maxretx, sely),
+             cv::Point2f(ui_size.width - 1, sely), line_color, 2);
 
     //  central box
     cv::Rect rect(minretx, minrety, maxretx - minretx, maxrety - minrety);
-    cv::rectangle(ui_image,rect,line_color,2);
+    cv::rectangle(ui_image, rect, line_color, 2);
   }
 
   //  adjust camera
@@ -119,9 +126,8 @@ void Node::imageCallback(const sensor_msgs::ImageConstPtr& img) {
     //  read the position from the image
     const cv::Size scaled_pos(click_position_.x / ui_scale_,
                               click_position_.y / ui_scale_);
-    const cv::Rect sel_rect = createRectAround(scaled_pos,
-                                               selection_size_,
-                                               size);
+    const cv::Rect sel_rect =
+        createRectAround(scaled_pos, selection_size_, size);
 
     if (sel_rect.area() > 0) {
       //  crop out region selected by user
@@ -136,7 +142,7 @@ void Node::imageCallback(const sensor_msgs::ImageConstPtr& img) {
       //  scale units into 'reflectance'
       updateExposure(mean / 255.0);
     }
-    //position_updated_ = false;
+    // position_updated_ = false;
   }
 
   //  draw output
@@ -157,8 +163,7 @@ void Node::callDynamicReconfigure(int expose_us) {
   int_param.value = expose_us;
   config.ints.push_back(int_param);
   req.config = config;
-  if (!ros::service::call(camera_topic_name_ + "/set_parameters",
-                          req, resp)) {
+  if (!ros::service::call(camera_topic_name_ + "/set_parameters", req, resp)) {
     ROS_WARN("ros::service::call failed while updating exposure");
   }
 }
@@ -168,7 +173,7 @@ void Node::updateExposure(double measured_mean) {
 
   const double err = target_reflectance_ - measured_mean;
   int inc = Kp_ * err;
-  //ROS_INFO("Increment: %i", inc);
+  // ROS_INFO("Increment: %i", inc);
   if (std::abs(inc) < 100) {
     //  stop adjusting
     inc = 0;
@@ -186,21 +191,18 @@ void Node::mouseCallback(int event, int x, int y, int flags, void*) {
   if (event == cv::EVENT_LBUTTONDOWN) {
     click_position_ = cv::Point2i(x, y);
     position_updated_ = true;
-  }
-  else if (event == cv::EVENT_RBUTTONDOWN) {
-  }
-  else if (event == cv::EVENT_MBUTTONDOWN) {
-  }
-  else if (event == cv::EVENT_MOUSEMOVE) {
+  } else if (event == cv::EVENT_RBUTTONDOWN) {
+  } else if (event == cv::EVENT_MBUTTONDOWN) {
+  } else if (event == cv::EVENT_MOUSEMOVE) {
   }
 }
 
-void Node::mouseCallbackStatic(int event, int x, int y,
-                               int flags, void* userdata) {
+void Node::mouseCallbackStatic(int event, int x, int y, int flags,
+                               void* userdata) {
   //  pass to instance
   Node* self = reinterpret_cast<Node*>(userdata);
-  self->mouseCallback(event,x,y,flags,NULL);
+  self->mouseCallback(event, x, y, flags, NULL);
 }
 
-} //  spectral_meter
-} //  galt
+}  //  spectral_meter
+}  //  galt

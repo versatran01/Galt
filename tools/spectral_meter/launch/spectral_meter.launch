@@ -1,0 +1,19 @@
+<launch>
+
+  <!-- temporary for debugging -->
+  <include file="$(find galt_setup)/launch/process/process_base.launch">
+    <arg name="bag" value="pennpark"/>
+    <arg name="bag_rate" value="1"/>
+    <arg name="bag_start" value="0"/>
+    <arg name="profile" value="aerial/v2"/>
+    <arg name="vicon" value="false"/>
+    <arg name="include_laser" value="false"/>
+  </include>
+
+  <!-- Camera to preview -->
+  <arg name="camera" default="color"/>
+  <node name="spectral_meter" pkg="spectral_meter"
+        type="spectral_meter_node" output="screen">
+    <remap from="~image" to="/$(arg camera)/image_raw"/>
+  </node>
+</launch>

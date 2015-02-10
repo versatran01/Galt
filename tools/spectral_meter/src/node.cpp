@@ -194,6 +194,7 @@ void Node::mouseCallback(int event, int x, int y, int flags, void*) {
     click_position_ = cv::Point2i(x, y);
     position_updated_ = true;
   } else if (event == cv::EVENT_RBUTTONDOWN) {
+    ros::shutdown();
   } else if (event == cv::EVENT_MBUTTONDOWN) {
   } else if (event == cv::EVENT_MOUSEMOVE) {
   }

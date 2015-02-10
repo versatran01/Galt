@@ -4,12 +4,14 @@
 #include <ros/node_handle.h>
 
 namespace galt {
-namespace spetral_meter {
+namespace spectral_meter {
 
 class Node {
 public:
   
   Node(const ros::NodeHandle& pnh) : pnh_(pnh) {}
+  
+  void configureTopics();
   
 private:
   ros::NodeHandle pnh_;

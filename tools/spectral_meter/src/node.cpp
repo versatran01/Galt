@@ -4,6 +4,8 @@
 #include <dynamic_reconfigure/Config.h>
 #include <dynamic_reconfigure/Reconfigure.h>
 
+#include <cmath>
+
 namespace galt {
 namespace spectral_meter {
 
@@ -216,8 +218,8 @@ void Node::mouseCallbackStatic(int event, int x, int y, int flags,
 }
 
 std::pair<std::string, bool> generatePercentageString(double num, double den) {
-  const auto num_percentage = static_cast<int>(num * 100);
-  const auto den_percentage = static_cast<int>(den * 100);
+  const auto num_percentage = static_cast<int>(std::round(num * 100));
+  const auto den_percentage = static_cast<int>(std::round(den * 100));
   const auto num_percentage_str = std::to_string(num_percentage);
   const auto den_percentage_str = std::to_string(den_percentage);
   return {num_percentage_str + "/" + den_percentage_str,

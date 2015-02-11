@@ -119,6 +119,13 @@ void Node::imageCallback(const sensor_msgs::ImageConstPtr& img) {
     //  central box
     cv::Rect rect(minretx, minrety, maxretx - minretx, maxrety - minrety);
     cv::rectangle(ui_image, rect, line_color, 2);
+
+    //  draw measured and target reflectance
+    drawPercentage(ui_image, {maxretx, minrety}, measured_reflectance_,
+                   target_reflectance_);
+
+    // draw exposure value
+    drawExposeUs(ui_image, {20, 50}, expose_us_);
   }
 
   //  adjust camera
@@ -140,7 +147,8 @@ void Node::imageCallback(const sensor_msgs::ImageConstPtr& img) {
 
       ROS_INFO("Selection min/max/mean: %f/%f/%f", min, max, mean);
       //  scale units into 'reflectance'
-      updateExposure(mean / 255.0);
+      measured_reflectance_ = mean / 255.0;
+      updateExposure(measured_reflectance_);
     }
     // position_updated_ = false;
   }
@@ -207,5 +215,27 @@ void Node::mouseCallbackStatic(int event, int x, int y, int flags,
   self->mouseCallback(event, x, y, flags, NULL);
 }
 
+std::pair<std::string, bool> generatePercentageString(double num, double den) {
+  const auto num_percentage = static_cast<int>(num * 100);
+  const auto den_percentage = static_cast<int>(den * 100);
+  const auto num_percentage_str = std::to_string(num_percentage);
+  const auto den_percentage_str = std::to_string(den_percentage);
+  return {num_percentage_str + "/" + den_percentage_str,
+          num_percentage == den_percentage};
+}
+
+void drawPercentage(cv::Mat& image, const cv::Point& point, double num,
+                    double den) {
+  const auto percentage_str = generatePercentageString(num, den);
+  const auto text_color =
+      percentage_str.second ? CV_RGB(0, 255, 0) : CV_RGB(0, 0, 255);
+  cv::putText(image, percentage_str.first, point, cv::FONT_HERSHEY_SIMPLEX, 1,
+              text_color, 2, CV_AA);
+}
+
+void drawExposeUs(cv::Mat& image, const cv::Point& point, int expose_us) {
+  cv::putText(image, std::to_string(expose_us), point, cv::FONT_HERSHEY_SIMPLEX,
+              1, CV_RGB(255, 0, 0), 2, CV_AA);
+}
 }  //  spectral_meter
 }  //  galt

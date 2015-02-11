@@ -43,6 +43,7 @@ class Node {
   double ui_scale_;
   int selection_size_;
   double target_reflectance_;
+  double measured_reflectance_{0};
   double Kp_;
   int skip_frame_param_;
 
@@ -54,6 +55,11 @@ class Node {
   int expose_us_;
   int skip_frames_{0};
 };
+
+std::pair<std::string, bool> generatePercentageString(double num, double den);
+void drawPercentage(cv::Mat& image, const cv::Point& point, double num,
+                    double den);
+void drawExposeUs(cv::Mat& image, const cv::Point& point, int expose_us);
 
 }  //  spectral_meter
 }  //  galt

@@ -4,7 +4,7 @@
 
     <include file="$(find bluefox2)/launch/single_node.launch">
         <arg name="device" value="$(arg device)"/>
-        <arg name="rate" value="10"/>
+        <arg name="rate" value="5"/>
         <arg name="aec" value="0"/>
         <arg name="expose_us" value="10000"/>
     </include>

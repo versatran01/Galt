@@ -71,6 +71,13 @@ void Node::configure() {
   ROS_INFO("\tSelection size: %i", selection_size_);
 }
 
+void Node::configCallback(Config& config, int level) {
+  if (level < 0) {
+    ROS_INFO("%s: Initializaing reconfigure server",
+             pnh_.getNamespace().c_str());
+  }
+}
+
 void Node::imageCallback(const sensor_msgs::ImageConstPtr& img) {
   cv_bridge::CvImageConstPtr bridged = cv_bridge::toCvShare(img, "mono8");
   if (!bridged || bridged->image.empty()) {
@@ -99,8 +106,7 @@ void Node::imageCallback(const sensor_msgs::ImageConstPtr& img) {
 
     //  clamp to at least one pixel
     const double box_size = std::max(selection_size_ * ui_scale_, 1.0);
-    const cv::Rect draw_rect =
-        createRectAround(click_position_, box_size, ui_size);
+    const auto draw_rect = createRectAround(click_position_, box_size, ui_size);
     const int minretx = draw_rect.x;
     const int maxretx = draw_rect.x + draw_rect.width;
     const int minrety = draw_rect.y;
@@ -239,5 +245,6 @@ void drawExposeUs(cv::Mat& image, const cv::Point& point, int expose_us) {
   cv::putText(image, std::to_string(expose_us), point, cv::FONT_HERSHEY_SIMPLEX,
               1, CV_RGB(255, 0, 0), 2, CV_AA);
 }
+
 }  //  spectral_meter
 }  //  galt

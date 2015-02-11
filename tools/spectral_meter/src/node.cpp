@@ -32,26 +32,6 @@ void Node::configure() {
   ROS_WARN("Subscribed to: %s, transport: %s", sub_image_.getTopic().c_str(),
            sub_image_.getTransport().c_str());
   pnh_.param("ui_scale", ui_scale_, 0.5);
-  //  pnh_.param<std::string>("camera", camera_name_, "color");
-  if (!pnh_.hasParam("reflectance")) {
-    throw std::invalid_argument("Argument reflectance is required!");
-  }
-  pnh_.getParam("reflectance", target_reflectance_);
-  if (target_reflectance_ < 0 || target_reflectance_ > 1) {
-    throw std::invalid_argument("Reflectance must be in the range [0,1]");
-  }
-  pnh_.param("selection_size", selection_size_, 40);  //  in pixels
-  if (selection_size_ < 1) {
-    throw std::invalid_argument("Selection size must be >= 1");
-  }
-  pnh_.param("kp", Kp_, 6000.0);
-  if (Kp_ <= 0) {
-    throw std::invalid_argument("Kp must be > 0");
-  }
-  pnh_.param("skip_frames", skip_frame_param_, 3);
-  if (skip_frame_param_ < 0) {
-    throw std::invalid_argument("skip_frames must be >= 0");
-  }
 
   //  retrieve current camera exposure
   camera_topic_name_ = nh_.getNamespace();
@@ -67,8 +47,8 @@ void Node::configure() {
 
   ROS_INFO("Spectral Meter 9000 - The Ultimate in Exposure Calibration");
   ROS_INFO("\tConfiguring camera: %s", expose_rosparam_name_.c_str());
-  ROS_INFO("\tReflectance: %f", target_reflectance_);
-  ROS_INFO("\tSelection size: %i", selection_size_);
+  ROS_INFO("\tReflectance: %f", config_.target_reflectance);
+  ROS_INFO("\tSelection size: %i", config_.selection_size);
 }
 
 void Node::configCallback(Config& config, int level) {
@@ -76,6 +56,7 @@ void Node::configCallback(Config& config, int level) {
     ROS_INFO("%s: Initializaing reconfigure server",
              pnh_.getNamespace().c_str());
   }
+  config_ = config;
 }
 
 void Node::imageCallback(const sensor_msgs::ImageConstPtr& img) {
@@ -105,7 +86,7 @@ void Node::imageCallback(const sensor_msgs::ImageConstPtr& img) {
     const cv::Scalar line_color(138, 43, 226);
 
     //  clamp to at least one pixel
-    const double box_size = std::max(selection_size_ * ui_scale_, 1.0);
+    const double box_size = std::max(config_.selection_size * ui_scale_, 1.0);
     const auto draw_rect = createRectAround(click_position_, box_size, ui_size);
     const int minretx = draw_rect.x;
     const int maxretx = draw_rect.x + draw_rect.width;
@@ -130,19 +111,19 @@ void Node::imageCallback(const sensor_msgs::ImageConstPtr& img) {
 
     //  draw measured and target reflectance
     drawPercentage(ui_image, {maxretx, minrety}, measured_reflectance_,
-                   target_reflectance_);
+                   config_.target_reflectance);
 
     // draw exposure value
     drawExposeUs(ui_image, {20, 50}, expose_us_);
   }
 
   //  adjust camera
-  if (position_updated_ && (skip_frames_--) <= 0) {
+  if (position_updated_ && (num_skip_frames_--) <= 0) {
     //  read the position from the image
     const cv::Size scaled_pos(click_position_.x / ui_scale_,
                               click_position_.y / ui_scale_);
     const cv::Rect sel_rect =
-        createRectAround(scaled_pos, selection_size_, size);
+        createRectAround(scaled_pos, config_.selection_size, size);
 
     if (sel_rect.area() > 0) {
       //  crop out region selected by user
@@ -187,8 +168,8 @@ void Node::callDynamicReconfigure(int expose_us) {
 void Node::updateExposure(double measured_mean) {
   nh_.getParamCached(expose_rosparam_name_, expose_us_);
 
-  const double err = target_reflectance_ - measured_mean;
-  int inc = Kp_ * err;
+  const double err = config_.target_reflectance - measured_mean;
+  int inc = config_.kp * err;
   // ROS_INFO("Increment: %i", inc);
   if (std::abs(inc) < 100) {
     //  stop adjusting
@@ -197,12 +178,13 @@ void Node::updateExposure(double measured_mean) {
   //  calculate commanded exposure
   const int expose_us = expose_us_ + inc;
 
-  ROS_INFO("Desired: %f, Measured: %f", target_reflectance_, measured_mean);
+  ROS_INFO("Desired: %f, Measured: %f", config_.target_reflectance,
+           measured_mean);
   ROS_INFO("Current: %i, Commanding: %i", expose_us_, expose_us);
   if (expose_us_ != expose_us) {
     callDynamicReconfigure(expose_us);
   }
-  skip_frames_ = skip_frame_param_;
+  num_skip_frames_ = config_.skip_frames;
 }
 
 void Node::mouseCallback(int event, int x, int y, int flags, void*) {

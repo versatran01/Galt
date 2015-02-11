@@ -49,22 +49,18 @@ class Node {
   image_transport::ImageTransport it_;
   image_transport::Subscriber sub_image_;
   dynamic_reconfigure::Server<Config> cfg_server_;
-  //  std::string camera_name_;
+  Config config_;
 
   double ui_scale_;
-  int selection_size_;
-  double target_reflectance_;
   double measured_reflectance_{0};
-  double Kp_;
-  int skip_frame_param_;
 
-  cv::Point2i click_position_;
+  cv::Point click_position_;
   bool position_updated_{false};
 
   std::string camera_topic_name_;
   std::string expose_rosparam_name_;
   int expose_us_;
-  int skip_frames_{0};
+  int num_skip_frames_{0};
 };
 
 std::pair<std::string, bool> generatePercentageString(double num, double den);

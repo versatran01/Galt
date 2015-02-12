@@ -6,10 +6,10 @@
 #include <sensor_msgs/Image.h>
 #include <dynamic_reconfigure/server.h>
 
-#include <spectral_meter/SpectralMeterDynConfig.h>
-
 #include <opencv2/opencv.hpp>
-#include <boost/optional.hpp>
+
+#include <spectral_meter/SpectralMeterDynConfig.h>
+#include "spectral_meter/tracker.h"
 
 namespace galt {
 namespace spectral_meter {
@@ -18,10 +18,7 @@ class Node {
  public:
   using Config = ::spectral_meter::SpectralMeterDynConfig;
 
-  Node(const ros::NodeHandle& nh, const ros::NodeHandle& pnh)
-      : nh_(nh), pnh_(pnh), it_(pnh), cfg_server_(pnh) {
-    cfg_server_.setCallback(boost::bind(&Node::configCallback, this, _1, _2));
-  }
+  Node(const ros::NodeHandle& nh, const ros::NodeHandle& pnh);
 
   /// Register all ROS callbacks.
   void configure();
@@ -50,6 +47,7 @@ class Node {
   image_transport::Subscriber sub_image_;
   dynamic_reconfigure::Server<Config> cfg_server_;
   Config config_;
+  Tracker tracker_;
 
   double ui_scale_;
   double measured_reflectance_{0};
@@ -63,10 +61,16 @@ class Node {
   int num_skip_frames_{0};
 };
 
+/// ================
+/// Helper functions
+/// ================
 std::pair<std::string, bool> generatePercentageString(double num, double den);
 void drawPercentage(cv::Mat& image, const cv::Point& point, double num,
                     double den);
 void drawExposeUs(cv::Mat& image, const cv::Point& point, int expose_us);
+void drawSelection(cv::Mat& image, const cv::Point2f& point, double box_size);
+cv::Rect createRectAround(const cv::Point2i& center, double size,
+                          const cv::Size& im_size);
 
 }  //  spectral_meter
 }  //  galt

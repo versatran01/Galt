@@ -1,4 +1,5 @@
-#include <spectral_meter/node.hpp>
+#include "spectral_meter/node.hpp"
+
 #include <cv_bridge/cv_bridge.h>
 #include <opencv2/opencv.hpp>
 #include <dynamic_reconfigure/Config.h>
@@ -9,14 +10,13 @@
 namespace galt {
 namespace spectral_meter {
 
-cv::Rect createRectAround(const cv::Point2i& center, double size,
-                          const cv::Size& im_size) {
-  const int minx = std::floor(std::max(0.0, center.x - size / 2));
-  const int maxx = std::ceil(std::min(im_size.width - 1., center.x + size / 2));
-  const int miny = std::floor(std::max(0.0, center.y - size / 2));
-  const int maxy =
-      std::ceil(std::min(im_size.height - 1., center.y + size / 2));
-  return cv::Rect(minx, miny, maxx - minx, maxy - miny);
+Node::Node(const ros::NodeHandle& nh, const ros::NodeHandle& pnh)
+    : nh_(nh),
+      pnh_(pnh),
+      it_(pnh),
+      cfg_server_(pnh),
+      tracker_(ros::NodeHandle(pnh_, "tracker")) {
+  cfg_server_.setCallback(boost::bind(&Node::configCallback, this, _1, _2));
 }
 
 void Node::configure() {
@@ -74,41 +74,14 @@ void Node::imageCallback(const sensor_msgs::ImageConstPtr& img) {
   cv::resize(input_image, ui_image, ui_size);
   cv::cvtColor(ui_image, ui_image, CV_GRAY2RGB);
 
-  //  click position
-  const int selx = click_position_.x;
-  const int sely = click_position_.y;
-
   //  draw target position
   {
-    //  purple
-    const cv::Scalar line_color(138, 43, 226);
-
     //  clamp to at least one pixel
     const double box_size = std::max(config_.selection_size * ui_scale_, 1.0);
-    const auto draw_rect = createRectAround(click_position_, box_size, ui_size);
-    const int minretx = draw_rect.x;
-    const int maxretx = draw_rect.x + draw_rect.width;
-    const int minrety = draw_rect.y;
-    const int maxrety = draw_rect.y + draw_rect.height;
-
-    //  vertical lines
-    cv::line(ui_image, cv::Point2f(selx, 0), cv::Point2f(selx, minrety),
-             line_color, 2);
-    cv::line(ui_image, cv::Point2f(selx, maxrety),
-             cv::Point2f(selx, ui_size.height - 1), line_color, 2);
-
-    //  horizontal lines
-    cv::line(ui_image, cv::Point2f(0, sely), cv::Point2f(minretx, sely),
-             line_color, 2);
-    cv::line(ui_image, cv::Point2f(maxretx, sely),
-             cv::Point2f(ui_size.width - 1, sely), line_color, 2);
-
-    //  central box
-    cv::Rect rect(minretx, minrety, maxretx - minretx, maxrety - minrety);
-    cv::rectangle(ui_image, rect, line_color, 2);
+    drawSelection(ui_image, click_position_, box_size);
 
     //  draw measured and target reflectance
-    drawPercentage(ui_image, {maxretx, minrety}, measured_reflectance_,
+    drawPercentage(ui_image, click_position_, measured_reflectance_,
                    config_.target_reflectance);
 
     // draw exposure value
@@ -168,7 +141,7 @@ void Node::updateExposure(double measured_mean) {
 
   const double err = config_.target_reflectance - measured_mean;
   // Clamp inc to some reasonable number to prevent overshoot
-  int inc = std::max(config_.kp * err, 2000);
+  int inc = config_.kp * err;
   // ROS_INFO("Increment: %i", inc);
   if (std::abs(inc) < 100) {
     //  stop adjusting
@@ -204,6 +177,9 @@ void Node::mouseCallbackStatic(int event, int x, int y, int flags,
   self->mouseCallback(event, x, y, flags, NULL);
 }
 
+/// ================
+/// Helper functions
+/// ================
 std::pair<std::string, bool> generatePercentageString(double num, double den) {
   const auto num_percentage = static_cast<int>(std::round(num * 100));
   const auto den_percentage = static_cast<int>(std::round(den * 100));
@@ -227,5 +203,42 @@ void drawExposeUs(cv::Mat& image, const cv::Point& point, int expose_us) {
               1, CV_RGB(255, 0, 0), 2, CV_AA);
 }
 
-}  //  spectral_meter
-}  //  galt
+void drawSelection(cv::Mat& image, const cv::Point2f& point, double box_size) {
+  const auto im_size = image.size();
+  const auto draw_rect = createRectAround(point, box_size, im_size);
+  const int min_ret_x = draw_rect.x;
+  const int max_ret_x = draw_rect.x + draw_rect.width;
+  const int min_ret_y = draw_rect.y;
+  const int max_ret_y = draw_rect.y + draw_rect.height;
+
+  const cv::Scalar line_color(138, 43, 226);
+  // vertical lines
+  cv::line(image, cv::Point2f(point.x, 0), cv::Point2f(point.x, min_ret_y),
+           line_color, 2);
+  cv::line(image, cv::Point2f(point.x, max_ret_y),
+           cv::Point2f(point.x, im_size.height - 1), line_color, 2);
+
+  // horizontal lines
+  cv::line(image, cv::Point2f(0, point.y), cv::Point2f(min_ret_x, point.y),
+           line_color, 2);
+  cv::line(image, cv::Point2f(max_ret_x, point.y),
+           cv::Point2f(im_size.width - 1, point.y), line_color, 2);
+  // central box
+  cv::Rect rect(min_ret_x, min_ret_y, max_ret_x - min_ret_x,
+                max_ret_y - min_ret_y);
+  cv::rectangle(image, rect, line_color, 2);
+}
+
+cv::Rect createRectAround(const cv::Point2i& center, double size,
+                          const cv::Size& im_size) {
+  const int min_x = std::floor(std::max(0.0, center.x - size / 2));
+  const int max_x =
+      std::ceil(std::min(im_size.width - 1., center.x + size / 2));
+  const int min_y = std::floor(std::max(0.0, center.y - size / 2));
+  const int max_y =
+      std::ceil(std::min(im_size.height - 1., center.y + size / 2));
+  return cv::Rect(min_x, min_y, max_x - min_x, max_y - min_y);
+}
+
+}  // namespace spectral_meter
+}  // namespace galt

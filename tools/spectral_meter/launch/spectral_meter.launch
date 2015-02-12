@@ -22,7 +22,10 @@
   <arg name="kp" default="6000"/>
   <!-- # of frames to skip between adjustments -->
   <arg name="skip_frames" default="3"/>
+  <!-- image_transport plugin -->
   <arg name="image_transport" default="compressed"/>
+  <!-- Use optical flow to compensate motion -->
+  <arg name="use_tracker" default="false"/>
 
   <node name="spectral_meter" pkg="spectral_meter"
     type="spectral_meter_node" ns="$(arg camera)" output="screen">
@@ -33,5 +36,6 @@
     <param name="kp" type="double" value="$(arg kp)"/>
     <param name="skip_frames" type="int" value="$(arg skip_frames)"/>
     <param name="image_transport" type="string" value="$(arg image_transport)"/>
+    <param name="use_tracker" type="bool" value="$(arg use_tracker)"/>
   </node>
 </launch>

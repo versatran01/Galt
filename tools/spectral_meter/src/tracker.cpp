@@ -76,14 +76,12 @@ void Tracker::step(const cv::Mat& image) {
 }
 
 cv::Point2f Tracker::calcOffset() const {
-  float x{0.0}, y{0.0};
+  cv::Point2f offset;
   for (size_t i = 0; i < prev_points_.size(); ++i) {
-    x += curr_points_[i].x - prev_points_[i].x;
-    y += curr_points_[i].y - prev_points_[i].y;
+    offset += (curr_points_[i] - prev_points_[i]);
   }
-  x /= prev_points_.size();
-  y /= prev_points_.size();
-  return {x, y};
+  const auto n = prev_points_.size();
+  return {offset.x / n, offset.y / n};
 }
 
 void Tracker::configCallback(Config& config, int level) {

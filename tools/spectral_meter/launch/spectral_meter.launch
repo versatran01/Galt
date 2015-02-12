@@ -25,7 +25,7 @@
   <!-- image_transport plugin -->
   <arg name="image_transport" default="compressed"/>
   <!-- Use optical flow to compensate motion -->
-  <arg name="use_tracker" default="false"/>
+  <arg name="use_tracker" default="true"/>
 
   <node name="spectral_meter" pkg="spectral_meter"
     type="spectral_meter_node" ns="$(arg camera)" output="screen">

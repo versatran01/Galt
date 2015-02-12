@@ -12,7 +12,10 @@ find_package(catkin REQUIRED COMPONENTS
 
 find_package(OpenCV REQUIRED)
 
-generate_dynamic_reconfigure_options(cfg/SpectralMeterDyn.cfg)
+generate_dynamic_reconfigure_options(
+  cfg/SpectralMeterDyn.cfg
+  cfg/OpticalFlowDyn.cfg
+  )
 
 catkin_package(
   INCLUDE_DIRS include

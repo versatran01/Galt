@@ -11,12 +11,13 @@ namespace galt {
 namespace spectral_meter {
 
 Node::Node(const ros::NodeHandle& nh, const ros::NodeHandle& pnh)
-    : nh_(nh),
-      pnh_(pnh),
-      it_(pnh),
-      cfg_server_(pnh),
-      tracker_(ros::NodeHandle(pnh_, "tracker")) {
+    : nh_(nh), pnh_(pnh), it_(pnh), cfg_server_(pnh), offset_(0, 0) {
   cfg_server_.setCallback(boost::bind(&Node::configCallback, this, _1, _2));
+  bool use_tracker;
+  pnh_.param("use_tracker", use_tracker, false);
+  if (use_tracker) {
+    tracker_ = boost::make_shared<Tracker>(ros::NodeHandle(pnh_, "tracker"));
+  }
 }
 
 void Node::configure() {
@@ -74,6 +75,15 @@ void Node::imageCallback(const sensor_msgs::ImageConstPtr& img) {
   cv::resize(input_image, ui_image, ui_size);
   cv::cvtColor(ui_image, ui_image, CV_GRAY2RGB);
 
+  if (tracker_) {
+    ROS_INFO("Use tracker");
+    // Track features across image
+    tracker_->step(ui_image);
+    offset_ = tracker_->calcOffset();
+  }
+
+  click_position_ += offset_;
+
   //  draw target position
   {
     //  clamp to at least one pixel
@@ -105,7 +115,7 @@ void Node::imageCallback(const sensor_msgs::ImageConstPtr& img) {
       const cv::Scalar scal_mean = cv::mean(region);
       const double mean = scal_mean[0];
 
-      ROS_INFO("Selection min/max/mean: %f/%f/%f", min, max, mean);
+      //      ROS_INFO("Selection min/max/mean: %f/%f/%f", min, max, mean);
       //  scale units into 'reflectance'
       measured_reflectance_ = mean / 255.0;
       updateExposure(measured_reflectance_);
@@ -150,9 +160,9 @@ void Node::updateExposure(double measured_mean) {
   //  calculate commanded exposure
   const int expose_us = expose_us_ + inc;
 
-  ROS_INFO("Desired: %f, Measured: %f", config_.target_reflectance,
-           measured_mean);
-  ROS_INFO("Current: %i, Commanding: %i", expose_us_, expose_us);
+  //  ROS_INFO("Desired: %f, Measured: %f", config_.target_reflectance,
+  //           measured_mean);
+  //  ROS_INFO("Current: %i, Commanding: %i", expose_us_, expose_us);
   if (expose_us_ != expose_us) {
     callDynamicReconfigure(expose_us);
   }
@@ -164,6 +174,8 @@ void Node::mouseCallback(int event, int x, int y, int flags, void*) {
     click_position_ = cv::Point2i(x, y);
     position_updated_ = true;
   } else if (event == cv::EVENT_RBUTTONDOWN) {
+    ROS_WARN("Camera %s's exposure is set to %d", camera_topic_name_.c_str(),
+             expose_us_);
     ros::shutdown();
   } else if (event == cv::EVENT_MBUTTONDOWN) {
   } else if (event == cv::EVENT_MOUSEMOVE) {

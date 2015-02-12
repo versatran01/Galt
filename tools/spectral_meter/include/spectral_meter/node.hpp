@@ -6,7 +6,7 @@
 #include <sensor_msgs/Image.h>
 #include <dynamic_reconfigure/server.h>
 
-#include <opencv2/opencv.hpp>
+#include <opencv2/core/core.hpp>
 
 #include <spectral_meter/SpectralMeterDynConfig.h>
 #include "spectral_meter/tracker.h"
@@ -47,12 +47,12 @@ class Node {
   image_transport::Subscriber sub_image_;
   dynamic_reconfigure::Server<Config> cfg_server_;
   Config config_;
-  Tracker tracker_;
+  Tracker::Ptr tracker_;
 
   double ui_scale_;
   double measured_reflectance_{0};
 
-  cv::Point click_position_;
+  cv::Point click_position_, offset_;
   bool position_updated_{false};
 
   std::string camera_topic_name_;

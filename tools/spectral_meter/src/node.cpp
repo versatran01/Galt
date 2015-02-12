@@ -19,8 +19,6 @@ cv::Rect createRectAround(const cv::Point2i& center, double size,
   return cv::Rect(minx, miny, maxx - minx, maxy - miny);
 }
 
-const static std::string kWindowName = "spectral_meter (9000)";
-
 void Node::configure() {
   image_transport::TransportHints hints("raw", ros::TransportHints(), pnh_);
   const auto resolved_image = pnh_.resolveName("image");
@@ -41,8 +39,8 @@ void Node::configure() {
     throw std::runtime_error(err);
   }
 
-  cv::namedWindow(kWindowName, cv::WINDOW_AUTOSIZE);
-  cv::setMouseCallback(kWindowName, &Node::mouseCallbackStatic,
+  cv::namedWindow(camera_topic_name_, cv::WINDOW_AUTOSIZE);
+  cv::setMouseCallback(camera_topic_name_, &Node::mouseCallbackStatic,
                        reinterpret_cast<void*>(this));
 
   ROS_INFO("Spectral Meter 9000 - The Ultimate in Exposure Calibration");
@@ -143,7 +141,7 @@ void Node::imageCallback(const sensor_msgs::ImageConstPtr& img) {
   }
 
   //  draw output
-  cv::imshow(kWindowName, ui_image);
+  cv::imshow(camera_topic_name_, ui_image);
 
   //  refresh UI
   cv::waitKey(1);
@@ -169,7 +167,8 @@ void Node::updateExposure(double measured_mean) {
   nh_.getParamCached(expose_rosparam_name_, expose_us_);
 
   const double err = config_.target_reflectance - measured_mean;
-  int inc = config_.kp * err;
+  // Clamp inc to some reasonable number to prevent overshoot
+  int inc = std::max(config_.kp * err, 2000);
   // ROS_INFO("Increment: %i", inc);
   if (std::abs(inc) < 100) {
     //  stop adjusting

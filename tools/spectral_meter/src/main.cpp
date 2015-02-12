@@ -9,7 +9,7 @@ int main(int argc, char** argv) {
   galt::spectral_meter::Node node(nh, pnh);
   try {
     node.configure();
-  } catch (std::exception& e) {
+  } catch (const std::exception& e) {
     ROS_ERROR("Error configuring: %s", e.what());
   }
   ros::spin();

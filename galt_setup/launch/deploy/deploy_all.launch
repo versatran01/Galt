@@ -6,13 +6,13 @@
     * imu
     * stereo
     * color
-    * multi_spectral (optional)
     * laser (optional)
-    * thermal (optional)
+    * multi_spectral (optional)
 
   Brief: Launch the base configuration of IRIS. This includes all devices
   which will be employed in all sensing modes.
 -->
+
 <launch>
   <arg name="spectral" default="$(optenv GALT_USE_SPECTRAL true)"/>
   <!-- estimation -->
@@ -20,5 +20,5 @@
 
   <!-- multi_spectral -->
   <include if="$(arg spectral)"
-      file="$(find galt_setup)/launch/drivers/multi_spectral.launch"/>
+    file="$(find galt_setup)/launch/drivers/multi_spectral.launch"/>
 </launch>

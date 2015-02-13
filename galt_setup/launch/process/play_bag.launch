@@ -1,0 +1,13 @@
+<launch>
+  <!-- Bag parameters -->
+  <arg name="bag_home" default="$(optenv GALT_BAGFILES /home)"/>
+  <arg name="bag" default=""/>
+  <arg name="bag_start" default="0"/>
+  <arg name="bag_rate" default="1"/>
+  <arg name="bag_path" default="$(arg bag_home)/$(arg bag).bag"/>
+
+  <!-- Rosbag -->
+  <node name="playback" pkg="rosbag" type="play" output="log"
+    args="--clock -s $(arg bag_start) -r $(arg bag_rate) $(arg bag_path)">
+  </node>
+</launch>

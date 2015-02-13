@@ -14,6 +14,7 @@
 
 <launch>
   <arg name="vicon" default="false"/>
+  <arg name="ekf" default="true"/>
   <arg name="laser" default="$(optenv GALT_USE_LASER true)"/>
 
   <!-- gps -->
@@ -29,6 +30,11 @@
   <!-- camera -->
   <include file="$(find galt_setup)/launch/drivers/stereo.launch"/>
   <include file="$(find galt_setup)/launch/drivers/color.launch"/>
+
+  <include file="$(find galt_setup)/launch/process/process_gps_imu.launch">
+    <arg name="platform" value="$(env GALT_PLATFORM_NAME)"/>
+    <arg name="version" value="$(env GALT_PLATFORM_VER)"/>
+  </include>
 
   <!-- optional: vicon -->
   <include if="$(arg vicon)"

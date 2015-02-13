@@ -28,7 +28,7 @@ void Tracker::step(const cv::Mat& image) {
   if (isInit()) {
     prev_points_ = curr_points_;
     curr_points_.clear();
-    ROS_INFO("Tracking features: %d", (int)prev_points_.size());
+    //    ROS_INFO("Tracking features: %d", (int)prev_points_.size());
     ROS_ASSERT_MSG(!prev_points_.empty(), "No tracked features");
     // optical flow
     std::vector<uchar> status;
@@ -62,7 +62,7 @@ void Tracker::step(const cv::Mat& image) {
       display = image;
     }
     drawKeypoints1(display, keypoints, display);
-    ROS_INFO("Number of new points: %d", (int)keypoints.size());
+    //    ROS_INFO("Number of new points: %d", (int)keypoints.size());
     // Add newly detected keypoints to prev_features
     for (const cv::KeyPoint& keypoint : keypoints) {
       curr_points_.push_back(keypoint.pt);

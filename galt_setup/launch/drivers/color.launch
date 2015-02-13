@@ -9,6 +9,7 @@
     * /color/camera_info
     * /color/image_raw
 -->
+
 <launch>
   <!--Camera Settings-->
   <arg name="device" value="$(env GALT_COLOR_SERIAL)"/>

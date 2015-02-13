@@ -11,6 +11,7 @@
   Brief: Launch the base configuration of IRIS. This includes all devices
   which will be employed in all sensing modes.
 -->
+
 <launch>
   <arg name="vicon" default="false"/>
   <arg name="laser" default="$(optenv GALT_USE_LASER true)"/>
@@ -23,7 +24,7 @@
 
   <!-- laser -->
   <include if="$(arg laser)"
-      file="$(find galt_setup)/launch/drivers/laser.launch"/>
+    file="$(find galt_setup)/launch/drivers/laser.launch"/>
 
   <!-- camera -->
   <include file="$(find galt_setup)/launch/drivers/stereo.launch"/>
@@ -31,5 +32,5 @@
 
   <!-- optional: vicon -->
   <include if="$(arg vicon)"
-      file="$(find galt_setup)/launch/deploy/vicon.launch"/>
+    file="$(find galt_setup)/launch/deploy/vicon.launch"/>
 </launch>

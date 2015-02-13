@@ -1,21 +1,21 @@
 <!-- This launch file filters laser scan by a filter and converts it to a point cloud -->
 <!-- Output topic name: /<laser>/cloud_filtered, message type: PointCloud2 -->
 <launch>
-    <arg name="output" default="screen"/>
-    <!-- namespace of the laser node -->
-    <arg name="laser" default="laser"/>
-    <!-- frame of the converted cloud -->
-    <arg name="target_frame" default="laser"/>
-    <arg name="high_fidelity" default="false"/>
-    <!-- path to the filter plugin yaml file -->
-    <arg name="plugin"/>
+  <arg name="output" default="screen"/>
+  <!-- namespace of the laser node -->
+  <arg name="laser" default="laser"/>
+  <!-- frame of the converted cloud -->
+  <arg name="target_frame" default="laser"/>
+  <arg name="high_fidelity" default="false"/>
+  <!-- path to the filter plugin yaml file -->
+  <arg name="plugin"/>
 
-    <!-- Node -->
-    <node pkg="laser_filters" type="scan_to_cloud_filter_chain"
-        name="laser_cloud_filter" ns="$(arg laser)" output="$(arg output)">
-        <!-- params -->
-        <rosparam command="load" file="$(arg plugin)"/>
-        <param name="high_fidelity" value="$(arg high_fidelity)"/>
-        <param name="target_frame" type="string" value="$(arg target_frame)"/>
-    </node>
+  <!-- Node -->
+  <node pkg="laser_filters" type="scan_to_cloud_filter_chain"
+    name="laser_cloud_filter" ns="$(arg laser)" output="$(arg output)">
+    <!-- params -->
+    <rosparam command="load" file="$(arg plugin)"/>
+    <param name="high_fidelity" value="$(arg high_fidelity)"/>
+    <param name="target_frame" type="string" value="$(arg target_frame)"/>
+  </node>
 </launch>

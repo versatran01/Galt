@@ -1,0 +1,16 @@
+<launch>
+  <arg name="output" default="screen"/>
+  <arg name="imu_topic" default="/imu/filtered_imu"/>
+  <arg name="gps_topic" default="/gps/odometry"/>
+  <arg name="config"/>
+
+  <!-- GPS Filter -->
+  <node name="gps_kf" pkg="gps_kf" type="gps_kf" output="$(arg output)">
+    <!-- filter inputs -->
+    <remap from="~imu" to="/imu/filtered_imu"/>
+    <remap from="~gps_odom" to="/gps/odometry"/>
+
+    <!-- Profile specific settings -->
+    <rosparam command="load" file="$(arg config)"/>
+  </node>
+</launch>

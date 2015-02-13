@@ -1,57 +1,57 @@
 <!-- This launch file is only for a demo -->
 <launch>
-    <!-- platform -->
-    <arg name="platform" default="steadicam"/>
-    <arg name="version" default="v4"/>
-    <arg name="profile" default="profiles/$(arg platform)/$(arg version)"/>
-    <arg name="stereo" default="stereo"/>
-    <arg name="view" default="false"/>
+  <!-- platform -->
+  <arg name="platform" default="steadicam"/>
+  <arg name="version" default="v4"/>
+  <arg name="profile" default="profiles/$(arg platform)/$(arg version)"/>
+  <arg name="stereo" default="stereo"/>
+  <arg name="view" default="false"/>
 
-    <arg name="bag" default="/home/chao/Workspace/bag/mrsl_vicon.bag"/>
-    <arg name="odom_topic" default="/vicon/antares/odom"/>
+  <arg name="bag" default="/home/chao/Workspace/bag/mrsl_vicon.bag"/>
+  <arg name="odom_topic" default="/vicon/antares/odom"/>
 
-    <!-- rosbag -->
-    <node pkg="rosbag" name="player" type="play" output="log" args="-r 0.5 $(arg bag)">
-    </node>
+  <!-- rosbag -->
+  <node pkg="rosbag" name="player" type="play" output="log" args="-r 0.5 $(arg bag)">
+  </node>
 
-    <!-- odom2tf -->
-    <include file="$(find odom2tf)/launch/odom2tf.launch">
-        <arg name="topic" value="$(arg odom_topic)"/>
-    </include>
+  <!-- odom2tf -->
+  <include file="$(find odom2tf)/launch/odom2tf.launch">
+    <arg name="topic" value="$(arg odom_topic)"/>
+  </include>
 
-    <!-- transforms -->
-    <include file="$(find galt_setup)/$(arg profile)/tf.launch">
-        <arg name="base_link" value="antares"/>
-        <arg name="static_broadcaster" value="$(arg platform)"/>
-    </include>
+  <!-- transforms -->
+  <include file="$(find galt_setup)/$(arg profile)/tf.launch">
+    <arg name="base_link" value="antares"/>
+    <arg name="static_broadcaster" value="$(arg platform)"/>
+  </include>
 
-    <!-- laser pipeline -->
-    <include file="$(find galt_setup)/launch/process/laser/laser_pipeline.launch">
-        <arg name="plugin" value="$(find galt_setup)/$(arg profile)/laser_filter.yml"/>
-        <arg name="target_frame" value="laser"/>
-        <arg name="fixed_frame" value="vicon"/>
-    </include>
+  <!-- laser pipeline -->
+  <include file="$(find galt_setup)/launch/process/laser/laser_pipeline.launch">
+    <arg name="plugin" value="$(find galt_setup)/$(arg profile)/laser_filter.yml"/>
+    <arg name="target_frame" value="laser"/>
+    <arg name="fixed_frame" value="vicon"/>
+  </include>
 
-    <!-- stereo_image_proc -->
-    <node pkg="stereo_image_proc" type="stereo_image_proc"
-        name="stereo_image_proc" ns="$(arg stereo)">
-    </node>
+  <!-- stereo_image_proc -->
+  <node pkg="stereo_image_proc" type="stereo_image_proc"
+    name="stereo_image_proc" ns="$(arg stereo)">
+  </node>
 
-    <!-- stereo_image_view -->
-    <node if="$(arg view)" pkg="image_view" type="stereo_view"
-        name="stereo_view" output="screen">
-        <remap from="image" to="image_rect"/>
-    </node>
+  <!-- stereo_image_view -->
+  <node if="$(arg view)" pkg="image_view" type="stereo_view"
+    name="stereo_view" output="screen">
+    <remap from="image" to="image_rect"/>
+  </node>
 
-    <!-- img2pcl -->
-    <include file="$(find img2pcl)/launch/node.launch">
-        <arg name="camera" value="color"/>
-    </include>
+  <!-- img2pcl -->
+  <include file="$(find img2pcl)/launch/node.launch">
+    <arg name="camera" value="color"/>
+  </include>
 
-    <!-- pcl_assembler -->
-    <include file="$(find pcl_assembler)/launch/node.launch">
-        <arg name="fixed_frame" value="vicon"/>
-        <arg name="source" value="$(arg stereo)"/>
-        <arg name="topic" value="points2"/>
-    </include>
+  <!-- pcl_assembler -->
+  <include file="$(find pcl_assembler)/launch/node.launch">
+    <arg name="fixed_frame" value="vicon"/>
+    <arg name="source" value="$(arg stereo)"/>
+    <arg name="topic" value="points2"/>
+  </include>
 </launch>

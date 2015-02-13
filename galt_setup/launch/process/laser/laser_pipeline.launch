@@ -1,43 +1,43 @@
 <!-- This launch file will launch the launch files that are related to laser scan processing -->
 <launch>
-    <arg name="plugin"/>
-    <!-- The frame to transform the point_cloud into -->
-    <arg name="target_frame" default="laser"/>
-    <!-- Stationary frame into which received scans (or clouds) are transformed -->
-    <arg name="fixed_frame" default="world"/>
+  <arg name="plugin"/>
+  <!-- The frame to transform the point_cloud into -->
+  <arg name="target_frame" default="laser"/>
+  <!-- Stationary frame into which received scans (or clouds) are transformed -->
+  <arg name="fixed_frame" default="world"/>
 
-    <!-- options -->
-    <arg name="scan_filter" default="false"/>
-    <arg name="scan_assembler" default="false"/>
-    <arg name="cloud_filter" default="false"/>
-    <arg name="cloud_assembler" default="false"/>
-
-
-    <!-- filters -->
-    <!-- laser scan filter -->
-    <include if="$(arg scan_filter)"
-        file="$(find galt_setup)/launch/process/laser/laser_scan_filter.launch">
-        <arg name="plugin" value="$(arg plugin)"/>
-    </include>
-
-    <!-- laser cloud filter -->
-    <include if="$(arg cloud_filter)"
-        file="$(find galt_setup)/launch/process/laser/laser_cloud_filter.launch">
-        <arg name="plugin" value="$(arg plugin)"/>
-        <arg name="target_frame" value="$(arg target_frame)"/>
-    </include>
+  <!-- options -->
+  <arg name="scan_filter" default="false"/>
+  <arg name="scan_assembler" default="false"/>
+  <arg name="cloud_filter" default="false"/>
+  <arg name="cloud_assembler" default="false"/>
 
 
-    <!-- assemblers -->
-    <!-- laser scan assembler -->
-    <include if="$(arg scan_assembler)"
-        file="$(find galt_setup)/launch/process/laser/laser_scan_assembler.launch">
-        <arg name="fixed_frame" value="$(arg fixed_frame)"/>
-    </include>
+  <!-- filters -->
+  <!-- laser scan filter -->
+  <include if="$(arg scan_filter)"
+    file="$(find galt_setup)/launch/process/laser/laser_scan_filter.launch">
+    <arg name="plugin" value="$(arg plugin)"/>
+  </include>
 
-    <!-- point cloud assembler -->
-    <include if="$(arg cloud_assembler)"
-            file="$(find galt_setup)/launch/process/laser/point_cloud_assembler.launch">
-        <arg name="fixed_frame" value="$(arg fixed_frame)"/>
-    </include>
+  <!-- laser cloud filter -->
+  <include if="$(arg cloud_filter)"
+    file="$(find galt_setup)/launch/process/laser/laser_cloud_filter.launch">
+    <arg name="plugin" value="$(arg plugin)"/>
+    <arg name="target_frame" value="$(arg target_frame)"/>
+  </include>
+
+
+  <!-- assemblers -->
+  <!-- laser scan assembler -->
+  <include if="$(arg scan_assembler)"
+    file="$(find galt_setup)/launch/process/laser/laser_scan_assembler.launch">
+    <arg name="fixed_frame" value="$(arg fixed_frame)"/>
+  </include>
+
+  <!-- point cloud assembler -->
+  <include if="$(arg cloud_assembler)"
+    file="$(find galt_setup)/launch/process/laser/point_cloud_assembler.launch">
+    <arg name="fixed_frame" value="$(arg fixed_frame)"/>
+  </include>
 </launch>

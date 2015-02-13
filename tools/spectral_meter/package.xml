@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>spectral_meter</name>
+  <version>0.0.1</version>
+  <description>Measure image intensities</description>
+
+  <maintainer email="gareth@todo.todo">gareth</maintainer>
+  <license>Super Duper Top Secret</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <depend>cv_bridge</depend>
+  <depend>image_transport</depend>
+  <depend>roscpp</depend>
+  <depend>std_msgs</depend>
+  <depend>sensor_msgs</depend>
+  <depend>dynamic_reconfigure</depend>
+
+  <export>
+  </export>
+</package>

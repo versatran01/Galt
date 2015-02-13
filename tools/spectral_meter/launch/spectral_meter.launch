@@ -1,0 +1,41 @@
+<launch>
+
+  <!-- temporary for debugging -->
+  <!--
+  <include file="$(find galt_setup)/launch/process/process_base.launch">
+    <arg name="bag" value="pennpark"/>
+    <arg name="bag_rate" value="1"/>
+    <arg name="bag_start" value="0"/>
+    <arg name="profile" value="aerial/v2"/>
+    <arg name="vicon" value="false"/>
+    <arg name="include_laser" value="false"/>
+  </include>
+  -->
+
+  <!-- Camera to preview/adjust -->
+  <arg name="camera" default="mv_30000388"/>
+  <!-- Reflectance of the multispectral panel -->
+  <arg name="target_reflectance" default="0.48"/>
+  <!-- Size of selection region (pixels) -->
+  <arg name="selection_size" default="40"/>
+  <!-- Kp -->
+  <arg name="kp" default="6000"/>
+  <!-- # of frames to skip between adjustments -->
+  <arg name="skip_frames" default="3"/>
+  <!-- image_transport plugin -->
+  <arg name="image_transport" default="compressed"/>
+  <!-- Use optical flow to compensate motion -->
+  <arg name="use_tracker" default="true"/>
+
+  <node name="spectral_meter" pkg="spectral_meter"
+    type="spectral_meter_node" ns="$(arg camera)" output="screen">
+    <remap from="~image" to="image_raw"/>
+    <!-- <param name="camera" type="string" value="$(arg camera)"/> -->
+    <param name="target_reflectance" type="double" value="$(arg target_reflectance)"/>
+    <param name="selection_size" type="int" value="$(arg selection_size)"/>
+    <param name="kp" type="double" value="$(arg kp)"/>
+    <param name="skip_frames" type="int" value="$(arg skip_frames)"/>
+    <param name="image_transport" type="string" value="$(arg image_transport)"/>
+    <param name="use_tracker" type="bool" value="$(arg use_tracker)"/>
+  </node>
+</launch>

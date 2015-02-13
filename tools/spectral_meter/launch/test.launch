@@ -1,0 +1,19 @@
+<launch>
+    <arg name="device" default="30000404"/>
+    <arg name="transport" default="compressed"/>
+    <arg name="use_tracker" default="true"/>
+
+    <include file="$(find bluefox2)/launch/single_node.launch">
+        <arg name="device" value="$(arg device)"/>
+        <arg name="rate" value="5"/>
+        <arg name="aec" value="0"/>
+        <arg name="expose_us" value="10000"/>
+    </include>
+
+    <include file="$(find spectral_meter)/launch/spectral_meter.launch">
+        <arg name="camera" value="mv_$(arg device)"/>
+        <arg name="skip_frames" value="2"/>
+        <arg name="image_transport" value="$(arg transport)"/>
+        <arg name="use_tracker" value="$(arg use_tracker)"/>
+    </include>
+</launch>

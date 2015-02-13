@@ -76,7 +76,6 @@ void Node::imageCallback(const sensor_msgs::ImageConstPtr& img) {
   cv::cvtColor(ui_image, ui_image, CV_GRAY2RGB);
 
   if (tracker_) {
-    ROS_INFO("Use tracker");
     // Track features across image
     tracker_->step(ui_image);
     offset_ = tracker_->calcOffset();

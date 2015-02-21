@@ -1,0 +1,25 @@
+<launch>
+  <arg name="sec_per_frame" default="0.1"/>
+  <arg name="camera" default="color"/>
+
+  <arg name="bag_home" default="$(optenv GALT_BAGFILES /home)"/>
+  <arg name="bag_start" default="0"/>
+  <arg name="bag"/>
+
+  <include file="$(find galt_setup)/launch/process/play_bag.launch">
+    <arg name="bag_home" value="$(arg bag_home)"/>
+    <arg name="bag_start" value="$(arg bag_start)"/>
+    <arg name="bag" value="$(arg bag)"/>
+  </include>
+
+  <node
+    name="extract"
+    pkg="image_view"
+    type="extract_images"
+    respawn="false"
+    output="screen"
+    cwd="ROS_HOME">
+    <param name="_sec_per_frame" type="double" value="$(arg sec_per_frame)"/>
+    <remap from="image" to="/$(arg camera)/image_raw"/>
+  </node>
+</launch>

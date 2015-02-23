@@ -10,7 +10,7 @@
 
     <!-- IMU data w/ proper covariance parameters -->
     <remap from="~imu" to="imu_cov"/>
-    <remap from="~magnetic_field" to="magnetic_field"/>
+    <remap from="~magnetic_field" to="magnetic_field_cov"/>
     <remap from="~filtered_imu" to="filtered_imu"/>
   </node>
 </launch>

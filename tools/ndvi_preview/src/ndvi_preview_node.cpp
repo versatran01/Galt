@@ -32,7 +32,6 @@ void image_callback(const sensor_msgs::ImageConstPtr &irImage,
                     const sensor_msgs::CameraInfoConstPtr &irInfo,
                     const sensor_msgs::ImageConstPtr &redImage,
                     const sensor_msgs::CameraInfoConstPtr &redInfo) {
-
   cv_bridge::CvImageConstPtr bridgedIrPtr =
       cv_bridge::toCvShare(irImage, "mono8");
   cv_bridge::CvImageConstPtr bridgedRedPtr =

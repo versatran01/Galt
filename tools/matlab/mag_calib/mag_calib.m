@@ -1,13 +1,25 @@
-%% mag_calib.m - Calibrate magnetometer w/ spheroid fitting.
-home;
-close all;
+%% mag_calib.m
+% Calibrate IMU magnetometer bias using least-squares.
+clear rosbag_wrapper;
+clear ros.Bag;
+clear;
 
-dataset = 'mag.csv';
-subsample_factor = 5;
-data = csvread(dataset);   % should be in format [mx,my,mz]
+BAGFILE_PATH = 'imu_calib_steadicam_v5_2015-02-23-16-57-55.bag';
+SUBSAMPLE_FACTOR = 5;
 
-% throw away some points
-data = data(1:subsample_factor:end,:);
+bag = ros.Bag.load(BAGFILE_PATH);
+
+% read messages
+[msgs, ~] = bag.readAll('/imu/magnetic_field');
+N = length(msgs);
+fprintf('Got %i IMU messages\n', N);
+
+data = [];
+for i=1:N
+    data(end+1,:) = msgs{i}.magnetic_field';
+end
+
+data = data(1:SUBSAMPLE_FACTOR:end,:);
 
 figure;
 hold on;
@@ -42,7 +54,7 @@ ylabel('Y');
 zlabel('Z');
 
 % output center and radius from least-squares fit
-fprinft('Least-squares centre:\n');
+fprintf('Least-squares centre:\n');
 disp(center)
 fprintf('Least-squares radius:\n');
 disp(radius)

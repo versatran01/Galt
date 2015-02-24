@@ -1,0 +1,24 @@
+<launch>
+  <arg name="output" default="screen"/>
+  <arg name="nir" default="spectral_800"/>
+  <arg name="red" default="spectral_670"/>
+  <arg name="image" default="image_rect"/>
+
+
+  <node pkg="image_proc" type="image_proc" name="image_proc" ns="$(arg nir)"
+  	output="$(arg output)">
+  </node>
+
+  <node pkg="image_proc" type="image_proc" name="image_proc" ns="$(arg red)"
+  	output="$(arg output)">
+  </node>
+
+  <node pkg="ndvi_preview" type="ndvi_preview" name="ndvi_preview"
+  	output="$(arg output)">
+    <!-- remap to correct cameras -->
+    <remap from="~red/image" to="$(arg red)/$(arg image)"/>
+    <remap from="~red/camera_info" to="$(arg red)/camera_info"/>
+    <remap from="~nir/image" to="$(arg nir)/$(arg image)"/>
+    <remap from="~nir/camera_info" to="$(arg nir)/camera_info"/>
+  </node>
+</launch>

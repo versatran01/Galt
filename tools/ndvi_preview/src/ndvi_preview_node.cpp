@@ -22,6 +22,7 @@
 
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/contrib/contrib.hpp>
+#include <opencv2/photo/photo.hpp>
 
 namespace ndvi_preview {
 
@@ -74,10 +75,11 @@ void NdviPreviewNode::SyncedCameraCb(const ImageConstPtr &nir_image_msg,
                                      const CameraInfoConstPtr &nir_cinfo_msg,
                                      const ImageConstPtr &red_image_msg,
                                      const CameraInfoConstPtr &red_cinfo_msg) {
-  ROS_WARN_THROTTLE(1, "IN!!");
   const cv::Mat nir = cv_bridge::toCvShare(nir_image_msg)->image;
   const cv::Mat red = cv_bridge::toCvShare(red_image_msg)->image;
-  cv::Mat ndvi = ComputeNdvi(nir, red);
+  cv::Mat nir_proc = PreprocessImage(nir);
+  cv::Mat red_proc = PreprocessImage(red);
+  cv::Mat ndvi = ComputeNdvi(nir_proc, red_proc);
   cv::Mat ndvi_jet;
   cv::applyColorMap(ndvi, ndvi_jet, cv::COLORMAP_JET);
 
@@ -101,6 +103,14 @@ cv::Mat ComputeNdvi(const cv::Mat &nir, const cv::Mat &red) {
   // Convert back to unit8
   ndvi_float.convertTo(ndvi, CV_8UC1);
   return ndvi;
+}
+
+cv::Mat PreprocessImage(const cv::Mat &image) {
+  /// @note: this function is a hack, should do dark current calibration first!
+  cv::Mat image_proc, image_resized;
+  cv::resize(image, image_resized, cv::Size(), 0.5, 0.5);
+  cv::GaussianBlur(image_resized, image_proc, cv::Size(7, 7), 0);
+  return image_proc;
 }
 
 }  // namespace ndvi_preview

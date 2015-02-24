@@ -51,6 +51,7 @@ class NdviPreviewNode {
 };
 
 cv::Mat ComputeNdvi(const cv::Mat& nir, const cv::Mat& red);
+cv::Mat PreprocessImage(const cv::Mat& image);
 
 }  // namespace ndvi_preview
 

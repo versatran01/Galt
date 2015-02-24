@@ -82,9 +82,9 @@ void NdviPreviewNode::SyncedCameraCb(const ImageConstPtr &nir_image_msg,
   cv::Mat ndvi = ComputeNdvi(nir_proc, red_proc);
   cv::Mat ndvi_jet;
   cv::applyColorMap(ndvi, ndvi_jet, cv::COLORMAP_JET);
-
-  cv::imshow("ndvi", ndvi_jet);
-  cv::waitKey(1);
+  cv_bridge::CvImage ndvi_cv_image(
+      nir_image_msg->header, sensor_msgs::image_encodings::BGR8, ndvi_jet);
+  pub_image_ndvi_.publish(ndvi_cv_image.toImageMsg());
 }
 
 cv::Mat ComputeNdvi(const cv::Mat &nir, const cv::Mat &red) {

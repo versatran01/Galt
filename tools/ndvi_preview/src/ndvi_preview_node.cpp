@@ -20,6 +20,9 @@
 #include <cv_bridge/cv_bridge.h>
 #include <sensor_msgs/image_encodings.h>
 
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/contrib/contrib.hpp>
+
 namespace ndvi_preview {
 
 NdviPreviewNode::NdviPreviewNode(const ros::NodeHandle &pnh)
@@ -55,17 +58,15 @@ void NdviPreviewNode::SubscribeSingleCamera(const std::string &camera,
 }
 
 void NdviPreviewNode::ConnectCb() {
+  /// @todo: something's wrong with this connect callback
   boost::lock_guard<boost::mutex> lock(connect_mutex_);
-  ROS_INFO("Num subscribers: %d", (int)pub_image_ndvi_.getNumSubscribers());
   if (pub_image_ndvi_.getNumSubscribers() == 0) {
     sub_image_nir_.unsubscribe();
     sub_cinfo_nir_.unsubscribe();
     sub_image_red_.unsubscribe();
     sub_cinfo_red_.unsubscribe();
-    ROS_INFO("Unsubscribe!");
   } else if (!sub_image_nir_.getSubscriber()) {
     SubscribeSyncedTopics();
-    ROS_INFO("Subscribe!");
   }
 }
 
@@ -74,8 +75,32 @@ void NdviPreviewNode::SyncedCameraCb(const ImageConstPtr &nir_image_msg,
                                      const ImageConstPtr &red_image_msg,
                                      const CameraInfoConstPtr &red_cinfo_msg) {
   ROS_WARN_THROTTLE(1, "IN!!");
-  const cv::Mat nir_image = cv_bridge::toCvShare(nir_image_msg)->image;
-  const cv::Mat red_image = cv_bridge::toCvShare(red_image_msg)->image;
+  const cv::Mat nir = cv_bridge::toCvShare(nir_image_msg)->image;
+  const cv::Mat red = cv_bridge::toCvShare(red_image_msg)->image;
+  cv::Mat ndvi = ComputeNdvi(nir, red);
+  cv::Mat ndvi_jet;
+  cv::applyColorMap(ndvi, ndvi_jet, cv::COLORMAP_JET);
+
+  cv::imshow("ndvi", ndvi_jet);
+  cv::waitKey(1);
+}
+
+cv::Mat ComputeNdvi(const cv::Mat &nir, const cv::Mat &red) {
+  cv::Mat nir_float, red_float;
+  nir.convertTo(nir_float, CV_32FC1);
+  red.convertTo(red_float, CV_32FC1);
+
+  // Calculate ndvi
+  cv::Mat num, den;
+  num = nir_float - red_float;
+  den = nir_float + red_float;
+
+  cv::Mat ndvi_float, ndvi;
+  cv::divide(num, den, ndvi_float, 255);
+
+  // Convert back to unit8
+  ndvi_float.convertTo(ndvi, CV_8UC1);
+  return ndvi;
 }
 
 }  // namespace ndvi_preview

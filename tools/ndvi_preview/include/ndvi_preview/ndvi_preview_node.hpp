@@ -9,6 +9,8 @@
 #include <message_filters/sync_policies/approximate_time.h>
 #include <sensor_msgs/CameraInfo.h>
 
+#include <opencv2/core/core.hpp>
+
 namespace ndvi_preview {
 
 using sensor_msgs::ImageConstPtr;
@@ -47,6 +49,8 @@ class NdviPreviewNode {
   boost::mutex connect_mutex_;
   int queue_size_;
 };
+
+cv::Mat ComputeNdvi(const cv::Mat& nir, const cv::Mat& red);
 
 }  // namespace ndvi_preview
 

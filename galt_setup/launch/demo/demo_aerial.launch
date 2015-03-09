@@ -11,7 +11,7 @@
 	<arg name="bag" default=""/>
 	<arg name="bag_start" default="0"/>
 	<arg name="bag_rate" default="1"/>
-	<arg name="bag_path" default="/media/chao/Seagate/bag/booth/aerial/galt_aerial_v2_row_1617_1718_2015-02-17-18-39-43.bag"/>
+	<arg name="bag_path" default="/media/gareth/External1/bagfiles/booth/galt_aerial_v2_row_1617_1718_2015-02-17-18-39-43.bag"/>
 
 	<include file="$(find galt_setup)/launch/process/process_gps_imu_bag.launch">
 		<arg name="platform" value="$(arg platform)"/>

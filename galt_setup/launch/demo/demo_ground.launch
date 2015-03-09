@@ -9,7 +9,7 @@
 	<arg name="bag" default=""/>
 	<arg name="bag_start" default="0"/>
 	<arg name="bag_rate" default="1"/>
-	<arg name="bag_path" default="/media/chao/Seagate/bag/booth/ground/r1s_steadicam_v5_2015-02-18-11-56-32.bag"/>
+	<arg name="bag_path" default="/media/gareth/External1/bagfiles/booth/r1s_steadicam_v5_2015-02-18-11-56-32.bag"/>
 
 	<include file="$(find galt_setup)/launch/process/process_gps_imu_bag.launch">
 		<arg name="platform" value="$(arg platform)"/>

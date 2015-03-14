@@ -39,10 +39,6 @@
   </include>
 
   <!-- Altimeter -->
-  <include file="$(find galt_setup)/launch/process/filter/laser_altimeter.launch">
-    <arg name="imu" value="/imu/filtered_imu"/>
-  </include>
-
   <include file="$(find galt_setup)/launch/process/filter/pressure_altimeter.launch">
     <arg name="pressure" value="/imu/pressure_cov"/>
   </include>

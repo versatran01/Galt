@@ -122,11 +122,6 @@ class BagStampBatchProcessor(BagBatchProcessorBase):
         BagBatchProcessorBase.process_args(self)
 
     def process_bags(self):
-        if True:
-            for bag_helper in self.all_bag_helpers:
-                print(bag_helper)
-            return
-
         # Do nothing if there's no bag files to process
         if not self.all_bag_helpers:
             print('No bags to process.')

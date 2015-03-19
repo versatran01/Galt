@@ -3,40 +3,132 @@
 #include <rosbag/view.h>
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/CameraInfo.h>
-#include <image_transport/image_transport.h>
-#include <image_transport/subscriber_filter.h>
 #include <cv_bridge/cv_bridge.h>
-#include <message_filters/subscriber.h>
-#include <message_filters/time_synchronizer.h>
 
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
-
-template <class M>
-class BagSubscriber : public message_filters::SimpleFilter<M> {
- public:
-  void newMessage(const boost::shared_ptr<M const>& msg) {
-    this->signalMessage(msg);
-  }
-};
+#include <opencv2/video/video.hpp>
+#include <opencv2/calib3d/calib3d.hpp>
 
 class KeyframeExtractor {
  public:
   KeyframeExtractor(const ros::NodeHandle& pnh) : pnh_(pnh) {
     pnh_.param("scale", scale_, 0.5);
+    pnh_.param("num_corners", num_corners_, 700);
+    pnh_.param("min_corners_ratio", min_corners_ratio_, 0.6);
+    pnh_.param("min_distance", min_distance_, 15);
+    pnh_.param("win_size", win_size_, 21);
+    pnh_.param("max_level", max_level_, 4);
   }
 
-  void ImageCb(const sensor_msgs::Image::ConstPtr& image_msg) {
-    const auto image = cv_bridge::toCvShare(image_msg)->image;
+  void ProcessImage(const sensor_msgs::Image::ConstPtr& image_msg) {
     cv::Mat image_scaled;
-    cv::resize(image, image_scaled, cv::Size(0, 0), 0.5, 0.5);
-    cv::imshow("image", image_scaled);
-    cv::waitKey(1);
+    cv::resize(cv_bridge::toCvShare(image_msg)->image, image_scaled,
+               cv::Size(0, 0), scale_, scale_);
+    Track(image_scaled);
   }
 
  private:
+  template <typename T, typename U>
+  void pruneByStatus(const std::vector<U>& status, std::vector<T>& objects) {
+    ROS_ASSERT_MSG(status.size() == objects.size(),
+                   "status and object size mismatch");
+    ROS_ASSERT_MSG(!status.empty(), "nothing to prune");
+    auto it_obj = objects.begin();
+    for (const auto& s : status) {
+      if (s) {
+        it_obj++;
+      } else {
+        it_obj = objects.erase(it_obj);
+      }
+    }
+  }
+
+  void Track(const cv::Mat& image) {
+    cv::Mat gray;
+    cv::Mat disp;
+
+    // Ensure grayscale iamge
+    if (image.type() != CV_8UC1) {
+      cv::cvtColor(image, gray, CV_BGR2GRAY);
+    } else {
+      gray = image;
+    }
+    cv::cvtColor(gray, disp, CV_GRAY2BGR);
+
+    // Track
+    if (!prev_image_.empty()) {
+      std::vector<uchar> status;
+      std::vector<cv::Point2f> curr_points;
+      const cv::TermCriteria term_criteria(
+          cv::TermCriteria::COUNT + cv::TermCriteria::EPS, 10, 0.005);
+      cv::calcOpticalFlowPyrLK(prev_image_, gray, tracked_points_, curr_points,
+                               status, cv::noArray(),
+                               cv::Size(win_size_, win_size_), max_level_,
+                               term_criteria);
+      pruneByStatus(status, tracked_points_);
+      pruneByStatus(status, curr_points);
+      status.clear();
+      cv::findFundamentalMat(tracked_points_, curr_points, status,
+                             cv::FM_RANSAC, 1, 0.99);
+      pruneByStatus(status, tracked_points_);
+      pruneByStatus(status, curr_points);
+      ROS_ASSERT_MSG(curr_points.size() == tracked_points_.size(),
+                     "Track mismatch");
+      DrawPoints(disp, curr_points, cv::Scalar(0, 255, 0));
+      DrawTracks(disp, tracked_points_, curr_points, cv::Scalar(255, 0, 0));
+      tracked_points_ = curr_points;
+      ROS_INFO("Tracked points: %d", (int)tracked_points_.size());
+    }
+
+    // Extract
+    if (tracked_points_.size() < num_corners_ * min_corners_ratio_) {
+      // Create a mask based on tracked features
+      cv::Mat mask = cv::Mat::ones(gray.rows, gray.cols, CV_8UC1);
+      for (const auto& p : tracked_points_) {
+        cv::circle(mask, p, min_distance_, cv::Scalar(0), -1);
+      }
+      // Detect new corners and append to tracked points
+      std::vector<cv::Point2f> corners;
+      cv::goodFeaturesToTrack(gray, corners, num_corners_, 0.01, min_distance_,
+                              mask);
+      ROS_INFO("New corners: %d", (int)corners.size());
+      // Draw newly detected points with red
+      DrawPoints(disp, corners, cv::Scalar(0, 0, 255));
+      // Add to tracked corners
+      tracked_points_.insert(tracked_points_.end(), corners.begin(),
+                             corners.end());
+    }
+    prev_image_ = gray;
+
+    cv::imshow("track", disp);
+    cv::waitKey(1);
+  }
+
+  void DrawTracks(cv::Mat& image, const std::vector<cv::Point2f>& points1,
+                  const std::vector<cv::Point2f>& points2,
+                  const cv::Scalar& color) {
+    for (size_t i = 0; i < points1.size(); ++i) {
+      cv::line(image, points1[i], points2[i], color, 2);
+    }
+  }
+
+  void DrawPoints(cv::Mat& image, const std::vector<cv::Point2f>& points,
+                  const cv::Scalar& color) {
+    for (const cv::Point2f& p : points) {
+      cv::circle(image, p, 2, color, -1);
+    }
+  }
+
   ros::NodeHandle pnh_;
   double scale_;
+  cv::Mat prev_image_;
+  std::vector<cv::Point2f> tracked_points_;
+  int num_corners_;
+  int min_distance_;
+  double min_corners_ratio_;
+  int win_size_;
+  int max_level_;
 };
 
 //  _                _
@@ -52,7 +144,6 @@ int main(int argc, char** argv) {
 
   std::string in_bag_path;
   if (!pnh.getParam("in_bag", in_bag_path)) {
-    std::cout << in_bag_path << std::endl;
     ROS_ERROR("No input bag file specified.");
     return -1;
   }
@@ -61,7 +152,7 @@ int main(int argc, char** argv) {
   pnh.param("queue_size", queue_size, 20);
 
   std::string out_bag_path;
-  pnh.param<std::string>("out_bag", out_bag_path, "/tmp/test.bag");
+  pnh.param<std::string>("out_dir", out_bag_path, "/tmp");
 
   std::string camera_ns;
   pnh.param<std::string>("camera", camera_ns, "/spectral_670");
@@ -82,7 +173,7 @@ int main(int argc, char** argv) {
     if (m.getTopic() == image_topic || ("/" + m.getTopic() == image_topic)) {
       sensor_msgs::ImageConstPtr image_msg =
           m.instantiate<sensor_msgs::Image>();
-      if (image_msg) extractor.ImageCb(image_msg);
+      if (image_msg) extractor.ProcessImage(image_msg);
     }
   }
 }

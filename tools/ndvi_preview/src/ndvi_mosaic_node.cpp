@@ -37,16 +37,31 @@ int main(int argc, char** argv) {
   ros::NodeHandle pnh("~");
 
   // Parameters
+  double scale;
+  pnh.param("scale", scale, 0.5);
+
   std::string image_dir;
   pnh.param<std::string>("image_dir", image_dir,
                          "/home/chao/Workspace/bag/aerial");
 
+  int num_images;
+  pnh.param("num_images", num_images, 10);
+  if (num_images < 2) {
+    ROS_WARN("Number of images is less than 2");
+    return -1;
+  }
+
   // Load all images
   std::vector<std::string> files = GetAllFilesWithExt(image_dir, ".png");
   std::vector<cv::Mat> images;
+  int i = 0;
   for (const std::string& f : files) {
-    images.push_back(cv::imread(f, CV_LOAD_IMAGE_COLOR));
+    auto image = cv::imread(f, CV_LOAD_IMAGE_COLOR);
+    cv::Mat image_scaled;
+    cv::resize(image, image_scaled, cv::Size(0, 0), scale, scale);
+    images.push_back(image_scaled);
     ROS_INFO("Image: %s", f.c_str());
+    if (++i == num_images) break;
   }
 
   // Stitching

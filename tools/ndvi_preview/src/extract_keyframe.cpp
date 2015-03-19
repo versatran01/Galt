@@ -10,15 +10,18 @@
 #include <opencv2/video/video.hpp>
 #include <opencv2/calib3d/calib3d.hpp>
 
+#include <sstream>
+
 class KeyframeExtractor {
  public:
-  KeyframeExtractor(const ros::NodeHandle& pnh) : pnh_(pnh) {
+  KeyframeExtractor(const ros::NodeHandle& pnh) : pnh_(pnh), num_keyframes_(0) {
     pnh_.param("scale", scale_, 0.5);
     pnh_.param("num_corners", num_corners_, 700);
     pnh_.param("min_corners_ratio", min_corners_ratio_, 0.6);
     pnh_.param("min_distance", min_distance_, 15);
     pnh_.param("win_size", win_size_, 21);
     pnh_.param("max_level", max_level_, 4);
+    pnh_.param<std::string>("out_dir", out_dir_, "/tmp");
   }
 
   void ProcessImage(const sensor_msgs::Image::ConstPtr& image_msg) {
@@ -78,7 +81,6 @@ class KeyframeExtractor {
       DrawPoints(disp, curr_points, cv::Scalar(0, 255, 0));
       DrawTracks(disp, tracked_points_, curr_points, cv::Scalar(255, 0, 0));
       tracked_points_ = curr_points;
-      ROS_INFO("Tracked points: %d", (int)tracked_points_.size());
     }
 
     // Extract
@@ -92,13 +94,20 @@ class KeyframeExtractor {
       std::vector<cv::Point2f> corners;
       cv::goodFeaturesToTrack(gray, corners, num_corners_, 0.01, min_distance_,
                               mask);
-      ROS_INFO("New corners: %d", (int)corners.size());
       // Draw newly detected points with red
       DrawPoints(disp, corners, cv::Scalar(0, 0, 255));
       // Add to tracked corners
       tracked_points_.insert(tracked_points_.end(), corners.begin(),
                              corners.end());
+      num_keyframes_ += 1;
+      // Save to disk
+      std::ostringstream ss;
+      ss << std::setw(4) << std::setfill('0') << num_keyframes_;
+      const std::string filename = "aerial" + ss.str();
+      cv::imwrite(out_dir_ + "/" + filename + ".png", gray);
     }
+    cv::putText(disp, std::to_string(num_keyframes_), {30, 30},
+                cv::FONT_HERSHEY_PLAIN, 2, cv::Scalar(0, 255, 255), 2, CV_AA);
     prev_image_ = gray;
 
     cv::imshow("track", disp);
@@ -129,6 +138,8 @@ class KeyframeExtractor {
   double min_corners_ratio_;
   int win_size_;
   int max_level_;
+  int num_keyframes_;
+  std::string out_dir_;
 };
 
 //  _                _

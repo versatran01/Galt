@@ -19,12 +19,26 @@ class BagSubscriber : public message_filters::SimpleFilter<M> {
   }
 };
 
-void CameraCb(const sensor_msgs::Image::ConstPtr& image_msg,
-              const sensor_msgs::CameraInfo::ConstPtr& cinfo_msg) {
-  const auto image = cv_bridge::toCvShare(image_msg)->image;
-  cv::imshow("image", image);
-  cv::waitKey(1);
-}
+class KeyframeExtractor {
+ public:
+  KeyframeExtractor() = default;
+
+  void CameraCb(const sensor_msgs::Image::ConstPtr& image_msg,
+                const sensor_msgs::CameraInfo::ConstPtr& cinfo_msg) {
+    const auto image = cv_bridge::toCvShare(image_msg)->image;
+    cv::imshow("image", image);
+    cv::waitKey(1);
+  }
+
+ private:
+};
+
+//  _                _
+// | |__   __ _  ___| | __
+// | '_ \ / _` |/ __| |/ /
+// | | | | (_| | (__|   <
+// |_| |_|\__,_|\___|_|\_\
+//
 
 int main(int argc, char** argv) {
   ros::init(argc, argv, "extract_and_rectify");
@@ -55,11 +69,13 @@ int main(int argc, char** argv) {
 
   ROS_INFO("Opened bag: %s", in_bag.getFileName().c_str());
 
+  KeyframeExtractor extractor;
   BagSubscriber<sensor_msgs::Image> sub_image;
   BagSubscriber<sensor_msgs::CameraInfo> sub_cinfo;
   message_filters::TimeSynchronizer<sensor_msgs::Image, sensor_msgs::CameraInfo>
       sync(sub_image, sub_cinfo, 25);
-  sync.registerCallback(boost::bind(&CameraCb, _1, _2));
+  sync.registerCallback(
+      boost::bind(&KeyframeExtractor::CameraCb, &extractor, _1, _2));
 
   for (auto it = view.begin(), it_end = view.end(); it != it_end; ++it) {
     const rosbag::MessageInstance& m = *it;

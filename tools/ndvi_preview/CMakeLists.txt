@@ -6,7 +6,6 @@ add_definitions(-std=c++11)
 find_package(catkin REQUIRED COMPONENTS
     cv_bridge image_transport roscpp sensor_msgs std_msgs pcl_ros
     pcl_conversions laser_assembler message_generation image_geometry
-    message_filters
     )
 
 find_package(OpenCV REQUIRED)

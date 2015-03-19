@@ -6,6 +6,7 @@ add_definitions(-std=c++11)
 find_package(catkin REQUIRED COMPONENTS
     cv_bridge image_transport roscpp sensor_msgs std_msgs pcl_ros
     pcl_conversions laser_assembler message_generation image_geometry
+    message_filters
     )
 
 find_package(OpenCV REQUIRED)
@@ -43,8 +44,8 @@ target_link_libraries(ndvi_mosaic_node
     ${Boost_LIBRARIES}
     )
 
-add_executable(extract_and_rectify src/extract_and_rectify.cpp)
-target_link_libraries(extract_and_rectify
+add_executable(extract_keyframe src/extract_keyframe.cpp)
+target_link_libraries(extract_keyframe
     ${catkin_LIBRARIES}
     ${OpenCV_LIBRARIES}
     )

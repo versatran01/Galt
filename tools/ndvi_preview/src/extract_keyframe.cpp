@@ -13,8 +13,9 @@
 #include <sstream>
 
 class KeyframeExtractor {
- public:
-  KeyframeExtractor(const ros::NodeHandle& pnh) : pnh_(pnh), num_keyframes_(0) {
+public:
+  KeyframeExtractor(const ros::NodeHandle &pnh, const std::string &camera_ns)
+      : pnh_(pnh), num_keyframes_(0) {
     pnh_.param("scale", scale_, 0.5);
     pnh_.param("num_corners", num_corners_, 700);
     pnh_.param("min_corners_ratio", min_corners_ratio_, 0.6);
@@ -22,23 +23,27 @@ class KeyframeExtractor {
     pnh_.param("win_size", win_size_, 21);
     pnh_.param("max_level", max_level_, 4);
     pnh_.param<std::string>("out_dir", out_dir_, "/tmp");
+    camera_ = camera_ns;
+    if (camera_.front() == '/') {
+      camera_.erase(0, 1);
+    }
   }
 
-  void ProcessImage(const sensor_msgs::Image::ConstPtr& image_msg) {
+  void ProcessImage(const sensor_msgs::Image::ConstPtr &image_msg) {
     cv::Mat image_scaled;
     cv::resize(cv_bridge::toCvShare(image_msg)->image, image_scaled,
                cv::Size(0, 0), scale_, scale_);
     Track(image_scaled);
   }
 
- private:
+private:
   template <typename T, typename U>
-  void pruneByStatus(const std::vector<U>& status, std::vector<T>& objects) {
+  void pruneByStatus(const std::vector<U> &status, std::vector<T> &objects) {
     ROS_ASSERT_MSG(status.size() == objects.size(),
                    "status and object size mismatch");
     ROS_ASSERT_MSG(!status.empty(), "nothing to prune");
     auto it_obj = objects.begin();
-    for (const auto& s : status) {
+    for (const auto &s : status) {
       if (s) {
         it_obj++;
       } else {
@@ -47,7 +52,7 @@ class KeyframeExtractor {
     }
   }
 
-  void Track(const cv::Mat& image) {
+  void Track(const cv::Mat &image) {
     cv::Mat gray;
     cv::Mat disp;
 
@@ -87,7 +92,7 @@ class KeyframeExtractor {
     if (tracked_points_.size() < num_corners_ * min_corners_ratio_) {
       // Create a mask based on tracked features
       cv::Mat mask = cv::Mat::ones(gray.rows, gray.cols, CV_8UC1);
-      for (const auto& p : tracked_points_) {
+      for (const auto &p : tracked_points_) {
         cv::circle(mask, p, min_distance_, cv::Scalar(0), -1);
       }
       // Detect new corners and append to tracked points
@@ -103,8 +108,8 @@ class KeyframeExtractor {
       // Save to disk
       std::ostringstream ss;
       ss << std::setw(4) << std::setfill('0') << num_keyframes_;
-      const std::string filename = "aerial" + ss.str();
-      cv::imwrite(out_dir_ + "/" + filename + ".png", gray);
+      const std::string filename = camera_ + "_" + ss.str();
+      cv::imwrite(out_dir_ + "/" + filename + ".png", image);
     }
     cv::putText(disp, std::to_string(num_keyframes_), {30, 30},
                 cv::FONT_HERSHEY_PLAIN, 2, cv::Scalar(0, 255, 255), 2, CV_AA);
@@ -114,17 +119,17 @@ class KeyframeExtractor {
     cv::waitKey(1);
   }
 
-  void DrawTracks(cv::Mat& image, const std::vector<cv::Point2f>& points1,
-                  const std::vector<cv::Point2f>& points2,
-                  const cv::Scalar& color) {
+  void DrawTracks(cv::Mat &image, const std::vector<cv::Point2f> &points1,
+                  const std::vector<cv::Point2f> &points2,
+                  const cv::Scalar &color) {
     for (size_t i = 0; i < points1.size(); ++i) {
       cv::line(image, points1[i], points2[i], color, 2);
     }
   }
 
-  void DrawPoints(cv::Mat& image, const std::vector<cv::Point2f>& points,
-                  const cv::Scalar& color) {
-    for (const cv::Point2f& p : points) {
+  void DrawPoints(cv::Mat &image, const std::vector<cv::Point2f> &points,
+                  const cv::Scalar &color) {
+    for (const cv::Point2f &p : points) {
       cv::circle(image, p, 2, color, -1);
     }
   }
@@ -140,6 +145,7 @@ class KeyframeExtractor {
   int max_level_;
   int num_keyframes_;
   std::string out_dir_;
+  std::string camera_;
 };
 
 //  _                _
@@ -149,7 +155,7 @@ class KeyframeExtractor {
 // |_| |_|\__,_|\___|_|\_\
 //
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   ros::init(argc, argv, "extract_and_rectify");
   ros::NodeHandle pnh("~");
 
@@ -162,12 +168,11 @@ int main(int argc, char** argv) {
   int queue_size;
   pnh.param("queue_size", queue_size, 20);
 
-  std::string out_bag_path;
-  pnh.param<std::string>("out_dir", out_bag_path, "/tmp");
-
   std::string camera_ns;
   pnh.param<std::string>("camera", camera_ns, "/spectral_670");
-  const std::string image_topic = camera_ns + "/image_rect";
+  std::string image;
+  pnh.param<std::string>("image", image, "image_rect");
+  const std::string image_topic = camera_ns + "/" + image;
 
   // Open rosbag
   rosbag::Bag in_bag(in_bag_path);
@@ -175,16 +180,17 @@ int main(int argc, char** argv) {
 
   ROS_INFO("Opened bag: %s", in_bag.getFileName().c_str());
 
-  KeyframeExtractor extractor(pnh);
+  KeyframeExtractor extractor(pnh, camera_ns);
 
   for (auto it = view.begin(), it_end = view.end(); it != it_end; ++it) {
-    const rosbag::MessageInstance& m = *it;
+    const rosbag::MessageInstance &m = *it;
 
     // Image topic
     if (m.getTopic() == image_topic || ("/" + m.getTopic() == image_topic)) {
       sensor_msgs::ImageConstPtr image_msg =
           m.instantiate<sensor_msgs::Image>();
-      if (image_msg) extractor.ProcessImage(image_msg);
+      if (image_msg)
+        extractor.ProcessImage(image_msg);
     }
   }
 }

@@ -7,6 +7,8 @@ roslaunch galt_setup rectify.launch bag_path:=r1s_steadicam_v4xxxxxxx.bag tag:=r
   <arg name="bag_start" default="0"/>
   <arg name="tag" default=""/>
   <arg name="bag_path" default=""/>
+  <arg name="camera" default="color"/>
+  <arg name="image" default="image_rect"/>
 
   <!-- rosbag play -->
   <include file="$(find galt_setup)/launch/process/play_bag.launch">
@@ -16,11 +18,11 @@ roslaunch galt_setup rectify.launch bag_path:=r1s_steadicam_v4xxxxxxx.bag tag:=r
   </include>
 
   <!-- image_proc -->
-  <node pkg="image_proc" type="image_proc" name="image_proc" ns="color"/>
+  <node pkg="image_proc" type="image_proc" name="image_proc" ns="$(arg camera)"/>
 
   <!-- rosbag record -->
   <node pkg="rosbag" type="record" name="recorder" output="screen" args="-o $(arg tag)
-    /color/camera_info
-    /color/image_rect_color
+    /$(arg camera)/camera_info
+    /$(arg camera)/$(arg image)
     "/>
 </launch>

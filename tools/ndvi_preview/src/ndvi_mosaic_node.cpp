@@ -4,15 +4,16 @@
 #include <opencv2/stitching/stitcher.hpp>
 #include <boost/filesystem.hpp>
 
-bool IsFolderValid(const std::string& dir) {
+bool IsFolderValid(const std::string &dir) {
   namespace bfs = boost::filesystem;
   bfs::path path(dir);
-  if (!bfs::exists(path) || !bfs::is_directory(path)) return false;
+  if (!bfs::exists(path) || !bfs::is_directory(path))
+    return false;
   return true;
 }
 
-std::vector<std::string> GetAllFilesWithExt(const std::string& dir,
-                                            const std::string& ext) {
+std::vector<std::string> GetAllFilesWithExt(const std::string &dir,
+                                            const std::string &ext) {
   namespace bfs = boost::filesystem;
   if (!IsFolderValid(dir))
     throw std::runtime_error(std::string("Invalid folder: ") + dir);
@@ -22,7 +23,7 @@ std::vector<std::string> GetAllFilesWithExt(const std::string& dir,
 
   // Such nonsense that qt only autocompletes when specify full namespace
   std::for_each(bfs::directory_iterator(path), bfs::directory_iterator(),
-                [&](const boost::filesystem::directory_entry& entry) {
+                [&](const boost::filesystem::directory_entry &entry) {
     if (ext.compare(entry.path().extension().string()) == 0) {
       files.push_back(entry.path().string());
     }
@@ -32,7 +33,7 @@ std::vector<std::string> GetAllFilesWithExt(const std::string& dir,
   return files;
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   ros::init(argc, argv, "ndvi_mosaic");
   ros::NodeHandle pnh("~");
 
@@ -55,13 +56,14 @@ int main(int argc, char** argv) {
   std::vector<std::string> files = GetAllFilesWithExt(image_dir, ".png");
   std::vector<cv::Mat> images;
   int i = 0;
-  for (const std::string& f : files) {
+  for (const std::string &f : files) {
     auto image = cv::imread(f, CV_LOAD_IMAGE_COLOR);
     cv::Mat image_scaled;
     cv::resize(image, image_scaled, cv::Size(0, 0), scale, scale);
     images.push_back(image_scaled);
     ROS_INFO("Image: %s", f.c_str());
-    if (++i == num_images) break;
+    if (++i == num_images)
+      break;
   }
 
   // Stitching
@@ -69,10 +71,12 @@ int main(int argc, char** argv) {
   auto stitcher = cv::Stitcher::createDefault();
   auto status = stitcher.stitch(images, result);
 
-  if (status != cv::Stitcher::OK) {
+  if (status != cv::Stitcher::OK || result.empty()) {
     ROS_WARN("Can't stitch images, error code = %d", (int)status);
     return -1;
   }
-  cv::imshow("result", result);
-  cv::waitKey(-1);
+  cv::Mat result_scaled;
+  cv::resize(result, result_scaled, cv::Size(0, 0), 0.5, 0.5);
+  cv::imwrite(image_dir + "/result/result.png", result_scaled);
+  ROS_INFO("Done");
 }

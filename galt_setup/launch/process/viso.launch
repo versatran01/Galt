@@ -1,6 +1,6 @@
 <launch>
   <!-- Arguments -->
-  <arg name="test" default="true"/>
+  <arg name="test" default="false"/>
   <arg name="output" default="screen"/>
   <arg name="bagfile" default="/home/chao/Workspace/bag/mrsl_new.bag"/>
   <arg name="view" default="false"/>
@@ -15,7 +15,7 @@
   <!-- rosbag -->
 
   <!-- transform -->
-  <include file="$(find galt_setup)/profiles/steadicam/v4/tf.launch">
+  <include file="$(find galt_setup)/profiles/steadicam/v5/tf.launch">
     <arg name="vicon" value="true"/>
   </include>
 
@@ -42,7 +42,7 @@
   <include file="$(find viso2_ros)/launch/stereo_odom.launch">
     <arg name="max_features" value="2"/>
     <arg name="publish_tf" value="true"/>
-    <arg name="visualize_matches" value="true"/>
+    <arg name="visualize_matches" value="false"/>
   </include>
 
   <!-- img2pcl -->

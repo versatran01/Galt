@@ -10,8 +10,8 @@
 -->
 <launch>
   <!-- Profile -->
-  <arg name="platform" default="aerial"/>
-  <arg name="version" default="v2"/>
+  <arg name="platform" default="steadicam"/>
+  <arg name="version" default="v5"/>
   <arg name="profile" default="$(arg platform)/$(arg version)"/>
   <arg name="profile_path" default="$(find galt_setup)/profiles/$(arg profile)"/>
   <arg name="vicon" default="false"/>
@@ -25,7 +25,8 @@
   <arg name="bag" default=""/>
   <arg name="bag_start" default="0"/>
   <arg name="bag_rate" default="1"/>
-  <arg name="bag_path" default="/media/chao/Seagate/bag/booth/aerial/galt_aerial_v2_row_1617_1718_2015-02-17-18-39-43.bag"/>
+  <arg name="bag_path"
+    default="/media/chao/Seagate/north_counts/r26n_steadicam_v5_2015-02-19-12-13-27_counts.bag"/>
   <!--<arg name="bag_path" default="/media/chao/Seagate/bag/booth/ground/r1s_steadicam_v5_2015-02-18-11-56-32.bag"/>-->
 
   <include file="$(find galt_setup)/launch/process/play_bag.launch">
@@ -44,6 +45,11 @@
     <arg name="vicon"        value="$(arg vicon)"/>
     <arg name="mag_calib"    value="$(arg mag_calib)"/>
     <arg name="use_laser"    value="$(arg use_laser)"/>
+  </include>
+
+  <include file="$(find yield_map)/launch/yield_map.launch">
+    <arg name="min_z" value="-10.0"/>
+    <arg name="leaf_size" value="0.05"/>
   </include>
 
 </launch>

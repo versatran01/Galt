@@ -1,0 +1,9 @@
+<launch>
+    <arg name="leaf_size" default="0.05"/>
+    <arg name="min_z" default="-1.0"/>
+	<node pkg="yield_map" type="yield_map_node" name="yiled_map" output="screen">
+		<remap from="~illuminance" to="/counts"/>
+		<remap from="~cloud2" to="/laser/cloud_filtered"/>
+        <param name="min_z" type="double" value="$(arg min_z)"/>
+	</node>
+</launch>

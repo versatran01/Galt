@@ -18,10 +18,10 @@
   <arg name="color" default="color"/>
 
   <!--base_link_imu-->
-  <node pkg="tf2_ros" type="static_transform_publisher"
-    name="base_link_imu_broadcaster" ns="$(arg static_broadcaster)"
-    args="0 0 0 0 0 0 1 $(arg base_link) $(arg imu)">
-  </node>
+  <!--<node pkg="tf2_ros" type="static_transform_publisher"-->
+    <!--name="base_link_imu_broadcaster" ns="$(arg static_broadcaster)"-->
+    <!--args="0 0 0 0 0 0 1 $(arg base_link) $(arg imu)">-->
+  <!--</node>-->
 
   <!--imu_stereo_left-->
   <node pkg="tf2_ros" type="static_transform_publisher"

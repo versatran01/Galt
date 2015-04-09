@@ -15,22 +15,24 @@
   <arg name="profile" default="$(arg platform)/$(arg version)"/>
   <arg name="profile_path" default="$(find galt_setup)/profiles/$(arg profile)"/>
   <arg name="vicon" default="false"/>
+  <arg name="use_laser" default="$(optenv GALT_USE_LASER false)"/>
 
   <!-- Magnetometer calibration to load -->
-  <arg name="mag_calib" default="biglerville_oct_aerial"/>
+  <arg name="mag_calib" default="booth_feb_ground"/>
 
   <!-- Bag -->
   <arg name="bag_home" default="$(optenv GALT_BAGFILES /home)"/>
   <arg name="bag" default=""/>
   <arg name="bag_start" default="0"/>
   <arg name="bag_rate" default="1"/>
-  <arg name="bag_path" default="/media/chao/Seagate/data/biglerville/galt_aerial_v2_2015-02-07-14-59-17.bag"/>
+  <arg name="bag_path" default="/media/chao/Seagate/bag/booth/aerial/galt_aerial_v2_row_1617_1718_2015-02-17-18-39-43.bag"/>
+  <!--<arg name="bag_path" default="/media/chao/Seagate/bag/booth/ground/r1s_steadicam_v5_2015-02-18-11-56-32.bag"/>-->
 
   <include file="$(find galt_setup)/launch/process/play_bag.launch">
     <arg name="bag_home" value="$(arg bag_home)"/>
     <arg name="bag_start" value="$(arg bag_start)"/>
-    <arg name="bag_rate" default="$(arg bag_rate)"/>
-    <arg name="bag_path" default="$(arg bag_path)"/>
+    <arg name="bag_rate" value="$(arg bag_rate)"/>
+    <arg name="bag_path" value="$(arg bag_path)"/>
   </include>
 
   <!-- process_gps_imu -->
@@ -41,5 +43,7 @@
     <arg name="profile_path" value="$(arg profile_path)"/>
     <arg name="vicon"        value="$(arg vicon)"/>
     <arg name="mag_calib"    value="$(arg mag_calib)"/>
+    <arg name="use_laser"    value="$(arg use_laser)"/>
   </include>
+
 </launch>

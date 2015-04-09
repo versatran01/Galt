@@ -4,7 +4,7 @@
   <include file="$(find galt_setup)/launch/drivers/imu.launch"/>
 
   <!-- record -->
-  <include file="$(find galt_setup)/launch/record_estimation.launch">
+  <include file="$(find galt_setup)/launch/deploy/record_estimation.launch">
     <arg name="name" value="imu_calib"/>
   </include>
 </launch>

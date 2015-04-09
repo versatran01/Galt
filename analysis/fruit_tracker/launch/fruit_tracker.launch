@@ -1,8 +1,0 @@
-<launch>
-  <arg name="camera"/>
-  <node pkg="fruit_tracker" type="fruit_tracker"
-    name="fruit_tracker" output="screen">
-    <remap from="~image" to="$(arg camera)/image_raw"/>
-    <remap from="~camera_info" to="$(arg camera)/camera_info"/>
-  </node>
-</launch>

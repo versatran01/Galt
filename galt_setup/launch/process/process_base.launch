@@ -15,19 +15,10 @@
   <arg name="profile" default="$(arg platform)/$(arg version)"/>
   <arg name="profile_path" default="$(find galt_setup)/profiles/$(arg profile)"/>
   <arg name="vicon" default="false"/>
-  <arg name="use_laser" default="$(optenv GALT_USE_LASER true)"/>
 
   <!-- Frame broadcaster -->
   <include file="$(arg profile_path)/tf.launch">
     <arg name="vicon" value="$(arg vicon)"/>
-  </include>
-
-  <!-- Laser pipeline -->
-  <include if="$(arg use_laser)"
-    file="$(find galt_setup)/launch/process/laser/laser_pipeline.launch">
-    <arg name="plugin" value="$(arg profile_path)/laser_filter.yml"/>
-    <arg name="scan_filter" value="true"/>
-    <arg name="cloud_filter" value="true"/>
   </include>
 
   <!-- IMU covariance -->

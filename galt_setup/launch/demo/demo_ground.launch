@@ -1,0 +1,29 @@
+<launch>
+	<arg name="platform" default="steadicam"/>
+	<arg name="version" default="v5"/>
+
+	<arg name="mag_calib" default="booth_feb_ground"/>
+	<arg name="use_laser" default="true"/>
+
+	<arg name="bag_home" default="$(optenv GALT_BAGFILES /home)"/>
+	<arg name="bag" default=""/>
+	<arg name="bag_start" default="0"/>
+	<arg name="bag_rate" default="1"/>
+	<arg name="bag_path" default="/media/gareth/External1/bagfiles/booth/r1s_steadicam_v5_2015-02-18-11-56-32.bag"/>
+
+	<include file="$(find galt_setup)/launch/process/process_gps_imu_bag.launch">
+		<arg name="platform" value="$(arg platform)"/>
+		<arg name="version" value="$(arg version)"/>
+
+		<!-- Magnetometer calibration to load -->
+		<arg name="mag_calib" value="$(arg mag_calib)"/>
+
+		<!-- Bag -->
+		<arg name="bag_path" value="$(arg bag_path)"/>
+		<arg name="use_laser" value="$(arg use_laser)"/>
+	</include>
+
+	<include file="$(find img2pcl)/launch/node.launch">
+		<arg name="camera" value="color"/>
+	</include>
+</launch>

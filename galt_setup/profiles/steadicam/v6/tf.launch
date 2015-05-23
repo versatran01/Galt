@@ -16,6 +16,7 @@
   <arg name="laser" default="laser"/>
   <arg name="stereo" default="stereo"/>
   <arg name="color" default="color"/>
+  <arg name="front" default="front"/>
 
   <!-- imu is base_link -->
   <node pkg="tf2_ros" type="static_transform_publisher"
@@ -26,18 +27,24 @@
   <!--imu_stereo_left-->
   <node pkg="tf2_ros" type="static_transform_publisher"
     name="imu_stereo_broadcaster" ns="$(arg static_broadcaster)"
-    args="-0.04695 0.0 0.016 0 0 0 1 $(arg imu) $(arg stereo)">
+    args="0.0639436 0.012139 0.03929812 0.0149264 0.0196666 0.00243623 0.9996922 $(arg imu) $(arg stereo)">
   </node>
 
-  <!--stereo_left_color-->
+  <!--imu_color-->
   <node pkg="tf2_ros" type="static_transform_publisher"
-    name="stereo_color_broadcaster" ns="$(arg static_broadcaster)"
-    args="0 0.05604 0.0 0 0 -0.7071 0.7071 $(arg stereo) $(arg color)">
+    name="imu_color_broadcaster" ns="$(arg static_broadcaster)"
+    args="0.06739 -0.05143 0.08377 -0.014797 0.0034369 -0.7164649 0.697458 $(arg imu) $(arg color)">
   </node>
 
   <!--imu_laser-->
   <node pkg="tf2_ros" type="static_transform_publisher"
     name="imu_laser_broadcaster" ns="$(arg static_broadcaster)"
-    args="0.06304 0.05604 0.03277 0.707107 0 0.707107 0 $(arg imu) $(arg laser)">
+    args="-0.042 -0.05604 0.03277 0.0 -0.707107 0.0 0.707107 $(arg imu) $(arg laser)">
+  </node>
+
+  <!--imu_front-->
+  <node pkg="tf2_ros" type="static_transform_publisher"
+    name="imu_front_broadcaster" ns="$(arg static_broadcaster)"
+    args="0.150 -0.0145 0.0438 0.715651 -0.031547 0.697746 -0.000431 $(arg imu) $(arg front)">
   </node>
 </launch>

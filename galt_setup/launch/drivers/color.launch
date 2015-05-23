@@ -15,15 +15,18 @@
   <arg name="device" value="$(env GALT_COLOR_SERIAL)"/>
   <arg name="rate" value="$(env GALT_COLOR_RATE)"/>
 
-  <include file="$(find bluefox2)/launch/single_node.launch">
+  <include file="$(find flea3)/launch/single_node.launch">
     <arg name="device" value="$(arg device)"/>
     <arg name="rate" value="$(arg rate)"/>
     <arg name="camera" value="$(env GALT_COLOR_FRAME)"/>
     <arg name="calib_url" value="$(env GALT_CAMERA_CALIB_DIR)/mv_$(arg device).yaml"/>
-    <arg name="expose_us" value="10000"/>
-    <arg name="aec" value="1"/>
-    <arg name="ctm" value="0"/>
-    <arg name="wbp" value="3"/>
-    <arg name="color" value="true"/>
+    <arg name="fps" default="$(arg rate)"/>
+
+    <arg name="video_mode" default="16"/>
+    <arg name="auto_exposure" default="true"/>
+    <arg name="auto_shutter" default="true"/>
+    <arg name="auto_gain" default="true"/>
+    <arg name="auto_white_balance" default="true"/>
+
   </include>
 </launch>

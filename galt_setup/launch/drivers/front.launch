@@ -1,0 +1,19 @@
+
+<launch>
+  <!--Camera Settings-->
+  <arg name="device" value="$(env GALT_FRONT_SERIAL)"/>
+  <arg name="rate" value="$(env GALT_FRONT_RATE)"/>
+
+  <include file="$(find bluefox2)/launch/single_node.launch">
+    <arg name="device" value="$(arg device)"/>
+    <arg name="rate" value="$(arg rate)"/>
+    <arg name="camera" value="$(env GALT_FRONT_FRAME)"/>
+    <arg name="calib_url" value="$(env GALT_CAMERA_CALIB_DIR)/mv_$(arg device).yaml"/>
+    <arg name="fps" default="$(arg rate)"/>
+
+    <arg name="aec" default="1"/>
+    <arg name="expose_us" default="10000"/>
+    <arg name="hdr" default="true"/>
+    <arg name="ctm" default="1"/>
+  </include>
+</launch>

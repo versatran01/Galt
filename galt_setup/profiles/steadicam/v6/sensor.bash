@@ -1,19 +1,24 @@
 # This file will set the following environmental variable to be read by launch files.
 
 export GALT_PLATFORM_NAME=steadicam
-export GALT_PLATFORM_VER=v5
+export GALT_PLATFORM_VER=v6
 
 export GALT_CAMERA_CALIB_DIR=package://galt_setup/profiles/${GALT_PLATFORM_NAME}/${GALT_PLATFORM_VER}/calib/camera
 
+#Front camera
+export GALT_FRONT_SERIAL=25001206
+export GALT_FRONT_RATE=25
+export GALT_FRONT_FRAME=front
+
 #Color camera
-export GALT_COLOR_SERIAL=29900189
-export GALT_COLOR_RATE=10
+export GALT_COLOR_SERIAL=13344889
+export GALT_COLOR_RATE=15
 export GALT_COLOR_FRAME=color
 
 #Stereo camera
 export GALT_STEREO_LEFT=25000855
 export GALT_STEREO_RIGHT=25001110
-export GALT_STEREO_RATE=20
+export GALT_STEREO_RATE=25
 export GALT_STEREO_FRAME=stereo
 
 #Laser

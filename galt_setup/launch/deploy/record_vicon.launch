@@ -3,22 +3,15 @@
   <arg name="platform" default="$(optenv GALT_PLATFORM_NAME)_$(optenv GALT_PLATFORM_VER)"/>
   <arg name="tag" default="$(arg name)_$(arg platform)"/>
   <node pkg="rosbag" type="record" name="recorder" output="screen" args="-o $(arg tag)
-    /$(env GALT_COLOR_FRAME)/camera_info
-    /$(env GALT_COLOR_FRAME)/image_raw
     /$(env GALT_FRONT_FRAME)/camera_info
     /$(env GALT_FRONT_FRAME)/image_raw
     /$(env GALT_STEREO_FRAME)/left/image_raw
     /$(env GALT_STEREO_FRAME)/left/camera_info
     /$(env GALT_STEREO_FRAME)/right/image_raw
     /$(env GALT_STEREO_FRAME)/right/camera_info
-    /$(env GALT_LASER_FRAME)/scan
     /$(env GALT_IMU_FRAME)/imu
     /$(env GALT_IMU_FRAME)/magnetic_field
     /$(env GALT_IMU_FRAME)/pressure
-    /$(env GALT_GPS_FRAME)/fix
-    /$(env GALT_GPS_FRAME)/fix_velocity
-    /$(env GALT_GPS_FRAME)/navposllh
-    /$(env GALT_GPS_FRAME)/navstatus
-    /$(env GALT_GPS_FRAME)/navvelned
+    /vicon/antares/odom
     "/>
 </launch>

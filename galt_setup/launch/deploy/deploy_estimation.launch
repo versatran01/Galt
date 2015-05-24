@@ -30,6 +30,7 @@
   <!-- camera -->
   <include file="$(find galt_setup)/launch/drivers/stereo.launch"/>
   <include file="$(find galt_setup)/launch/drivers/color.launch"/>
+  <include file="$(find galt_setup)/launch/drivers/front.launch"/>
 
   <!--<include file="$(find galt_setup)/launch/process/process_gps_imu.launch">-->
     <!--<arg name="platform" value="$(env GALT_PLATFORM_NAME)"/>-->

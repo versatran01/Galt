@@ -24,13 +24,13 @@
   <include file="$(find galt_setup)/launch/drivers/imu.launch"/>
 
   <!-- laser -->
-  <include if="$(arg laser)"
-    file="$(find galt_setup)/launch/drivers/laser.launch"/>
+  <!--<include if="$(arg laser)"-->
+    <!--file="$(find galt_setup)/launch/drivers/laser.launch"/>-->
 
   <!-- camera -->
   <include file="$(find galt_setup)/launch/drivers/stereo.launch"/>
-  <include file="$(find galt_setup)/launch/drivers/color.launch"/>
-  <include file="$(find galt_setup)/launch/drivers/front.launch"/>
+  <!--<include file="$(find galt_setup)/launch/drivers/color.launch"/>-->
+  <!--<include file="$(find galt_setup)/launch/drivers/mono.launch"/>-->
 
   <!--<include file="$(find galt_setup)/launch/process/process_gps_imu.launch">-->
     <!--<arg name="platform" value="$(env GALT_PLATFORM_NAME)"/>-->
@@ -38,6 +38,6 @@
   <!--</include>-->
 
   <!-- optional: vicon -->
-  <include if="$(arg vicon)"
-    file="$(find galt_setup)/launch/deploy/vicon.launch"/>
+  <!--<include if="$(arg vicon)"-->
+    <!--file="$(find galt_setup)/launch/deploy/vicon.launch"/>-->
 </launch>

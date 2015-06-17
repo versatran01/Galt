@@ -1,0 +1,7 @@
+<launch>
+  <env name="ROS_MASTER_URI" value="http://192.168.100.104:11311"/>
+  <env name="ROS_IP" value="192.168.100.217"/>
+  <node pkg="rqt_reconfigure" name="reconfigurer" type="rqt_reconfigure"/>
+  <node pkg="rqt_image_view" name="viewer" type="rqt_image_view"/>
+  <node pkg="rqt_runtime_monitor" name="monitor" type="rqt_runtime_monitor"/>
+</launch>

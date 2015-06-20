@@ -5,10 +5,10 @@ export GALT_PLATFORM_VER=v6
 
 export GALT_CAMERA_CALIB_DIR=package://galt_setup/profiles/${GALT_PLATFORM_NAME}/${GALT_PLATFORM_VER}/calib/camera
 
-#Front camera
-export GALT_FRONT_SERIAL=25001206
-export GALT_FRONT_RATE=25
-export GALT_FRONT_FRAME=front
+#Mono camera
+export GALT_MONO_SERIAL=25001206
+export GALT_MONO_RATE=25
+export GALT_MONO_FRAME=mono
 
 #Color camera
 export GALT_COLOR_SERIAL=13344889

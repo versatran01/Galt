@@ -1,9 +1,9 @@
 <!--
   Name: color.launch
   Triggers:
-    * bluefox2 (1x)
+    * flea3 (1x)
 
-  Brief: Launch one Matrix-Vision bluefox2 MLC usb camera.
+  Brief: Launch one Point-Grey flea3 usb3 camera.
 
   Topics you should record:
     * /color/camera_info

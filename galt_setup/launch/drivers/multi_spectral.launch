@@ -25,6 +25,28 @@
   <arg name="aec" default="0"/>
   <arg name="jpeg_quality" default="50"/>
 
+  <!--<include file="$(find bluefox2)/launch/single_node.launch">-->
+    <!--<arg name="device" value="$(env GALT_SPECTRAL_530_SERIAL)"/>-->
+    <!--<arg name="rate" value="$(env GALT_SPECTRAL_RATE)"/>-->
+    <!--<arg name="camera" value="$(env GALT_SPECTRAL_530_FRAME)"/>-->
+    <!--<arg name="calib_url" value="$(env GALT_CAMERA_CALIB_DIR)/mv_$(env GALT_SPECTRAL_530_SERIAL).yaml"/>-->
+    <!--<arg name="aec" value="$(arg aec)"/>-->
+    <!--<arg name="ctm" value="$(arg ctm)"/>-->
+    <!--<arg name="expose_us" value="1400"/>-->
+    <!--<arg name="jpeg_quality" value="$(arg jpeg_quality)"/>-->
+  <!--</include>-->
+
+  <!--<include file="$(find bluefox2)/launch/single_node.launch">-->
+    <!--<arg name="device" value="$(env GALT_SPECTRAL_570_SERIAL)"/>-->
+    <!--<arg name="rate" value="$(env GALT_SPECTRAL_RATE)"/>-->
+    <!--<arg name="camera" value="$(env GALT_SPECTRAL_570_FRAME)"/>-->
+    <!--<arg name="calib_url" value="$(env GALT_CAMERA_CALIB_DIR)/mv_$(env GALT_SPECTRAL_570_SERIAL).yaml"/>-->
+    <!--<arg name="aec" value="$(arg aec)"/>-->
+    <!--<arg name="ctm" value="$(arg ctm)"/>-->
+    <!--<arg name="expose_us" value="1100"/>-->
+    <!--<arg name="jpeg_quality" value="$(arg jpeg_quality)"/>-->
+  <!--</include>-->
+
   <include file="$(find bluefox2)/launch/single_node.launch">
     <arg name="device" value="$(env GALT_SPECTRAL_670_SERIAL)"/>
     <arg name="rate" value="$(env GALT_SPECTRAL_RATE)"/>
@@ -32,6 +54,7 @@
     <arg name="calib_url" value="$(env GALT_CAMERA_CALIB_DIR)/mv_$(env GALT_SPECTRAL_670_SERIAL).yaml"/>
     <arg name="aec" value="$(arg aec)"/>
     <arg name="ctm" value="$(arg ctm)"/>
+    <arg name="expose_us" value="2900"/>
     <arg name="jpeg_quality" value="$(arg jpeg_quality)"/>
   </include>
 
@@ -42,38 +65,20 @@
     <arg name="calib_url" value="$(env GALT_CAMERA_CALIB_DIR)/mv_$(env GALT_SPECTRAL_690_SERIAL).yaml"/>
     <arg name="aec" value="$(arg aec)"/>
     <arg name="ctm" value="$(arg ctm)"/>
+    <arg name="expose_us" value="3000"/>
     <arg name="jpeg_quality" value="$(arg jpeg_quality)"/>
   </include>
 
-  <include file="$(find bluefox2)/launch/single_node.launch">
-    <arg name="device" value="$(env GALT_SPECTRAL_530_SERIAL)"/>
-    <arg name="rate" value="$(env GALT_SPECTRAL_RATE)"/>
-    <arg name="camera" value="$(env GALT_SPECTRAL_530_FRAME)"/>
-    <arg name="calib_url" value="$(env GALT_CAMERA_CALIB_DIR)/mv_$(env GALT_SPECTRAL_530_SERIAL).yaml"/>
-    <arg name="aec" value="$(arg aec)"/>
-    <arg name="ctm" value="$(arg ctm)"/>
-    <arg name="jpeg_quality" value="$(arg jpeg_quality)"/>
-  </include>
-
-  <include file="$(find bluefox2)/launch/single_node.launch">
-    <arg name="device" value="$(env GALT_SPECTRAL_570_SERIAL)"/>
-    <arg name="rate" value="$(env GALT_SPECTRAL_RATE)"/>
-    <arg name="camera" value="$(env GALT_SPECTRAL_570_FRAME)"/>
-    <arg name="calib_url" value="$(env GALT_CAMERA_CALIB_DIR)/mv_$(env GALT_SPECTRAL_570_SERIAL).yaml"/>
-    <arg name="aec" value="$(arg aec)"/>
-    <arg name="ctm" value="$(arg ctm)"/>
-    <arg name="jpeg_quality" value="$(arg jpeg_quality)"/>
-  </include>
-
-  <include file="$(find bluefox2)/launch/single_node.launch">
-    <arg name="device" value="$(env GALT_SPECTRAL_700_SERIAL)"/>
-    <arg name="rate" value="$(env GALT_SPECTRAL_RATE)"/>
-    <arg name="camera" value="$(env GALT_SPECTRAL_700_FRAME)"/>
-    <arg name="calib_url" value="$(env GALT_CAMERA_CALIB_DIR)/mv_$(env GALT_SPECTRAL_700_SERIAL).yaml"/>
-    <arg name="aec" value="$(arg aec)"/>
-    <arg name="ctm" value="$(arg ctm)"/>
-    <arg name="jpeg_quality" value="$(arg jpeg_quality)"/>
-  </include>
+  <!--<include file="$(find bluefox2)/launch/single_node.launch">-->
+    <!--<arg name="device" value="$(env GALT_SPECTRAL_700_SERIAL)"/>-->
+    <!--<arg name="rate" value="$(env GALT_SPECTRAL_RATE)"/>-->
+    <!--<arg name="camera" value="$(env GALT_SPECTRAL_700_FRAME)"/>-->
+    <!--<arg name="calib_url" value="$(env GALT_CAMERA_CALIB_DIR)/mv_$(env GALT_SPECTRAL_700_SERIAL).yaml"/>-->
+    <!--<arg name="aec" value="$(arg aec)"/>-->
+    <!--<arg name="ctm" value="$(arg ctm)"/>-->
+    <!--<arg name="expose_us" value="1800"/>-->
+    <!--<arg name="jpeg_quality" value="$(arg jpeg_quality)"/>-->
+  <!--</include>-->
 
   <include file="$(find bluefox2)/launch/single_node.launch">
     <arg name="device" value="$(env GALT_SPECTRAL_800_SERIAL)"/>
@@ -82,6 +87,7 @@
     <arg name="calib_url" value="$(env GALT_CAMERA_CALIB_DIR)/mv_$(env GALT_SPECTRAL_800_SERIAL).yaml"/>
     <arg name="aec" value="$(arg aec)"/>
     <arg name="ctm" value="$(arg ctm)"/>
+    <arg name="expose_us" value="1000"/>
     <arg name="jpeg_quality" value="$(arg jpeg_quality)"/>
   </include>
 </launch>

@@ -5,6 +5,8 @@
   <node pkg="rosbag" type="record" name="recorder" output="screen" args="-o $(arg tag)
     /$(env GALT_COLOR_FRAME)/camera_info
     /$(env GALT_COLOR_FRAME)/image_raw
+    /$(env GALT_FRONT_FRAME)/camera_info
+    /$(env GALT_FRONT_FRAME)/image_raw
     /$(env GALT_STEREO_FRAME)/left/image_raw
     /$(env GALT_STEREO_FRAME)/left/camera_info
     /$(env GALT_STEREO_FRAME)/right/image_raw

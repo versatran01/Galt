@@ -6,7 +6,6 @@
 #include <laser_assembler/AssembleScans2.h>
 #include <std_srvs/Empty.h>
 #include <ndvi_preview/SaveToPcd.h>
-#include <ndvi_preview/LoadFromPcd.h>
 
 namespace ndvi_preview {
 

@@ -113,8 +113,7 @@ bool NdviCloudNode::SavePcdToDir(const sensor_msgs::PointCloud2 &cloud_ros,
     ROS_INFO_STREAM("Saving cloud to " << full_filename);
     pcl::io::savePCDFile(full_filename, cloud_pcl_w);
     ROS_INFO_STREAM("Cloud saved to" << full_filename);
-  }
-  catch (const std::exception &e) {
+  } catch (const std::exception &e) {
     ROS_ERROR("%s: %s", nh_.getNamespace().c_str(), e.what());
     return false;
   }

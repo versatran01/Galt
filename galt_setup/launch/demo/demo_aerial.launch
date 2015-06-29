@@ -1,0 +1,30 @@
+<launch>
+	<arg name="platform" default="aerial"/>
+	<arg name="version" default="v2"/>
+
+	<!-- Magnetometer calibration to load -->
+	<arg name="mag_calib" default="booth_feb_aerial"/>
+	<arg name="use_laser" default="false"/>
+
+	<!-- Bag -->
+	<arg name="bag_home" default="$(optenv GALT_BAGFILES /home)"/>
+	<arg name="bag" default=""/>
+	<arg name="bag_start" default="0"/>
+	<arg name="bag_rate" default="1"/>
+	<arg name="bag_path" default="/media/gareth/External1/bagfiles/booth/galt_aerial_v2_row_1617_1718_2015-02-17-18-39-43.bag"/>
+
+	<include file="$(find galt_setup)/launch/process/process_gps_imu_bag.launch">
+		<arg name="platform" value="$(arg platform)"/>
+		<arg name="version" value="$(arg version)"/>
+
+		<!-- Magnetometer calibration to load -->
+		<arg name="mag_calib" value="$(arg mag_calib)"/>
+
+		<!-- Bag -->
+		<arg name="bag_path" value="$(arg bag_path)"/>
+		<arg name="use_laser" value="$(arg use_laser)"/>
+	</include>
+
+	<include file="$(find ndvi_preview)/launch/preview_node.launch">
+	</include>
+</launch>

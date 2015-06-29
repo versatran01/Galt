@@ -19,7 +19,7 @@
   <!-- Size of selection region (pixels) -->
   <arg name="selection_size" default="40"/>
   <!-- Kp -->
-  <arg name="kp" default="6000"/>
+  <arg name="kp" default="3000"/>
   <!-- # of frames to skip between adjustments -->
   <arg name="skip_frames" default="3"/>
   <!-- image_transport plugin -->

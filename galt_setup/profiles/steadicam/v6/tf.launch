@@ -1,0 +1,60 @@
+<!-- These transformations are acquired by kalibr and verified by cad drawings -->
+<!-- static_transform_publisher x y z qx qy qz qw frame_id child_frame_id -->
+<!-- the vecotr (x,y,z) is a vector pointing from frame_id to child_frame_id expressed in framed_id -->
+<!-- the quaternion (qw,qx,qy,qz) is the rotation of child_frame_id in frame_id -->
+<!-- vicon transforms -->
+<!-- If use with vicon, a related node should publish a transform from vicon to base_link -->
+<!-- A typical tf tree with vicon: vicon(map) -> base_link -> imu -> laser -->
+<!-- A typical tf tree with gpskf: world(map) -> base_link -> imu -> laser -->
+
+<launch>
+  <!-- namespace for all static broadcaster -->
+  <arg name="vicon" default="false"/>
+  <arg name="static_broadcaster" default="static_broadcaster"/>
+  <arg name="base_link" default="base_link"/>
+  <arg name="imu" default="imu"/>
+  <arg name="laser" default="laser"/>
+  <arg name="stereo" default="stereo"/>
+  <arg name="color" default="color"/>
+  <arg name="front" default="front"/>
+
+  <!-- imu is base_link -->
+  <node pkg="tf2_ros" type="static_transform_publisher"
+    name="base_link_imu_broadcaster" ns="$(arg static_broadcaster)"
+    args="0.06237 -0.015828 0.0278911
+    0.5 0.5 0.5 0.5
+    $(arg base_link) $(arg imu)">
+  </node>
+
+  <!--imu_stereo_left-->
+  <node pkg="tf2_ros" type="static_transform_publisher"
+    name="imu_stereo_broadcaster" ns="$(arg static_broadcaster)"
+    args="0.0639436 0.012139 0.03929812
+    0.0196666 0.00243623 0.9996922 0.0149264
+    $(arg imu) $(arg stereo)">
+  </node>
+
+  <!--imu_color-->
+  <node pkg="tf2_ros" type="static_transform_publisher"
+    name="imu_color_broadcaster" ns="$(arg static_broadcaster)"
+    args="0.06739 -0.05143 0.08377
+    -0.014797 0.0034369 -0.7164649 0.697458
+    $(arg imu) $(arg color)">
+  </node>
+
+  <!--imu_laser-->
+  <node pkg="tf2_ros" type="static_transform_publisher"
+    name="imu_laser_broadcaster" ns="$(arg static_broadcaster)"
+    args="-0.042 -0.05604 0.03277
+    0.0 -0.707107 0.0 0.707107
+    $(arg imu) $(arg laser)">
+  </node>
+
+  <!--imu_front-->
+  <node pkg="tf2_ros" type="static_transform_publisher"
+    name="imu_front_broadcaster" ns="$(arg static_broadcaster)"
+    args="0.150 -0.0145 0.0438
+    0.715651 -0.031547 0.697746 -0.000431
+    $(arg imu) $(arg front)">
+  </node>
+</launch>

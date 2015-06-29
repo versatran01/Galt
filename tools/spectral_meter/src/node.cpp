@@ -151,6 +151,12 @@ void Node::updateExposure(double measured_mean) {
   const double err = config_.target_reflectance - measured_mean;
   // Clamp inc to some reasonable number to prevent overshoot
   int inc = config_.kp * err;
+  int max_inc = 100;
+  if (inc > max_inc) {
+    inc = max_inc;
+  } else if (inc < -max_inc) {
+    inc = -max_inc;
+  }
   // ROS_INFO("Increment: %i", inc);
   if (std::abs(inc) < 100) {
     //  stop adjusting

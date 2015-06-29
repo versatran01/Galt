@@ -16,6 +16,7 @@
   <arg name="profile" default="$(arg platform)/$(arg version)"/>
   <arg name="profile_path" default="$(find galt_setup)/profiles/$(arg profile)"/>
   <arg name="vicon" default="false"/>
+  <arg name="use_laser" default="$(optenv GALT_USE_LASER true)"/>
 
   <!-- Magnetometer calibration to load -->
   <arg name="mag_calib" default="biglerville_oct_aerial"/>
@@ -29,11 +30,17 @@
     <arg name="vicon"        value="$(arg vicon)"/>
   </include>
 
-  <!-- Altimeter -->
-  <include file="$(find galt_setup)/launch/process/filter/laser_altimeter.launch">
-    <arg name="imu" value="/imu/filtered_imu"/>
+  <!-- Laser pipeline -->
+  <!--<include if="$(arg use_laser)"-->
+  <include
+    file="$(find galt_setup)/launch/process/laser/laser_pipeline.launch">
+    <arg name="plugin" value="$(arg profile_path)/laser_filter.yml"/>
+    <arg name="scan_filter" value="true"/>
+    <arg name="cloud_filter" value="true"/>
+    <arg name="target_frame" value="world"/>
   </include>
 
+  <!-- Altimeter -->
   <include file="$(find galt_setup)/launch/process/filter/pressure_altimeter.launch">
     <arg name="pressure" value="/imu/pressure_cov"/>
   </include>

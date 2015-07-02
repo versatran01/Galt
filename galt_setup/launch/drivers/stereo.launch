@@ -28,7 +28,7 @@
     <arg name="right_calib_url" default="$(env GALT_CAMERA_CALIB_DIR)/mv_$(arg right).yaml"/>
     <arg name="expose_us" default="7500"/>
     <arg name="aec" default="1"/>
-    <arg name="hdr" default="true"/>
+    <arg name="hdr" default="false"/>
     <arg name="ctm" default="1"/>
   </include>
 </launch>

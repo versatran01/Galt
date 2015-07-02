@@ -28,7 +28,7 @@ export GALT_LASER_FRAME=laser
 
 #IMU
 export GALT_IMU_SERIAL=usb-Lord_Microstrain_Lord_Inertial_Sensor_0000__6234.21073-if00
-export GALT_IMU_RATE=250
+export GALT_IMU_RATE=500
 export GALT_IMU_FRAME=imu
 
 #GPS

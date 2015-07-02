@@ -27,11 +27,19 @@
   </node>
 
   <!--imu_stereo_left-->
+  <!--invert this to work with viso2-->
+  <!--<node pkg="tf2_ros" type="static_transform_publisher"-->
+    <!--name="imu_stereo_broadcaster" ns="$(arg static_broadcaster)"-->
+    <!--args="0.0639436 0.012139 0.03929812-->
+    <!--0.0196666 0.00243623 0.9996922 0.0149264-->
+    <!--$(arg imu) $(arg stereo)">-->
+  <!--</node>-->
+
   <node pkg="tf2_ros" type="static_transform_publisher"
-    name="imu_stereo_broadcaster" ns="$(arg static_broadcaster)"
-    args="0.0639436 0.012139 0.03929812
-    0.0196666 0.00243623 0.9996922 0.0149264
-    $(arg imu) $(arg stereo)">
+    name="stereo_imu_broadcaster" ns="$(arg static_broadcaster)"
+    args="0.06191271 0.01200319 -0.04238516
+    0.0196666 0.00243623 0.9996922 -0.0149264
+    $(arg stereo) $(arg imu)">
   </node>
 
   <!--imu_color-->

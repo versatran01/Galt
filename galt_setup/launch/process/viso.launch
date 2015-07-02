@@ -7,15 +7,13 @@
   <arg name="stereo" default="stereo"/>
   <!-- platform -->
   <arg name="platform" default="steadicam"/>
-  <arg name="version" default="v4"/>
+  <arg name="version" default="v6"/>
   <arg name="profile" default="profiles/$(arg platform)/$(arg version)"/>
 
   <param if="$(arg test)" name="/use_sim_time" value="true"/>
 
-  <!-- rosbag -->
-
   <!-- transform -->
-  <include file="$(find galt_setup)/profiles/steadicam/v5/tf.launch">
+  <include file="$(find galt_setup)/$(arg profile)/tf.launch">
     <arg name="vicon" value="true"/>
   </include>
 
@@ -39,10 +37,8 @@
   </node>
 
   <!-- viso2_ros -->
-  <include file="$(find viso2_ros)/launch/stereo_odom.launch">
-    <arg name="max_features" value="2"/>
-    <arg name="publish_tf" value="true"/>
-    <arg name="visualize_matches" value="false"/>
+  <include file="$(find viso2_ros)/launch/viso2_stereo.launch">
+    <arg name="vis_matches" value="true"/>
   </include>
 
   <!-- img2pcl -->

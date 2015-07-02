@@ -24,8 +24,7 @@
   <include file="$(find galt_setup)/launch/drivers/imu.launch"/>
 
   <!-- laser -->
-  <!--<include if="$(arg laser)"-->
-    <!--file="$(find galt_setup)/launch/drivers/laser.launch"/>-->
+  <!--<include if="$(arg laser)" file="$(find galt_setup)/launch/drivers/laser.launch"/>-->
 
   <!-- camera -->
   <include file="$(find galt_setup)/launch/drivers/stereo.launch"/>

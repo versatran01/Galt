@@ -1,4 +1,3 @@
-
 <launch>
   <!--Camera Settings-->
   <arg name="device" value="$(env GALT_MONO_SERIAL)"/>

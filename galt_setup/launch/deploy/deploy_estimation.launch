@@ -5,7 +5,7 @@
     * gps
     * imu
     * stereo
-    * color
+    * mono
     * laser (optional)
 
   Brief: Launch the base configuration of IRIS. This includes all devices
@@ -13,8 +13,6 @@
 -->
 
 <launch>
-  <arg name="vicon" default="false"/>
-  <arg name="ekf" default="true"/>
   <arg name="laser" default="$(optenv GALT_USE_LASER true)"/>
 
   <!-- gps -->
@@ -24,19 +22,9 @@
   <include file="$(find galt_setup)/launch/drivers/imu.launch"/>
 
   <!-- laser -->
-  <!--<include if="$(arg laser)" file="$(find galt_setup)/launch/drivers/laser.launch"/>-->
+  <include if="$(arg laser)" file="$(find galt_setup)/launch/drivers/laser.launch"/>
 
   <!-- camera -->
-  <include file="$(find galt_setup)/launch/drivers/stereo.launch"/>
-  <!--<include file="$(find galt_setup)/launch/drivers/color.launch"/>-->
-  <!--<include file="$(find galt_setup)/launch/drivers/mono.launch"/>-->
-
-  <!--<include file="$(find galt_setup)/launch/process/process_gps_imu.launch">-->
-    <!--<arg name="platform" value="$(env GALT_PLATFORM_NAME)"/>-->
-    <!--<arg name="version" value="$(env GALT_PLATFORM_VER)"/>-->
-  <!--</include>-->
-
-  <!-- optional: vicon -->
-  <!--<include if="$(arg vicon)"-->
-    <!--file="$(find galt_setup)/launch/deploy/vicon.launch"/>-->
+  <include file="$(find galt_setup)/launch/drivers/stereo_pg.launch"/>
+  <include file="$(find galt_setup)/launch/drivers/mono.launch"/>
 </launch>

@@ -26,7 +26,7 @@
     <arg name="camera" value="$(env GALT_STEREO_FRAME)"/>
     <arg name="left_calib_url" default="$(env GALT_CAMERA_CALIB_DIR)/mv_$(arg left).yaml"/>
     <arg name="right_calib_url" default="$(env GALT_CAMERA_CALIB_DIR)/mv_$(arg right).yaml"/>
-    <arg name="video_mode" default="16"/>
+    <arg name="video_mode" default="23"/>
     <arg name="enable_trigger" default="true"/>
     <arg name="auto_exposure" default="false"/>
     <arg name="auto_shutter" default="false"/>

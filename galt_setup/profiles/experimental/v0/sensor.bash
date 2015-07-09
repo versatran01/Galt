@@ -3,7 +3,7 @@
 export GALT_PLATFORM_NAME=experimental
 export GALT_PLATFORM_VER=v0
 
-export GALT_CAMERA_CALIB_DIR=package://galt_setup/profiles/${GALT_PLATFORM_NAME}/${GALT_PLATFORM_VER}/calib/camera
+export GALT_CAMERA_CALIB_DIR=package://galt_setup/profiles/${GALT_PLATFORM_NAME}/${GALT_PLATFORM_VER}/calib/camera_info
 
 #Mono camera
 export GALT_MONO_SERIAL=25001185

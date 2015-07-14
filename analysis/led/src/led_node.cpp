@@ -16,11 +16,13 @@ class Node {
   ros::NodeHandle pnh_;
   image_transport::ImageTransport it_;
   image_transport::Subscriber image_sub_;
+  image_transport::Publisher image_pub_;
   int threshold_;
 };
 
 Node::Node(const ros::NodeHandle& pnh) : pnh_(pnh), it_(pnh) {
   image_sub_ = it_.subscribe("image", 1, &Node::imageCb, this);
+  image_pub_ = it_.advertise("image_highlighted",1);
 
   //get param for threshold
   pnh.param("threshold",threshold_, 250);
@@ -31,15 +33,15 @@ void Node::imageCb(const sensor_msgs::ImageConstPtr& image_msg) {
 
   //convert to rgb
   cv::Mat image_rgb(image.size(), CV_8UC3);
-  cv::cvtColor(image,image_rgb,CV_GRAY2RGB);
+  cv::cvtColor(image,image_rgb,CV_GRAY2BGR);
 
   //create mask and apply threshold
   cv::threshold(image,image,threshold_,255,0);
   image_rgb.setTo(cv::Scalar(51,51,255),image);
 
-  //display image
-  cv::imshow("Saturation Highlighted", image_rgb);
-  cv::waitKey(1);
+  //publish ros message
+  sensor_msgs::ImagePtr image_out = cv_bridge::CvImage(std_msgs::Header(), "bgr8", image_rgb).toImageMsg();
+  image_pub_.publish(image_out);
 }
 
 }  // namespace led

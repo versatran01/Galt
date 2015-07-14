@@ -1,0 +1,5 @@
+<launch>
+	<node pkg="led" type="led_node" name="led_node" output="screen">
+		<remap from="~image" to="/mv_25001206/image_raw"/>
+	</node>
+</launch>

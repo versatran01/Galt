@@ -31,7 +31,6 @@
   </include>
 
   <!-- Laser pipeline -->
-  <!--<include if="$(arg use_laser)"-->
   <include
     file="$(find galt_setup)/launch/process/laser/laser_pipeline.launch">
     <arg name="plugin" value="$(arg profile_path)/laser_filter.yml"/>

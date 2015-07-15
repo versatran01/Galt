@@ -1,5 +1,12 @@
 <launch>
-	<node pkg="led" type="led_node" name="led_node" output="screen">
-		<remap from="~image" to="/mv_25001206/image_raw"/>
-	</node>
+	<arg name="camera_name" value="mv_25001206"/>
+
+	<group ns="$(arg camera_name)" >
+
+		<node pkg="led" type="led_node" name="led_node" output="screen">
+			<remap from="~image" to="image_raw"/>
+		</node>
+
+	</group>
+
 </launch>

@@ -3,7 +3,7 @@ project(led)
 
 add_definitions(-Wall -std=c++11)
 find_package(catkin REQUIRED COMPONENTS
-    roscpp sensor_msgs image_transport cv_bridge
+    roscpp rospy sensor_msgs image_transport cv_bridge
     )
 find_package(OpenCV REQUIRED)
 

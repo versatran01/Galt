@@ -1,5 +1,5 @@
 <launch>
-	<arg name="camera_name" value="mv_25001206"/>
+	<arg name="camera_name" default="mv_25001206"/>
 
 	<group ns="$(arg camera_name)" >
 

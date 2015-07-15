@@ -2,9 +2,9 @@
 <package format="2">
   <name>led</name>
   <version>0.0.0</version>
-  <description>The led package</description>
+  <description>LED Utilities. Plots live intensity distributions, shows overexposed areas.</description>
 
-  <maintainer email="chao@todo.todo">chao</maintainer>
+  <maintainer email="anurag.makineni@gmail.com">anurag</maintainer>
 
   <license>TODO</license>
 

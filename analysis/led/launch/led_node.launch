@@ -1,10 +1,18 @@
 <launch>
 	<arg name="camera_name" default="mv_25001206"/>
 
+	<arg name="max_threshold" default="250"/>
+	<!-- <param name="max_threshold" value="$(arg max_threshold)"/> -->
+
+	<arg name="min_threshold" default="10"/>
+	<!-- <param name="min_threshold" value="$(arg min_threshold)"/> -->
+
 	<group ns="$(arg camera_name)" >
 
 		<node pkg="led" type="led_node" name="led_node" output="screen">
-			<remap from="~image" to="image_raw"/>
+			<remap from="~image" to="image_raw"/>\
+			<param name="min_threshold" value="$(arg min_threshold)"/>
+			<param name="max_threshold" value="$(arg max_threshold)"/>
 		</node>
 
 	</group>

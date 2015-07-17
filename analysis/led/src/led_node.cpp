@@ -17,7 +17,8 @@ class Node {
   image_transport::ImageTransport it_;
   image_transport::Subscriber image_sub_;
   image_transport::Publisher image_pub_;
-  int threshold_;
+  int max_threshold_;
+  int min_threshold_;
 };
 
 Node::Node(const ros::NodeHandle& pnh) : pnh_(pnh), it_(pnh) {
@@ -25,19 +26,26 @@ Node::Node(const ros::NodeHandle& pnh) : pnh_(pnh), it_(pnh) {
   image_pub_ = it_.advertise("image_highlighted",1);
 
   //get param for threshold
-  pnh.param("threshold",threshold_, 250);
+  pnh.param("max_threshold",max_threshold_);
+  pnh.param("min_threshold",min_threshold_);
 }
 
 void Node::imageCb(const sensor_msgs::ImageConstPtr& image_msg) {
   const auto image = cv_bridge::toCvCopy(image_msg)->image;
+  const auto mask_max = cv_bridge::toCvCopy(image_msg)->image;
+  const auto mask_min = cv_bridge::toCvCopy(image_msg)->image;
 
   //convert to rgb
   cv::Mat image_rgb(image.size(), CV_8UC3);
   cv::cvtColor(image,image_rgb,CV_GRAY2BGR);
 
-  //create mask and apply threshold
-  cv::threshold(image,image,threshold_,255,0);
-  image_rgb.setTo(cv::Scalar(51,51,255),image);
+  //create max_mask and apply threshold
+  cv::threshold(image,mask_max,max_threshold_,255,0);
+  image_rgb.setTo(cv::Scalar(51,51,255),mask_max);
+
+  //create min_mask and appply threshold
+  cv::threshold(image,mask_min,min_threshold_,255,1);
+  image_rgb.setTo(cv::Scalar(255,51,51),mask_min);
 
   //publish ros message
   sensor_msgs::ImagePtr image_out = cv_bridge::CvImage(std_msgs::Header(), "bgr8", image_rgb).toImageMsg();

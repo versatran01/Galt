@@ -1,17 +1,17 @@
 <launch>
-	<arg name="camera_name" default="mv_25001206"/>
+  <arg name="camera_name" default="mv_25001206"/>
 
-	<arg name="vertical" default="False"/>
-	<param name="vertical" value="$(arg vertical)"/>
+  <arg name="vertical" default="False"/>
+  <param name="vertical" value="$(arg vertical)"/>
 
 
-	<group ns="$(arg camera_name)" >
+  <group ns="$(arg camera_name)" >
 
-		<node pkg="led" type="intensity_profiler.py" name="intensity_profiler" output="screen">
-			<remap from="image" to="image_raw"/>
-			<param name="vertical" value="$(arg vertical)"/>
-		</node>
+    <node pkg="led" type="intensity_profiler.py" name="intensity_profiler" output="screen">
+      <remap from="image" to="image_raw"/>
+      <param name="vertical" value="$(arg vertical)"/>
+    </node>
 
-	</group>
+  </group>
 
 </launch>

@@ -27,8 +27,8 @@ Node::Node(const ros::NodeHandle& pnh) : pnh_(pnh), it_(pnh) {
   image_pub_ = it_.advertise("image_highlighted", 1);
 
   // get param for threshold
-  pnh_.param("max_threshold", max_threshold_);
-  pnh_.param("min_threshold", min_threshold_);
+  pnh_.param("max_threshold", max_threshold_, 250);
+  pnh_.param("min_threshold", min_threshold_, 5);
 }
 
 void Node::imageCb(const sensor_msgs::ImageConstPtr& image_msg) {

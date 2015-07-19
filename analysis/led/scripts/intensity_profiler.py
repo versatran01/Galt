@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 from __future__ import print_function
 import rospy
-import roslib
-roslib.load_manifest('led')
 from sensor_msgs.msg import Image
 import sys
 import cv2
@@ -12,10 +10,12 @@ import matplotlib.pyplot as plt
 
 
 class IntensityProfiler:
+
     def __init__(self):
         self.bridge = CvBridge()
         self.image_sub = rospy.Subscriber("image", Image, self.image_callback)
-        self.image_pub = rospy.Publisher("intensity_profiler/image_drawn",Image,queue_size=1)
+        self.image_pub = rospy.Publisher(
+            "intensity_profiler/image_drawn", Image, queue_size=1)
         plt.ion()
 
     def image_callback(self, data):
@@ -27,17 +27,18 @@ class IntensityProfiler:
         cv_image_gray = cv2.cvtColor(cv_image, cv2.COLOR_BGR2GRAY)
 
         # get image information
-        height, width, channels = cv_image.shape;
+        height, width, channels = cv_image.shape
         # convert to np array
         np_image = np.asarray(cv_image_gray)
-        np_image[0:15,:] = 0 #to get rid of bad pixels
+        # to get rid of bad pixels
+        np_image[0:15, :] = 0
 
         # find max values and draw lines on image
         itemindex = np.where(np_image == np.amax(np_image))
         x_max = int(np.median(itemindex[1]))
         y_max = int(np.median(itemindex[0]))
 
-        #plot and draw line on image
+        # plot and draw line on image
         vertical = rospy.get_param("~vertical")
         plt.cla()
         if vertical:
@@ -52,13 +53,15 @@ class IntensityProfiler:
         plt.title("Intensity Profile")
         fig = plt.gcf()
         fig.canvas.set_window_title('Intensity Profile')
+        plt.pause(0.001)
         plt.draw()
 
-        #publish
+        # publish
         try:
             self.image_pub.publish(self.bridge.cv2_to_imgmsg(cv_image, "bgr8"))
         except CvBridgeError, e:
             print(e)
+
 
 def main(args):
     profiler = IntensityProfiler()

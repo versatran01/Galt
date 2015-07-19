@@ -1,6 +1,7 @@
 #include <ros/ros.h>
 #include <sensor_msgs/Image.h>
 #include <image_transport/image_transport.h>
+#include <sensor_msgs/image_encodings.h>
 #include <cv_bridge/cv_bridge.h>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -26,23 +27,24 @@ Node::Node(const ros::NodeHandle& pnh) : pnh_(pnh), it_(pnh) {
   image_pub_ = it_.advertise("image_highlighted", 1);
 
   // get param for threshold
-  pnh.param("max_threshold", max_threshold_);
-  pnh.param("min_threshold", min_threshold_);
+  pnh_.param("max_threshold", max_threshold_);
+  pnh_.param("min_threshold", min_threshold_);
 }
 
 void Node::imageCb(const sensor_msgs::ImageConstPtr& image_msg) {
-  const auto image = cv_bridge::toCvCopy(image_msg)->image;
-  const auto mask_max = cv_bridge::toCvCopy(image_msg)->image;
-  const auto mask_min = cv_bridge::toCvCopy(image_msg)->image;
+  const auto image = cv_bridge::toCvCopy(
+                         image_msg, sensor_msgs::image_encodings::MONO8)->image;
 
   // convert to rgb
-  cv::Mat image_rgb(image.size(), CV_8UC3);
+  cv::Mat image_rgb;
   cv::cvtColor(image, image_rgb, CV_GRAY2BGR);
 
   // create max_mask and apply threshold
+  cv::Mat mask_max;
   cv::threshold(image, mask_max, max_threshold_, 255, 0);
   image_rgb.setTo(cv::Scalar(51, 51, 255), mask_max);
 
+  cv::Mat mask_min;
   // create min_mask and appply threshold
   cv::threshold(image, mask_min, min_threshold_, 255, 1);
   image_rgb.setTo(cv::Scalar(255, 51, 51), mask_min);

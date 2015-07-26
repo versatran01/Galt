@@ -22,11 +22,13 @@
     <arg name="calib_url" value="$(env GALT_CAMERA_CALIB_DIR)/pg_$(arg device).yaml"/>
     <arg name="fps" default="$(arg rate)"/>
 
-    <arg name="video_mode" default="16"/>
-    <arg name="auto_exposure" default="true"/>
-    <arg name="auto_shutter" default="true"/>
-    <arg name="auto_gain" default="true"/>
-    <arg name="auto_white_balance" default="true"/>
+    <arg name="video_mode" default="23"/>
+    <arg name="auto_exposure" default="false"/>
+    <arg name="auto_shutter" default="false"/>
+    <arg name="shutter" default="0.001"/>
+    <arg name="auto_gain" default="false"/>
+    <arg name="white_balance" default="false"/>
+    <arg name="auto_white_balance" default="false"/>
 
   </include>
 </launch>

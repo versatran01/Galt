@@ -10,9 +10,10 @@
     <arg name="calib_url" value="$(env GALT_CAMERA_CALIB_DIR)/mv_$(arg device).yaml"/>
     <arg name="fps" default="$(arg rate)"/>
 
-    <arg name="aec" default="1"/>
-    <arg name="expose_us" default="10000"/>
-    <arg name="hdr" default="false"/>
+    <arg name="idpf" default="2"/>
+    <arg name="aec" default="true"/>
+    <arg name="agc" default="false"/>
     <arg name="ctm" default="1"/>
+    <arg name="hdr" default="false"/>
   </include>
 </launch>

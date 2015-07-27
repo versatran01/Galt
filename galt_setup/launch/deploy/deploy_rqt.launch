@@ -4,4 +4,5 @@
   <node pkg="rqt_reconfigure" name="reconfigurer" type="rqt_reconfigure"/>
   <node pkg="rqt_image_view" name="viewer" type="rqt_image_view"/>
   <node pkg="rqt_runtime_monitor" name="monitor" type="rqt_runtime_monitor"/>
+  <node pkg="rqt_plot" name="plotter" type="rqt_plot" args="/imu/imu/linear_acceleration/x:y:z"/>
 </launch>

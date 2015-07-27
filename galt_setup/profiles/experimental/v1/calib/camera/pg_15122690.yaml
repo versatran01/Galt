@@ -1,0 +1,20 @@
+image_width: 1920
+image_height: 1200
+camera_name: pg_15122690
+camera_matrix:
+  rows: 3
+  cols: 3
+  data: [834.3262984817073, 0, 948.6033001375766, 0, 834.2564115970188, 599.6607660518613, 0, 0, 1]
+distortion_model: rational_polynomial
+distortion_coefficients:
+  rows: 1
+  cols: 8
+  data: [0.3779674022676867, -0.05922191500686861, 0.0002262569231634784, 0.000246129636656435, 0.004369909526949156, 0.6280207696967702, -0.04089728474832955, 0]
+rectification_matrix:
+  rows: 3
+  cols: 3
+  data: [1, 0, 0, 0, 1, 0, 0, 0, 1]
+projection_matrix:
+  rows: 3
+  cols: 4
+  data: [583.917236328125, 0, 942.739695016644, 0, 0, 729.19189453125, 599.5544410064758, 0, 0, 0, 1, 0]

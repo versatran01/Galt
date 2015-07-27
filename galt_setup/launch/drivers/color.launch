@@ -8,6 +8,7 @@
   Topics you should record:
     * /color/camera_info
     * /color/image_raw
+    * /color/image_metadata
 -->
 
 <launch>
@@ -23,12 +24,13 @@
     <arg name="fps" default="$(arg rate)"/>
 
     <arg name="video_mode" default="23"/>
+    <arg name="exposure" default="false"/>
     <arg name="auto_exposure" default="false"/>
     <arg name="auto_shutter" default="false"/>
-    <arg name="shutter" default="0.001"/>
+    <arg name="shutter_ms" default="2"/>
     <arg name="auto_gain" default="false"/>
+    <arg name="gain_db" default="10.0"/>
     <arg name="white_balance" default="false"/>
     <arg name="auto_white_balance" default="false"/>
-
   </include>
 </launch>

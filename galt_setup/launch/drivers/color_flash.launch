@@ -14,7 +14,7 @@
 <launch>
   <!--Camera Settings-->
   <arg name="device" value="$(env GALT_COLOR_SERIAL)"/>
-  <arg name="rate" value="$(env GALT_COLOR_RATE)"/>
+  <arg name="rate" value="5"/>
 
   <include file="$(find flea3)/launch/single_node.launch">
     <arg name="device" value="$(arg device)"/>

@@ -7,6 +7,7 @@
     /$(env GALT_MONO_FRAME)/image_raw
     /$(env GALT_COLOR_FRAME)/camera_info
     /$(env GALT_COLOR_FRAME)/image_raw
+    /$(env GALT_COLOR_FRAME)/image_metadata
     /$(env GALT_LASER_FRAME)/scan
     /$(env GALT_IMU_FRAME)/imu
     /$(env GALT_IMU_FRAME)/magnetic_field

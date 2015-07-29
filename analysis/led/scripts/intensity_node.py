@@ -5,20 +5,23 @@ import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
-import matplotlib
 from matplotlib import cm
-from PyQt4 import QtCore
 from cv_bridge import CvBridge, CvBridgeError
 from sensor_msgs.msg import Image
+from sensor_msgs.msg import CompressedImage
 import threading
-import time
 
 
 class IntensityNode(object):
     def __init__(self):
         self.bridge = CvBridge()
-        self.image_sub = rospy.Subscriber('image', Image, self.image_cb,
-                                          queue_size=1)
+        self.transport = 'compressed'
+        if self.transport == 'compressed':
+            self.image_sub = rospy.Subscriber('image', CompressedImage,
+                                              self.image_cb, queue_size=1)
+        else:
+            self.image_sub = rospy.Subscriber('image', Image, self.image_cb,
+                                              queue_size=1)
         plt.ion()
         self.image = None
         self.do_plot = True
@@ -35,6 +38,7 @@ class IntensityNode(object):
             if self.image is None:
                 fig = plt.gcf()
                 ax = fig.gca(projection='3d')
+                ax.set_zlim(0, 255)
                 surf = None
             else:
                 height, width = self.image.shape
@@ -44,19 +48,24 @@ class IntensityNode(object):
                 Z = self.image
                 if surf is not None:
                     surf.remove()
-                surf = ax.plot_surface(X, Y, Z, cstride=2, rstride=2,
+                surf = ax.plot_surface(X, Y, Z, cstride=int(width / 20),
+                                       rstride=int(height / 20),
                                        cmap=cm.jet)
-                plt.draw()
-                plt.pause(0.1)
+                plt.pause(0.01)
 
     def image_cb(self, image_msg):
-        try:
-            image = self.bridge.imgmsg_to_cv2(image_msg, 'mono8')
-        except CvBridgeError, e:
-            print(e)
+        if self.transport == 'compressed':
+            np_arr = np.fromstring(image_msg.data, np.uint8)
+            image = cv2.imdecode(np_arr, cv2.CV_LOAD_IMAGE_GRAYSCALE)
+        else:
+            try:
+                image = self.bridge.imgmsg_to_cv2(image_msg, 'mono8')
+            except CvBridgeError, e:
+                print(e)
 
-        self.image = cv2.resize(image, None, fx=0.05, fy=0.05,
-                                interpolation=cv2.INTER_NEAREST)
+        image = cv2.resize(image, None, fx=0.2, fy=0.2,
+                           interpolation=cv2.INTER_NEAREST)
+        self.image = cv2.GaussianBlur(image, (5, 5), 0)
 
 
 if __name__ == '__main__':

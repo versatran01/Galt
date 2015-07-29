@@ -2,7 +2,7 @@
   <arg name="camera" default="camera"/>
 
   <node pkg="led" type="intensity_node.py" name="intensity_node" output="screen" ns="$(arg camera)">
-    <remap from="image" to="image_raw"/>
+    <remap from="image" to="image_raw/compressed"/>
   </node>
 
 </launch>

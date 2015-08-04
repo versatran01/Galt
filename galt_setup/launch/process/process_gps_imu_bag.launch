@@ -11,13 +11,13 @@
 <launch>
   <!-- Profile -->
   <arg name="platform" default="experimental"/>
-  <arg name="version" default="v0"/>
+  <arg name="version" default="v1"/>
   <arg name="profile" default="$(arg platform)/$(arg version)"/>
   <arg name="profile_path" default="$(find galt_setup)/profiles/$(arg profile)"/>
   <arg name="use_laser" default="$(optenv GALT_USE_LASER false)"/>
 
   <!-- Magnetometer calibration to load -->
-  <arg name="mag_calib" default="biglerville_oct_ground"/>
+  <arg name="mag_calib" default="booth_feb_ground"/>
 
   <!-- Bag -->
   <arg name="bag_home" default="$(optenv GALT_BAGFILES /home)"/>
@@ -25,7 +25,7 @@
   <arg name="bag_start" default="0"/>
   <arg name="bag_rate" default="1"/>
   <arg name="bag_path"
-    default="/media/chao/D512/biglerville/galt_experimental_v0_green_night_narrow_far_2015-07-10-22-02-40.bag"/>
+    default="/home/chao/Workspace/bag/exp_v1/galt_experimental_v1_umbrella_led_row_forth_2015-07-31-01-31-02.bag"/>
 
   <include file="$(find galt_setup)/launch/process/play_bag.launch">
     <arg name="bag_home" value="$(arg bag_home)"/>
@@ -40,7 +40,6 @@
     <arg name="version"      value="$(arg version)"/>
     <arg name="profile"      value="$(arg profile)"/>
     <arg name="profile_path" value="$(arg profile_path)"/>
-    <arg name="vicon"        value="false"/>
     <arg name="mag_calib"    value="$(arg mag_calib)"/>
     <arg name="use_laser"    value="$(arg use_laser)"/>
   </include>

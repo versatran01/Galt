@@ -11,15 +11,14 @@
 -->
 <launch>
   <!-- Profile -->
-  <arg name="platform" default="aerial"/>
-  <arg name="version" default="v2"/>
+  <arg name="platform" default="experimental"/>
+  <arg name="version" default="v1"/>
   <arg name="profile" default="$(arg platform)/$(arg version)"/>
   <arg name="profile_path" default="$(find galt_setup)/profiles/$(arg profile)"/>
-  <arg name="vicon" default="false"/>
   <arg name="use_laser" default="$(optenv GALT_USE_LASER true)"/>
 
   <!-- Magnetometer calibration to load -->
-  <arg name="mag_calib" default="biglerville_oct_aerial"/>
+  <arg name="mag_calib" default="biglerville_oct_ground"/>
 
   <!-- process_base -->
   <include file="$(find galt_setup)/launch/process/process_base.launch">
@@ -27,7 +26,6 @@
     <arg name="version"      value="$(arg version)"/>
     <arg name="profile"      value="$(arg profile)"/>
     <arg name="profile_path" value="$(arg profile_path)"/>
-    <arg name="vicon"        value="$(arg vicon)"/>
   </include>
 
   <!-- Laser pipeline -->

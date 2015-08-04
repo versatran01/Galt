@@ -14,11 +14,9 @@
   <arg name="version" default="v5"/>
   <arg name="profile" default="$(arg platform)/$(arg version)"/>
   <arg name="profile_path" default="$(find galt_setup)/profiles/$(arg profile)"/>
-  <arg name="vicon" default="false"/>
 
   <!-- Frame broadcaster -->
   <include file="$(arg profile_path)/tf.launch">
-    <arg name="vicon" value="$(arg vicon)"/>
   </include>
 
   <!-- IMU covariance -->

@@ -1,12 +1,68 @@
 #!/usr/bin/python3
 
 import sys
+import logging
 from PyQt5.QtCore import (QDir, Qt, QPoint, QRect, QSize)
 from PyQt5.QtWidgets import (QWidget, QLabel, QApplication, QMainWindow,
                              QAction, QFileDialog, qApp, QMessageBox, QMenu,
-                             QSizePolicy, QScrollArea, QToolTip)
+                             QSizePolicy, QScrollArea, QToolTip,
+                             QGraphicsScene, QGraphicsView, QGraphicsItem,
+                             QGraphicsPixmapItem)
 from PyQt5.QtGui import (QPixmap, QIcon, QImage, QPalette, QPainter, QPen,
                          QImageWriter, qRgb, qRgba)
+
+
+class Label(object):
+    def __init__(self):
+        pass
+
+
+class ZoomView(QGraphicsView):
+    """
+    A zoomed view that looks at where the mouse is
+    """
+
+    def __init__(self):
+        pass
+
+
+class LabelView(QGraphicsView):
+    """
+    Main view that looks at the scene
+    """
+
+    def __init__(self):
+        super().__init__()
+
+    def scaleBy(self, factor):
+        self.scale(factor, factor)
+
+
+class LabelScene(QGraphicsScene):
+    def __init__(self):
+        super().__init__()
+
+        self._modified = False
+
+    def getModified(self):
+        return self._modified
+
+    def setModified(self, modified):
+        self._modified = modified
+
+    modified = property(getModified, setModified)
+
+    def loadImage(self, fileName):
+        image = QImage(fileName)
+
+        if image.isNull():
+            logger.warn('Invalid image')
+            return False
+
+        imageItem = QGraphicsPixmapItem(QPixmap.fromImage(image))
+        self.addItem(imageItem)
+
+        return True
 
 
 class Labeler(QMainWindow):
@@ -17,51 +73,74 @@ class Labeler(QMainWindow):
         self.initUI()
 
     def initConsts(self):
-        self.factorStep = 0.25
-        self.maxFactor = 4.0
-        self.minFactor = 1 / self.maxFactor
-        self.scaleFactor = 0.0
         self.appName = 'Apple Labeler'
         self.resourceDir = 'resources'
         self.iconDir = self.resourceDir + '/icons'
 
     def initUI(self):
+        self.labelScene = LabelScene()
+        self.labelView = LabelView()
+        self.labelView.setScene(self.labelScene)
 
-        # TODO: move these to a method
-        self.imageLabel = QLabel()
-        self.imageLabel.setBackgroundRole(QPalette.Base)
-        self.imageLabel.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
-        self.imageLabel.setScaledContents(True)
-
-        self.scrollArea = QScrollArea()
-        self.scrollArea.setBackgroundRole(QPalette.Dark)
-        self.scrollArea.setWidget(self.imageLabel)
-        self.setCentralWidget(self.scrollArea)
-
+        self.statusBar().showMessage('Ready')
         self.createActions()
         self.createMenus()
         self.createToolbar()
         self.createWindow()
-
-        self.show()
+        self.setCentralWidget(self.labelView)
 
     def aboutThisApp(self):
         QMessageBox.about(self, 'About Apple Labeler',
                           '<b>Apple Labeler</b> is an apple labeling tool.')
 
-    def resetScaleFactor(self):
-        self.scaleFactor = 1.0
+    def closeEvent(self, event):
+        if self.maybeSave():
+            event.accept()
+        else:
+            event.ignore()
+
+    def maybeSave(self):
+        # TODO: fix this
+        if self.labelScene.modified:
+            ret = QMessageBox.warning(self, 'Labeler',
+                                      'The image has been labeled.\n'
+                                      'Do you want to save your changes?',
+                                      QMessageBox.Save |
+                                      QMessageBox.Discard | QMessageBox.Cancel)
+            if ret == QMessageBox.Save:
+                print('save to file')
+                return True
+            elif ret == QMessageBox.Cancel:
+                return False
+
+        return True
+
+    def saveFile(self):
+        """
+        Save all labels to some kind of file format
+        """
+        pass
+
+        self.show()
 
     def createToolbar(self):
-        # View
-        self.toolbar = self.addToolBar('Zoom In')
+        self.toolbar = self.addToolBar('Toolbar')
         self.toolbar.addAction(self.openAct)
         self.toolbar.addAction(self.saveAct)
+
         self.toolbar.addSeparator()
+
         self.toolbar.addAction(self.zoomInAct)
         self.toolbar.addAction(self.zoomOutAct)
-        self.toolbar.addAction(self.normalSizeAct)
-        self.toolbar.addAction(self.fitToWindowAct)
+        # self.toolbar.addAction(self.normalSizeAct)
+        # self.toolbar.addAction(self.fitToWindowAct)
+        # self.toolbar.addAction(self.zoomAct)
+
+        self.toolbar.addSeparator()
+
+        self.toolbar.addAction(self.selectAct)
+        self.toolbar.addAction(self.brushAct)
+
         self.toolbar.addSeparator()
 
     def createWindow(self):
@@ -70,18 +149,18 @@ class Labeler(QMainWindow):
         self.centerWindow()
 
     def getIcon(self, file):
-        return self.iconDir + '/' + file
+        return QIcon(self.iconDir + '/' + file)
 
     def createActions(self):
         # File
         # Open
-        openIcon = QIcon(self.getIcon('open-file.png'))
+        openIcon = self.getIcon('open-file.png')
         self.openAct = QAction(openIcon, '&Open', self)
         self.openAct.setShortcut('Ctrl+O')
         self.openAct.triggered.connect(self.openFile)
 
         # Save
-        saveIcon =QIcon(self.getIcon('save-file.png'))
+        saveIcon = self.getIcon('save-file.png')
         self.saveAct = QAction(saveIcon, '&Save', self)
         self.saveAct.setShortcut('Ctrl+S')
         self.saveAct.setEnabled(False)
@@ -93,33 +172,30 @@ class Labeler(QMainWindow):
 
         # View
         # Zoom In
-        zoomInIcon = QIcon(self.iconDir + '/zoom-in.png')
+        zoomInIcon = self.getIcon('zoom-in.png')
         self.zoomInAct = QAction(zoomInIcon, 'Zoom &In', self)
         self.zoomInAct.setShortcut('Ctrl++')
         self.zoomInAct.setEnabled(False)
-        self.zoomInAct.triggered.connect(self.zoomIn)
 
         # Zoom Out
-        zoomOutIcon = QIcon(self.iconDir + '/zoom-out.png')
+        zoomOutIcon = self.getIcon('zoom-out.png')
         self.zoomOutAct = QAction(zoomOutIcon, 'Zoom &Out', self)
         self.zoomOutAct.setShortcut('Ctrl+-')
         self.zoomOutAct.setEnabled(False)
-        self.zoomOutAct.triggered.connect(self.zoomOut)
 
-        # Normal Size
-        normalSizeIcon = QIcon(self.iconDir + '/normal-size.png')
-        self.normalSizeAct = QAction(normalSizeIcon, '&Normal Size', self)
-        self.normalSizeAct.setShortcut('Ctrl+0')
-        self.normalSizeAct.setEnabled(False)
-        self.normalSizeAct.triggered.connect(self.normalSize)
+        # Edit
+        # Select
+        selectIcon = self.getIcon('select.png')
+        self.selectAct = QAction(selectIcon, 'Select', self)
+        self.selectAct.setShortcut('Ctrl+E')
+        self.selectAct.setCheckable(True)
+        self.selectAct.setEnabled(False)
 
-        # Fit to Window
-        fitToWindowIcon = QIcon(self.iconDir + '/fit-to-window.png')
-        self.fitToWindowAct = QAction(fitToWindowIcon, '&Fit to Window', self)
-        self.fitToWindowAct.setShortcut('Ctrl+F')
-        self.fitToWindowAct.setEnabled(False)
-        self.fitToWindowAct.setCheckable(True)
-        self.fitToWindowAct.triggered.connect(self.fitToWindow)
+        brushIcon = self.getIcon('brush.png')
+        self.brushAct = QAction(brushIcon, 'Brush', self)
+        self.brushAct.setShortcut('Ctrl+B')
+        self.brushAct.setCheckable(True)
+        self.brushAct.setEnabled(False)
 
         # Help
         # About
@@ -142,17 +218,22 @@ class Labeler(QMainWindow):
         viewMenu = QMenu('&View', self)
         viewMenu.addAction(self.zoomInAct)
         viewMenu.addAction(self.zoomOutAct)
-        viewMenu.addAction(self.normalSizeAct)
-        viewMenu.addAction(self.fitToWindowAct)
+
+        # Edit
+        editMenu = QMenu('&Edit', self)
+        editMenu.addAction(self.selectAct)
+        editMenu.addAction(self.brushAct)
 
         # help
         helpMenu = QMenu('&Help', self)
         helpMenu.addAction(self.aboutAct)
         helpMenu.addAction(self.aboutQtAct)
 
+        # Menu Bar
         menuBar = self.menuBar()
         menuBar.addMenu(fileMenu)
         menuBar.addMenu(viewMenu)
+        menuBar.addMenu(editMenu)
         menuBar.addMenu(helpMenu)
 
     def centerWindow(self):
@@ -164,70 +245,30 @@ class Labeler(QMainWindow):
         self.move(frame.topLeft())
         self.resize(640, 480)
 
-    def zoomIn(self):
-        self.scaleImage(1 + self.factorStep)
-
-    def zoomOut(self):
-        self.scaleImage(1 - self.factorStep)
-
-    def normalSize(self):
-        self.imageLabel.adjustSize()
-        self.resetScaleFactor()
-        self.updateViewActions()
-
-    def fitToWindow(self):
-        fitToWindow = self.fitToWindowAct.isChecked()
-        self.scrollArea.setWidgetResizable(fitToWindow)
-        if not fitToWindow:
-            self.normalSize()
-
-        self.updateViewActions()
-
-    def updateViewActions(self):
-        isFitToWindowChecked = self.fitToWindowAct.isChecked()
-        self.zoomInAct.setEnabled(not isFitToWindowChecked)
-        self.zoomOutAct.setEnabled(not isFitToWindowChecked)
-        self.normalSizeAct.setEnabled(not isFitToWindowChecked)
-
-    def scaleImage(self, factor):
-        self.scaleFactor *= factor
-        self.imageLabel.resize(
-            self.scaleFactor * self.imageLabel.pixmap().size())
-
-        self.adjustScrollBar(self.scrollArea.horizontalScrollBar(), factor)
-        self.adjustScrollBar(self.scrollArea.verticalScrollBar(), factor)
-
-        self.zoomInAct.setEnabled(self.scaleFactor < self.maxFactor)
-        self.zoomOutAct.setEnabled(self.scaleFactor > self.minFactor)
-
-    def adjustScrollBar(self, scrollBar, factor):
-        scrollBarValue = factor * scrollBar.value() + (factor - 1) * \
-                                                      scrollBar.pageStep() / 2
-        scrollBar.setValue(int(scrollBarValue))
-
     def openFile(self):
-        fileName, _ = QFileDialog.getOpenFileName(self, 'Open file',
-                                                  QDir.currentPath())
+        if self.maybeSave():
+            fileName, _ = QFileDialog.getOpenFileName(self, 'Open file',
+                                                      QDir.currentPath())
 
-        if fileName:
-            image = QImage(fileName)
+            if fileName:
+                if self.labelScene.loadImage(fileName):
+                    # Load label file if exists
+                    # Parse label file and add items to scene
 
-            if image.isNull():
-                QMessageBox.information(self, self.appName, "Cannot load "
-                                                            "%s." % fileName)
-                return
-
-            self.imageLabel.setPixmap(QPixmap.fromImage(image))
-            self.resetScaleFactor()
-
-            self.fitToWindowAct.setEnabled(True)
-            self.updateViewActions()
-
-            if not self.fitToWindowAct.isChecked():
-                self.imageLabel.adjustSize()
+                    self.selectAct.setEnabled(True)
+                    self.brushAct.setEnabled(True)
+                else:
+                    QMessageBox.information(self, self.appName,
+                                            'Cannot load file %s' % fileName)
 
 
 if __name__ == '__main__':
+    logging.basicConfig(level=logging.INFO)
+    logger = logging.getLogger(__name__)
+
     app = QApplication(sys.argv)
+
     labeler = Labeler()
+    labeler.show()
+
     sys.exit(app.exec_())

@@ -2,14 +2,12 @@
 
 import sys
 import logging
-from PyQt5.QtCore import (QDir, Qt, QPoint, QRect, QSize)
-from PyQt5.QtWidgets import (QWidget, QLabel, QApplication, QMainWindow,
-                             QAction, QFileDialog, qApp, QMessageBox, QMenu,
-                             QSizePolicy, QScrollArea, QToolTip,
-                             QGraphicsScene, QGraphicsView, QGraphicsItem,
-                             QGraphicsPixmapItem)
-from PyQt5.QtGui import (QPixmap, QIcon, QImage, QPalette, QPainter, QPen,
-                         QImageWriter, qRgb, qRgba)
+from PyQt5.QtCore import (QDir, Qt, QLineF)
+from PyQt5.QtWidgets import (QApplication, QMainWindow, QAction, QFileDialog,
+                             QMessageBox, QMenu, QGraphicsScene, QGraphicsView,
+                             QGraphicsPixmapItem, QGraphicsPathItem,
+                             QGraphicsLineItem)
+from PyQt5.QtGui import (QPixmap, QIcon, QImage, QPen, QPainterPath)
 
 
 class Label(object):
@@ -23,7 +21,7 @@ class ZoomView(QGraphicsView):
     """
 
     def __init__(self):
-        pass
+        super().__init__()
 
 
 class LabelView(QGraphicsView):
@@ -36,6 +34,40 @@ class LabelView(QGraphicsView):
 
     def scaleBy(self, factor):
         self.scale(factor, factor)
+
+    def mousePressEvent(self, event):
+        if event.buttons() == Qt.LeftButton:
+            self.selecting = True
+            pos = self.mapToScene(event.pos())
+
+            self.path = QPainterPath(QPainterPath(pos))
+            self.pathItem = QGraphicsPathItem(self.path)
+            self.scene().addItem(self.pathItem)
+
+            self.line = QLineF(pos, pos)
+            self.lineItem = QGraphicsLineItem(self.line)
+            self.scene().addItem(self.lineItem)
+
+    def mouseMoveEvent(self, event):
+        if (event.buttons() & Qt.LeftButton) and self.selecting:
+            pos = self.mapToScene(event.pos())
+
+            self.path.lineTo(pos)
+            self.pathItem.setPath(self.path)
+
+            self.line.setP2(pos)
+            self.lineItem.setLine(self.line)
+
+    def mouseReleaseEvent(self, event):
+        if self.selecting:
+            pos = self.mapToScene(event.pos())
+
+            # Close the path when released
+            self.path.closeSubpath()
+            self.pathItem.setPath(self.path)
+
+            # Remove the line
+            self.scene().removeItem(self.lineItem)
 
 
 class LabelScene(QGraphicsScene):
@@ -255,6 +287,7 @@ class Labeler(QMainWindow):
                     # Load label file if exists
                     # Parse label file and add items to scene
 
+                    self.statusBar().showMessage('Image: ' + fileName)
                     self.selectAct.setEnabled(True)
                     self.brushAct.setEnabled(True)
                 else:

@@ -14,7 +14,7 @@
 <launch>
   <!--Camera Settings-->
   <arg name="device" value="$(env GALT_COLOR_SERIAL)"/>
-  <arg name="rate" value="5"/>
+  <arg name="rate" default="4"/>
 
   <include file="$(find flea3)/launch/single_node.launch">
     <arg name="device" value="$(arg device)"/>
@@ -29,10 +29,10 @@
     <arg name="auto_shutter" value="false"/>
     <arg name="shutter_ms" value="2"/>
     <arg name="auto_gain" value="false"/>
-    <arg name="gain_db" value="10.0"/>
+    <arg name="gain_db" value="6.0"/>
     <arg name="trigger_source" value="7"/>
     <arg name="strobe_control" value="2"/>
-    <arg name="white_balance" value="false"/>
+    <arg name="white_balance" value="true"/>
     <arg name="auto_white_balance" value="false"/>
   </include>
 </launch>

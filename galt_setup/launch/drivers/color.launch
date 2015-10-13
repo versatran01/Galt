@@ -24,6 +24,7 @@
     <arg name="fps" default="$(arg rate)"/>
 
     <arg name="video_mode" value="23"/>
+    <arg name="pixel_format" value="21"/>
     <arg name="exposure" value="false"/>
     <arg name="auto_exposure" value="false"/>
     <arg name="auto_shutter" value="false"/>
@@ -31,7 +32,7 @@
     <arg name="auto_gain" value="false"/>
     <arg name="gain_db" value="10.0"/>
     <arg name="trigger_source" value="7"/>
-    <arg name="white_balance" default="false"/>
+    <arg name="white_balance" default="true"/>
     <arg name="auto_white_balance" default="false"/>
   </include>
 </launch>

@@ -7,12 +7,12 @@ export GALT_CAMERA_CALIB_DIR=package://galt_setup/profiles/${GALT_PLATFORM_NAME}
 
 # Mono camera
 export GALT_MONO_SERIAL=25001206
-export GALT_MONO_RATE=10
+export GALT_MONO_RATE=20
 export GALT_MONO_FRAME=mono
 
 # Color camera
 export GALT_COLOR_SERIAL=15122690
-export GALT_COLOR_RATE=5
+export GALT_COLOR_RATE=8
 export GALT_COLOR_FRAME=color
 
 # Laser

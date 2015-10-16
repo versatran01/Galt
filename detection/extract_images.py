@@ -44,7 +44,7 @@ def extract_images(bagfile, output_dir, image_topic, num_images, visualize):
                 continue
             try:
                 image = bridge.imgmsg_to_cv2(msg, 'bgr8')
-                filename = '{0}/image_{1:03d}.png'.format(output_dir, j)
+                filename = '{0}/image_{1:03d}.png'.format(output_dir, i)
                 # Write image to filename
                 if cv2.imwrite(filename, image):
                     print('[{0}/{1}]: {2}'.format(j, num_images, filename))

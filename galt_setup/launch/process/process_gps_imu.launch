@@ -18,7 +18,7 @@
   <arg name="use_laser" default="$(optenv GALT_USE_LASER true)"/>
 
   <!-- Magnetometer calibration to load -->
-  <arg name="mag_calib" default="biglerville_oct_ground"/>
+  <arg name="mag_calib"/>
 
   <!-- process_base -->
   <include file="$(find galt_setup)/launch/process/process_base.launch">

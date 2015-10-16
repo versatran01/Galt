@@ -25,6 +25,6 @@
   <include if="$(arg laser)" file="$(find galt_setup)/launch/drivers/laser.launch"/>
 
   <!-- camera -->
-  <include file="$(find galt_setup)/launch/drivers/color.launch"/>
+  <include file="$(find galt_setup)/launch/drivers/color_flash.launch"/>
   <include file="$(find galt_setup)/launch/drivers/mono.launch"/>
 </launch>

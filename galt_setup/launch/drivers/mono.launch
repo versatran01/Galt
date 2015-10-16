@@ -11,7 +11,8 @@
     <arg name="fps" default="$(arg rate)"/>
 
     <arg name="idpf" default="2"/>
-    <arg name="aec" default="true"/>
+    <arg name="aec" default="false"/>
+    <arg name="expose_us" default="2000"/>
     <arg name="agc" default="false"/>
     <arg name="ctm" default="1"/>
     <arg name="hdr" default="false"/>

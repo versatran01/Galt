@@ -14,11 +14,12 @@
     * /gps/navvelned
 -->
 
+
 <launch>
   <arg name="output" default="log"/>
 
   <include file="$(find ublox_gps)/launch/ublox_gps.launch">
-    <arg name="device" value="/dev/serial/by-id/$(env GALT_GPS_SERIAL)"/>
+    <arg name="device" value="/dev/serial/by-id/usb-u-blox_AG_-_www.u-blox.com_u-blox_GNSS_receiver-if00"/>
     <arg name="rate" value="$(env GALT_GPS_RATE)"/>
     <arg name="frame_id" value="$(env GALT_GPS_FRAME)"/>
     <arg name="output" value="$(arg output)"/>

@@ -17,7 +17,7 @@
   <arg name="use_laser" default="$(optenv GALT_USE_LASER false)"/>
 
   <!-- Magnetometer calibration to load -->
-  <arg name="mag_calib" default="booth_feb_ground"/>
+  <arg name="mag_calib" default="pasco_ground"/>
 
   <!-- Bag -->
   <arg name="bag_home" default="$(optenv GALT_BAGFILES /home)"/>
@@ -25,7 +25,8 @@
   <arg name="bag_start" default="0"/>
   <arg name="bag_rate" default="1"/>
   <arg name="bag_path"
-    default="/home/chao/Workspace/bag/exp_v1/galt_experimental_v1_umbrella_led_row_forth_2015-07-31-01-31-02.bag"/>
+    default="/home/chao/Workspace/bag/D512/exp_v1/galt_experimental_v1_led_row_forth_2015-07-31-00-53-40.bag
+    "/>
 
   <include file="$(find galt_setup)/launch/process/play_bag.launch">
     <arg name="bag_home" value="$(arg bag_home)"/>

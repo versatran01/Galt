@@ -25,7 +25,7 @@
   <arg name="bag_start" default="0"/>
   <arg name="bag_rate" default="1"/>
   <arg name="bag_path"
-    default="/media/chao/D512/biglerville/galt_experimental_v0_green_night_narrow_far_2015-07-10-22-02-40.bag"/>
+    default="/media/chao/Seagate/galt_experimental_v1_2015-10-17-22-03-55.bag"/>
 
   <include file="$(find galt_setup)/launch/process/play_bag.launch">
     <arg name="bag_home" value="$(arg bag_home)"/>

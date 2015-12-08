@@ -8,7 +8,7 @@
   <arg name="bag_path" default="$(arg bag_home)/$(arg bag).bag"/>
 
   <!-- Rosbag -->
-  <node name="playback" pkg="rosbag" type="play" output="log"
+  <node name="playback" pkg="rosbag" type="play" output="screen"
     args="--clock -s $(arg bag_start) -r $(arg bag_rate) -d $(arg bag_delay) $(arg bag_path)">
   </node>
 </launch>

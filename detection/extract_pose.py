@@ -1,11 +1,9 @@
 #!/usr/bin/env python2
-
-from __future__ import print_function
 import rosbag
-from nav_msgs.msg import Odometry
+from geometry_msgs.msg import PoseStamped
 
-bagfile = '/home/chao/Workspace/bag/new_odom.bag'
-odom_topic = '/gps_kf/odometry'
+bagfile = '/media/chao/Seagate/galt-2015-10-17-22-29-22.bag'
+pose_topic = '/gps_kf/pose'
 txtfile = '/home/chao/Desktop/new_poses.txt'
 
 with rosbag.Bag(bagfile, 'r') as bag:
@@ -15,10 +13,10 @@ with rosbag.Bag(bagfile, 'r') as bag:
         f.write(header)
 
         for i, (topic, msg, t) in enumerate(
-                bag.read_messages(topics=[odom_topic])):
-            if (i % 10) == 0:
-                position = msg.pose.pose.position
-                orientation = msg.pose.pose.orientation
+                bag.read_messages(topics=[pose_topic])):
+            if (i % 1) == 0:
+                position = msg.pose.position
+                orientation = msg.pose.orientation
                 line = '{0}.{1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}\n'.format(
                     msg.header.stamp.secs, msg.header.stamp.nsecs,
                     position.x, position.y, position.z, orientation.w,

@@ -6,6 +6,7 @@ Panels:
       Expanded:
         - /Global Options1
         - /AerialMapDisplay1/Status1
+        - /LaserScan1
       Splitter Ratio: 0.5
     Tree Height: 776
   - Class: rviz/Selection
@@ -26,7 +27,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: ""
+    SyncSource: LaserScan
 Visualization Manager:
   Class: ""
   Displays:
@@ -57,26 +58,81 @@ Visualization Manager:
       Object URI: http://api.mapbox.com/v4/mapbox.satellite/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoidmVyc2F0cmFuMDEiLCJhIjoiMjFiOWFlMjFhMjg3N2YyMGUxYzNkNDk4OWRhMmQwOGYifQ.SXnI_kH9KlspcsXfirqCMw
       Topic: /gps/reference
       Value: true
-      Zoom: 18
-    - Angle Tolerance: 0.1
-      Class: rviz/Odometry
-      Color: 255; 25; 0
+      Zoom: 19
+    - Class: rviz/Marker
       Enabled: true
-      Keep: 100
-      Length: 1
-      Name: Odometry
-      Position Tolerance: 0.1
-      Topic: /gps/odometry
+      Marker Topic: /gps/traj
+      Name: GpsTraj
+      Namespaces:
+        "": true
+      Queue Size: 100
       Value: true
-    - Angle Tolerance: 0.1
-      Class: rviz/Odometry
-      Color: 255; 25; 0
+    - Class: rviz/Marker
       Enabled: true
-      Keep: 100
-      Length: 1
-      Name: Odometry
-      Position Tolerance: 0.1
-      Topic: /gps_kf/odometry
+      Marker Topic: /gps_kf/traj
+      Name: GpsKfTraj
+      Namespaces:
+        "": true
+      Queue Size: 100
+      Value: true
+    - Alpha: 1
+      Autocompute Intensity Bounds: true
+      Autocompute Value Bounds:
+        Max Value: 10
+        Min Value: -10
+        Value: true
+      Axis: Z
+      Channel Name: intensity
+      Class: rviz/LaserScan
+      Color: 255; 255; 255
+      Color Transformer: Intensity
+      Decay Time: 100
+      Enabled: true
+      Invert Rainbow: false
+      Max Color: 255; 255; 255
+      Max Intensity: 3418
+      Min Color: 0; 0; 0
+      Min Intensity: 421
+      Name: LaserScan
+      Position Transformer: XYZ
+      Queue Size: 10
+      Selectable: true
+      Size (Pixels): 3
+      Size (m): 0.01
+      Style: Flat Squares
+      Topic: /laser/scan_filtered
+      Use Fixed Frame: true
+      Use rainbow: true
+      Value: true
+    - Class: rviz/TF
+      Enabled: true
+      Frame Timeout: 15
+      Frames:
+        All Enabled: true
+        color:
+          Value: true
+        imu:
+          Value: true
+        laser:
+          Value: true
+        stereo:
+          Value: true
+        world:
+          Value: true
+      Marker Scale: 1
+      Name: TF
+      Show Arrows: true
+      Show Axes: true
+      Show Names: true
+      Tree:
+        world:
+          imu:
+            laser:
+              {}
+            stereo:
+              color:
+                {}
+      Update Interval: 0
       Value: true
   Enabled: true
   Global Options:
@@ -102,22 +158,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 176.488
+      Distance: 8.45223
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0
-        Y: 0
-        Z: 0
+        X: 0.017132
+        Y: -0.192482
+        Z: -0.00498521
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.785398
-      Target Frame: base_link
+      Pitch: 0.489797
+      Target Frame: laser
       Value: Orbit (rviz)
-      Yaw: 0.785398
+      Yaw: 2.49859
     Saved: ~
 Window Geometry:
   Displays:

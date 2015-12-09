@@ -9,4 +9,4 @@ def resize_image(image, k=0.25):
     :param k:
     :return:
     """
-    return cv2.resize(image, None, fx=k, fy=k, interpolation=cv2.INTER_NEAREST)
+    return cv2.resize(image, None, fx=k, fy=k, interpolation=cv2.INTER_LINEAR)

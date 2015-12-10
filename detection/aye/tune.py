@@ -35,18 +35,16 @@ def tune_rf(X, y):
 
 
 def tune_ensemble(X, y):
-    clf_gnb = naive_bayes.GaussianNB()
     clf_svc = svm.SVC()
     clf_lr = linear_model.LogisticRegression()
     clf_rf = ensemble.RandomForestClassifier()
 
     eclf = ensemble.VotingClassifier(
-            estimators=[('lr', clf_lr), ('svc', clf_svc), ('gnb', clf_gnb),
-                        ('rf', clf_rf)],
+            estimators=[('lr', clf_lr), ('svc', clf_svc), ('rf', clf_rf)],
             voting='hard')
-    params = {'svc__kernel': ['rbf'], 'svc__C': [0.1, 1, 10, 100],
-              'lr__C': [0.1, 1, 5, 10, 50],
-              'rf__n_estimators': [5, 10, 25, 50]}
+    params = {'svc__kernel': ['rbf'], 'svc__C': [1, 5, 10, 50, 100],
+              'lr__C': [1, 5, 10, 50, 100],
+              'rf__n_estimators': [5, 10, 25]}
 
     grid = grid_search.GridSearchCV(estimator=eclf, param_grid=params, cv=5)
     grid.fit(X, y)

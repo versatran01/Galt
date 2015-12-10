@@ -97,3 +97,5 @@ gen/*
 *.out
 *.app
 *.pcd
+
+model/

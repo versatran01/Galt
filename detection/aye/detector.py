@@ -3,9 +3,7 @@ import rosbag
 import cv2
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
-
 import matplotlib.pyplot as plt
-
 from sklearn.externals import joblib
 from aye.preprocessing import *
 
@@ -47,6 +45,11 @@ with rosbag.Bag(bagfile) as bag:
             h_bgr.set_data(s.im_bgr)
         else:
             h_bw = ax_bw.imshow(bw, cmap=plt.cm.Greys)
-            h_bgr = ax_bgr.imshow(s.im_bgr)
+
+            #convert to rgb
+            b, g, r = cv2.split(s.im_bgr)
+            rgb_img = cv2.merge([r, g, b])
+
+            h_bgr = ax_bgr.imshow(rgb_img)
         plt.pause(0.01)
         plt.draw()

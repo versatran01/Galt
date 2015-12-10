@@ -150,3 +150,14 @@ def make_masked_test_samples(images, v_thresh):
     X = np.array(X, float)
 
     return X, mask
+
+
+def masked_y_to_image(y, mask):
+    h, w = mask.shape
+    mask_vec = np.reshape(mask, (-1,))
+    idx = np.array(np.where(mask_vec)).ravel()
+    idx = idx[y > 0]
+    bw = np.zeros((h * w,))
+    bw[idx] = 1
+    bw = np.reshape(bw, (h, w))
+    return bw

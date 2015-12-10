@@ -7,19 +7,6 @@ from sklearn.cross_validation import train_test_split
 from aye.preprocessing import *
 from aye.tune import tune_svc, print_grid_search_report
 
-
-def masked_y_to_image(y, mask):
-    h, w = mask.shape
-    mask_vec = np.reshape(mask, (-1,))
-    idx = np.array(np.where(mask_vec)).T
-    idx = idx[y_valid_hat > 0]
-    h, w = labels_valid[0].shape
-    bw = np.zeros((h * w,))
-    bw[idx] = 1
-    bw = np.reshape(bw, (h, w))
-    return bw
-
-
 cwd = os.getcwd()
 data_dir = os.path.join(cwd, '..', 'data')
 
@@ -78,9 +65,9 @@ X_valid_scaled = scaler.transform(X_valid)
 print('X_valid: ', X_valid_scaled.shape)
 y_valid_hat = svc_grid.predict(X_valid_scaled)
 
-# plt.figure()
-# im_bgr_valid = images_valid[0]
-# plt.imshow(im_bgr_valid)
+plt.figure()
+im_bgr_valid = images_valid[0]
+plt.imshow(im_bgr_valid)
 
 # plt.figure()
 # print(y_valid_hat.shape)
@@ -89,8 +76,9 @@ y_valid_hat = svc_grid.predict(X_valid_scaled)
 # plt.imshow(bw_test, cmap=plt.cm.Greys)
 # plt.show()
 
+plt.figure()
 bw = masked_y_to_image(y_valid_hat, mask)
-plt.imshow(bw)
+plt.imshow(bw, cmap=plt.cm.Greys)
 plt.show()
 
 # Maybe calculate how good it is doing

@@ -8,6 +8,24 @@ def resize_image(image, k=0.25, interpolation=cv2.INTER_NEAREST):
     return cv2.resize(image, None, fx=k, fy=k, interpolation=interpolation)
 
 
+def prepare_data(reader, file_ids):
+    X = None
+    y = None
+    for fid in file_ids:
+        image, labels = reader.read_image_with_label(fid)
+        s = Samples(image, labels)
+        X_both, y_both = s.Xy_both()
+
+        if X is None or y is None:
+            X = X_both
+            y = y_both
+        else:
+            X = np.vstack((X, X_both))
+            y = np.hstack((y, y_both))
+
+    return X, y
+
+
 def convert_image_colorspace(image, to):
     if to.lower() == 'hsv':
         flag = cv2.COLOR_BGR2HSV

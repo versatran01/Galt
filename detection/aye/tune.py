@@ -17,7 +17,7 @@ def tune_svc(X, y):
 
 
 def tune_lr(X, y):
-    params = {'C': [0.1, 1, 10, 50, 100]}
+    params = {'C': [1, 5, 10, 50, 100]}
     grid = grid_search.GridSearchCV(estimator=linear_model.LogisticRegression(),
                                     param_grid=params, cv=5)
     grid.fit(X, y)
@@ -26,7 +26,7 @@ def tune_lr(X, y):
 
 
 def tune_rf(X, y):
-    params = {'n_estimators': [10, 50, 200]}
+    params = {'n_estimators': [5, 10, 25, 50, 100]}
     grid = grid_search.GridSearchCV(estimator=ensemble.RandomForestClassifier(),
                                     param_grid=params, cv=5)
     grid.fit(X, y)
@@ -41,12 +41,12 @@ def tune_ensemble(X, y):
     clf_rf = ensemble.RandomForestClassifier()
 
     eclf = ensemble.VotingClassifier(
-        estimators=[('lr', clf_lr), ('svc', clf_svc), ('gnb', clf_gnb),
-                    ('rf', clf_rf)],
-        voting='hard')
-    params = {'svc__kernel': ['rbf'], 'svc__C': [0.01, 0.1, 1, 10, 100],
-              'lr__C': [1, 100],
-              'rf__n_estimators': [20, 200]}
+            estimators=[('lr', clf_lr), ('svc', clf_svc), ('gnb', clf_gnb),
+                        ('rf', clf_rf)],
+            voting='hard')
+    params = {'svc__kernel': ['rbf'], 'svc__C': [0.1, 1, 10, 100],
+              'lr__C': [0.1, 1, 5, 10, 50],
+              'rf__n_estimators': [5, 10, 25, 50]}
 
     grid = grid_search.GridSearchCV(estimator=eclf, param_grid=params, cv=5)
     grid.fit(X, y)

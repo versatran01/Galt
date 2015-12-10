@@ -4,7 +4,7 @@ from sklearn.grid_search import GridSearchCV
 
 def tune_svc(X, y):
     tuned_parameters = [
-        {'kernel': ['rbf', 'linear'], 'C': [0.01, 0.1, 1, 10, 100]}]
+        {'kernel': ['rbf', 'linear'], 'C': [1, 2.5, 5, 7.5, 10]}]
 
     grid = GridSearchCV(svm.SVC(), tuned_parameters, cv=5)
     grid.fit(X, y)

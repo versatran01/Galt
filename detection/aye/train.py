@@ -94,22 +94,52 @@ for fid in file_ids:
         X = np.vstack((X, X_both))
         y = np.hstack((y, y_both))
 
+print('X: {0}, y: {0}'.format(X.shape, y.shape))
+
 # Pre-processing data
+print('Scale all data')
 scaler = StandardScaler()
 X_scaled = scaler.fit_transform(X)
 
 # Split data into train and test
-X_train, X_test, y_train, y_test = train_test_split(X_scaled, y,
-                                                    test_size=test_size)
+print('Split data')
+X_train, X_valid, y_train, y_test = train_test_split(X_scaled, y,
+                                                     test_size=test_size)
 
 # For now, train an SVC with GridSearchCV
-svc_grid = tune_svc(X, y)
+print('Tune SVC')
+svc_grid = tune_svc(X_train[::2], y_train[::2])
 
 # Optionally, print a verbose report
 print_grid_search_report(svc_grid)
 
 # Validate on y_test
+score = svc_grid.score(X_valid, y_test)
+print('Test score: {0}'.format(score))
 
 # Load the final image and see visually how good the classifier is
+image_name_bgr_valid = "frame{0:04d}.{1}".format(5, file_ext)
+filename_bgr_valid = os.path.join(data_dir, image_name_bgr_valid)
+im_bgr_valid = cv2.imread(filename_bgr_valid, cv2.IMREAD_COLOR)
+im_bgr_valid = resize_image(im_bgr_valid, k)
+im_hsv_valid = cv2.cvtColor(im_bgr_valid, cv2.COLOR_BGR2HSV)
+im_lab_valid = cv2.cvtColor(im_bgr_valid, cv2.COLOR_BGR2LAB)
+h, w, c = np.shape(im_bgr_valid)
+X_valid_bgr = np.reshape(im_bgr_valid, (h * w, -1))
+X_valid_hsv = np.reshape(im_hsv_valid, (h * w, -1))
+X_valid_lab = np.reshape(im_lab_valid, (h * w, -1))
+X_valid = np.hstack((X_valid_bgr, X_valid_hsv, X_valid_lab))
+X_valid = np.array(X_valid, float)
+X_valid_scaled = scaler.transform(X_valid)
+print('X_valid: ', X_valid_scaled.shape)
+Y_valid_hat = svc_grid.predict(X_valid_scaled)
+
+fig = plt.figure(figsize=(6, 6))
+plt.imshow(im_bgr_valid)
+fig = plt.figure(figsize=(6, 6))
+bw_test = np.reshape(Y_valid_hat, (h, w))
+bw_test = bw_test > 0
+plt.imshow(bw_test, cmap=plt.cm.Greys)
+plt.show()
 
 # Maybe calculate how good it is doing

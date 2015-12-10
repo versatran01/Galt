@@ -145,7 +145,7 @@ class Samples(object):
         X = np.array(X, float)
         return X
 
-    def y_to_bw(self, y):
+    def y_to_bw(self, y, to_gray=False):
         h, w = self.mask.shape
         m = np.reshape(self.mask, (-1,))
         idx = np.array(np.where(m))
@@ -154,4 +154,9 @@ class Samples(object):
         bw = np.zeros((h * w,))
         bw[idx] = 1
         bw = np.reshape(bw, (h, w))
+
+        if to_gray:
+            bw = np.array(bw, np.uint8)
+            bw *= 255
+
         return bw

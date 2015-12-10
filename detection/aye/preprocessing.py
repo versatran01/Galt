@@ -4,23 +4,11 @@ import os
 import numpy as np
 
 
-def resize_image(image, k=0.25):
-    """
-    Resize image using cv2.resize with a single scale k
-    :param image: array-like
-    :param k: float
-    :return: array-like
-    """
-    return cv2.resize(image, None, fx=k, fy=k, interpolation=cv2.INTER_NEAREST)
+def resize_image(image, k=0.25, interpolation=cv2.INTER_NEAREST):
+    return cv2.resize(image, None, fx=k, fy=k, interpolation=interpolation)
 
 
 def convert_image_colorspace(image, to):
-    """
-    Covert image colorspace from BGR to HSV or LAB
-    :param image: array-like
-    :param to: str
-    :return: array-like
-    """
     if to.lower() == 'hsv':
         flag = cv2.COLOR_BGR2HSV
     elif to.lower() == 'lab':
@@ -29,10 +17,6 @@ def convert_image_colorspace(image, to):
         raise ValueError('colorspace {0} not supported'.format(to))
 
     return cv2.cvtColor(image, flag)
-
-
-def image_to_feature_vector():
-    pass
 
 
 class DataReader(object):
@@ -65,18 +49,6 @@ class DataReader(object):
 
         return image, [pos, neg]
 
-    def read_cspace_with_label(self, fid, k=0.4):
-        im_bgr, labels = self.read_image_with_label(fid)
-        # Convert colorspace
-        im_hsv = convert_image_colorspace(im_bgr, 'hsv')
-        im_lab = convert_image_colorspace(im_bgr, 'lab')
-        # Resize images
-        images = [im_bgr, im_hsv, im_lab]
-        images = [resize_image(im, k) for im in images]
-        # Resize labels
-        labels = [resize_image(im, k) for im in labels]
-        return images, labels
-
 
 class Samples(object):
     k = 0.25
@@ -84,7 +56,8 @@ class Samples(object):
 
     def __init__(self, im_bgr, labels=None):
         # Get images of all color spaces
-        self.im_bgr = resize_image(im_bgr, self.k)
+        # For images we resize using linear
+        self.im_bgr = resize_image(im_bgr, self.k, cv2.INTER_LINEAR)
         self.im_hsv = convert_image_colorspace(self.im_bgr, "hsv")
         self.im_lab = convert_image_colorspace(self.im_bgr, "lab")
 
@@ -94,8 +67,9 @@ class Samples(object):
         if labels:
             assert len(labels) == 2
             im_pos, im_neg = labels
-            im_pos = resize_image(im_pos, self.k)
-            im_neg = resize_image(im_neg, self.k)
+            # For labels we resize using nearest
+            im_pos = resize_image(im_pos, self.k, cv2.INTER_NEAREST)
+            im_neg = resize_image(im_neg, self.k, cv2.INTER_NEAREST)
             self.pos = im_pos > 0
             self.neg = im_neg > 0
 

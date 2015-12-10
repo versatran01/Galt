@@ -11,7 +11,7 @@ cwd = os.getcwd()
 data_dir = os.path.join(cwd, '..', 'data')
 
 # Get all file names
-file_ids = range(1,6)
+file_ids = range(1, 6)
 test_size = 0.3
 
 reader = DataReader()

@@ -12,11 +12,15 @@ def tune_svc(X, y):
     return grid
 
 
+def tune_ensemble(X, y):
+    pass
+
+
 def print_grid_search_report(grid):
     print("All Parameters Searched:")
     for params, mean_score, scores in grid.grid_scores_:
         print(
-        "%0.3f (+/-%0.03f) for %r" % (mean_score, scores.std() * 2, params))
+            "%0.3f (+/-%0.03f) for %r" % (mean_score, scores.std() * 2, params))
     print(" ")
 
     print("Optimal Parameters:")

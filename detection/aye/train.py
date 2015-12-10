@@ -11,19 +11,17 @@ cwd = os.getcwd()
 data_dir = os.path.join(cwd, '..', 'data')
 
 # Get all file names
-file_ids = range(5)
-file_ext = 'png'
+file_ids = range(1,6)
+test_size = 0.3
 
 reader = DataReader()
-
-k = 0.25
-v_thresh = 20
-test_size = 0.3
 X = None
 y = None
+# TODO: make this entire thing a function
 for fid in file_ids:
-    images, labels = reader.read_cspace_with_label(fid, k)
-    X_both, y_both = make_train_samples_features(images, labels, 20)
+    image, labels = reader.read_image_with_label(fid)
+    s = Samples(image, labels)
+    X_both, y_both = s.Xy_both()
 
     if X is None or y is None:
         X = X_both
@@ -46,7 +44,7 @@ X_train, X_valid, y_train, y_test = train_test_split(X_scaled, y,
 
 # For now, train an SVC with GridSearchCV
 print('Tune SVC')
-svc_grid = tune_svc(X_train[::4], y_train[::4])
+svc_grid = tune_svc(X_train[::2], y_train[::2])
 
 # Optionally, print a verbose report
 print_grid_search_report(svc_grid)
@@ -56,9 +54,9 @@ score = svc_grid.score(X_valid, y_test)
 print('Test score: {0}'.format(score))
 
 # Load the final image and see visually how good the classifier is
-images_valid, labels_valid = reader.read_cspace_with_label(5, k)
-# X_valid = make_test_samples(images_valid)
-X_valid, mask = make_masked_test_samples(images_valid, 20)
+image, labels_valid = reader.read_image_with_label(0)
+s_valid = Samples(image, labels_valid)
+X_valid = s_valid.X()
 
 # Apply transform
 X_valid_scaled = scaler.transform(X_valid)
@@ -66,19 +64,9 @@ print('X_valid: ', X_valid_scaled.shape)
 y_valid_hat = svc_grid.predict(X_valid_scaled)
 
 plt.figure()
-im_bgr_valid = images_valid[0]
-plt.imshow(im_bgr_valid)
-
-# plt.figure()
-# print(y_valid_hat.shape)
-# bw_test = np.reshape(y_valid_hat, labels_valid[0].shape)
-# bw_test = bw_test > 0
-# plt.imshow(bw_test, cmap=plt.cm.Greys)
-# plt.show()
+plt.imshow(s_valid.im_bgr)
 
 plt.figure()
-bw = masked_y_to_image(y_valid_hat, mask)
+bw = s_valid.y_to_bw(y_valid_hat)
 plt.imshow(bw, cmap=plt.cm.Greys)
 plt.show()
-
-# Maybe calculate how good it is doing

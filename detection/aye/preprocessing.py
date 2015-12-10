@@ -11,7 +11,7 @@ def resize_image(image, k=0.25):
     :param k: float
     :return: array-like
     """
-    return cv2.resize(image, None, fx=k, fy=k, interpolation=cv2.INTER_LINEAR)
+    return cv2.resize(image, None, fx=k, fy=k, interpolation=cv2.INTER_NEAREST)
 
 
 def convert_image_colorspace(image, to):
@@ -78,86 +78,88 @@ class DataReader(object):
         return images, labels
 
 
-def make_train_samples_features(images, labels, v_thresh=None):
-    im_bgr, im_hsv, im_lab = images
-    im_pos, im_neg = labels
+class Samples(object):
+    k = 0.25
+    v_thresh = 25
 
-    if v_thresh:
-        v = im_hsv[:, :, -1]
-        mask_v = (v > v_thresh) & (v < 255 - v_thresh)
-    else:
-        mask_v = np.ones_like(im_pos) > 0
+    def __init__(self, im_bgr, labels=None):
+        # Get images of all color spaces
+        self.im_bgr = resize_image(im_bgr, self.k)
+        self.im_hsv = convert_image_colorspace(self.im_bgr, "hsv")
+        self.im_lab = convert_image_colorspace(self.im_bgr, "lab")
 
-    mask_pos = im_pos > 0
-    mask_neg = im_neg > 0
+        # Handle labels
+        self.pos = None
+        self.neg = None
+        if labels:
+            assert len(labels) == 2
+            im_pos, im_neg = labels
+            im_pos = resize_image(im_pos, self.k)
+            im_neg = resize_image(im_neg, self.k)
+            self.pos = im_pos > 0
+            self.neg = im_neg > 0
 
-    mask_pos_v = mask_pos & mask_v
-    mask_neg_v = mask_neg & mask_v
+        # Mask out invalid data
+        v = self.im_hsv[:, :, -1]
+        self.mask = (v >= self.v_thresh) & (v <= 255 - self.v_thresh)
 
-    X_pos_bgr = im_bgr[mask_pos_v]
-    X_pos_hsv = im_hsv[mask_pos_v]
-    X_pos_lab = im_lab[mask_pos_v]
+    def extract(self, label):
+        m = label & self.mask
+        X_bgr = self.im_bgr[m]
+        X_hsv = self.im_hsv[m]
+        X_lab = self.im_lab[m]
+        X = np.hstack((X_bgr, X_hsv, X_lab))
+        n_samples, n_features = X.shape
+        assert n_features == 9
+        # Convert to float
+        X = np.array(X, float)
+        return X
 
-    X_neg_bgr = im_bgr[mask_neg_v]
-    X_neg_hsv = im_hsv[mask_neg_v]
-    X_neg_lab = im_lab[mask_neg_v]
+    def Xy_pos(self):
+        assert self.pos is not None
 
-    X_pos = np.hstack((X_pos_bgr, X_pos_hsv, X_pos_lab))
-    X_neg = np.hstack((X_neg_bgr, X_neg_hsv, X_neg_lab))
+        X_pos = self.extract(self.pos)
+        y_pos = np.ones((len(X_pos),))
+        return X_pos, y_pos
 
-    # Convert to float
-    X_pos = np.array(X_pos, float)
-    X_neg = np.array(X_neg, float)
+    def Xy_neg(self):
+        assert self.neg is not None
 
-    # Make sure we don't have too many negative samples than positive samples
-    if len(X_neg) / len(X_pos) > 2:
-        X_neg = X_neg[::2]
+        X_neg = self.extract(self.neg)
+        y_neg = np.zeros((len(X_neg),))
+        return X_neg, y_neg
 
-    # Generate corresponding labels
-    y_pos = np.ones((np.size(X_pos, axis=0)))
-    y_neg = np.zeros((np.size(X_neg, axis=0)))
+    def Xy_both(self, balance=True):
+        X_pos, y_pos = self.Xy_pos()
+        X_neg, y_neg = self.Xy_neg()
+        if balance:
+            if len(X_neg) / len(X_pos) > 2:
+                X_neg = X_neg[::2]
+                y_neg = y_neg[::2]
+        X = np.vstack((X_pos, X_neg))
+        y = np.hstack((y_pos, y_neg))
 
-    X_both = np.vstack((X_pos, X_neg))
-    y_both = np.hstack((y_pos, y_neg))
+        return X, y
 
-    return X_both, y_both
+    def X(self):
+        h, w, _ = self.im_bgr.shape
+        X_bgr = np.reshape(self.im_bgr, (h * w, -1))
+        X_hsv = np.reshape(self.im_hsv, (h * w, -1))
+        X_lab = np.reshape(self.im_lab, (h * w, -1))
 
+        m = np.reshape(self.mask, (-1,))
+        X = np.hstack((X_bgr, X_hsv, X_lab))
+        X = X[m]
+        X = np.array(X, float)
+        return X
 
-def make_test_samples(images):
-    im_bgr, im_hsv, im_lab = images
-
-    h, w, _ = im_bgr.shape
-    X_bgr = np.reshape(im_bgr, (h * w, -1))
-    X_hsv = np.reshape(im_hsv, (h * w, -1))
-    X_lab = np.reshape(im_lab, (h * w, -1))
-
-    X = np.hstack((X_bgr, X_hsv, X_lab))
-    X = np.array(X, float)
-    return X
-
-
-def make_masked_test_samples(images, v_thresh):
-    im_bgr, im_hsv, im_lab = images
-
-    v = im_hsv[:, :, -1]
-    mask = (v > v_thresh) & (v < 255 - v_thresh)
-
-    X_bgr = im_bgr[mask]
-    X_hsv = im_hsv[mask]
-    X_lab = im_lab[mask]
-
-    X = np.hstack((X_bgr, X_hsv, X_lab))
-    X = np.array(X, float)
-
-    return X, mask
-
-
-def masked_y_to_image(y, mask):
-    h, w = mask.shape
-    mask_vec = np.reshape(mask, (-1,))
-    idx = np.array(np.where(mask_vec)).ravel()
-    idx = idx[y > 0]
-    bw = np.zeros((h * w,))
-    bw[idx] = 1
-    bw = np.reshape(bw, (h, w))
-    return bw
+    def y_to_bw(self, y):
+        h, w = self.mask.shape
+        m = np.reshape(self.mask, (-1,))
+        idx = np.array(np.where(m))
+        idx = idx.ravel()
+        idx = idx[y > 0]
+        bw = np.zeros((h * w,))
+        bw[idx] = 1
+        bw = np.reshape(bw, (h, w))
+        return bw

@@ -27,8 +27,7 @@ with rosbag.Bag(bagfile) as bag:
         try:
             im_bgr = bridge.imgmsg_to_cv2(msg)
             # Rotate image 90 degree
-            im_bgr = cv2.transpose(im_bgr)
-            im_bgr = cv2.flip(im_bgr, 1)
+            im_bgr = rotate_image(im_bgr)
 
         except CvBridgeError as e:
             print(e)

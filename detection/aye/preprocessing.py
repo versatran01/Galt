@@ -68,6 +68,12 @@ class DataReader(object):
         return image, [pos, neg]
 
 
+def rotate_image(image):
+    image = cv2.transpose(image)
+    image = cv2.flip(image, 1)
+    return image
+
+
 class Samples(object):
     k = 0.25
     v_thresh = 25

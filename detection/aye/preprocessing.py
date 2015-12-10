@@ -45,7 +45,7 @@ class DataReader(object):
         self.fmt_image = "frame{0:04d}.{1}"
         self.fmt_label = "frame{0:04d}_{1}.{2}"
 
-    def read_color_image(self, fid):
+    def read_image(self, fid):
         image_name = self.fmt_image.format(fid, self.ext)
         filename = os.path.join(self.dir, image_name)
         image = cv2.imread(filename, cv2.IMREAD_COLOR)
@@ -61,7 +61,7 @@ class DataReader(object):
 
     def read_image_with_label(self, fid):
         flag = cv2.IMREAD_GRAYSCALE
-        image = self.read_color_image(fid)
+        image = self.read_image(fid)
         pos = cv2.imread(self.get_label_filename(fid, 'positive'), flag)
         neg = cv2.imread(self.get_label_filename(fid, 'negative'), flag)
 

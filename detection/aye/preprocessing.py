@@ -161,7 +161,7 @@ class Samples(object):
         idx = np.array(np.where(m))
         idx = idx.ravel()
         idx = idx[y > 0]
-        bw = np.zeros((h * w,))
+        bw = np.zeros((h * w,), np.bool)
         bw[idx] = 1
         bw = np.reshape(bw, (h, w))
 

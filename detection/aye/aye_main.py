@@ -26,6 +26,7 @@ with rosbag.Bag(bagfile) as bag:
         try:
             im_bgr = bridge.imgmsg_to_cv2(msg)
             # Rotate image 90 degree
+            im_bgr = im_bgr[200:1000, :1480, :]
             im_bgr = rotate_image(im_bgr)
             # Use a small portion of the image here?
 

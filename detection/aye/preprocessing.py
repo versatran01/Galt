@@ -75,29 +75,33 @@ def rotate_image(image):
 
 
 class Samples(object):
-    k = 0.25
+    k = 0.4
     v_thresh = 25
 
     def __init__(self, im_bgr, labels=None):
         # Get images of all color spaces
         # For images we resize using linear
-        self.im_bgr = resize_image(im_bgr, self.k, cv2.INTER_LINEAR)
+        self.im_raw = resize_image(im_bgr, self.k, cv2.INTER_LINEAR)
+        # Blur the image a bit
+        self.im_bgr = cv2.GaussianBlur(self.im_raw, (5, 5), 1)
         self.im_hsv = convert_image_colorspace(self.im_bgr, "hsv")
         self.im_lab = convert_image_colorspace(self.im_bgr, "lab")
 
-        # Handle labels
+        # Handle labels, if labels is provided, we are making training samples
+        # otherwise we are making testing samples and generally don't care
+        # about labels
         self.pos = None
         self.neg = None
         if labels:
             assert len(labels) == 2
             im_pos, im_neg = labels
-            # For labels we resize using nearest
+            # For labels we resize using nearest because they are masks
             im_pos = resize_image(im_pos, self.k, cv2.INTER_NEAREST)
             im_neg = resize_image(im_neg, self.k, cv2.INTER_NEAREST)
             self.pos = im_pos > 0
             self.neg = im_neg > 0
 
-        # Mask out invalid data
+        # Mask out invalid data based on v value in hsv
         v = self.im_hsv[:, :, -1]
         self.mask = (v >= self.v_thresh) & (v <= 255 - self.v_thresh)
 

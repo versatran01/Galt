@@ -26,30 +26,36 @@ with rosbag.Bag(bagfile) as bag:
             im_bgr = bridge.imgmsg_to_cv2(msg)
             # Rotate image 90 degree
             im_bgr = rotate_image(im_bgr)
+            # Use a small portion of the image here?
 
         except CvBridgeError as e:
             print(e)
 
+        # Make a feature vector out of color image
         s = Samples(im_bgr)
         X = scaler.transform(s.X())
 
+        # Get prediction
         y = clf.predict(X)
         bw = s.y_to_bw(y, to_gray=True)
 
+        # Clean up bw image for blob analysis
+        # TODO: convert this to a function
         n = 3
         kernel = np.ones((n, n), np.uint8)
         opened = cv2.morphologyEx(bw, cv2.MORPH_OPEN, kernel)
 
+        # Input to RegionProps and get back a bunch of bounding boxes
+
+        # Visualize result
+        b, g, r = cv2.split(s.im_bgr)
+        im_rgb = cv2.merge([r, g, b])
+
         if h_bgr:
             h_bw.set_data(opened)
-            h_bgr.set_data(s.im_bgr)
+            h_bgr.set_data(im_rgb)
         else:
             h_bw = ax_bw.imshow(bw, cmap=plt.cm.Greys)
-
-            #convert to rgb
-            b, g, r = cv2.split(s.im_bgr)
-            rgb_img = cv2.merge([r, g, b])
-
-            h_bgr = ax_bgr.imshow(rgb_img)
+            h_bgr = ax_bgr.imshow(im_rgb)
         plt.pause(0.01)
         plt.draw()

@@ -75,7 +75,7 @@ def rotate_image(image):
 
 
 class Samples(object):
-    k = 0.4
+    k = 0.25
     v_thresh = 25
 
     def __init__(self, im_bgr, labels=None):

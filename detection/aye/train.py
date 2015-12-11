@@ -29,15 +29,15 @@ print('Split data into {0} train and {1} test'.format(len(y_train),
 
 # For now, train an SVC with GridSearchCV
 print('Tuning classifiers')
-grid = tune_svc(X_train[::2], y_train[::2])
+grid = tune_ensemble(X_train[::2], y_train[::2])
 print_grid_search_report(grid)
 
 # Validate on y_test
 score = grid.score(X_valid, y_test)
 print('Test score: {0}'.format(score))
 
-joblib.dump(grid, '../model/svc.pkl')
-clf = joblib.load('../model/svc.pkl')
+joblib.dump(grid, '../model/ensemble.pkl')
+clf = joblib.load('../model/ensemble.pkl')
 joblib.dump(scaler, '../model/scaler.pkl')
 
 # Load the final image and see visually how good the classifier is

@@ -10,12 +10,13 @@ from aye.preprocessing import *
 bagfile = '/home/chao/Workspace/bag/frame/rect_fixed/frame1_rect_fixed.bag'
 
 # load
-clf = joblib.load('../model/ensemble.pkl')
+clf = joblib.load('../model/svc.pkl')
 scaler = joblib.load('../model/scaler.pkl')
 im_topic = '/color/image_rect_color'
 
 bridge = CvBridge()
 fig = plt.figure()
+plt.ion()
 ax_bgr = fig.add_subplot(121)
 ax_bw = fig.add_subplot(122)
 h_bgr = None
@@ -47,8 +48,10 @@ with rosbag.Bag(bagfile) as bag:
 
         # Input to RegionProps and get back a bunch of bounding boxes
 
+        # Give bounding boxes and image and timestamp to tracker for tracking
+
         # Visualize result
-        b, g, r = cv2.split(s.im_bgr)
+        b, g, r = cv2.split(s.im_raw)
         im_rgb = cv2.merge([r, g, b])
 
         if h_bgr:
@@ -57,5 +60,4 @@ with rosbag.Bag(bagfile) as bag:
         else:
             h_bw = ax_bw.imshow(bw, cmap=plt.cm.Greys)
             h_bgr = ax_bgr.imshow(im_rgb)
-        plt.pause(0.01)
-        plt.draw()
+        plt.pause(0.001)

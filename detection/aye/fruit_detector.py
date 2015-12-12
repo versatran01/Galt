@@ -2,7 +2,7 @@ from __future__ import print_function, division, absolute_import
 from aye.preprocessing import Samples
 
 
-class Detector(object):
+class FruitDetector(object):
     def __init__(self, clf, scaler):
         self.clf = clf
         self.scaler = scaler

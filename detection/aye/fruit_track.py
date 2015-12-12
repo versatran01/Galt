@@ -1,7 +1,6 @@
 from __future__ import print_function, division, absolute_import
-import cv2
 
 
-class Tracker(object):
+class FruitTrack(object):
     def __init__(self):
         pass

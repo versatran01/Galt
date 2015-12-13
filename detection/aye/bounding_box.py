@@ -66,7 +66,21 @@ def bbox_distance_squared(bbox1, bbox2):
     return (cx1 - cx2) ** 2 + (cy1 - cy2) ** 2
 
 
+def bbox_distance_squared_area_ratio(bbox1, bbox2):
+    x1, y1, w1, h1 = bbox1
+    x2, y2, w2, h2 = bbox2
+    cx1 = x1 + w1 / 2.0
+    cy1 = y1 + h1 / 2.0
+    cx2 = x2 + w2 / 2.0
+    cy2 = y2 + h2 / 2.0
+    distance_squared = (cx1 - cx2) ** 2 + (cy1 - cy2) ** 2
+    area = w1 * h1 + w2 * h2
+    return distance_squared / area
+
+
 def bboxes_assignment_cost(bboxes1, bboxes2):
+    bboxes1 = np.atleast_2d(bboxes1)
+    bboxes2 = np.atleast_2d(bboxes2)
     n1 = len(bboxes1)
     n2 = len(bboxes2)
     assert n1 > 0 and n2 > 0
@@ -79,15 +93,3 @@ def bboxes_assignment_cost(bboxes1, bboxes2):
             distance2_area_cost = bbox_distance_squared_area_ratio(b1, b2)
             C[i1, i2] = overlap_cost + distance2_area_cost
     return C
-
-
-def bbox_distance_squared_area_ratio(bbox1, bbox2):
-    x1, y1, w1, h1 = bbox1
-    x2, y2, w2, h2 = bbox2
-    cx1 = x1 + w1 / 2.0
-    cy1 = y1 + h1 / 2.0
-    cx2 = x2 + w2 / 2.0
-    cy2 = y2 + h2 / 2.0
-    distance_squared = (cx1 - cx2) ** 2 + (cy1 - cy2) ** 2
-    area = w1 * h1 + w2 * h2
-    return distance_squared / area

@@ -62,7 +62,6 @@ def region_props(bw, do_clean=True, min_area=4):
     blob_dtype = [('area', 'int32'),
                   ('bbox', '(4,)int32'),
                   ('bbox_area', 'int32'),
-                  ('bbox_center', '(2,)float32'),
                   ('extent', 'float32'),
                   ('equiv_diameter', 'float32')]
 
@@ -74,11 +73,10 @@ def region_props(bw, do_clean=True, min_area=4):
             bbox = cv2.boundingRect(cnt)
             x, y, w, h = bbox
             bbox_area = w * h
-            bbox_center = (x + w / 2.0, y + h / 2.0)
             extent = area / bbox_area
             equiv_diameter = np.sqrt(4 * area / np.pi)
-            blob = np.array((area, bbox, bbox_area, bbox_center, extent,
-                             equiv_diameter), dtype=blob_dtype)
+            blob = np.array((area, bbox, bbox_area, extent, equiv_diameter),
+                            dtype=blob_dtype)
             blobs.append(blob)
     blobs = np.array(blobs)
 

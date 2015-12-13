@@ -2,7 +2,6 @@ from __future__ import print_function, division, absolute_import
 
 import cv2
 import numpy as np
-import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 
 
@@ -24,6 +23,7 @@ def plot_edge_bboxes(ax, bboxes, color):
 # Functions start with draw calls opencv subroutines
 def draw_bboxes(image, bboxes, color, thickness=1):
     bboxes = np.atleast_2d(bboxes)
+    bboxes = np.array(bboxes, copy=True, dtype=int)
     for bbox in bboxes:
         x, y, w, h = bbox
         cv2.rectangle(image, (x, y), (x + w, y + h),

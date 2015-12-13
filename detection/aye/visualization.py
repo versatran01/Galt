@@ -5,6 +5,14 @@ import numpy as np
 import matplotlib.patches as patches
 
 
+class Colors:
+    bbox_detection = (255, 0, 0)  # red
+    bbox_prediction = (0, 0, 255)  # blue
+    bbox_update = (255, 0, 255)  # magenta
+    bbox_match = (0, 255, 0)  # green
+    optical_flow = (255, 0, 0)  # red
+
+
 # Functions start with plot calls pyplot subroutines and usually requires ax
 def plot_filled_bboxes(ax, bboxes, color, alpha):
     for bbox in bboxes:

@@ -19,6 +19,11 @@ def extract_bbox(image, bbox):
     return image[y:y + h, x:x + w]
 
 
+def bbox_center(bbox):
+    x, y, w, h = bbox
+    return np.array([x + w / 2, y + h / 2])
+
+
 def bbox_intersect(bbox1, bbox2):
     x1, y1, w1, h1 = bbox1
     x2, y2, w2, h2 = bbox2

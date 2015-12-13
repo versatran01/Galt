@@ -1,6 +1,27 @@
 from __future__ import print_function, division, absolute_import
 import cv2
 import numpy as np
+from aye.bounding_box import extract_bbox
+
+
+def thresh_blobs_area(blobs, area=50):
+    return blobs[blobs['area'] > area]
+
+
+def is_blob_multiple(blob):
+    # For now just return false
+    # Some learning algorithm goes here
+    return False
+
+
+def num_peaks_in_blob(blob, image):
+    if is_blob_multiple(blob):
+        bbox = blob['bbox']
+        bbox_region = extract_bbox(image, bbox)
+        num_peaks = num_local_maximas(bbox_region)
+    else:
+        num_peaks = 1
+    return num_peaks
 
 
 def num_local_maximas(image, n=7):

@@ -1,7 +1,6 @@
 from __future__ import print_function, division, absolute_import
 import cv2
 import numpy as np
-import matplotlib.pyplot as plt
 
 
 def points_inside_image(points, image, bound=4):
@@ -9,6 +8,14 @@ def points_inside_image(points, image, bound=4):
     px = points[:, :, 0]
     py = points[:, :, 1]
     return (px >= bound) & (px < w - bound) & (py >= bound) & (py < h - bound)
+
+
+def calc_average_flow(flows, sts=None):
+    if sts is None:
+        flows_good = flows
+    else:
+        flows_good = flows[sts > 0]
+    return np.mean(flows_good, axis=0)
 
 
 def calc_bboxes_flow(gray1, gray2, bboxes1, win_size=21, max_level=3,

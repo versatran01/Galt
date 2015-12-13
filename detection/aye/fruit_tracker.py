@@ -1,24 +1,65 @@
 from __future__ import print_function, division, absolute_import
+
+from aye.visualization import *
 from aye.fruit_track import FruitTrack
+from aye.assignment import hungarian_assignment
 from aye.blob_analysis import num_peaks_in_blob
+from aye.bounding_box import bboxes_assignment_cost
+from aye.optical_flow import calc_bboxes_flow, calc_average_flow
+
+
+def get_tracks_bboxes(tracks):
+    bboxes = []
+    for track in tracks:
+        bboxes.append(track.bbox)
+    return np.array(bboxes, int)
+
+
+def predict_tracks_with_flows(tracks, flows, sts):
+    valid_tracks = []
+    invalid_tracks = []
+
+    for track, flow, st in zip(tracks, flows, sts):
+        if st.ravel():
+            track.predict(flow)
+            valid_tracks.append(track)
+        else:
+            invalid_tracks.append(track)
+    return valid_tracks, invalid_tracks
+
+
+def add_new_tracks(tracks, blobs, v):
+    for blob in blobs:
+        num_fruits = num_peaks_in_blob(blob, v)
+        track = FruitTrack(blob, num_fruits=num_fruits)
+        tracks.append(track)
 
 
 class FruitTracker(object):
     def __init__(self):
+        # Tracking
         self.tracks = []
         self.s = None
+        self.blobs = None
 
         # Optical flow
-        self.prev_gray = None
+        self.gray_prev = None
+        self.flow_mean = None
 
         # visualization
-        self.disp_color = None
-        self.disp_bw = None
+        self.disp = None
 
     def track(self, s, blobs):
         self.s = s
+        self.blobs = blobs
+        self.disp = np.array(s.im_raw, copy=True)
+
+        # Draw detections
+        draw_bboxes(self.disp, blobs['bbox'], Colors.detection)
+
         if not self.initialized:
-            self.add_new_tracks(self.tracks, blobs)
+            add_new_tracks(self.tracks, blobs, self.v_channel)
+            self.gray_prev = cv2.cvtColor(self.s.im_raw, cv2.COLOR_BGR2GRAY)
             return
 
         # Starting here we do the following things
@@ -34,17 +75,89 @@ class FruitTracker(object):
         #   c. for lost tracks, move to invalid_tracks
         #   d. for all invalid_tracks, we see if they can be added to total
         #      counts and then delete them
+        # Calculate optical flow from the tracks bounding boxes
 
-        print('a')
+        # 1.a
+        bboxes_track = get_tracks_bboxes(self.tracks)
+        gray = cv2.cvtColor(self.s.im_raw, cv2.COLOR_BGR2GRAY)
+        # if self.flow_mean is None:
+        p1s, p2s, sts = calc_bboxes_flow(self.gray_prev, gray, bboxes_track)
+        # else:
+        #     p1s, p2s, sts = calc_bboxes_flow(self.gray_prev, gray, bboxes_track,
+        #                                      guess=self.flow_mean)
+        flows = p2s - p1s
+        self.flow_mean = calc_average_flow(flows, sts)
+        self.gray_prev = gray
 
-    def add_new_tracks(self, tracks, blobs):
-        for blob in blobs:
-            num_fruits = num_peaks_in_blob(blob, self.v_channel)
-            track = FruitTrack(blob, num_fruits=num_fruits)
-            tracks.append(track)
+        # Draw optical flow
+        # draw_optical_flow(self.disp, p1s, p2s, color=Colors.optical_flow)
+
+        # 1.b and 1.c
+        valid_tracks = []
+        invalid_tracks = []
+        for track, flow, st in zip(self.tracks, flows, sts):
+            if st.ravel():
+                track.predict(flow)
+                valid_tracks.append(track)
+            else:
+                invalid_tracks.append(track)
+
+        # Draw prediction
+        bboxes_prediction = get_tracks_bboxes(valid_tracks)
+        # draw_bboxes(self.disp, bboxes_prediction, color=Colors.prediction)
+
+        # 2
+        self.tracks = valid_tracks
+        bboxes_track = get_tracks_bboxes(self.tracks)
+        bboxes_detection = blobs['bbox']
+        cost = bboxes_assignment_cost(bboxes_track, bboxes_detection)
+        matches, lost_tracks, new_detections = hungarian_assignment(cost)
+
+        # Draw matches
+        # draw_bboxes_matches(self.disp, matches, bboxes_track, bboxes_detection,
+        #                     color=Colors.match)
+
+        # 3.a
+        valid_tracks = []
+        for match in matches:
+            i1, i2 = match
+            track = self.tracks[i1]
+            blob = self.blobs[i2]
+            track.correct(blob)
+            valid_tracks.append(track)
+
+        # Draw kalman filter update
+        # for track in valid_tracks:
+        #     x, y = np.array(track.x, dtype=int)
+        #     cv2.circle(self.disp, (x, y), 2, color=Colors.correction,
+        #                thickness=-1)
+
+        # 3.b
+        blobs_new = blobs[new_detections]
+        add_new_tracks(valid_tracks, blobs_new, self.v_channel)
+
+        # Draw new tracks
+        bboxes_new = blobs_new['bbox']
+        # draw_bboxes(self.disp, bboxes_new, color=Colors.new)
+
+        # 3.c
+        for i in lost_tracks:
+            invalid_tracks.append(self.tracks[i])
+
+        # 3.d
+        for track in invalid_tracks:
+            pass
+
+        self.tracks = valid_tracks
+
+    def predict(self):
+        pass
+
+    def correct(self, valid_tracks, invalid_tracks):
+        pass
 
     def get_initialized(self):
-        return self.prev_gray is not None
+        return self.gray_prev is not None
 
     def get_v_channel(self):
         return self.s.im_hsv[:, :, -1]

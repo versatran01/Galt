@@ -56,13 +56,14 @@ with rosbag.Bag(bagfile) as bag:
         tracker.track(s, blobs)
 
         # Visualize result
-        b, g, r = cv2.split(s.im_raw)
-        im_rgb = cv2.merge([r, g, b])
+        disp = tracker.disp
+        b, g, r = cv2.split(disp)
+        disp = cv2.merge([r, g, b])
 
         if h_bgr:
             h_bw.set_data(bw)
-            h_bgr.set_data(im_rgb)
+            h_bgr.set_data(disp)
         else:
             h_bw = ax_bw.imshow(bw, cmap=plt.cm.gray)
-            h_bgr = ax_bgr.imshow(im_rgb)
+            h_bgr = ax_bgr.imshow(disp)
         plt.pause(0.001)

@@ -6,10 +6,11 @@ import matplotlib.patches as patches
 
 
 class Colors:
-    bbox_detection = (255, 0, 0)  # red
-    bbox_prediction = (0, 0, 255)  # blue
-    bbox_update = (255, 0, 255)  # magenta
-    bbox_match = (0, 255, 0)  # green
+    prediction = (0, 0, 255)  # blue
+    detection = (255, 0, 0)  # red
+    correction = (255, 255, 0)  # yellow
+    new = (255, 0, 255)  # magenta
+    match = (0, 255, 0)  # green
     optical_flow = (255, 0, 0)  # red
 
 

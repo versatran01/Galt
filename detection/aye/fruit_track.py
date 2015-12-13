@@ -1,14 +1,14 @@
 from __future__ import print_function, division, absolute_import
 
 import numpy as np
-from aye.kalman_filter import KalmanFilter
 from aye.bounding_box import bbox_center
+from aye.kalman_filter import KalmanFilter
 
 
 class FruitTrack(object):
     def __init__(self, blob, num_fruits=1):
         self.blob = blob
-        self.num_fruits = 1
+        self.num_fruits = num_fruits
         self.kf = KalmanFilter(bbox_center(blob['bbox']))
 
     def get_bbox(self):
@@ -21,6 +21,10 @@ class FruitTrack(object):
         y = cy - h / 2
         return np.array([x, y, w, h], int)
 
+    def get_x(self):
+        return self.kf.x
+
+    x = property(get_x)
     bbox = property(get_bbox)
     bbox_filtered = property(get_bbox_filtered)
 

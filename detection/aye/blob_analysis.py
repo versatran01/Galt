@@ -29,39 +29,43 @@ def num_local_maximas(image, n=7):
     return len(cs)
 
 
-def clean_bw(bw, n=3):
+def clean_bw(bw, n=3, close=True):
     kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (n, n))
-    bw_clean = cv2.morphologyEx(bw, cv2.MORPH_OPEN, kernel=kernel)
-    return bw_clean
+    bw_open = cv2.morphologyEx(bw, cv2.MORPH_OPEN, kernel=kernel)
+
+    if close:
+        return cv2.morphologyEx(bw_open, cv2.MORPH_CLOSE, kernel=kernel)
+
+    return bw_open
 
 
-def fill_holes(bw, cs):
-    bw_filled = np.zeros_like(bw)
+def fill_holes(cs, shape):
+    bw_filled = np.zeros(shape, np.uint8)
     cv2.drawContours(bw_filled, cs, -1, color=255, thickness=-1)
     return bw_filled
 
 
 def region_props(bw, do_clean=True):
     if do_clean:
-        bw_copy = clean_bw(bw)
+        bw_clean = clean_bw(bw, close=False)
     else:
-        bw_copy = np.array(bw, copy=True)
+        bw_clean = np.array(bw, copy=True)
 
     # Detect contour
-    cs, _ = cv2.findContours(bw_copy, mode=cv2.RETR_EXTERNAL,
+    cs, _ = cv2.findContours(bw_clean, mode=cv2.RETR_EXTERNAL,
                              method=cv2.CHAIN_APPROX_SIMPLE)
 
     # Redraw the contour on a new image to fill all the holes
-    bw_filled = fill_holes(bw_copy, cs)
+    bw_filled = fill_holes(cs, bw.shape)
 
     # Assemble a list of Blobs
-    dtype = [('area', 'int32'),
-             ('bbox', '(4,)int32'),
-             ('bbox_area', 'int32'),
-             ('extent', 'float32'),
-             ('equiv_diameter', 'float32')]
+    blob_dtype = [('area', 'int32'),
+                  ('bbox', '(4,)int32'),
+                  ('bbox_area', 'int32'),
+                  ('extent', 'float32'),
+                  ('equiv_diameter', 'float32')]
 
-    stats = []
+    blobs = []
     for cnt in cs:
         m = cv2.moments(cnt)
         area = m['m00']
@@ -70,8 +74,10 @@ def region_props(bw, do_clean=True):
             bbox_area = bbox[-1] * bbox[-2]
             extent = area / bbox_area
             equiv_diameter = np.sqrt(4 * area / np.pi)
-            stat = np.array((area, bbox, bbox_area, extent, equiv_diameter),
-                            dtype=dtype)
-            stats.append(stat)
-    stats = np.array(stats)
-    return stats, bw_filled
+            blob = np.array((area, bbox, bbox_area, extent, equiv_diameter),
+                            dtype=blob_dtype)
+            blobs.append(blob)
+    blobs = np.array(blobs)
+
+    # TODO: should we sort all blobs here?
+    return blobs, bw_filled

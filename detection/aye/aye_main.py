@@ -40,7 +40,7 @@ with rosbag.Bag(bagfile) as bag:
         s, bw = detector.detect(im_bgr)
 
         # Clean up bw image for blob analysis
-        stats, bw_filled = region_props(bw)
+        blobs, bw_filled = region_props(bw)
 
         # Input to BlobAnalyser and get back a bunch of bounding boxes
 

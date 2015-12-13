@@ -110,9 +110,9 @@ def plot_edge_bboxes(ax, bboxes, color):
         ax.add_patch(rect)
 
 
-def draw_bbox(image, bboxes, color, thickness=1):
+def draw_bboxes(image, bboxes, color, thickness=1):
     bboxes = np.atleast_2d(bboxes)
     for bbox in bboxes:
         x, y, w, h = bbox
-        cv2.rectangle(image, (x, y), (x + w, y + w),
+        cv2.rectangle(image, (x, y), (x + w, y + h),
                       color=color, thickness=thickness)

@@ -37,6 +37,7 @@ def hungarian_assignment(cost_matrix, unassigned_cost=1.5):
     # Correct matches
     match_inds = (ind1 < n1) & (ind2 < n2)
     matches = assignment[match_inds]
+    matches = np.atleast_2d(matches)
 
     # Unassigned bboxes1 and bboxes2
     un_ind1 = (ind1 < n1) & (ind2 >= n2)

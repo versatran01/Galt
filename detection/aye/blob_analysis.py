@@ -69,6 +69,8 @@ def region_props(bw, do_clean=True, min_area=4):
     for cnt in cs:
         m = cv2.moments(cnt)
         area = m['m00']
+        # We only accept blob that is decently big
+        # because somethings we will get a blob with an area of 0
         if area > min_area:
             bbox = cv2.boundingRect(cnt)
             x, y, w, h = bbox

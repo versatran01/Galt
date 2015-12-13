@@ -5,14 +5,16 @@ from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
 import matplotlib.pyplot as plt
 from sklearn.externals import joblib
-from aye.preprocessing import *
+from aye import *
 
-bagfile = '/home/chao/Workspace/bag/frame/rect_fixed/frame1_rect_fixed.bag'
+bagfile = '/home/chao/Workspace/bag/frame/rect_fixed/frame4_rect_fixed.bag'
 
 # load
 clf = joblib.load('../model/svc.pkl')
 scaler = joblib.load('../model/scaler.pkl')
 im_topic = '/color/image_rect_color'
+
+detector = FruitDetector(clf, scaler)
 
 bridge = CvBridge()
 fig = plt.figure()
@@ -32,20 +34,13 @@ with rosbag.Bag(bagfile) as bag:
 
         except CvBridgeError as e:
             print(e)
+            continue
 
-        # Make a feature vector out of color image
-        s = Samples(im_bgr)
-        X = scaler.transform(s.X())
-
-        # Get prediction
-        y = clf.predict(X)
-        bw = s.y_to_bw(y, to_gray=True)
+        # Detect
+        s, bw = detector.detect(im_bgr)
 
         # Clean up bw image for blob analysis
-        # TODO: convert this to a function
-        n = 3
-        kernel = np.ones((n, n), np.uint8)
-        opened = cv2.morphologyEx(bw, cv2.MORPH_OPEN, kernel)
+        stats, bw_filled = region_props(bw)
 
         # Input to BlobAnalyser and get back a bunch of bounding boxes
 
@@ -56,9 +51,9 @@ with rosbag.Bag(bagfile) as bag:
         im_rgb = cv2.merge([r, g, b])
 
         if h_bgr:
-            h_bw.set_data(opened)
+            h_bw.set_data(bw_filled)
             h_bgr.set_data(im_rgb)
         else:
-            h_bw = ax_bw.imshow(bw, cmap=plt.cm.Greys)
+            h_bw = ax_bw.imshow(bw_filled, cmap=plt.cm.gray)
             h_bgr = ax_bgr.imshow(im_rgb)
         plt.pause(0.001)

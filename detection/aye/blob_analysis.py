@@ -75,4 +75,3 @@ def region_props(bw, do_clean=True):
             stats.append(stat)
     stats = np.array(stats)
     return stats, bw_filled
-

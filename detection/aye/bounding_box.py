@@ -1,9 +1,6 @@
 from __future__ import print_function, division, absolute_import
 
-import cv2
 import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.patches as patches
 
 
 class OverlapRatio:
@@ -94,25 +91,3 @@ def bbox_distance_squared_area_ratio(bbox1, bbox2):
     distance_squared = (cx1 - cx2) ** 2 + (cy1 - cy2) ** 2
     area = w1 * h1 + w2 * h2
     return distance_squared / area
-
-
-def plot_filled_bboxes(ax, bboxes, color, alpha):
-    for bbox in bboxes:
-        x, y, w, h = bbox
-        rect = patches.Rectangle((x, y), w, h, facecolor=color, alpha=alpha)
-        ax.add_patch(rect)
-
-
-def plot_edge_bboxes(ax, bboxes, color):
-    for bbox in bboxes:
-        x, y, w, h = bbox
-        rect = patches.Rectangle((x, y), w, h, edgecolor=color, fill=False)
-        ax.add_patch(rect)
-
-
-def draw_bboxes(image, bboxes, color, thickness=1):
-    bboxes = np.atleast_2d(bboxes)
-    for bbox in bboxes:
-        x, y, w, h = bbox
-        cv2.rectangle(image, (x, y), (x + w, y + h),
-                      color=color, thickness=thickness)

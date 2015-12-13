@@ -4,13 +4,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-def draw_optical_flow(image, p1, p2):
-    for p1g, p2g in zip(p1, p2):
-        a, b = p1g.ravel()
-        c, d = p2g.ravel()
-
-        cv2.line(image, (a, b), (c, d), (255, 0, 0), 1)
-        cv2.circle(image, (c, d), 1, (255, 0, 0), -1)
+def points_inside_image(points, image, bound=4):
+    h, w = image.shape
+    px = points[:, :, 0]
+    py = points[:, :, 1]
+    return (px >= bound) & (px < w - bound) & (py >= bound) & (py < h - bound)
 
 
 def calc_bboxes_flow(gray1, gray2, bboxes1, win_size=21, max_level=3,
@@ -23,25 +21,25 @@ def calc_bboxes_flow(gray1, gray2, bboxes1, win_size=21, max_level=3,
     p1 = np.array(p1, np.float32)
     p1 = p1[:, np.newaxis, :]
 
+    criteria = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 0.03)
     if guess is not None:
         p2_0 = np.array(p1, copy=True)
         p2_0 += guess
         klt_params = dict(winSize=(win_size, win_size),
                           maxLevel=max_level,
                           flags=cv2.OPTFLOW_USE_INITIAL_FLOW,
-                          criteria=(
-                              cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT,
-                              10, 0.03))
+                          criteria=criteria)
         p2, st, err = cv2.calcOpticalFlowPyrLK(gray1, gray2, p1, p2_0,
                                                **klt_params)
     else:
         klt_params = dict(winSize=(win_size, win_size),
                           maxLevel=max_level,
-                          criteria=(
-                              cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT,
-                              10, 0.03))
+                          criteria=criteria)
         p2, st, err = cv2.calcOpticalFlowPyrLK(gray1, gray2, p1, None,
                                                **klt_params)
 
-    st = (st == 1)
-    return np.squeeze(p1), np.squeeze(p2), np.squeeze(st)
+    # we also check whether p2 is inside some bounds of the image, 4 pixels
+    is_inside = points_inside_image(p2, gray2)
+    st = (st == 1) & is_inside
+
+    return p1, p2, st

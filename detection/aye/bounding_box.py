@@ -45,17 +45,6 @@ def bbox_overlap_ratio(bbox1, bbox2, ratio_type=OverlapRatio.Union):
         return 0.0
 
 
-def bboxes_overlap_ratio(bboxes1, bboxes2, ratio_type=OverlapRatio.Union):
-    n1 = len(bboxes1)
-    n2 = len(bboxes2)
-
-    R = np.zeros((n1, n2))
-    for i1, b1 in enumerate(bboxes1):
-        for i2, b2 in enumerate(bboxes2):
-            R[i1, i2] = bbox_overlap_ratio(b1, b2, ratio_type)
-    return R
-
-
 def bbox_distance_squared(bbox1, bbox2):
     x1, y1, w1, h1 = bbox1
     x2, y2, w2, h2 = bbox2
@@ -76,6 +65,20 @@ def bbox_distance_squared_area_ratio(bbox1, bbox2):
     distance_squared = (cx1 - cx2) ** 2 + (cy1 - cy2) ** 2
     area = w1 * h1 + w2 * h2
     return distance_squared / area
+
+
+def bboxes_overlap_ratio(bboxes1, bboxes2, ratio_type=OverlapRatio.Union):
+    bboxes1 = np.atleast_2d(bboxes1)
+    bboxes2 = np.atleast_2d(bboxes2)
+    n1 = len(bboxes1)
+    n2 = len(bboxes2)
+    assert n1 > 0 and n2 > 0
+
+    R = np.zeros((n1, n2))
+    for i1, b1 in enumerate(bboxes1):
+        for i2, b2 in enumerate(bboxes2):
+            R[i1, i2] = bbox_overlap_ratio(b1, b2, ratio_type)
+    return R
 
 
 def bboxes_assignment_cost(bboxes1, bboxes2):

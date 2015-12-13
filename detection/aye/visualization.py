@@ -37,3 +37,18 @@ def draw_optical_flow(image, p1, p2, color=(255, 0, 0)):
 
         cv2.line(image, (a, b), (c, d), color=color, thickness=1)
         cv2.circle(image, (c, d), 1, color=color, thickness=-1)
+
+
+def draw_bboxes_matches(image, matches, bboxes1, bboxes2, color, thickness=1):
+    matches = np.atleast_2d(matches)
+    for pair in matches:
+        i1, i2 = pair
+        b1 = bboxes1[i1]
+        b2 = bboxes2[i2]
+        x1, y1, w1, h1 = b1
+        x2, y2, w2, h2 = b2
+        a = int(x1 + w1 / 2)
+        b = int(y1 + h1 / 2)
+        c = int(x2 + w2 / 2)
+        d = int(y2 + h2 / 2)
+        cv2.line(image, (a, b), (c, d), color=color, thickness=thickness)

@@ -1,4 +1,6 @@
 from __future__ import print_function, division, absolute_import
+
+import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
@@ -6,6 +8,18 @@ import matplotlib.patches as patches
 
 class OverlapRatio:
     Union, Min = range(2)
+
+
+def extract_bbox(image, bbox):
+    """
+    Assumes 2D image
+    :param image:
+    :param bbox:
+    :return:
+    """
+    # TODO: need to handle 3D image and edge cases
+    x, y, w, h = bbox
+    return image[y:y + h, x:x + w]
 
 
 def bbox_intersect(bbox1, bbox2):
@@ -55,6 +69,21 @@ def bbox_distance_squared(bbox1, bbox2):
     return (cx1 - cx2) ** 2 + (cy1 - cy2) ** 2
 
 
+def bboxes_assignment_cost(bboxes1, bboxes2):
+    n1 = len(bboxes1)
+    n2 = len(bboxes2)
+    assert n1 > 0 and n2 > 0
+
+    C = np.zeros((n1, n2))
+    for i1, b1 in enumerate(bboxes1):
+        for i2, b2 in enumerate(bboxes2):
+            overlap_ratio = bbox_overlap_ratio(b1, b2)
+            overlap_cost = 1 - overlap_ratio
+            distance2_area_cost = bbox_distance_squared_area_ratio(b1, b2)
+            C[i1, i2] = overlap_cost + distance2_area_cost
+    return C
+
+
 def bbox_distance_squared_area_ratio(bbox1, bbox2):
     x1, y1, w1, h1 = bbox1
     x2, y2, w2, h2 = bbox2
@@ -79,3 +108,11 @@ def plot_edge_bboxes(ax, bboxes, color):
         x, y, w, h = bbox
         rect = patches.Rectangle((x, y), w, h, edgecolor=color, fill=False)
         ax.add_patch(rect)
+
+
+def draw_bbox(image, bboxes, color, thickness=1):
+    bboxes = np.atleast_2d(bboxes)
+    for bbox in bboxes:
+        x, y, w, h = bbox
+        cv2.rectangle(image, (x, y), (x + w, y + w),
+                      color=color, thickness=thickness)

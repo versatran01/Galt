@@ -4,7 +4,17 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-def calc_flow(gray1, gray2, bboxes1, win_size=21, max_level=3, guess=None):
+def draw_optical_flow(image, p1, p2):
+    for p1g, p2g in zip(p1, p2):
+        a, b = p1g.ravel()
+        c, d = p2g.ravel()
+
+        cv2.line(image, (a, b), (c, d), (255, 0, 0), 1)
+        cv2.circle(image, (c, d), 1, (255, 0, 0), -1)
+
+
+def calc_bboxes_flow(gray1, gray2, bboxes1, win_size=21, max_level=3,
+                     guess=None):
     p1 = []
     for bbox in bboxes1:
         x, y, w, h = bbox

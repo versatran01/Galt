@@ -8,23 +8,21 @@ def thresh_blobs_area(blobs, area=50):
     return blobs[blobs['area'] > area]
 
 
-def is_blob_multiple(blob):
-    # For now just return false
-    # Some learning algorithm goes here
-    return False
+def is_blob_multiple(blob, min_area=25):
+    return blob['area'] >= min_area
 
 
 def num_peaks_in_blob(blob, image):
     if is_blob_multiple(blob):
         bbox = blob['bbox']
-        bbox_region = extract_bbox(image, bbox)
-        num_peaks = num_local_maximas(bbox_region)
+        region = extract_bbox(image, bbox)
+        num_peaks = num_local_maximas(region)
     else:
         num_peaks = 1
     return num_peaks
 
 
-def num_local_maximas(image, n=7):
+def num_local_maximas(image, n=5):
     """
     http://answers.opencv.org/question/28035/find-local-maximum-in-1d-2d-mat/
     :param image:
@@ -92,7 +90,7 @@ def region_props(bw, do_clean=True, min_area=4):
         area = m['m00']
         # We only accept blob that is decently big
         # because somethings we will get a blob with an area of 0
-        if area > min_area:
+        if area >= min_area:
             bbox = cv2.boundingRect(cnt)
             x, y, w, h = bbox
             bbox_area = w * h

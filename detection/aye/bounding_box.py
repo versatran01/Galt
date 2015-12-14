@@ -8,12 +8,6 @@ class OverlapRatio:
 
 
 def extract_bbox(image, bbox):
-    """
-    Assumes 2D image
-    :param image:
-    :param bbox:
-    :return:
-    """
     # TODO: need to handle 3D image and edge cases
     x, y, w, h = bbox
     return image[y:y + h, x:x + w]

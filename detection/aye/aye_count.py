@@ -13,7 +13,7 @@ from aye.preprocessing import rotate_image
 
 # Data to process
 im_topic = '/color/image_rect_color'
-bagfile = '/home/chao/Workspace/bag/frame/rect_fixed/frame1_rect_fixed.bag'
+bagfile = '/home/chao/Workspace/bag/frame/rect_fixed/frame4_rect_fixed.bag'
 
 # Load learning stuff
 clf = joblib.load('../model/svc.pkl')

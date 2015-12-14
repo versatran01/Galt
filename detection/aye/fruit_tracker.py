@@ -130,11 +130,14 @@ class FruitTracker(object):
             track.correct(blob)
             valid_tracks.append(track)
 
-        # Draw kalman filter update
+        # Draw kalman filter update and tracks that contains multiple fruits
         for track in valid_tracks:
             x, y = np.array(track.x, dtype=int)
             cv2.circle(self.disp, (x, y), 2, color=Colors.correction,
                        thickness=-1)
+            if track.num_fruits > 1:
+                cv2.putText(self.disp, str(track.num_fruits), (x, y),
+                            cv2.FONT_HERSHEY_PLAIN, 1, color=Colors.text)
 
         # 3.b
         blobs_new = blobs[new_detections]

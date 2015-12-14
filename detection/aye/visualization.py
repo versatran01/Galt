@@ -12,6 +12,7 @@ class Colors:
     new = (255, 255, 255)  # white
     match = (0, 255, 0)  # green
     optical_flow = (255, 0, 0)  # red
+    text = (0, 255, 255)
 
 
 # Functions start with plot calls pyplot subroutines and usually requires ax

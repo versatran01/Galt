@@ -4,25 +4,25 @@ import numpy as np
 from aye.bounding_box import extract_bbox
 
 
-def thresh_blobs_area(blobs, area=50):
+def thresh_blobs_area(blobs, area):
     return blobs[blobs['area'] > area]
 
 
-def is_blob_multiple(blob, min_area=25):
+def is_blob_multiple(blob, min_area):
     return blob['area'] >= min_area
 
 
-def num_peaks_in_blob(blob, image):
-    if is_blob_multiple(blob):
+def num_peaks_in_blob(blob, image, min_area=25, max_peaks=4):
+    if is_blob_multiple(blob, min_area):
         bbox = blob['bbox']
         region = extract_bbox(image, bbox)
         num_peaks = num_local_maximas(region)
     else:
         num_peaks = 1
-    return num_peaks
+    return min(num_peaks, max_peaks)
 
 
-def num_local_maximas(image, n=5):
+def num_local_maximas(image, n=7):
     """
     http://answers.opencv.org/question/28035/find-local-maximum-in-1d-2d-mat/
     :param image:
@@ -48,12 +48,9 @@ def num_local_maximas(image, n=5):
     return len(cs)
 
 
-def clean_bw(bw, n=3, close=True):
+def clean_bw(bw, n=3):
     kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (n, n))
     bw_open = cv2.morphologyEx(bw, cv2.MORPH_OPEN, kernel=kernel)
-
-    if close:
-        return cv2.morphologyEx(bw_open, cv2.MORPH_CLOSE, kernel=kernel)
 
     return bw_open
 
@@ -65,8 +62,10 @@ def fill_holes(cs, shape):
 
 
 def region_props(bw, do_clean=True, min_area=4):
+    # TODO: This is arbitrary
+    kernel_size = int(np.sqrt(min_area) + 1)
     if do_clean:
-        bw_clean = clean_bw(bw, close=False)
+        bw_clean = clean_bw(bw, n=3)
     else:
         bw_clean = np.array(bw, copy=True)
 

@@ -8,12 +8,13 @@ from cv_bridge import CvBridge, CvBridgeError
 
 from aye.fruit_detector import FruitDetector
 from aye.fruit_tracker import FruitTracker
-from aye.blob_analysis import region_props, thresh_blobs_area
+from aye.blob_analysis import region_props
 from aye.preprocessing import rotate_image
+from aye.visualization import draw_bboxes
 
 # Data to process
 im_topic = '/color/image_rect_color'
-bagfile = '/home/chao/Workspace/bag/frame/rect_fixed/frame4_rect_fixed.bag'
+bagfile = '/home/chao/Workspace/bag/frame/rect_fixed/frame2_rect_fixed.bag'
 
 # Load learning stuff
 clf = joblib.load('../model/svc.pkl')
@@ -48,8 +49,10 @@ with rosbag.Bag(bagfile) as bag:
             continue
 
         # Detection and tracking
-        s, bw = detector.detect(image)
-        blobs, bw = region_props(bw)
+        s, bw = detector.detect(image, k=0.5)
+        h, w, _ = image.shape
+        min_area = 12
+        blobs, bw = region_props(bw, min_area=min_area)
 
         # This is for debugging purposes, remove later
         # blobs = thresh_blobs_area(blobs, area=50)
@@ -57,12 +60,15 @@ with rosbag.Bag(bagfile) as bag:
 
         # Visualize result
         disp = tracker.disp
+        mask = cv2.cvtColor(bw, cv2.COLOR_GRAY2BGR)
+        bboxes = blobs['bbox']
+        draw_bboxes(mask, bboxes, color=(255, 0, 0))
 
         if h_bgr:
-            h_bw.set_data(bw)
+            h_bw.set_data(mask)
             h_bgr.set_data(disp)
         else:
-            h_bw = ax_bw.imshow(bw, cmap=plt.cm.gray)
+            h_bw = ax_bw.imshow(mask)
             h_bgr = ax_bgr.imshow(disp)
         plt.pause(0.001)
         print(tracker.total_counts)

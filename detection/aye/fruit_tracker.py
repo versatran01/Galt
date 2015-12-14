@@ -32,8 +32,12 @@ def predict_tracks_with_flows(tracks, flows, sts):
 
 
 def add_new_tracks(tracks, blobs, v):
+    # TODO: another place that needs to consider area
+    h, w = v.shape
+    min_area = (w / 50) ** 2
+
     for blob in blobs:
-        num_fruits = num_peaks_in_blob(blob, v)
+        num_fruits = num_peaks_in_blob(blob, v, min_area=min_area, max_peaks=5)
         track = FruitTrack(blob, num_fruits=num_fruits)
         tracks.append(track)
 
@@ -88,8 +92,12 @@ class FruitTracker(object):
         # if self.flow_mean is None:
         # p1s, p2s, sts = calc_bboxes_flow(self.gray_prev, gray, bboxes_track)
         # else:
+        h, w = gray.shape
+        win_size = int(w / 10)
+        dx = int(w / 11)
         p1s, p2s, sts = calc_bboxes_flow(self.gray_prev, gray, bboxes_track,
-                                         guess=np.array([17, 0]))
+                                         win_size=win_size, max_level=4,
+                                         guess=np.array([dx, 0]))
         flows = p2s - p1s
         self.flow_mean = calc_average_flow(flows, sts)
         self.gray_prev = gray

@@ -75,10 +75,10 @@ def rotate_image(image):
 
 
 class Samples(object):
-    k = 0.25
     v_thresh = 25
 
-    def __init__(self, im_bgr, labels=None):
+    def __init__(self, im_bgr, labels=None, k=0.25):
+        self.k = k
         # Get images of all color spaces
         # For images we resize using linear
         self.im_raw = resize_image(im_bgr, self.k, cv2.INTER_LINEAR)

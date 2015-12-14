@@ -7,8 +7,8 @@ class FruitDetector(object):
         self.clf = clf
         self.scaler = scaler
 
-    def detect(self, im_bgr):
-        s = Samples(im_bgr)
+    def detect(self, im_bgr, k):
+        s = Samples(im_bgr, k=k)
         X = self.scaler.transform(s.X())
         y = self.clf.predict(X)
         bw = s.y_to_bw(y, to_gray=True)

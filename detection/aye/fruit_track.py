@@ -24,7 +24,11 @@ class FruitTrack(object):
     def get_x(self):
         return self.kf.x
 
+    def get_age(self):
+        return self.kf.length
+
     x = property(get_x)
+    age = property(get_age)
     bbox = property(get_bbox)
     bbox_filtered = property(get_bbox_filtered)
 

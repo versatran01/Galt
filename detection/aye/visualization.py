@@ -9,7 +9,7 @@ class Colors:
     prediction = (0, 0, 255)  # blue
     detection = (255, 0, 0)  # red
     correction = (255, 255, 0)  # yellow
-    new = (255, 0, 255)  # magenta
+    new = (255, 255, 255)  # white
     match = (0, 255, 0)  # green
     optical_flow = (255, 0, 0)  # red
 

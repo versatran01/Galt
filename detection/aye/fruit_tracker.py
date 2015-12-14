@@ -8,10 +8,13 @@ from aye.bounding_box import bboxes_assignment_cost
 from aye.optical_flow import calc_bboxes_flow, calc_average_flow
 
 
-def get_tracks_bboxes(tracks):
+def get_tracks_bboxes(tracks, filtered=False):
     bboxes = []
     for track in tracks:
-        bboxes.append(track.bbox)
+        if filtered:
+            bboxes.append(track.bbox_filtered)
+        else:
+            bboxes.append(track.bbox)
     return np.array(bboxes, int)
 
 
@@ -41,6 +44,8 @@ class FruitTracker(object):
         self.tracks = []
         self.s = None
         self.blobs = None
+        self.min_age = 3
+        self.total_counts = 0
 
         # Optical flow
         self.gray_prev = None
@@ -81,16 +86,16 @@ class FruitTracker(object):
         bboxes_track = get_tracks_bboxes(self.tracks)
         gray = cv2.cvtColor(self.s.im_raw, cv2.COLOR_BGR2GRAY)
         # if self.flow_mean is None:
-        p1s, p2s, sts = calc_bboxes_flow(self.gray_prev, gray, bboxes_track)
+        # p1s, p2s, sts = calc_bboxes_flow(self.gray_prev, gray, bboxes_track)
         # else:
-        #     p1s, p2s, sts = calc_bboxes_flow(self.gray_prev, gray, bboxes_track,
-        #                                      guess=self.flow_mean)
+        p1s, p2s, sts = calc_bboxes_flow(self.gray_prev, gray, bboxes_track,
+                                         guess=np.array([17, 0]))
         flows = p2s - p1s
         self.flow_mean = calc_average_flow(flows, sts)
         self.gray_prev = gray
 
         # Draw optical flow
-        # draw_optical_flow(self.disp, p1s, p2s, color=Colors.optical_flow)
+        draw_optical_flow(self.disp, p1s, p2s, color=Colors.optical_flow)
 
         # 1.b and 1.c
         valid_tracks = []
@@ -103,19 +108,18 @@ class FruitTracker(object):
                 invalid_tracks.append(track)
 
         # Draw prediction
-        bboxes_prediction = get_tracks_bboxes(valid_tracks)
-        # draw_bboxes(self.disp, bboxes_prediction, color=Colors.prediction)
+        bboxes_prediction = get_tracks_bboxes(valid_tracks, filtered=True)
+        draw_bboxes(self.disp, bboxes_prediction, color=Colors.prediction)
 
         # 2
         self.tracks = valid_tracks
-        bboxes_track = get_tracks_bboxes(self.tracks)
         bboxes_detection = blobs['bbox']
-        cost = bboxes_assignment_cost(bboxes_track, bboxes_detection)
+        cost = bboxes_assignment_cost(bboxes_prediction, bboxes_detection)
         matches, lost_tracks, new_detections = hungarian_assignment(cost)
 
         # Draw matches
-        # draw_bboxes_matches(self.disp, matches, bboxes_track, bboxes_detection,
-        #                     color=Colors.match)
+        draw_bboxes_matches(self.disp, matches, bboxes_prediction,
+                            bboxes_detection, color=Colors.match)
 
         # 3.a
         valid_tracks = []
@@ -127,10 +131,10 @@ class FruitTracker(object):
             valid_tracks.append(track)
 
         # Draw kalman filter update
-        # for track in valid_tracks:
-        #     x, y = np.array(track.x, dtype=int)
-        #     cv2.circle(self.disp, (x, y), 2, color=Colors.correction,
-        #                thickness=-1)
+        for track in valid_tracks:
+            x, y = np.array(track.x, dtype=int)
+            cv2.circle(self.disp, (x, y), 2, color=Colors.correction,
+                       thickness=-1)
 
         # 3.b
         blobs_new = blobs[new_detections]
@@ -138,23 +142,30 @@ class FruitTracker(object):
 
         # Draw new tracks
         bboxes_new = blobs_new['bbox']
-        # draw_bboxes(self.disp, bboxes_new, color=Colors.new)
+        draw_bboxes(self.disp, bboxes_new, color=Colors.new)
 
         # 3.c
         for i in lost_tracks:
             invalid_tracks.append(self.tracks[i])
 
         # 3.d
-        for track in invalid_tracks:
-            pass
+        self.count_fruits_in_tracks(invalid_tracks)
 
         self.tracks = valid_tracks
 
-    def predict(self):
-        pass
+    def finish(self):
+        self.count_fruits_in_tracks(self.tracks)
 
-    def correct(self, valid_tracks, invalid_tracks):
-        pass
+    # def predict(self):
+    #     pass
+
+    # def correct(self, valid_tracks, invalid_tracks):
+    #     pass
+
+    def count_fruits_in_tracks(self, tracks):
+        for track in tracks:
+            if track.age >= self.min_age:
+                self.total_counts += track.num_fruits
 
     def get_initialized(self):
         return self.gray_prev is not None

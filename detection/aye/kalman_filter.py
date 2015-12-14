@@ -10,13 +10,13 @@ class KalmanFilter(object):
 
         self.x = x
         # State covariance
-        p = 3.0
+        p = 1.0
         self.P = np.diag([p, p])
         # Process covariance
-        q = 3.0
+        q = 5.0
         self.Q = np.diag([q, q])
         # Measurement covariance
-        r = 1.0
+        r = 0.5
         self.R = np.diag([r, r])
 
         self.xs = []

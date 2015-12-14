@@ -13,7 +13,7 @@ from aye.preprocessing import rotate_image
 
 # Data to process
 im_topic = '/color/image_rect_color'
-bagfile = '/home/chao/Workspace/bag/frame/rect_fixed/frame4_rect_fixed.bag'
+bagfile = '/home/chao/Workspace/bag/frame/rect_fixed/frame1_rect_fixed.bag'
 
 # Load learning stuff
 clf = joblib.load('../model/svc.pkl')
@@ -52,13 +52,11 @@ with rosbag.Bag(bagfile) as bag:
         blobs, bw = region_props(bw)
 
         # This is for debugging purposes, remove later
-        blobs = thresh_blobs_area(blobs, area=100)
+        # blobs = thresh_blobs_area(blobs, area=50)
         tracker.track(s, blobs)
 
         # Visualize result
         disp = tracker.disp
-        b, g, r = cv2.split(disp)
-        disp = cv2.merge([r, g, b])
 
         if h_bgr:
             h_bw.set_data(bw)
@@ -67,3 +65,7 @@ with rosbag.Bag(bagfile) as bag:
             h_bw = ax_bw.imshow(bw, cmap=plt.cm.gray)
             h_bgr = ax_bgr.imshow(disp)
         plt.pause(0.001)
+        print(tracker.total_counts)
+
+tracker.finish()
+print(tracker.total_counts)

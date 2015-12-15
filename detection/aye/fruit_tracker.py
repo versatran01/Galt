@@ -37,7 +37,7 @@ def add_new_tracks(tracks, blobs, v):
     min_area = (w / 50) ** 2
 
     for blob in blobs:
-        num_fruits = num_peaks_in_blob(blob, v, min_area=min_area, max_peaks=5)
+        num_fruits = num_peaks_in_blob(blob, v, min_area=min_area)
         track = FruitTrack(blob, num_fruits=num_fruits)
         tracks.append(track)
 
@@ -58,7 +58,7 @@ class FruitTracker(object):
         # visualization
         self.disp = None
 
-    def track(self, s, blobs):
+    def track(self, s, blobs, bw):
         self.s = s
         self.blobs = blobs
         self.disp = np.array(s.im_raw, copy=True)
@@ -149,7 +149,9 @@ class FruitTracker(object):
 
         # 3.b
         blobs_new = blobs[new_detections]
-        add_new_tracks(valid_tracks, blobs_new, self.v_channel)
+        v_bw = np.array(self.v_channel, copy=True)
+        v_bw[~(bw > 0)] = 0
+        add_new_tracks(valid_tracks, blobs_new, v_bw)
 
         # Draw new tracks
         bboxes_new = blobs_new['bbox']

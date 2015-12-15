@@ -14,7 +14,7 @@ from aye.visualization import draw_bboxes
 
 # Data to process
 im_topic = '/color/image_rect_color'
-bagfile = '/home/chao/Workspace/bag/frame/rect_fixed/frame2_rect_fixed.bag'
+bagfile = '/home/chao/Workspace/bag/frame/rect_fixed/frame4_rect_fixed.bag'
 
 # Load learning stuff
 clf = joblib.load('../model/svc.pkl')
@@ -41,7 +41,7 @@ with rosbag.Bag(bagfile) as bag:
         try:
             image = bridge.imgmsg_to_cv2(msg)
             # Rotate image 90 degree
-            image = image[200:1000, :1480, :]
+            image = image[200:1000, :1440, :]
             image = rotate_image(image)
 
         except CvBridgeError as e:
@@ -56,7 +56,7 @@ with rosbag.Bag(bagfile) as bag:
 
         # This is for debugging purposes, remove later
         # blobs = thresh_blobs_area(blobs, area=50)
-        tracker.track(s, blobs)
+        tracker.track(s, blobs, bw)
 
         # Visualize result
         disp = tracker.disp

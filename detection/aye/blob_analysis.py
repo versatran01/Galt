@@ -12,14 +12,15 @@ def is_blob_multiple(blob, min_area):
     return blob['area'] >= min_area
 
 
-def num_peaks_in_blob(blob, image, min_area=25, max_peaks=4):
+def num_peaks_in_blob(blob, image, min_area=25):
     if is_blob_multiple(blob, min_area):
         bbox = blob['bbox']
         region = extract_bbox(image, bbox)
+        # TODO: need to change n according to image size
         num_peaks = num_local_maximas(region)
     else:
         num_peaks = 1
-    return min(num_peaks, max_peaks)
+    return num_peaks
 
 
 def num_local_maximas(image, n=7):

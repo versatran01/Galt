@@ -67,7 +67,9 @@ class FruitTracker(object):
         draw_bboxes(self.disp, blobs['bbox'], Colors.detection)
 
         if not self.initialized:
-            add_new_tracks(self.tracks, blobs, self.v_channel)
+            v_bw = np.array(self.v_channel, copy=True)
+            v_bw[~(bw > 0)] = 0
+            add_new_tracks(self.tracks, blobs, v_bw)
             self.gray_prev = cv2.cvtColor(self.s.im_raw, cv2.COLOR_BGR2GRAY)
             return
 
@@ -97,7 +99,7 @@ class FruitTracker(object):
         dx = int(w / 11)
         p1s, p2s, sts = calc_bboxes_flow(self.gray_prev, gray, bboxes_track,
                                          win_size=win_size, max_level=4,
-                                         guess=np.array([dx, 0]))
+                                         guess=np.array([dx, 0], np.float32))
         flows = p2s - p1s
         self.flow_mean = calc_average_flow(flows, sts)
         self.gray_prev = gray

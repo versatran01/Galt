@@ -49,9 +49,9 @@ with rosbag.Bag(bagfile) as bag:
             continue
 
         # Detection and tracking
-        s, bw = detector.detect(image, k=0.25)
+        s, bw = detector.detect(image, k=0.5)
         h, w, _ = image.shape
-        min_area = 12
+        min_area = 15
         blobs, bw = region_props(bw, min_area=min_area)
 
         # This is for debugging purposes, remove later

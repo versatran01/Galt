@@ -8,9 +8,8 @@ class OverlapRatio:
 
 
 def extract_bbox(image, bbox):
-    # TODO: need to handle 3D image and edge cases
     x, y, w, h = bbox
-    return image[y:y + h, x:x + w]
+    return image[y:y + h, x:x + w, ...]
 
 
 def bbox_center(bbox):

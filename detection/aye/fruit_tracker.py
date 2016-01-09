@@ -34,7 +34,7 @@ def predict_tracks_with_flows(tracks, flows, sts):
 def add_new_tracks(tracks, blobs, v):
     # TODO: another place that needs to consider area
     h, w = v.shape
-    min_area = (w / 50) ** 2
+    min_area = (w / 40) ** 2
 
     for blob in blobs:
         num_fruits = num_peaks_in_blob(blob, v, min_area=min_area)

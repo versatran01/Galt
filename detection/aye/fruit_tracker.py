@@ -97,9 +97,11 @@ class FruitTracker(object):
         h, w = gray.shape
         win_size = int(w / 10)
         dx = int(w / 11)
+        # p1s, p2s, sts = calc_bboxes_flow(self.gray_prev, gray, bboxes_track,
+        #                                  win_size=win_size, max_level=4,
+        #                                  guess=np.array([dx, 0], np.float32))
         p1s, p2s, sts = calc_bboxes_flow(self.gray_prev, gray, bboxes_track,
-                                         win_size=win_size, max_level=4,
-                                         guess=np.array([dx, 0], np.float32))
+                                         win_size=win_size, max_level=4)
         flows = p2s - p1s
         self.flow_mean = calc_average_flow(flows, sts)
         self.gray_prev = gray

@@ -1,5 +1,6 @@
 from __future__ import print_function, division, absolute_import
 import cv2
+import os
 import matplotlib.pyplot as plt
 from sklearn.externals import joblib
 
@@ -12,16 +13,26 @@ from aye.blob_analysis import region_props
 from aye.preprocessing import rotate_image
 from aye.visualization import draw_bboxes
 
+k = 0.25
+apple = 'red'
+if apple == 'green':
+    roi = [200, 240, 800, 1440]
+else:
+    roi = [200, 0, 800, 1440]
+frame_dir = 'frame_' + apple
+model_dir = '../model/' + apple
+
 # Data to process
 im_topic = '/color/image_rect_color'
-bagfile = '/home/chao/Workspace/bag/frame/rect_fixed/frame4_rect_fixed.bag'
+bagfile = '/home/chao/Workspace/bag/' + frame_dir + \
+          '/rect_fixed/frame1_rect_fixed.bag'
 
 # Load learning stuff
-clf = joblib.load('../model/svc.pkl')
-scaler = joblib.load('../model/scaler.pkl')
+clf = joblib.load(os.path.join(model_dir, 'svc.pkl'))
+scaler = joblib.load(os.path.join(model_dir, 'scaler.pkl'))
 
 # Detector and Tracker
-detector = FruitDetector(clf, scaler)
+detector = FruitDetector(clf, scaler, roi, k)
 tracker = FruitTracker()
 
 # Ros
@@ -41,7 +52,6 @@ with rosbag.Bag(bagfile) as bag:
         try:
             image = bridge.imgmsg_to_cv2(msg)
             # Rotate image 90 degree
-            image = image[200:1000, :1440, :]
             image = rotate_image(image)
 
         except CvBridgeError as e:
@@ -49,8 +59,7 @@ with rosbag.Bag(bagfile) as bag:
             continue
 
         # Detection and tracking
-        s, bw = detector.detect(image, k=0.5)
-        h, w, _ = image.shape
+        s, bw = detector.detect(image)
         min_area = 15
         blobs, bw = region_props(bw, min_area=min_area)
 

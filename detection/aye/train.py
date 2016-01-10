@@ -11,6 +11,7 @@ from aye.tune import *
 # Parameters
 k = 0.5
 roi = [240, 200, 1440, 800]
+# roi = [0, 200, 1440, 800]
 test_size = 0.4
 data = 'green'
 data_dir = '../data/' + data

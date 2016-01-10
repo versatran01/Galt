@@ -13,7 +13,7 @@ def tune_svc(X, y):
     :return:
     """
     params = [
-        {'kernel': ['rbf'], 'C': [0.01, 0.1, 1, 10, 100]}]
+        {'kernel': ['rbf'], 'C': [0.01, 0.05, 0.1, 0.5, 1, 5, 10, 50, 100]}]
 
     grid = grid_search.GridSearchCV(estimator=svm.SVC(), param_grid=params,
                                     cv=5)

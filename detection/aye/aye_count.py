@@ -10,15 +10,14 @@ from cv_bridge import CvBridge, CvBridgeError
 from aye.fruit_detector import FruitDetector
 from aye.fruit_tracker import FruitTracker
 from aye.blob_analysis import region_props
-from aye.preprocessing import rotate_image
 from aye.visualization import draw_bboxes
 
 k = 0.3
-apple = 'green'
+apple = 'red'
 if apple == 'green':
-    roi = [200, 240, 800, 1440]
+    roi = [240, 200, 1440, 800]
 else:
-    roi = [200, 0, 800, 1440]
+    roi = [0, 200, 1440, 800]
 frame_dir = 'frame_' + apple
 model_dir = '../model/' + apple
 
@@ -52,7 +51,6 @@ with rosbag.Bag(bagfile) as bag:
         try:
             image = bridge.imgmsg_to_cv2(msg)
             # Rotate image 90 degree
-            image = rotate_image(image)
 
         except CvBridgeError as e:
             print(e)

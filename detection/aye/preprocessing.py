@@ -81,10 +81,15 @@ class Samples(object):
 
     def __init__(self, im_bgr, labels=None, roi=None, k=0.5):
         self.k = k
+        self.dim = im_bgr.shape
+        self.roi = roi
 
         # Extract roi
-        if roi is not None:
-            im_bgr = extract_bbox(im_bgr, roi)
+        if self.roi is not None:
+            im_bgr = extract_bbox(im_bgr, self.roi)
+
+        # HACK: rotate image
+        im_bgr = rotate_image(im_bgr)
 
         # For images we resize using linear interpolation
         self.im_raw = resize_image(im_bgr, self.k, cv2.INTER_LINEAR)
@@ -107,6 +112,10 @@ class Samples(object):
                 im_pos = extract_bbox(im_pos, roi)
                 im_neg = extract_bbox(im_neg, roi)
 
+            # HACK: rotate
+            im_pos = rotate_image(im_pos)
+            im_neg = rotate_image(im_neg)
+
             # For labels we resize using nearest because they are masks
             im_pos = resize_image(im_pos, self.k, cv2.INTER_NEAREST)
             im_neg = resize_image(im_neg, self.k, cv2.INTER_NEAREST)
@@ -122,9 +131,14 @@ class Samples(object):
         X_bgr = self.im_bgr[m]
         X_hsv = self.im_hsv[m]
         X_lab = self.im_lab[m]
-        X = np.hstack((X_bgr, X_hsv, X_lab))
+        X_x, X_y = np.where(m)
+        X_x = np.divide(X_x, self.k)
+        X_y = np.divide(X_y, self.k)
+        X_p = np.vstack((X_x, X_y))
+        # X = np.hstack((X_bgr, X_hsv, X_lab))
+        X = np.hstack((X_bgr, X_hsv, X_lab, X_p.T))
         n_samples, n_features = X.shape
-        assert n_features == 9
+        assert n_features == 11
         # Convert to float
         X = np.array(X, float)
         return X
@@ -180,8 +194,13 @@ class Samples(object):
         X_hsv = np.reshape(self.im_hsv, (h * w, -1))
         X_lab = np.reshape(self.im_lab, (h * w, -1))
 
+        X_x, X_y = np.where(np.ones((h, w)))
+        X_x = np.divide(X_x, self.k)
+        X_y = np.divide(X_y, self.k)
+        X_p = np.vstack((X_x, X_y))
+
         m = np.reshape(self.mask, (-1,))
-        X = np.hstack((X_bgr, X_hsv, X_lab))
+        X = np.hstack((X_bgr, X_hsv, X_lab, X_p.T))
         X = X[m]
         X = np.array(X, float)
         return X

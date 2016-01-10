@@ -49,8 +49,8 @@ def num_local_maximas(image, n=7):
     return len(cs)
 
 
-def clean_bw(bw, n=3):
-    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (n, n))
+def clean_bw(bw, ksize=3):
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (ksize, ksize))
     bw_open = cv2.morphologyEx(bw, cv2.MORPH_OPEN, kernel=kernel)
 
     return bw_open
@@ -62,11 +62,11 @@ def fill_holes(cs, shape):
     return bw_filled
 
 
-def region_props(bw, do_clean=True, min_area=4):
-    # TODO: This is arbitrary
-    kernel_size = int(np.sqrt(min_area) + 1)
+def region_props(bw, do_clean=True):
+    h, w = np.shape(bw)
+    min_area = h * w / (100.0 ** 2)
     if do_clean:
-        bw_clean = clean_bw(bw, n=3)
+        bw_clean = clean_bw(bw, ksize=3)
     else:
         bw_clean = np.array(bw, copy=True)
 

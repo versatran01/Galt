@@ -31,11 +31,7 @@ def predict_tracks_with_flows(tracks, flows, sts):
     return valid_tracks, invalid_tracks
 
 
-def add_new_tracks(tracks, blobs, v):
-    # TODO: another place that needs to consider area
-    h, w = v.shape
-    min_area = (w / 40) ** 2
-
+def add_new_tracks(tracks, blobs, v, min_area):
     for blob in blobs:
         num_fruits = num_peaks_in_blob(blob, v, min_area=min_area)
         track = FruitTrack(blob, num_fruits=num_fruits)
@@ -66,10 +62,13 @@ class FruitTracker(object):
         # Draw detections
         draw_bboxes(self.disp, blobs['bbox'], Colors.detection)
 
+        h, w = np.shape(bw)
+        min_area = (h * w) / (50.0 ** 2)
+
         if not self.initialized:
             v_bw = np.array(self.v_channel, copy=True)
             v_bw[~(bw > 0)] = 0
-            add_new_tracks(self.tracks, blobs, v_bw)
+            add_new_tracks(self.tracks, blobs, v_bw, min_area=min_area)
             self.gray_prev = cv2.cvtColor(self.s.im_raw, cv2.COLOR_BGR2GRAY)
             return
 
@@ -95,13 +94,15 @@ class FruitTracker(object):
         # p1s, p2s, sts = calc_bboxes_flow(self.gray_prev, gray, bboxes_track)
         # else:
         h, w = gray.shape
-        win_size = int(w / 10)
-        dx = int(w / 11)
-        # p1s, p2s, sts = calc_bboxes_flow(self.gray_prev, gray, bboxes_track,
-        #                                  win_size=win_size, max_level=4,
-        #                                  guess=np.array([dx, 0], np.float32))
+        d = np.sqrt(h * w)
+        win_size = int(d / 16)
+        if self.flow_mean is None:
+            self.flow_mean = np.array([w / 6, 0], np.float32)
         p1s, p2s, sts = calc_bboxes_flow(self.gray_prev, gray, bboxes_track,
-                                         win_size=win_size, max_level=4)
+                                         win_size=win_size, max_level=4,
+                                         guess=self.flow_mean)
+        # p1s, p2s, sts = calc_bboxes_flow(self.gray_prev, gray, bboxes_track,
+        #                                  win_size=win_size, max_level=4)
         flows = p2s - p1s
         self.flow_mean = calc_average_flow(flows, sts)
         self.gray_prev = gray
@@ -155,7 +156,7 @@ class FruitTracker(object):
         blobs_new = blobs[new_detections]
         v_bw = np.array(self.v_channel, copy=True)
         v_bw[~(bw > 0)] = 0
-        add_new_tracks(valid_tracks, blobs_new, v_bw)
+        add_new_tracks(valid_tracks, blobs_new, v_bw, min_area=min_area)
 
         # Draw new tracks
         bboxes_new = blobs_new['bbox']
@@ -172,12 +173,6 @@ class FruitTracker(object):
 
     def finish(self):
         self.count_fruits_in_tracks(self.tracks)
-
-    # def predict(self):
-    #     pass
-
-    # def correct(self, valid_tracks, invalid_tracks):
-    #     pass
 
     def count_fruits_in_tracks(self, tracks):
         for track in tracks:

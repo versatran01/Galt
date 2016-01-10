@@ -13,8 +13,8 @@ from aye.blob_analysis import region_props
 from aye.preprocessing import rotate_image
 from aye.visualization import draw_bboxes
 
-k = 0.25
-apple = 'red'
+k = 0.3
+apple = 'green'
 if apple == 'green':
     roi = [200, 240, 800, 1440]
 else:
@@ -60,11 +60,7 @@ with rosbag.Bag(bagfile) as bag:
 
         # Detection and tracking
         s, bw = detector.detect(image)
-        min_area = 15
-        blobs, bw = region_props(bw, min_area=min_area)
-
-        # This is for debugging purposes, remove later
-        # blobs = thresh_blobs_area(blobs, area=50)
+        blobs, bw = region_props(bw)
         tracker.track(s, blobs, bw)
 
         # Visualize result

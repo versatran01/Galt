@@ -6,6 +6,12 @@ from sklearn import ensemble
 
 
 def tune_svc(X, y):
+    """
+    Tune support vector classifier
+    :param X:
+    :param y:
+    :return:
+    """
     params = [
         {'kernel': ['rbf'], 'C': [0.01, 0.1, 1, 10, 100]}]
 
@@ -17,6 +23,12 @@ def tune_svc(X, y):
 
 
 def tune_lr(X, y):
+    """
+    Tune logistic regression classifier
+    :param X:
+    :param y:
+    :return:
+    """
     params = {'C': [1, 5, 10, 50, 100]}
     grid = grid_search.GridSearchCV(estimator=linear_model.LogisticRegression(),
                                     param_grid=params, cv=5)
@@ -26,6 +38,12 @@ def tune_lr(X, y):
 
 
 def tune_rf(X, y):
+    """
+    Tune random forest classifier
+    :param X:
+    :param y:
+    :return:
+    """
     params = {'n_estimators': [5, 10, 25, 50, 100]}
     grid = grid_search.GridSearchCV(estimator=ensemble.RandomForestClassifier(),
                                     param_grid=params, cv=5)
@@ -35,6 +53,12 @@ def tune_rf(X, y):
 
 
 def tune_ensemble(X, y):
+    """
+    Tune ensemble classifier
+    :param X:
+    :param y:
+    :return:
+    """
     clf_svc = svm.SVC()
     clf_lr = linear_model.LogisticRegression()
     clf_rf = ensemble.RandomForestClassifier()
@@ -53,6 +77,10 @@ def tune_ensemble(X, y):
 
 
 def print_grid_search_report(grid):
+    """
+    :param grid:
+    :return:
+    """
     print("All Parameters Searched:")
     for params, mean_score, scores in grid.grid_scores_:
         print(

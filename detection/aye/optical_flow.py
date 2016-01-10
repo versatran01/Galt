@@ -3,14 +3,28 @@ import cv2
 import numpy as np
 
 
-def points_inside_image(points, image, bound=4):
+def points_inside_image(points, image, margin=4):
+    """
+    Check if point is inside image with a certain margin
+    :param points:
+    :param image:
+    :param margin:
+    :return:
+    """
     h, w = image.shape
     px = points[:, :, 0]
     py = points[:, :, 1]
-    return (px >= bound) & (px < w - bound) & (py >= bound) & (py < h - bound)
+    return (px >= margin) & (px < w - margin) & (py >= margin) & (
+    py < h - margin)
 
 
 def calc_average_flow(flows, sts=None):
+    """
+    Calculates average optical flow
+    :param flows:
+    :param sts:
+    :return:
+    """
     if sts is None:
         flows_good = flows
     else:

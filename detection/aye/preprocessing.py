@@ -2,18 +2,19 @@ from __future__ import print_function, division, absolute_import
 import cv2
 import os
 import numpy as np
+from aye.bounding_box import extract_bbox
 
 
-def resize_image(image, k=0.25, interpolation=cv2.INTER_NEAREST):
+def resize_image(image, k, interpolation=cv2.INTER_NEAREST):
     return cv2.resize(image, None, fx=k, fy=k, interpolation=interpolation)
 
 
-def prepare_data(reader, file_ids):
+def prepare_data(reader, file_ids, roi, k):
     X = None
     y = None
     for fid in file_ids:
         image, labels = reader.read_image_with_label(fid)
-        s = Samples(image, labels)
+        s = Samples(image, labels, roi=roi, k=k)
         X_both, y_both = s.Xy_both()
 
         if X is None or y is None:
@@ -38,7 +39,7 @@ def convert_image_colorspace(image, to):
 
 
 class DataReader(object):
-    def __init__(self, rel_dir="../data", ext="png"):
+    def __init__(self, rel_dir, ext="png"):
         cwd = os.getcwd()
         self.dir = os.path.join(cwd, rel_dir)
         self.ext = ext
@@ -48,6 +49,7 @@ class DataReader(object):
     def read_image(self, fid):
         image_name = self.fmt_image.format(fid, self.ext)
         filename = os.path.join(self.dir, image_name)
+        print(filename)
         image = cv2.imread(filename, cv2.IMREAD_COLOR)
         if image is None:
             raise ValueError("{0} not found".format(filename))
@@ -77,15 +79,20 @@ def rotate_image(image):
 class Samples(object):
     v_thresh = 25
 
-    def __init__(self, im_bgr, labels=None, k=0.25):
+    def __init__(self, im_bgr, labels=None, roi=None, k=0.5):
         self.k = k
-        # Get images of all color spaces
-        # For images we resize using linear
+
+        # Extract roi
+        if roi is not None:
+            im_bgr = extract_bbox(im_bgr, roi)
+
+        # For images we resize using linear interpolation
         self.im_raw = resize_image(im_bgr, self.k, cv2.INTER_LINEAR)
         # Blur the image a bit
         self.im_bgr = cv2.GaussianBlur(self.im_raw, (5, 5), 1)
-        self.im_hsv = convert_image_colorspace(self.im_bgr, "hsv")
-        self.im_lab = convert_image_colorspace(self.im_bgr, "lab")
+        # Get images of all color spaces
+        self.im_hsv = convert_image_colorspace(self.im_bgr, 'hsv')
+        self.im_lab = convert_image_colorspace(self.im_bgr, 'lab')
 
         # Handle labels, if labels is provided, we are making training samples
         # otherwise we are making testing samples and generally don't care
@@ -95,6 +102,11 @@ class Samples(object):
         if labels:
             assert len(labels) == 2
             im_pos, im_neg = labels
+            # Extract roi
+            if roi is not None:
+                im_pos = extract_bbox(im_pos, roi)
+                im_neg = extract_bbox(im_neg, roi)
+
             # For labels we resize using nearest because they are masks
             im_pos = resize_image(im_pos, self.k, cv2.INTER_NEAREST)
             im_neg = resize_image(im_neg, self.k, cv2.INTER_NEAREST)
@@ -118,32 +130,51 @@ class Samples(object):
         return X
 
     def Xy_pos(self):
+        """
+        Positive examples of X and y
+        :return:
+        """
         assert self.pos is not None
 
         X_pos = self.extract(self.pos)
-        y_pos = np.ones((len(X_pos),))
+        y_pos = np.ones((np.size(X_pos, 0),))
         return X_pos, y_pos
 
     def Xy_neg(self):
+        """
+        Negative examples of X and y
+        :return:
+        """
         assert self.neg is not None
 
         X_neg = self.extract(self.neg)
-        y_neg = np.zeros((len(X_neg),))
+        y_neg = np.zeros((np.size(X_neg, 0),))
         return X_neg, y_neg
 
     def Xy_both(self, balance=True):
+        """
+        Both positive and negative examples of X and y
+        :param balance:
+        :return:
+        """
         X_pos, y_pos = self.Xy_pos()
         X_neg, y_neg = self.Xy_neg()
         if balance:
-            if len(X_neg) / len(X_pos) > 2:
-                X_neg = X_neg[::2]
-                y_neg = y_neg[::2]
+            r = np.size(X_neg, 0) / np.size(X_pos, 0)
+            r = int(r)
+            if r > 1:
+                X_neg = X_neg[::r]
+                y_neg = y_neg[::r]
         X = np.vstack((X_pos, X_neg))
         y = np.hstack((y_pos, y_neg))
 
         return X, y
 
     def X(self):
+        """
+        Test examples
+        :return:
+        """
         h, w, _ = self.im_bgr.shape
         X_bgr = np.reshape(self.im_bgr, (h * w, -1))
         X_hsv = np.reshape(self.im_hsv, (h * w, -1))
@@ -156,6 +187,12 @@ class Samples(object):
         return X
 
     def y_to_bw(self, y, to_gray=False):
+        """
+        Convert y to binary image
+        :param y:
+        :param to_gray:
+        :return:
+        """
         h, w = self.mask.shape
         m = np.reshape(self.mask, (-1,))
         idx = np.array(np.where(m))

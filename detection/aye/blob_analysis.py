@@ -64,7 +64,8 @@ def fill_holes(cs, shape):
 
 def region_props(bw, do_clean=True):
     h, w = np.shape(bw)
-    min_area = h * w / (100.0 ** 2)
+    min_area = h * w / (120.0 ** 2)
+    max_area = h * w / (25 ** 2)
     if do_clean:
         bw_clean = clean_bw(bw, ksize=3)
     else:
@@ -90,7 +91,7 @@ def region_props(bw, do_clean=True):
         area = m['m00']
         # We only accept blob that is decently big
         # because somethings we will get a blob with an area of 0
-        if area >= min_area:
+        if area >= min_area and area < max_area:
             bbox = cv2.boundingRect(cnt)
             x, y, w, h = bbox
             bbox_area = w * h
@@ -98,7 +99,8 @@ def region_props(bw, do_clean=True):
             equiv_diameter = np.sqrt(4 * area / np.pi)
             blob = np.array((area, bbox, bbox_area, extent, equiv_diameter),
                             dtype=blob_dtype)
-            blobs.append(blob)
+            if extent > 0.425:
+                blobs.append(blob)
     blobs = np.array(blobs)
 
     # TODO: should we sort all blobs here?

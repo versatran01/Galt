@@ -10,10 +10,10 @@ from aye.tune import *
 
 # Parameters
 k = 0.5
-roi = [240, 200, 1440, 800]
-# roi = [0, 200, 1440, 800]
+# roi = [240, 200, 1440, 800]
+roi = [0, 200, 1440, 800]
 test_size = 0.4
-data = 'green'
+data = 'red'
 data_dir = '../data/' + data
 model_dir = '../model/' + data
 
@@ -45,9 +45,9 @@ print_grid_search_report(grid)
 score = grid.score(X_valid, y_test)
 print('Test score: {0}'.format(score))
 
-joblib.dump(grid, os.path.join(model_dir, 'svc.pkl'))
-clf = joblib.load(os.path.join(model_dir, 'svc.pkl'))
-joblib.dump(scaler, os.path.join(model_dir, 'scaler.pkl'))
+# joblib.dump(grid, os.path.join(model_dir, 'svc.pkl'))
+# clf = joblib.load(os.path.join(model_dir, 'svc.pkl'))
+# joblib.dump(scaler, os.path.join(model_dir, 'scaler.pkl'))
 
 # Load the final image and see visually how good the classifier is
 image, labels_valid = dr.read_image_with_label(2)

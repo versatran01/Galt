@@ -12,7 +12,7 @@ from aye.fruit_tracker import FruitTracker
 from aye.blob_analysis import region_props
 from aye.visualization import draw_bboxes
 
-k = 0.5
+k = 0.3
 apple = 'green'
 if apple == 'green':
     roi = [240, 200, 1440, 800]
@@ -24,7 +24,7 @@ model_dir = '../model/' + apple
 # Data to process
 im_topic = '/color/image_rect_color'
 bagfile = '/home/chao/Workspace/bag/' + frame_dir + \
-          '/rect_fixed/frame4_rect_fixed.bag'
+          '/rect_fixed/frame2_rect_fixed.bag'
 
 # Load learning stuff
 clf = joblib.load(os.path.join(model_dir, 'svc.pkl'))

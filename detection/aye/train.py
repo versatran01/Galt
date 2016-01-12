@@ -80,3 +80,13 @@ class Trainer:
         bw = s_v.y_to_bw(y_v_hat)
         ax.imshow(bw, cmap=plt.cm.gray)
         plt.show()
+
+
+if __name__ == '__main__':
+    red = Trainer('red', k=0.5, n_images=7, test_size=0.4, use_ind=True)
+    red.train()
+    red.save()
+
+    green = Trainer('green', k=0.5, n_images=7, test_size=0.4, use_ind=True)
+    green.train()
+    green.save()

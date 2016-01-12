@@ -9,12 +9,12 @@ def resize_image(image, k, interpolation=cv2.INTER_NEAREST):
     return cv2.resize(image, None, fx=k, fy=k, interpolation=interpolation)
 
 
-def prepare_data(reader, file_ids, roi, k):
+def prepare_data(reader, file_ids, roi, k, use_ind=True):
     X = None
     y = None
     for fid in file_ids:
         image, labels = reader.read_image_with_label(fid)
-        s = Samples(image, labels, roi=roi, k=k)
+        s = Samples(image, labels, roi=roi, k=k, use_ind=use_ind)
         X_both, y_both = s.Xy_both()
 
         if X is None or y is None:
@@ -77,12 +77,13 @@ def rotate_image(image):
 
 
 class Samples(object):
-    v_thresh = 25
+    v_thresh = 20
 
-    def __init__(self, im_bgr, labels=None, roi=None, k=0.5):
+    def __init__(self, im_bgr, labels=None, roi=None, k=0.5, use_ind=True):
         self.k = k
         self.dim = im_bgr.shape
         self.roi = roi
+        self.use_ind = use_ind
 
         # Extract roi
         if self.roi is not None:
@@ -124,21 +125,24 @@ class Samples(object):
 
         # Mask out invalid data based on v value in hsv
         v = self.im_hsv[:, :, -1]
-        self.mask = (v >= self.v_thresh) & (v <= 255 - self.v_thresh)
+        self.mask = (v >= self.v_thresh)  # & (v <= 255 - self.v_thresh)
 
     def extract(self, label):
         m = label & self.mask
         X_bgr = self.im_bgr[m]
         X_hsv = self.im_hsv[m]
         X_lab = self.im_lab[m]
-        X_x, X_y = np.where(m)
-        X_x = np.divide(X_x, self.k)
-        X_y = np.divide(X_y, self.k)
-        X_p = np.vstack((X_x, X_y))
-        # X = np.hstack((X_bgr, X_hsv, X_lab))
-        X = np.hstack((X_bgr, X_hsv, X_lab, X_p.T))
+
+        if self.use_ind:
+            X_x, X_y = np.where(m)
+            X_x = np.divide(X_x, self.k)
+            X_y = np.divide(X_y, self.k)
+            X_p = np.vstack((X_x, X_y))
+            X = np.hstack((X_bgr, X_hsv, X_lab, X_p.T))
+        else:
+            X = np.hstack((X_bgr, X_hsv, X_lab))
+
         n_samples, n_features = X.shape
-        assert n_features == 11
         # Convert to float
         X = np.array(X, float)
         return X
@@ -194,13 +198,17 @@ class Samples(object):
         X_hsv = np.reshape(self.im_hsv, (h * w, -1))
         X_lab = np.reshape(self.im_lab, (h * w, -1))
 
-        X_x, X_y = np.where(np.ones((h, w)))
-        X_x = np.divide(X_x, self.k)
-        X_y = np.divide(X_y, self.k)
-        X_p = np.vstack((X_x, X_y))
+        if self.use_ind:
+            X_x, X_y = np.where(np.ones((h, w)))
+            X_x = np.divide(X_x, self.k)
+            X_y = np.divide(X_y, self.k)
+            X_p = np.vstack((X_x, X_y))
+
+            X = np.hstack((X_bgr, X_hsv, X_lab, X_p.T))
+        else:
+            X = np.hstack((X_bgr, X_hsv, X_lab))
 
         m = np.reshape(self.mask, (-1,))
-        X = np.hstack((X_bgr, X_hsv, X_lab, X_p.T))
         X = X[m]
         X = np.array(X, float)
         return X

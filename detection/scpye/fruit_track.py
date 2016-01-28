@@ -1,8 +1,8 @@
 from __future__ import print_function, division, absolute_import
 
 import numpy as np
-from aye.bounding_box import bbox_center
-from aye.kalman_filter import KalmanFilter
+from scpye.bounding_box import bbox_center
+from scpye.kalman_filter import KalmanFilter
 
 
 class FruitTrack(object):

@@ -1,11 +1,11 @@
 from __future__ import print_function, division, absolute_import
 
-from aye.visualization import *
-from aye.fruit_track import FruitTrack
-from aye.assignment import hungarian_assignment
-from aye.blob_analysis import num_peaks_in_blob
-from aye.bounding_box import bboxes_assignment_cost
-from aye.optical_flow import calc_bboxes_flow, calc_average_flow
+from scpye.visualization import *
+from scpye.fruit_track import FruitTrack
+from scpye.assignment import hungarian_assignment
+from scpye.blob_analysis import num_peaks_in_blob
+from scpye.bounding_box import bboxes_assignment_cost
+from scpye.optical_flow import calc_bboxes_flow, calc_average_flow
 
 
 def get_tracks_bboxes(tracks, filtered=False):

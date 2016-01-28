@@ -1,7 +1,7 @@
 from __future__ import print_function, division, absolute_import
 import cv2
 import numpy as np
-from aye.bounding_box import extract_bbox
+from scpye.bounding_box import extract_bbox
 
 
 def thresh_blobs_area(blobs, area):

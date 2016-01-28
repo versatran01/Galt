@@ -1,5 +1,5 @@
 from __future__ import print_function, division, absolute_import
-from aye.preprocessing import Samples
+from scpye.preprocessing import Samples
 
 
 class FruitDetector(object):

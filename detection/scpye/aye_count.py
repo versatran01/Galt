@@ -7,10 +7,10 @@ from sklearn.externals import joblib
 import rosbag
 from cv_bridge import CvBridge, CvBridgeError
 
-from aye.fruit_detector import FruitDetector
-from aye.fruit_tracker import FruitTracker
-from aye.blob_analysis import region_props
-from aye.visualization import draw_bboxes
+from scpye.fruit_detector import FruitDetector
+from scpye.fruit_tracker import FruitTracker
+from scpye.blob_analysis import region_props
+from scpye.visualization import draw_bboxes
 
 k = 0.3
 apple = 'green'

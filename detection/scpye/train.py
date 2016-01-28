@@ -5,8 +5,8 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.cross_validation import train_test_split
 from sklearn.externals import joblib
 # apple yield estimation
-from aye.preprocessing import *
-from aye.tune import *
+from scpye.preprocessing import *
+from scpye.tune import *
 
 
 class Trainer:
@@ -77,9 +77,9 @@ class Trainer:
         ax = fig.add_subplot(121)
         ax.imshow(s_v.im_bgr)
         ax = fig.add_subplot(122)
-        bw = s_v.y_to_bw(y_v_hat)
+        bw = s_v.y_to_bw(y_v_hat, to_gray=True)
         ax.imshow(bw, cmap=plt.cm.gray)
-        plt.show()
+        return s_v, bw
 
 
 if __name__ == '__main__':

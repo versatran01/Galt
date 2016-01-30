@@ -3,14 +3,24 @@ import numpy as np
 
 
 def pad_cost_matrix(cost_matrix, unassigned_cost):
+    """
+    Pad cost matrix to handle unassignment
+    :param cost_matrix: M x N matrix, M - tracks, N - detections
+    :type cost_matrix: numpy.ndarray
+    :param unassigned_cost:  cost of unassignment
+    :type unassigned_cost: float
+    :return: padded cost matrix
+    :rtype: numpy.ndarray
+    """
     if unassigned_cost == 0.0:
         return cost_matrix
 
-    r, c = cost_matrix.shape
+    r, c = np.shape(cost_matrix)
     # padded size
     n = r + c
     float_max = np.finfo(np.float).max
     padded_cost_matrix = np.ones((n, n)) * float_max
+
     # fill the padded cost matrix
     padded_cost_matrix[:r, :c] = cost_matrix
     padded_cost_matrix[r:, c:] = 0.0
@@ -23,14 +33,16 @@ def hungarian_assignment(cost_matrix, unassigned_cost=1.5):
     """
     This is the equivalent of matlab's assignDetectionsToTracks
     :param cost_matrix: M x N matrix, M - tracks, N - detections
-    :param unassigned_cost:
+    :type cost_matrix: numpy.ndarray
+    :param unassigned_cost: cost of unassignment
+    :type unassigned_cost: float
     :return:
     """
     padded_cost_matrix = pad_cost_matrix(cost_matrix, unassigned_cost)
     assignment = skla.linear_assignment(padded_cost_matrix)
 
     # Figure out matches, unassigned bboxes1 and unassigned bboxes2
-    n1, n2 = cost_matrix.shape
+    n1, n2 = np.shape(cost_matrix)
     ind1 = assignment[:, 0]
     ind2 = assignment[:, 1]
 

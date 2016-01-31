@@ -12,7 +12,6 @@ def process_bags(bagfiles):
     """
     :param bagfiles: a list of bag files
     :type bagfiles: List
-    :return:
     """
     for bagfile in bagfiles:
         try:
@@ -24,9 +23,18 @@ def process_bags(bagfiles):
             print(ve)
 
 
-def add_suffix(bagfile):
+def add_suffix(bagfile, suffix="_fixed"):
+    """
+    Add suffix to a bag file name
+    :param bagfile: bag file path
+    :type bagfile: str
+    :param suffix: suffix to add to bag file
+    :type suffix: str
+    :return: suffixed bag file
+    :rtype str:
+    """
     name, ext = os.path.splitext(bagfile)
-    return name + "_fixed" + ext
+    return name + suffix + ext
 
 
 def fix_bag(bagfile):

@@ -1,4 +1,5 @@
 from __future__ import print_function, division, absolute_import
+
 import matplotlib.pyplot as plt
 # scikit learn
 from sklearn.preprocessing import StandardScaler

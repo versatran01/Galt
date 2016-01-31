@@ -1,15 +1,16 @@
 from __future__ import print_function, division, absolute_import
-import cv2
-import os
-import matplotlib.pyplot as plt
-from sklearn.externals import joblib
 
+import os
+
+import cv2
+import matplotlib.pyplot as plt
 import rosbag
 from cv_bridge import CvBridge, CvBridgeError
+from sklearn.externals import joblib
 
+from scpye.blob_analysis import region_props
 from scpye.fruit_detector import FruitDetector
 from scpye.fruit_tracker import FruitTracker
-from scpye.blob_analysis import region_props
 from scpye.visualization import draw_bboxes
 
 k = 0.3

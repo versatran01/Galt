@@ -6,14 +6,11 @@ Created on Sun Jan 31 16:06:13 2016
 """
 
 # %%
-import sys
 import os
 import numpy as np
 import matplotlib.pyplot as plt
 import cv2
-from sklearn.preprocessing import FunctionTransformer
-from sklearn.pipeline import FeatureUnion, Pipeline
-from sklearn.base import BaseEstimator, TransformerMixin
+from scpye.transformer import *
 
 # %%
 
@@ -81,70 +78,18 @@ imshow(mask, 'mask')
 X = img_raw
 y = np.dstack((neg, pos))
 
-class ImageTransformer(TransformerMixin):
-    def fit(self, X, y=None):
-        return self
-
-class ImageRotator(ImageTransformer):
-    def transform(self, X, y=None):
-        return np.rot90(X, -1)
-
-
-class ImageCropper(ImageTransformer):
-    def __init__(self, bbox=None):
-        self.bbox = bbox
-    
-    def transform(self, X, y=None):
-        if self.bbox is None:
-            return X
-        else:
-            x, y, w, h = bbox
-            return X[y:(y+h), x:(x+w), ...]
-
-class ImageResizer(ImageTransformer):
-    def __init__(self, k=0.5):
-        self.k = k
-    
-    def transform(self, X, y=None):
-        if k == 0.5:
-            return cv2.pyrDown(X)
-        else:
-            raise ValueError("not implemented")
-
-class DarkRemover(ImageTransformer):
-    def __init__(self):
-        self.mask = None
-        
-    def transform(self, X, y=None):
-        img_hsv = cv2.cvtColor(X, cv2.COLOR_BGR2HSV)
-        v = img_hsv[:, :, -1]
-        self.mask = v > 25
-        return X, self.mask
-
-class HsvTransformer(ImageTransformer):
-    def __init__(self):
-        self.img = None
-    
-    def transform(self, X, y=None):
-        bgr, mask = X
-        self.img = cv2.cvtColor(bgr, cv2.COLOR_BGR2HSV)
-        return self.img
-
-class BgrTransformer(ImageTransformer):
-    def __init__(self):
-        self.img = None
-    
-    def transform(self, X, y=None):
-        bgr, mask = X
-        self.img = bgr
-        return bgr
+features = FeatureUnion([
+    ('bgr', CspaceTransformer('bgr')),
+    ('hsv', CspaceTransformer('hsv')),
+    ('lab', CspaceTransformer('lab'))
+    ])
 
 ppl = Pipeline([
-    ('rotate_image', ImageRotator()),
+    ('rotate_image', ImageRotator(-1)), # cw
     ('crop_image', ImageCropper(bbox)),
-    ('resize_image', ImageResizer()),
-    ('remove_dark', DarkRemover()),
-    ('bgr2hsv', HsvTransformer())
+    ('resize_image', ImageResizer(0.5)), # half size
+    ('remove_dark', DarkRemover(25)),
+    ('features', features)
     ])
 
 a = ppl.transform(X)

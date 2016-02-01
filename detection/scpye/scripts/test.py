@@ -11,17 +11,20 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 import cv2
-from sklearn.pipeline import FeatureUnion
+from sklearn.preprocessing import FunctionTransformer
+from sklearn.pipeline import FeatureUnion, Pipeline
+from sklearn.base import BaseEstimator, TransformerMixin
 
 # %%
-def extract_bbox(image, bbox):
-    x, y, w, h = bbox
-    return image[y:(y + h), x:(x + w), ...]
+
 
 def imshow(image, title=""):
     plt.figure(figsize=(10, 10)).gca().imshow(image)
     plt.gca().set_title(title)
 
+def extract_bbox(image, bbox):
+    x, y, w, h = bbox
+    return image[y:(y + h), x:(x + w), ...]
 # %%
 data_dir = "/home/chao/Workspace/bag/apple/green/fast_led/train"
 i = 0
@@ -69,3 +72,79 @@ mask = v > 25
 imshow(mask, 'mask')
 
 # %%
+# Use Pipeline and FeatureUnion to simplify preprocessing
+# When training
+#   pipeline.fit(X, y)
+# When testing
+#   pipeline.predict(X)
+
+X = img_raw
+y = np.dstack((neg, pos))
+
+class ImageTransformer(TransformerMixin):
+    def fit(self, X, y=None):
+        return self
+
+class ImageRotator(ImageTransformer):
+    def transform(self, X, y=None):
+        return np.rot90(X, -1)
+
+
+class ImageCropper(ImageTransformer):
+    def __init__(self, bbox=None):
+        self.bbox = bbox
+    
+    def transform(self, X, y=None):
+        if self.bbox is None:
+            return X
+        else:
+            x, y, w, h = bbox
+            return X[y:(y+h), x:(x+w), ...]
+
+class ImageResizer(ImageTransformer):
+    def __init__(self, k=0.5):
+        self.k = k
+    
+    def transform(self, X, y=None):
+        if k == 0.5:
+            return cv2.pyrDown(X)
+        else:
+            raise ValueError("not implemented")
+
+class DarkRemover(ImageTransformer):
+    def __init__(self):
+        self.mask = None
+        
+    def transform(self, X, y=None):
+        img_hsv = cv2.cvtColor(X, cv2.COLOR_BGR2HSV)
+        v = img_hsv[:, :, -1]
+        self.mask = v > 25
+        return X, self.mask
+
+class HsvTransformer(ImageTransformer):
+    def __init__(self):
+        self.img = None
+    
+    def transform(self, X, y=None):
+        bgr, mask = X
+        self.img = cv2.cvtColor(bgr, cv2.COLOR_BGR2HSV)
+        return self.img
+
+class BgrTransformer(ImageTransformer):
+    def __init__(self):
+        self.img = None
+    
+    def transform(self, X, y=None):
+        bgr, mask = X
+        self.img = bgr
+        return bgr
+
+ppl = Pipeline([
+    ('rotate_image', ImageRotator()),
+    ('crop_image', ImageCropper(bbox)),
+    ('resize_image', ImageResizer()),
+    ('remove_dark', DarkRemover()),
+    ('bgr2hsv', HsvTransformer())
+    ])
+
+a = ppl.transform(X)

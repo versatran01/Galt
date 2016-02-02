@@ -1,18 +1,35 @@
 from __future__ import (absolute_import, division, print_function)
 import cv2
 import numpy as np
-from sklearn.base import TransformerMixin
+from sklearn.preprocessing import StandardScaler
+from sklearn.base import TransformerMixin, BaseEstimator
+from functools import partial
 
 from scpye.bounding_box import extract_bbox
 
+__all__ = ['ImageRotator', 'ImageCropper', 'ImageResizer']
 
-class ImageTransformer(TransformerMixin):
+
+class ImageTransformer(BaseEstimator, TransformerMixin):
     """
     Base class for image transformation
     """
 
     def fit(self, X, y=None):
         return self
+
+    @staticmethod
+    def _transform(X, func):
+        """
+        Apply transform to X return None if X is None
+        :param X: data
+        :param func: function to apply to data
+        :return: transformed data
+        """
+        if X is None:
+            return None
+
+        return func(X)
 
 
 class ImageRotator(ImageTransformer):
@@ -26,10 +43,13 @@ class ImageRotator(ImageTransformer):
     def transform(self, X, y=None):
         """
         :param X: image
-        :return: rotated image
+        :param y: label
+        :return: rotated image and label
         """
-        assert np.ndim(X) >= 2
-        return np.rot90(X, self.ccw)
+        func = partial(np.rot90, k=self.ccw)
+        Xt = self._transform(X, func)
+        yt = self._transform(y, func)
+        return Xt, yt
 
 
 class ImageCropper(ImageTransformer):
@@ -39,35 +59,31 @@ class ImageCropper(ImageTransformer):
     def transform(self, X, y=None):
         """
         :param X: image
-        :return: region of image
+        :param y: label
+        :return: region of image and label
         """
-        if self.bbox is None:
-            return X
-        else:
-            return extract_bbox(X, self.bbox)
+        func = partial(extract_bbox, bbox=self.bbox)
+        Xt = self._transform(X, func)
+        yt = self._transform(y, func)
+        return Xt, yt
 
 
 class ImageResizer(ImageTransformer):
-    def __init__(self, k=0.5):
-        """
-        :param k: resize factor
-        :type k: float
-        """
-        assert 0 < k <= 1
-        self.k = k
-
     def transform(self, X, y=None):
         """
         :param X: image
         :return: resized image
         """
-        if self.k == 0.5:
-            return cv2.pyrDown(X)
-        else:
-            raise ValueError("not implemented")
+        k = 0.5
+        func_x = cv2.pyrDown
+        func_y = partial(cv2.resize, dsize=None, fx=k, fy=k,
+                         interpolation=cv2.INTER_NEAREST)
+        Xt = self._transform(X, func_x)
+        yt = self._transform(y, func_y)
+        return Xt, yt
 
 
-class DarkRemover(ImageTransformer):
+class DarkPixelRemover(ImageTransformer):
     def __init__(self, v_min=25):
         """
         :param v_min: minimum value in v channel
@@ -80,12 +96,10 @@ class DarkRemover(ImageTransformer):
     def transform(self, X, y=None):
         """
         :param X: bgr image
-        :param y:
         :return: a tuple of bgr image and mask
         """
         img_hsv = cv2.cvtColor(X, cv2.COLOR_BGR2HSV)
         self.mask = img_hsv[:, :, -1] > self.v_min
-        return X, self.mask
 
 
 class CspaceTransformer(ImageTransformer):
@@ -110,8 +124,8 @@ class CspaceTransformer(ImageTransformer):
     def transform(self, X, y=None):
         """
         :param X: tuple of bgr image and mask
-        :return:
+        :return: masked image with transformed colorspace
         """
         bgr, mask = X
         self.img = self.cspace_transform(bgr)
-        return self.img[mask]
+        return np.array(self.img[mask], dtype=np.float64)

@@ -10,7 +10,10 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 import cv2
-from scpye.transformer import *
+from scpye.image_transformer import *
+from sklearn.pipeline import Pipeline
+from scpye.image_pipeline import ImagePipeline
+
 
 # %%
 
@@ -19,16 +22,21 @@ def imshow(image, title=""):
     plt.figure(figsize=(10, 10)).gca().imshow(image)
     plt.gca().set_title(title)
 
+
 def extract_bbox(image, bbox):
     x, y, w, h = bbox
     return image[y:(y + h), x:(x + w), ...]
+
+
 # %%
 data_dir = "/home/chao/Workspace/bag/apple/green/fast_led/train"
 i = 0
 img_fmt = "frame{0:04d}_{1}.png"
+
 img_file = os.path.join(data_dir, img_fmt.format(i, 'raw'))
 pos_file = os.path.join(data_dir, img_fmt.format(i, 'pos'))
 neg_file = os.path.join(data_dir, img_fmt.format(i, 'neg'))
+
 img_raw = cv2.imread(img_file, cv2.IMREAD_COLOR)
 pos = cv2.imread(pos_file, cv2.IMREAD_GRAYSCALE)
 neg = cv2.imread(neg_file, cv2.IMREAD_GRAYSCALE)
@@ -47,7 +55,7 @@ imshow(img_crop, 'crop')
 
 # resize image (either resize or gaussian pyramid)
 k = 0.5
-#img_down = cv2.resize(im_crop, None, fx=k, fy=k, interpolation=cv2.INTER_LINEAR)
+# img_down = cv2.resize(im_crop, None, fx=k, fy=k, interpolation=cv2.INTER_LINEAR)
 img_pyr = cv2.pyrDown(img_crop)
 imshow(img_pyr, 'pyr')
 
@@ -78,18 +86,13 @@ imshow(mask, 'mask')
 X = img_raw
 y = np.dstack((neg, pos))
 
-features = FeatureUnion([
-    ('bgr', CspaceTransformer('bgr')),
-    ('hsv', CspaceTransformer('hsv')),
-    ('lab', CspaceTransformer('lab'))
-    ])
-
-ppl = Pipeline([
-    ('rotate_image', ImageRotator(-1)), # cw
+image_ppl = ImagePipeline([
+    ('rotate_image', ImageRotator(-1)),
     ('crop_image', ImageCropper(bbox)),
-    ('resize_image', ImageResizer(0.5)), # half size
-    ('remove_dark', DarkRemover(25)),
-    ('features', features)
-    ])
+    ('resize_image', ImageResizer())
+])
 
-a = ppl.transform(X)
+
+Xt = image_ppl.transform(X)
+
+# %%

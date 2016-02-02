@@ -1,5 +1,4 @@
 from sklearn import svm
-from sklearn import naive_bayes
 from sklearn import linear_model
 from sklearn import grid_search
 from sklearn import ensemble
@@ -64,8 +63,8 @@ def tune_ensemble(X, y):
     clf_rf = ensemble.RandomForestClassifier()
 
     eclf = ensemble.VotingClassifier(
-            estimators=[('lr', clf_lr), ('svc', clf_svc), ('rf', clf_rf)],
-            voting='hard')
+        estimators=[('lr', clf_lr), ('svc', clf_svc), ('rf', clf_rf)],
+        voting='hard')
     params = {'svc__kernel': ['rbf'], 'svc__C': [1, 5, 10, 50, 100],
               'lr__C': [1, 5, 10, 50, 100],
               'rf__n_estimators': [5, 10, 25]}

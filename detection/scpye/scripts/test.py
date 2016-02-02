@@ -106,3 +106,8 @@ image_ppl.fit(X, y)
 
 # %%
 img_file = os.path.join(data_dir, img_fmt.format(1, 'raw'))
+img_raw = cv2.imread(img_file, cv2.IMREAD_COLOR)
+y_pred = image_ppl.predict(img_raw)
+bw = image_ppl.named_steps['remove_dark'].mask
+bw[bw > 0] = y_pred
+imshow(bw)

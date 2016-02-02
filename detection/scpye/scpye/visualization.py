@@ -2,6 +2,7 @@ from __future__ import print_function, division, absolute_import
 
 import cv2
 import numpy as np
+import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 
 
@@ -15,6 +16,29 @@ class Colors:
     match = (0, 255, 0)  # green
     optical_flow = (255, 0, 0)  # red
     text = (0, 255, 255)
+
+
+def imshow(image, title="", fsize=(10, 10)):
+    """
+    Convenient function to display image
+    :param image:
+    :param title:
+    :param fsize:
+    """
+    plt.figure(figsize=fsize).gca().imshow(image)
+    plt.gca().set_title(title)
+
+
+def imshow2(image1, image2, fsize=(10, 10)):
+    """
+    Convenient function to display 2 images side by side
+    :param image1:
+    :param image2:
+    :param fsize:
+    """
+    fig = plt.figure(figsize=fsize)
+    fig.add_subplot(121).imshow(image1)
+    fig.add_subplot(122).imshow(image2)
 
 
 # Functions start with plot calls pyplot subroutines and usually requires ax

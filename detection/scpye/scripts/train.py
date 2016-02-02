@@ -7,21 +7,12 @@ Created on Sun Jan 31 16:06:13 2016
 
 # %%
 import os
+import cv2
 import numpy as np
 import matplotlib.pyplot as plt
-import cv2
-from scpye.image_transformer import *
-from scpye.image_pipeline import ImagePipeline, FeatureUnion
-from sklearn import svm
-
+from scpye.fruit_detector import make_image_pipeline
 
 # %%
-
-
-def imshow(image, title=""):
-    plt.figure(figsize=(10, 10)).gca().imshow(image)
-    plt.gca().set_title(title)
-
 
 def extract_bbox(image, bbox):
     x, y, w, h = bbox
@@ -56,37 +47,13 @@ bbox = np.array([200, 200, 800, 1400])
 
 # %%
 # Use Pipeline and FeatureUnion to simplify preprocessing
-# When training
-#   pipeline.fit(X, y)
-# When testing
-#   pipeline.predict(X)
-
-# X = img_raw
-# y = np.dstack((neg, pos))
-
-features = FeatureUnion([
-   ('bgr', CspaceTransformer('bgr')),
-   ('hsv', CspaceTransformer('hsv')),
-   ('mask_location', MaskLocator())
-])
-
-
 Xs = [img_raw0, img_raw1]
 ys = [lbl0, lbl1]
 
 #Xs = img_raw0
 #ys = lbl0
 
-image_ppl = ImagePipeline([
-    ('rotate_image', ImageRotator(-1)),
-    ('crop_image', ImageCropper(bbox)),
-    ('resize_image', ImageResizer()),
-    ('remove_dark', DarkRemover(25)),
-    ('features', features),
-    ('scaler', StandardScaler()),
-    ('svc', svm.SVC())
-])
-
+image_ppl = make_image_pipeline(bbox=bbox, use_loc=True)
 image_ppl.fit(Xs, ys)
 
 # %%

@@ -19,6 +19,10 @@ class TestBoundingBox(unittest.TestCase):
         e0 = np.dstack((e0, e0))
         nt.assert_array_equal(e, e0)
 
+        # None
+        e = extract_bbox(x, None)
+        nt.assert_array_equal(e, x)
+
     def test_bbox_center(self):
         b = np.array([1, 1, 2, 2])
         c = bbox_center(b)

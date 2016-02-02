@@ -14,14 +14,15 @@ def extract_bbox(image, bbox):
     """
     Extract region of image defined by bbox
     :param image: image
-    :type image: numpy.ndarray
     :param bbox: bbox
-    :type bbox: numpy.ndarray
     :return: region of image
     :rtype: numpy.ndarray
     """
-    x, y, w, h = bbox
-    return image[y:y + h, x:x + w, ...]
+    if bbox is None:
+        return image
+    else:
+        x, y, w, h = bbox
+        return image[y:y + h, x:x + w, ...]
 
 
 def bbox_center(bbox):

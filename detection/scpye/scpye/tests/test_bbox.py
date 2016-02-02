@@ -1,10 +1,10 @@
 import unittest
 import numpy as np
 import numpy.testing as nt
-from scpye.bounding_box import *
+from scpye.bbox import *
 
 
-class TestBoundingBox(unittest.TestCase):
+class TestBbox(unittest.TestCase):
     def test_extract_bbox(self):
         # 2d
         x = np.identity(4)

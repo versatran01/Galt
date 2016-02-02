@@ -11,13 +11,7 @@ import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 from scpye.fruit_detector import make_image_pipeline
-
-# %%
-
-def extract_bbox(image, bbox):
-    x, y, w, h = bbox
-    return image[y:(y + h), x:(x + w), ...]
-
+from scpye.viz import imshow
 
 # %%
 data_dir = "/home/chao/Workspace/bag/apple/green/fast_led/train"
@@ -50,8 +44,8 @@ bbox = np.array([200, 200, 800, 1400])
 Xs = [img_raw0, img_raw1]
 ys = [lbl0, lbl1]
 
-#Xs = img_raw0
-#ys = lbl0
+# Xs = img_raw0
+# ys = lbl0
 
 image_ppl = make_image_pipeline(bbox=bbox, use_loc=True)
 image_ppl.fit(Xs, ys)

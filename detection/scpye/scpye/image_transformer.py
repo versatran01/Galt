@@ -8,7 +8,7 @@ from collections import namedtuple
 from sklearn.base import TransformerMixin, BaseEstimator
 from sklearn.preprocessing import StandardScaler
 
-from scpye.bounding_box import extract_bbox
+from scpye.bbox import extract_bbox
 
 __all__ = ['ImageRotator', 'ImageCropper', 'ImageResizer', 'DarkRemover',
            'CspaceTransformer', 'MaskLocator', 'StandardScaler']

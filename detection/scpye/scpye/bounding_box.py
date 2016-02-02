@@ -36,15 +36,30 @@ def bbox_center(bbox):
     return np.array([x + w / 2, y + h / 2])
 
 
-# TODO: this is broken
-def bbox_intersect(bbox1, bbox2):
+def bbox_distance_squared(bbox1, bbox2):
     """
-    Whether two bboxes overlap or not
+    Squared distance between bbox1 and bbox2
     :param bbox1: bbox
     :type bbox1: numpy.ndarray
     :param bbox2: bbox
     :type bbox2: numpy.ndarray
-    :return: True if two bboxes overlap
+    :return: squared distance between center of bbox
+    :rtype: float
+    """
+    cx1, cy1 = bbox_center(bbox1)
+    cx2, cy2 = bbox_center(bbox2)
+    return (cx1 - cx2) ** 2 + (cy1 - cy2) ** 2
+
+
+# TODO: this might be broken
+def bbox_intersect(bbox1, bbox2):
+    """
+    Whether two bboxes intersect or not
+    :param bbox1: bbox
+    :type bbox1: numpy.ndarray
+    :param bbox2: bbox
+    :type bbox2: numpy.ndarray
+    :return: True if two bboxes intersect
     :rtype: bool
     """
     x1, y1, w1, h1 = bbox1
@@ -52,16 +67,38 @@ def bbox_intersect(bbox1, bbox2):
     return (abs(x1 - x2) * 2 < (w1 + w2)) and (abs(y1 - y2) * 2 < (h1 + h2))
 
 
+def bbox_intersect_area(bbox1, bbox2):
+    """
+    Intersection area of two bboxes
+    :param bbox1: bbox
+    :param bbox2: bbox
+    :return: intersection area
+    :rtype: float
+    """
+    x1, y1, w1, h1 = bbox1
+    x2, y2, w2, h2 = bbox2
+    w = max(0.0, min(x1 + w1, x2 + w2) - max(x1, x2))
+    h = max(0.0, min(y1 + h1, y2 + h2) - max(y1, y2))
+    return w * h
+
+
+# TODO: need unittest for this
 def bbox_overlap_ratio(bbox1, bbox2, ratio_type=OverlapRatio.Union):
+    """
+    Overlap ratio of two bboxes
+    :param bbox1: bbox
+    :param bbox2: bbox
+    :param ratio_type:
+    :return: overlap ratio
+    :rtype: float
+    """
     if not bbox_intersect(bbox1, bbox2):
         return 0.0
 
     x1, y1, w1, h1 = bbox1
     x2, y2, w2, h2 = bbox2
     # intersection area is a * b, where a is width and b is height
-    a = max(0, min(x1 + w1, x2 + w2) - max(x1, x2))
-    b = max(0, min(y1 + h1, y2 + h2) - max(y1, y2))
-    area_intersection = a * b
+    area_intersection = bbox_intersect_area(bbox1, bbox2)
     area_b1 = w1 * h1
     area_b2 = w2 * h2
     if ratio_type == OverlapRatio.Union:
@@ -70,25 +107,6 @@ def bbox_overlap_ratio(bbox1, bbox2, ratio_type=OverlapRatio.Union):
     elif ratio_type == OverlapRatio.Min:
         area_min = min(area_b1, area_b2)
         return area_intersection / area_min
-
-
-def bbox_distance_squared(bbox1, bbox2):
-    """
-    Squared distance between bbox1 and bbox2
-    :param bbox1: bbox
-    :type bbox1: numpy.ndarray
-    :param bbox2: bbox
-    :type bbox2: numpy.ndarray
-    :return: squared distance
-    :rtype: float
-    """
-    x1, y1, w1, h1 = bbox1
-    x2, y2, w2, h2 = bbox2
-    cx1 = x1 + w1 / 2.0
-    cy1 = y1 + h1 / 2.0
-    cx2 = x2 + w2 / 2.0
-    cy2 = y2 + h2 / 2.0
-    return (cx1 - cx2) ** 2 + (cy1 - cy2) ** 2
 
 
 def bbox_distance_squared_area_ratio(bbox1, bbox2):

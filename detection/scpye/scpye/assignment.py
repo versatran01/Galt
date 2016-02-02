@@ -36,7 +36,7 @@ def hungarian_assignment(cost_matrix, unassigned_cost=1.5):
     :type cost_matrix: numpy.ndarray
     :param unassigned_cost: cost of unassignment
     :type unassigned_cost: float
-    :return:
+    :return: matches, unassigned tracks, unassigned detections
     """
     padded_cost_matrix = pad_cost_matrix(cost_matrix, unassigned_cost)
     assignment = skla.linear_assignment(padded_cost_matrix)

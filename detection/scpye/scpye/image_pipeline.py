@@ -22,25 +22,32 @@ class ImagePipeline(Pipeline):
             else:
                 out = transform.fit(Xt, yt, **fit_params_steps[name]) \
                     .transform(Xt, yt)
-            # Handle transforms that only return X
-            if isinstance(out, tuple) and len(out) == 2:
+            # Handle transforms that only return X, because X could be a
+            # namedTuple, we have to check type explicitly
+            if type(out) == tuple and len(out) == 2:
                 Xt, yt = out
             else:
                 Xt = out
-            print(name, yt.shape)
 
         return Xt, yt, fit_params_steps[self.steps[-1][0]]
 
     @staticmethod
-    def _transform_xy(X, steps):
+    def _transform_x(X, steps):
         Xt = X
         for name, transform in steps:
             out = transform.transform(Xt)
-            if isinstance(out, tuple) and len(out) == 2:
-                Xt, yt = out
+            if type(out) == tuple and len(out) == 2:
+                Xt, _ = out
             else:
                 Xt = out
         return Xt
+
+    @staticmethod
+    def _stack_ys(ys):
+        if isinstance(ys, list):
+            return np.hstack(ys)
+        else:
+            return ys
 
     def fit(self, X, y=None, **fit_params):
         """Fit all the transforms one after the other and transform the
@@ -56,7 +63,9 @@ class ImagePipeline(Pipeline):
             the pipeline.
         """
         Xt, yt, fit_params = self._pre_transform_xy(X, y, **fit_params)
-        print(np.shape(yt))
+        # Because FeatureTransformer doesn't change yt, it might be a list of
+        # yt, thus we have to stack yt ourselves
+        yt = self._stack_ys(yt)
         self.steps[-1][-1].fit(Xt, yt, **fit_params)
         return self
 
@@ -94,7 +103,7 @@ class ImagePipeline(Pipeline):
             Data to predict on. Must fulfill input requirements of first step of
             the pipeline.
         """
-        Xt = self._transform_xy(X, self.steps[:-1])
+        Xt = self._transform_x(X, self.steps[:-1])
         return self.steps[-1][-1].predict(Xt)
 
     @if_delegate_has_method(delegate='_final_estimator')
@@ -129,7 +138,7 @@ class ImagePipeline(Pipeline):
             Data to predict on. Must fulfill input requirements of first step of
             the pipeline.
         """
-        Xt = self._transform_xy(X, self.steps[:-1])
+        Xt = self._transform_x(X, self.steps[:-1])
         return self.steps[-1][-1].predict_proba(Xt)
 
     @if_delegate_has_method(delegate='_final_estimator')
@@ -144,7 +153,7 @@ class ImagePipeline(Pipeline):
             Data to predict on. Must fulfill input requirements of first step of
             the pipeline.
         """
-        Xt = self._transform_xy(X, self.steps[:-1])
+        Xt = self._transform_x(X, self.steps[:-1])
         return self.steps[-1][-1].decision_function(Xt)
 
     @if_delegate_has_method(delegate='_final_estimator')
@@ -159,11 +168,11 @@ class ImagePipeline(Pipeline):
             Data to predict on. Must fulfill input requirements of first step of
             the pipeline.
         """
-        Xt = self._transform_xy(X, self.steps[:-1])
+        Xt = self._transform_x(X, self.steps[:-1])
         return self.steps[-1][-1].predict_log_proba(Xt)
 
     @if_delegate_has_method(delegate='_final_estimator')
-    def transform(self, X):
+    def transform(self, X, y=None):
         """Applies transforms to the data, and the transform method of the
         final estimator. Valid only if the final estimator implements
         transform.
@@ -174,7 +183,7 @@ class ImagePipeline(Pipeline):
             Data to predict on. Must fulfill input requirements of first step of
             the pipeline.
         """
-        Xt = self._transform_xy(X, self.steps)
+        Xt = self._transform_x(X, self.steps)
         return Xt
 
     @if_delegate_has_method(delegate='_final_estimator')
@@ -193,5 +202,5 @@ class ImagePipeline(Pipeline):
             Targets used for scoring. Must fulfill label requirements for all
             steps of the pipeline.
         """
-        Xt = self._transform_xy(X, self.steps[:-1])
+        Xt = self._transform_x(X, self.steps[:-1])
         return self.steps[-1][-1].score(Xt, y)

@@ -3,6 +3,7 @@ from __future__ import (absolute_import, division, print_function)
 import cv2
 import numpy as np
 from functools import partial
+from collections import namedtuple
 
 from sklearn.base import TransformerMixin, BaseEstimator
 from sklearn.preprocessing import StandardScaler
@@ -12,8 +13,39 @@ from scpye.bounding_box import extract_bbox
 __all__ = ['ImageRotator', 'ImageCropper', 'ImageResizer', 'DarkRemover',
            'CspaceTransformer', 'PixelIndexer', 'StandardScaler']
 
+MaskedData = namedtuple('MaskedData', ['X', 'm'])
+
 
 class ImageTransformer(BaseEstimator, TransformerMixin):
+    @staticmethod
+    def forward_list_input(func):
+        """
+        Decorator that output a list if input is list
+        Currently only handles class member function
+        """
+
+        def func_wrapper(self, X, y=None):
+            if y is None:
+                if isinstance(X, list):
+                    return [func(self, _X) for _X in X]
+                else:
+                    return func(self, X)
+            else:
+                # Hopefully the input of y won't be a list of None
+                if isinstance(X, list):
+                    assert isinstance(y, list) and len(X) == len(y)
+                    Xts = []
+                    yts = []
+                    for _X, _y in zip(X, y):
+                        Xt, yt = func(self, _X, _y)
+                        Xts.append(Xt)
+                        yts.append(yt)
+                    return Xts, yts
+                else:
+                    return func(self, X, y)
+
+        return func_wrapper
+
     def fit_transform(self, X, y=None, **fit_params):
         if y is None:
             # fit method of arity 1 (unsupervised transformation)
@@ -37,6 +69,7 @@ class ImageRotator(ImageTransformer):
         """
         self.ccw = ccw
 
+    @ImageTransformer.forward_list_input
     def transform(self, X, y=None):
         """
         :param X: image
@@ -56,6 +89,7 @@ class ImageCropper(ImageTransformer):
     def __init__(self, bbox=None):
         self.bbox = bbox
 
+    @ImageTransformer.forward_list_input
     def transform(self, X, y=None):
         """
         :param X: image
@@ -72,6 +106,7 @@ class ImageCropper(ImageTransformer):
 
 
 class ImageResizer(ImageTransformer):
+    @ImageTransformer.forward_list_input
     def transform(self, X, y=None):
         """
         :param X: image
@@ -110,6 +145,7 @@ class DarkRemover(ImageTransformer):
         self.mask = None
         self.v_min = v_min
 
+    @ImageTransformer.forward_list_input
     def transform(self, X, y=None):
         """
         :param X: image
@@ -119,7 +155,7 @@ class DarkRemover(ImageTransformer):
         img_hsv = cv2.cvtColor(X, cv2.COLOR_BGR2HSV)
         self.mask = img_hsv[:, :, -1] > self.v_min
         if y is None:
-            return [X, self.mask]
+            return MaskedData(X=X, m=self.mask)
 
         neg, pos = split_label01(y)
 
@@ -131,7 +167,24 @@ class DarkRemover(ImageTransformer):
 
         mask = np.dstack((neg_mask, pos_mask))
         yt = np.hstack((y_neg, y_pos))
-        return [X, mask], yt
+        return MaskedData(X=X, m=mask), yt
+
+
+class FeatureTransformer(ImageTransformer):
+    @staticmethod
+    def stack_list_input(func):
+        """
+        Decorator that stack the output if input is a list
+        Currently only handles class member function
+        """
+
+        def func_wrapper(self, X, y=None):
+            if isinstance(X, list):
+                return np.vstack([func(self, _X) for _X in X])
+            else:
+                return func(self, X)
+
+        return func_wrapper
 
 
 class CspaceTransformer(ImageTransformer):
@@ -158,19 +211,22 @@ class CspaceTransformer(ImageTransformer):
 
         return np.squeeze(des)
 
+    @FeatureTransformer.stack_list_input
     def transform(self, X, y=None):
         """
         :param X: tuple of bgr image and mask
+        :type X: MaskedData
+        :param y:
         :return: masked image with transformed colorspace
         """
-        if y is None:
-            bgr, mask = X
+        bgr = X.X
+        mask = X.m
+        if np.ndim(mask) == 2:
             Xt = self.cspace_transform(bgr[mask])
             self.img = np.zeros_like(bgr)
             self.img[mask] = Xt
         else:
-            bgr, label = X
-            neg, pos = split_label01(label)
+            neg, pos = split_label01(mask)
             Xt_neg = self.cspace_transform(bgr[neg])
             Xt_pos = self.cspace_transform(bgr[pos])
             Xt = np.vstack((Xt_neg, Xt_pos))
@@ -183,6 +239,7 @@ def xy_from_array(m):
     :param m: array
     :type m: numpy.ndarray
     :return: n x 2 matrix of [x, y]
+    :rtype: numpy.ndarray
     """
     assert np.ndim(m) == 2
     r, c = np.where(m)

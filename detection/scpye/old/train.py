@@ -6,7 +6,6 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.cross_validation import train_test_split
 from sklearn.externals import joblib
 # apple yield estimation
-from scpye.preprocessing import *
 from scpye.tune import *
 
 

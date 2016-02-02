@@ -11,7 +11,7 @@ from sklearn.preprocessing import StandardScaler
 from scpye.bounding_box import extract_bbox
 
 __all__ = ['ImageRotator', 'ImageCropper', 'ImageResizer', 'DarkRemover',
-           'CspaceTransformer', 'PixelIndexer', 'StandardScaler']
+           'CspaceTransformer', 'MaskLocator', 'StandardScaler']
 
 MaskedData = namedtuple('MaskedData', ['X', 'm'])
 
@@ -248,7 +248,7 @@ def xy_from_array(m):
     return np.transpose(np.vstack((r, c)))
 
 
-class PixelIndexer(FeatureTransformer):
+class MaskLocator(FeatureTransformer):
     @FeatureTransformer.stack_list_input
     def transform(self, X, y=None):
         mask = X.m

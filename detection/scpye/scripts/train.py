@@ -67,18 +67,8 @@ bbox = np.array([200, 200, 800, 1400])
 features = FeatureUnion([
    ('bgr', CspaceTransformer('bgr')),
    ('hsv', CspaceTransformer('hsv')),
-   ('pixel_position', PixelIndexer())
+   ('mask_location', MaskLocator())
 ])
-
-# image_ppl = ImagePipeline([
-#    ('rotate_image', ImageRotator(-1)),
-#    ('crop_image', ImageCropper(bbox)),
-#    ('resize_image', ImageResizer()),
-#    ('remove_dark', DarkRemover(25)),
-#    ('features', features),
-#    ('scale', StandardScaler()),
-#    ('svc', svm.SVC())
-# ])
 
 
 Xs = [img_raw0, img_raw1]

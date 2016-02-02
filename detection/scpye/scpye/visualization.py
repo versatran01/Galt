@@ -5,6 +5,8 @@ import numpy as np
 import matplotlib.patches as patches
 
 
+# TODO: get rid of all these for loops using higher-order functions
+
 class Colors:
     prediction = (0, 0, 255)  # blue
     detection = (255, 0, 0)  # red
@@ -16,7 +18,6 @@ class Colors:
 
 
 # Functions start with plot calls pyplot subroutines and usually requires ax
-# TODO: get rid of all these for loops using higher-order functions
 def plot_filled_bboxes(ax, bboxes, color, alpha):
     for bbox in bboxes:
         x, y, w, h = bbox

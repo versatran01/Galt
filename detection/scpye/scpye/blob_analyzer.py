@@ -3,6 +3,13 @@ import cv2
 import numpy as np
 from scpye.bounding_box import extract_bbox
 
+# Assemble a list of Blobs
+blob_dtype = [('area', 'int32'),
+              ('bbox', '(4,)int32'),
+              ('bbox_area', 'int32'),
+              ('extent', 'float32'),
+              ('equiv_diameter', 'float32')]
+
 
 def thresh_blobs_area(blobs, area):
     return blobs[blobs['area'] > area]
@@ -77,13 +84,6 @@ def region_props(bw, do_clean=True):
 
     # Redraw the contour on a new image to fill all the holes
     bw_filled = fill_holes(cs, bw.shape)
-
-    # Assemble a list of Blobs
-    blob_dtype = [('area', 'int32'),
-                  ('bbox', '(4,)int32'),
-                  ('bbox_area', 'int32'),
-                  ('extent', 'float32'),
-                  ('equiv_diameter', 'float32')]
 
     blobs = []
     for cnt in cs:

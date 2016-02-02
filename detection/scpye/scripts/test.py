@@ -29,7 +29,7 @@ def extract_bbox(image, bbox):
 
 
 # %%
-data_dir = "/home/chao/Workspace/bag/apple/red/fast_flash/train"
+data_dir = "/home/chao/Workspace/bag/apple/green/fast_led/train"
 i = 0
 img_fmt = "frame{0:04d}_{1}.png"
 
@@ -100,8 +100,8 @@ image_ppl.fit(Xs, ys)
 
 # %%
 img_file = os.path.join(data_dir, img_fmt.format(2, 'raw'))
-img_raw = cv2.imread(img_file, cv2.IMREAD_COLOR)
-y_pred = image_ppl.predict(img_raw)
+img_raw2 = cv2.imread(img_file, cv2.IMREAD_COLOR)
+y_pred = image_ppl.predict(img_raw2)
 bw = image_ppl.named_steps['remove_dark'].mask
 bw[bw > 0] = y_pred
 imshow(bw)

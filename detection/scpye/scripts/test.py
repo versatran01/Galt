@@ -64,10 +64,10 @@ bbox = np.array([200, 200, 800, 1400])
 # X = img_raw
 # y = np.dstack((neg, pos))
 
-# features = FeatureUnion([
-#    ('bgr', CspaceTransformer('bgr')),
-#    ('hsv', CspaceTransformer('hsv')),
-# ])
+features = FeatureUnion([
+   ('bgr', CspaceTransformer('bgr')),
+   ('hsv', CspaceTransformer('hsv')),
+])
 
 # image_ppl = ImagePipeline([
 #    ('rotate_image', ImageRotator(-1)),
@@ -80,18 +80,18 @@ bbox = np.array([200, 200, 800, 1400])
 # ])
 
 
-Xs = [img_raw0, img_raw1]
-ys = [lbl0, lbl1]
+#Xs = [img_raw0, img_raw1]
+#ys = [lbl0, lbl1]
 
-#Xs = img_raw0
-#ys = lbl0
+Xs = img_raw0
+ys = lbl0
 
 image_ppl = ImagePipeline([
     ('rotate_image', ImageRotator(-1)),
     ('crop_image', ImageCropper(bbox)),
     ('resize_image', ImageResizer()),
     ('remove_dark', DarkRemover(25)),
-    ('hsv', CspaceTransformer('hsv')),
+    ('features', features),
     ('scaler', StandardScaler()),
     ('svc', svm.SVC())
 ])

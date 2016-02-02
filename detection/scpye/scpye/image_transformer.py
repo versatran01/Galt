@@ -22,6 +22,7 @@ class ImageTransformer(BaseEstimator, TransformerMixin):
         """
         Decorator that output a list if input is list
         Currently only handles class member function
+        :param func:
         """
 
         def func_wrapper(self, X, y=None):
@@ -176,6 +177,7 @@ class FeatureTransformer(ImageTransformer):
         """
         Decorator that stack the output if input is a list
         Currently only handles class member function
+        :param func:
         """
 
         def func_wrapper(self, X, y=None):
@@ -246,14 +248,14 @@ def xy_from_array(m):
     return np.transpose(np.vstack((r, c)))
 
 
-class PixelIndexer(ImageTransformer):
+class PixelIndexer(FeatureTransformer):
+    @FeatureTransformer.stack_list_input
     def transform(self, X, y=None):
-        if y is None:
-            _, mask = X
+        mask = X.m
+        if np.ndim(mask) == 2:
             Xt = xy_from_array(mask)
         else:
-            _, label = X
-            neg, pos = split_label01(label)
+            neg, pos = split_label01(mask)
             xy_neg = xy_from_array(neg)
             xy_pos = xy_from_array(pos)
             Xt = np.vstack((xy_neg, xy_pos))

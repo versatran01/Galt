@@ -67,6 +67,7 @@ bbox = np.array([200, 200, 800, 1400])
 features = FeatureUnion([
    ('bgr', CspaceTransformer('bgr')),
    ('hsv', CspaceTransformer('hsv')),
+   ('pixel_position', PixelIndexer())
 ])
 
 # image_ppl = ImagePipeline([
@@ -80,11 +81,11 @@ features = FeatureUnion([
 # ])
 
 
-#Xs = [img_raw0, img_raw1]
-#ys = [lbl0, lbl1]
+Xs = [img_raw0, img_raw1]
+ys = [lbl0, lbl1]
 
-Xs = img_raw0
-ys = lbl0
+#Xs = img_raw0
+#ys = lbl0
 
 image_ppl = ImagePipeline([
     ('rotate_image', ImageRotator(-1)),

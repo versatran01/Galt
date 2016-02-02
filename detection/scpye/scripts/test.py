@@ -11,7 +11,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import cv2
 from scpye.image_transformer import *
-from scpye.image_pipeline import ImagePipeline
+from scpye.image_pipeline import ImagePipeline, FeatureUnion
+from sklearn import svm
 
 
 # %%
@@ -85,15 +86,23 @@ imshow(mask, 'mask')
 X = img_raw
 y = np.dstack((neg, pos))
 
+features = FeatureUnion([
+    ('bgr', CspaceTransformer('bgr')),
+    ('hsv', CspaceTransformer('hsv')),
+])
+
 image_ppl = ImagePipeline([
     ('rotate_image', ImageRotator(-1)),
     ('crop_image', ImageCropper(bbox)),
     ('resize_image', ImageResizer()),
     ('remove_dark', DarkRemover(25)),
-    ('bgr2lab', CspaceTransformer('lab'))
+    ('features', features),
+    ('scale', StandardScaler()),
+    ('svc', svm.SVC())
 ])
 
 
-Xt = image_ppl.transform(X)
+image_ppl.fit(X, y)
 
 # %%
+img_file = os.path.join(data_dir, img_fmt.format(1, 'raw'))

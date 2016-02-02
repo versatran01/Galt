@@ -1,25 +1,28 @@
 from __future__ import (absolute_import, division, print_function)
+
 import cv2
 import numpy as np
-from sklearn.base import TransformerMixin, BaseEstimator
 from functools import partial
+
+from sklearn.base import TransformerMixin, BaseEstimator
+from sklearn.preprocessing import StandardScaler
 
 from scpye.bounding_box import extract_bbox
 
 __all__ = ['ImageRotator', 'ImageCropper', 'ImageResizer', 'DarkRemover',
-           'CspaceTransformer']
-
-
-def split_label01(label):
-    return label[:, :, 0], label[:, :, 1]
+           'CspaceTransformer', 'PixelIndexer', 'StandardScaler']
 
 
 class ImageTransformer(BaseEstimator, TransformerMixin):
-    """
-    Base class for image transformation
-    """
+    def fit_transform(self, X, y=None, **fit_params):
+        if y is None:
+            # fit method of arity 1 (unsupervised transformation)
+            return self.fit(X, **fit_params).transform(X)
+        else:
+            # fit method of arity 2 (supervised transformation)
+            return self.fit(X, y, **fit_params).transform(X, y)
 
-    def fit(self, X, y=None):
+    def fit(self, X, y=None, **fit_params):
         return self
 
     @staticmethod
@@ -34,6 +37,9 @@ class ImageTransformer(BaseEstimator, TransformerMixin):
             return None
 
         return func(X)
+
+    def transform(self, X, y=None):
+        assert False
 
 
 class ImageRotator(ImageTransformer):
@@ -86,6 +92,16 @@ class ImageResizer(ImageTransformer):
         Xt = self._transform(X, func_x)
         yt = self._transform(y, func_y)
         return Xt, yt
+
+
+def split_label01(label):
+    """
+
+    :param label:
+    :return:
+    """
+    assert np.ndim(label) == 3 and np.size(label, axis=-1) == 2
+    return label[:, :, 0] > 0, label[:, :, 1] > 0
 
 
 class DarkRemover(ImageTransformer):
@@ -174,7 +190,7 @@ def xy_from_array(m):
     """
     assert np.ndim(m) == 2
     r, c = np.where(m)
-    return np.hstack((r.T, c.T))
+    return np.transpose(np.vstack((r, c)))
 
 
 class PixelIndexer(ImageTransformer):

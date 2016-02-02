@@ -1,6 +1,9 @@
-from sklearn.pipeline import Pipeline
+import numpy as np
+from sklearn.pipeline import Pipeline, FeatureUnion
 from sklearn.externals import six
 from sklearn.utils.metaestimators import if_delegate_has_method
+
+__all__ = ['ImagePipeline', 'FeatureUnion']
 
 
 class ImagePipeline(Pipeline):
@@ -24,6 +27,7 @@ class ImagePipeline(Pipeline):
                 Xt, yt = out
             else:
                 Xt = out
+            print(name, yt.shape)
 
         return Xt, yt, fit_params_steps[self.steps[-1][0]]
 
@@ -52,6 +56,7 @@ class ImagePipeline(Pipeline):
             the pipeline.
         """
         Xt, yt, fit_params = self._pre_transform_xy(X, y, **fit_params)
+        print(np.shape(yt))
         self.steps[-1][-1].fit(Xt, yt, **fit_params)
         return self
 

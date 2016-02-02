@@ -18,9 +18,9 @@ class ImagePipeline(Pipeline):
                 out = transform.fit_transform(Xt, yt, **fit_params_steps[name])
             else:
                 out = transform.fit(Xt, yt, **fit_params_steps[name]) \
-                    .transform(Xt)
+                    .transform(Xt, yt)
             # Handle transforms that only return X
-            if len(out) == 2:
+            if isinstance(out, tuple) and len(out) == 2:
                 Xt, yt = out
             else:
                 Xt = out
@@ -32,8 +32,8 @@ class ImagePipeline(Pipeline):
         Xt = X
         for name, transform in steps:
             out = transform.transform(Xt)
-            if len(out) == 2:
-                Xt, _ = out
+            if isinstance(out, tuple) and len(out) == 2:
+                Xt, yt = out
             else:
                 Xt = out
         return Xt
@@ -74,7 +74,8 @@ class ImagePipeline(Pipeline):
         if hasattr(self.steps[-1][-1], 'fit_transform'):
             return self.steps[-1][-1].fit_transform(Xt, yt, **fit_params)
         else:
-            return self.steps[-1][-1].fit(Xt, yt, **fit_params).transform(Xt)
+            return self.steps[-1][-1].fit(Xt, yt, **fit_params). \
+                transform(Xt, yt)
 
     @if_delegate_has_method(delegate='_final_estimator')
     def predict(self, X):

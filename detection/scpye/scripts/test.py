@@ -11,7 +11,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import cv2
 from scpye.image_transformer import *
-from sklearn.pipeline import Pipeline
 from scpye.image_pipeline import ImagePipeline
 
 
@@ -29,7 +28,7 @@ def extract_bbox(image, bbox):
 
 
 # %%
-data_dir = "/home/chao/Workspace/bag/apple/green/fast_led/train"
+data_dir = "/home/chao/Workspace/bag/apple/red/fast_flash/train"
 i = 0
 img_fmt = "frame{0:04d}_{1}.png"
 
@@ -49,7 +48,7 @@ img_rot = np.rot90(img_raw, -1)
 imshow(img_rot, 'rot')
 
 # crop image
-bbox = [200, 210, 800, 1500]
+bbox = [200, 0, 800, 1500]
 img_crop = extract_bbox(img_rot, bbox)
 imshow(img_crop, 'crop')
 
@@ -89,7 +88,9 @@ y = np.dstack((neg, pos))
 image_ppl = ImagePipeline([
     ('rotate_image', ImageRotator(-1)),
     ('crop_image', ImageCropper(bbox)),
-    ('resize_image', ImageResizer())
+    ('resize_image', ImageResizer()),
+    ('remove_dark', DarkRemover(25)),
+    ('bgr2lab', CspaceTransformer('lab'))
 ])
 
 

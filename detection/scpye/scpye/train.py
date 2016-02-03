@@ -2,6 +2,7 @@ from __future__ import (print_function, absolute_import, division)
 from sklearn.svm import SVC
 from sklearn.externals import joblib
 from sklearn.grid_search import GridSearchCV
+from sklearn.metrics import classification_report
 from scpye.image_transformer import (ImageRotator, ImageCropper, ImageResizer,
                                      DarkRemover, CspaceTransformer,
                                      MaskLocator, StandardScaler)
@@ -46,8 +47,57 @@ def make_feature_union(cspace=None, use_loc=True):
     if use_loc:
         transformer_list.append(('mask_location', MaskLocator()))
 
-    return FeatureUnion(transformer_list, n_jobs=len(transformer_list))
+    # Unfortunately, cannot do a parallel feature extraction
+    return FeatureUnion(transformer_list)
 
 
-def train():
-    pass
+def tune_svc(X, y, param_grid, cv=4, verbose=5):
+    """
+    Tune a support vector machine with cross validation
+    :type X: numpy.ndarray
+    :type y: numpy.ndarray
+    :param param_grid:
+    :type param_grid: list
+    :param cv: n folds cross validation
+    :type cv: int
+    :param verbose: verbosity level
+    :type verbose: int
+    :return: grid search
+    :rtype: GridSearchCV
+    """
+    grid = GridSearchCV(estimator=SVC(), param_grid=param_grid, cv=cv,
+                        verbose=verbose)
+    grid.fit(X, y)
+    return grid
+
+
+def print_grid_search_report(grid):
+    """
+    Print grid search report
+    :type grid: GridSearchCV
+    """
+    print("")
+    print("Grid search cross validation report:")
+    print("All parameters searched:")
+    for params, mean_score, scores in grid.grid_scores_:
+        print("{0:03f} (+/-{1:03f}) - {2}".format(mean_score, scores.std() * 2,
+                                                  params))
+    print("")
+    print("Optimal parameters and best score:")
+    print("{0:06f} for {1}".format(grid.best_score_, grid.best_params_))
+    print("")
+
+
+def print_validation_report(clf, X, y, target_names=None):
+    """
+    Print classification report
+    :type clf: GridSearchCV
+    :type X: numpy.ndarray
+    :type y: numpy.ndarray
+    :param target_names:
+    """
+    if target_names is None:
+        target_names = ['Non-apple', 'Apple']
+    y_p = clf.predict(X)
+    report = classification_report(y, y_p, target_names=target_names)
+    print(report)

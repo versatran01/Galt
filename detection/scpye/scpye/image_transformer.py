@@ -145,6 +145,7 @@ class DarkRemover(ImageTransformer):
         """
         assert 0 < v_min < 255
         self.mask = None
+        self.label = None
         self.v_min = v_min
 
     @ImageTransformer.forward_list_input
@@ -167,9 +168,9 @@ class DarkRemover(ImageTransformer):
         y_pos = np.ones(np.count_nonzero(pos_mask))
         y_neg = np.zeros(np.count_nonzero(neg_mask))
 
-        mask = np.dstack((neg_mask, pos_mask))
+        self.label = np.dstack((neg_mask, pos_mask))
         yt = np.hstack((y_neg, y_pos))
-        return MaskedData(X=X, m=mask), yt
+        return MaskedData(X=X, m=self.label), yt
 
 
 class FeatureTransformer(ImageTransformer):
@@ -226,8 +227,10 @@ class CspaceTransformer(ImageTransformer):
         mask = X.m
         if np.ndim(mask) == 2:
             Xt = self.cspace_transform(bgr[mask])
-            self.img = np.zeros_like(bgr)
-            self.img[mask] = Xt
+            img = np.zeros_like(bgr)
+            img[mask] = Xt
+            if y is None:
+                self.img = img
         else:
             neg, pos = split_label01(mask)
             Xt_neg = self.cspace_transform(bgr[neg])

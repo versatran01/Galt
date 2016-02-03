@@ -60,7 +60,7 @@ class FruitTracker(object):
         self.disp = np.array(s.im_raw, copy=True)
 
         # Draw detections
-        draw_bboxes(self.disp, blobs['bbox'], Colors.detection)
+        draw_bboxes(self.disp, blobs['bbox'], Colors.detect)
 
         h, w = np.shape(bw)
         min_area = (h * w) / (50.0 ** 2)
@@ -108,7 +108,7 @@ class FruitTracker(object):
         self.gray_prev = gray
 
         # Draw optical flow
-        draw_optical_flow(self.disp, p1s, p2s, color=Colors.optical_flow)
+        draw_optical_flow(self.disp, p1s, p2s, color=Colors.flow)
 
         # 1.b and 1.c
         valid_tracks = []
@@ -122,7 +122,7 @@ class FruitTracker(object):
 
         # Draw prediction
         bboxes_prediction = get_tracks_bboxes(valid_tracks, filtered=True)
-        draw_bboxes(self.disp, bboxes_prediction, color=Colors.prediction)
+        draw_bboxes(self.disp, bboxes_prediction, color=Colors.predict)
 
         # 2
         self.tracks = valid_tracks
@@ -146,7 +146,7 @@ class FruitTracker(object):
         # Draw kalman filter update and tracks that contains multiple fruits
         for track in valid_tracks:
             x, y = np.array(track.x, dtype=int)
-            cv2.circle(self.disp, (x, y), 2, color=Colors.correction,
+            cv2.circle(self.disp, (x, y), 2, color=Colors.correct,
                        thickness=-1)
             if track.num_fruits > 1:
                 cv2.putText(self.disp, str(track.num_fruits), (x, y),

@@ -9,13 +9,20 @@ import matplotlib.patches as patches
 # TODO: get rid of all these for loops using higher-order functions
 
 class Colors:
-    prediction = (0, 0, 255)  # blue
-    detection = (255, 0, 0)  # red
-    correction = (255, 255, 0)  # yellow
+    """
+    Collection of colors
+    """
+
+    predict = (0, 0, 255)  # blue
+    detect = (255, 0, 0)  # red
+    correct = (255, 255, 0)  # yellow
     new = (255, 255, 255)  # white
     match = (0, 255, 0)  # green
-    optical_flow = (255, 0, 0)  # red
+    flow = (255, 0, 0)  # red
     text = (0, 255, 255)
+
+    def __init__(self):
+        pass
 
 
 def imshow(image, title="", fsize=(10, 10)):

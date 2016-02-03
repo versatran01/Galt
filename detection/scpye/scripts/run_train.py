@@ -9,8 +9,6 @@ Created on Sun Jan 31 16:06:13 2016
 import os
 import cv2
 import numpy as np
-import matplotlib.pyplot as plt
-from scpye.fruit_detector import make_image_pipeline
 from sklearn.grid_search import GridSearchCV
 from scpye.viz import imshow
 from sklearn.svm import SVC

@@ -3,10 +3,14 @@ from __future__ import print_function, division, absolute_import
 import numpy as np
 
 __all__ = ['OverlapRatio', 'extract_bbox', 'bbox_center',
-           'bbox_distance_squared']
+           'bbox_distsq']
 
 
 class OverlapRatio:
+    """
+    Min: intersection area / min(bbox1 area, bbox2 area)
+    Union: intersection area / union(bbox1 area, bbox2 area)
+    """
     Union, Min = range(2)
 
     def __init__(self):
@@ -40,7 +44,7 @@ def bbox_center(bbox):
     return np.array([x + w / 2, y + h / 2])
 
 
-def bbox_distance_squared(bbox1, bbox2):
+def bbox_distsq(bbox1, bbox2):
     """
     Squared distance between bbox1 and bbox2
     :param bbox1: bbox
@@ -75,6 +79,7 @@ def bbox_intersect_area(bbox1, bbox2):
     """
     Intersection area of two bboxes
     :param bbox1: bbox
+    :type bbox1: numpy.ndarray
     :param bbox2: bbox
     :return: intersection area
     :rtype: float
@@ -113,16 +118,19 @@ def bbox_overlap_ratio(bbox1, bbox2, ratio_type=OverlapRatio.Union):
         return area_intersection / area_min
 
 
-def bbox_distance_squared_area_ratio(bbox1, bbox2):
-    x1, y1, w1, h1 = bbox1
-    x2, y2, w2, h2 = bbox2
-    cx1 = x1 + w1 / 2.0
-    cy1 = y1 + h1 / 2.0
-    cx2 = x2 + w2 / 2.0
-    cy2 = y2 + h2 / 2.0
-    distance_squared = (cx1 - cx2) ** 2 + (cy1 - cy2) ** 2
-    area = w1 * h1 + w2 * h2
-    return distance_squared / area
+def bbox_area(bbox):
+    """
+    Area of bbox
+    :param bbox: bbox
+    :return: bbox area
+    """
+    return bbox[-1] * bbox[-2]
+
+
+def bbox_distsq_area_ratio(bbox1, bbox2):
+    dist_sq = bbox_distsq(bbox1, bbox2)
+    area = bbox_area(bbox1) + bbox_area(bbox2)
+    return dist_sq / area
 
 
 def bboxes_overlap_ratio(bboxes1, bboxes2, ratio_type=OverlapRatio.Union):
@@ -151,6 +159,6 @@ def bboxes_assignment_cost(bboxes1, bboxes2):
         for i2, b2 in enumerate(bboxes2):
             overlap_ratio = bbox_overlap_ratio(b1, b2)
             overlap_cost = 1 - overlap_ratio
-            distance2_area_cost = bbox_distance_squared_area_ratio(b1, b2)
+            distance2_area_cost = bbox_distsq_area_ratio(b1, b2)
             C[i1, i2] = overlap_cost + distance2_area_cost
     return C

@@ -3,6 +3,20 @@ import cv2
 import numpy as np
 from scpye.bbox import extract_bbox
 
+"""
+http://scikit-image.org/docs/dev/api/skimage.measure.html#skimage.measure.regionprops
+"""
+
+
+class BlobAnalyzer(object):
+    def __init__(self):
+        pass
+
+    def analyze(self, bw):
+        blobs = []
+        return blobs
+
+
 # Assemble a list of Blobs
 blob_dtype = [('area', 'int32'),
               ('bbox', '(4,)int32'),

@@ -36,9 +36,9 @@ class TestBbox(unittest.TestCase):
 
     def test_bbox_distance_squared(self):
         b0 = np.array([0, 0, 2, 2])
-        d0 = bbox_distance_squared(b0, b0)
+        d0 = bbox_distsq(b0, b0)
         self.assertEqual(d0, 0.0)
 
         b1 = np.array([1, 1, 2, 2])
-        d1 = bbox_distance_squared(b0, b1)
+        d1 = bbox_distsq(b0, b1)
         self.assertEqual(d1, 2.0)

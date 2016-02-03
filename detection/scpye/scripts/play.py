@@ -20,7 +20,7 @@ bbox = np.array([200, 0, 800, 1440])
 params = [{'C': [0.1, 1, 10]}]
 
 dr = DataReader()
-ppl = make_image_pipeline(bbox=bbox)
+ppl = make_image_pipeline(bbox=bbox, use_loc=False)
 
 # Load a list of training images and labels
 train_indices = range(0, 6, 2)
@@ -58,4 +58,3 @@ bw = ppl.named_steps['remove_dark'].mask.copy()
 bw[bw > 0] = y
 bgr = ppl.named_steps['features'].transformer_list[0][-1].img
 imshow2(bgr, bw)
-

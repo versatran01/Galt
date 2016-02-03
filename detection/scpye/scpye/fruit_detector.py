@@ -26,7 +26,6 @@ def make_image_pipeline(ccw=-1, bbox=None, v_min=25, cspace=None, use_loc=True):
         ('remove_dark', DarkRemover(v_min)),
         ('features', features),
         ('scale', StandardScaler()),
-        ('svc', SVC())
     ])
     return img_ppl
 
@@ -49,27 +48,32 @@ def make_feature_union(cspace=None, use_loc=True):
 
 
 class FruitDetector(object):
-    def __init__(self, ppl):
+    def __init__(self, ppl, clf):
         """
         :param ppl: image pipeline
         :type ppl: ImagePipeline
+        :param clf: classifier
         """
         self.ppl = ppl
+        self.clf = clf
 
     def detect(self, img_raw):
         # TODO: what else to return from ppl?
-        y = self.ppl.predict(img_raw)
+        Xt = self.ppl.transform(img_raw)
+        y = self.clf.predict(Xt)
         bw = np.array(self.ppl.named_steps['remove_dark'].mask, copy=True)
         bw[bw > 0] = y
         return bw
 
     @classmethod
-    def from_pickle(cls, fname):
+    def from_pickle(cls, ppl_file, clf_file):
         """
         Constructor from a pickle
-        :param fname:
-        :type fname: str
+        :param clf_file:
+        :param ppl_file:
         :return:
         :rtype: FruitDetector
         """
-        return cls(joblib.load(fname))
+        ppl = joblib.load(ppl_file)
+        clf = joblib.load(clf_file)
+        return cls(ppl, clf)

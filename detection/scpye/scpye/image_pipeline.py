@@ -1,13 +1,25 @@
 import numpy as np
-from sklearn.pipeline import Pipeline, FeatureUnion
 from sklearn.externals import six
+from sklearn.pipeline import Pipeline, FeatureUnion
 from sklearn.utils.metaestimators import if_delegate_has_method
 
 __all__ = ['ImagePipeline', 'FeatureUnion']
 
 
 class ImagePipeline(Pipeline):
-    def _pre_transform_xy(self, X, y=None, **fit_params):
+    def _pre_transform_Xy(self, X, y=None, **fit_params):
+        """
+        Pre-transform Xy using every steps except the last one
+        Notice that if y is None, every intermediate transformers should return
+        only Xt, thus leave y unchanged and yt also None
+        And if y is not None, every intermediate transformers that need to
+        change y will return properly transformed yt, while anything that
+        doesn't change y will only return Xt, leaving the previous yt unmodified
+        :param X:
+        :param y:
+        :param fit_params:
+        :return:
+        """
         fit_params_steps = dict((step, {}) for step, _ in self.steps)
 
         for pname, pval in six.iteritems(fit_params):
@@ -18,32 +30,58 @@ class ImagePipeline(Pipeline):
 
         for name, transform in self.steps[:-1]:
             if hasattr(transform, "fit_transform"):
-                out = transform.fit_transform(Xt, yt, **fit_params_steps[name])
+                Xyt = transform.fit_transform(Xt, yt, **fit_params_steps[name])
             else:
-                out = transform.fit(Xt, yt, **fit_params_steps[name]) \
+                Xyt = transform.fit(Xt, yt, **fit_params_steps[name]) \
                     .transform(Xt, yt)
+
             # Handle transforms that only return X, because X could be a
             # namedTuple, we have to check type explicitly
-            if type(out) == tuple and len(out) == 2:
-                Xt, yt = out
+            # If a transformer also transforms y to yt, it will return a tuple,
+            # thus we extract it from Xyt and update yt
+            if type(Xyt) == tuple and len(Xyt) == 2:
+                Xt, yt = Xyt
             else:
-                Xt = out
+                Xt = Xyt
 
         return Xt, yt, fit_params_steps[self.steps[-1][0]]
 
     @staticmethod
-    def _transform_x(X, steps):
+    def _transform_X(X, steps):
+        """
+        Transform only X according to steps
+        Because transform only take X as input, it should only return X
+        :param X:
+        :param steps:
+        :return: X transformed
+        """
         Xt = X
         for name, transform in steps:
-            out = transform.transform(Xt)
-            if type(out) == tuple and len(out) == 2:
-                Xt, _ = out
-            else:
-                Xt = out
+            Xyt = transform.transform(Xt)
+            Xt = ImagePipeline._extract_X(Xyt)
+        return Xt
+
+    @staticmethod
+    def _extract_X(Xy):
+        """
+        Extract X from Xyt
+        :param Xy: X or (X, y)
+        :return:
+        """
+        if type(Xy) == tuple and len(Xy) == 2:
+            Xt, _ = Xy
+        else:
+            Xt = Xy
         return Xt
 
     @staticmethod
     def _stack_ys(ys):
+        """
+        Stack ys if ys is a list of y
+        :param ys:
+        :return: ys stacked into 1d array
+        :rtype: numpy.ndarray
+        """
         if isinstance(ys, list):
             return np.hstack(ys)
         else:
@@ -62,10 +100,12 @@ class ImagePipeline(Pipeline):
             Training targets. Must fulfill label requirements for all steps of
             the pipeline.
         """
-        Xt, yt, fit_params = self._pre_transform_xy(X, y, **fit_params)
+        Xt, yt, fit_params = self._pre_transform_Xy(X, y, **fit_params)
+
         # Because FeatureTransformer doesn't change yt, it might be a list of
         # yt, thus we have to stack yt ourselves
         yt = self._stack_ys(yt)
+
         self.steps[-1][-1].fit(Xt, yt, **fit_params)
         return self
 
@@ -84,12 +124,28 @@ class ImagePipeline(Pipeline):
             Training targets. Must fulfill label requirements for all steps of
             the pipeline.
         """
-        Xt, yt, fit_params = self._pre_transform_xy(X, y, **fit_params)
+        Xt, yt, fit_params = self._pre_transform_Xy(X, y, **fit_params)
+        # At this point, if y is None then yt should also be None
+
         if hasattr(self.steps[-1][-1], 'fit_transform'):
-            return self.steps[-1][-1].fit_transform(Xt, yt, **fit_params)
+            Xyt = self.steps[-1][-1].fit_transform(Xt, yt, **fit_params)
         else:
-            return self.steps[-1][-1].fit(Xt, yt, **fit_params). \
-                transform(Xt, yt)
+            Xyt = self.steps[-1][-1].fit(Xt, yt, **fit_params).transform(Xt, yt)
+
+        # Handle last step output
+        # Most of the time fit_transform will just return Xt because our last
+        # step will always be StandardScaler
+        # This cannot be abstracted to a function since we need yt?
+        if type(Xyt) == tuple and len(Xyt) == 2:
+            Xt, yt = Xyt
+        else:
+            Xt = Xyt
+
+        if y is None:
+            return Xt
+        else:
+            yt = self._stack_ys(yt)
+            return Xt, yt
 
     @if_delegate_has_method(delegate='_final_estimator')
     def predict(self, X):
@@ -103,7 +159,7 @@ class ImagePipeline(Pipeline):
             Data to predict on. Must fulfill input requirements of first step of
             the pipeline.
         """
-        Xt = self._transform_x(X, self.steps[:-1])
+        Xt = self._transform_X(X, self.steps[:-1])
         return self.steps[-1][-1].predict(Xt)
 
     @if_delegate_has_method(delegate='_final_estimator')
@@ -138,7 +194,7 @@ class ImagePipeline(Pipeline):
             Data to predict on. Must fulfill input requirements of first step of
             the pipeline.
         """
-        Xt = self._transform_x(X, self.steps[:-1])
+        Xt = self._transform_X(X, self.steps[:-1])
         return self.steps[-1][-1].predict_proba(Xt)
 
     @if_delegate_has_method(delegate='_final_estimator')
@@ -153,7 +209,7 @@ class ImagePipeline(Pipeline):
             Data to predict on. Must fulfill input requirements of first step of
             the pipeline.
         """
-        Xt = self._transform_x(X, self.steps[:-1])
+        Xt = self._transform_X(X, self.steps[:-1])
         return self.steps[-1][-1].decision_function(Xt)
 
     @if_delegate_has_method(delegate='_final_estimator')
@@ -168,7 +224,7 @@ class ImagePipeline(Pipeline):
             Data to predict on. Must fulfill input requirements of first step of
             the pipeline.
         """
-        Xt = self._transform_x(X, self.steps[:-1])
+        Xt = self._transform_X(X, self.steps[:-1])
         return self.steps[-1][-1].predict_log_proba(Xt)
 
     @if_delegate_has_method(delegate='_final_estimator')
@@ -183,7 +239,7 @@ class ImagePipeline(Pipeline):
             Data to predict on. Must fulfill input requirements of first step of
             the pipeline.
         """
-        Xt = self._transform_x(X, self.steps)
+        Xt = self._transform_X(X, self.steps)
         return Xt
 
     @if_delegate_has_method(delegate='_final_estimator')
@@ -202,5 +258,5 @@ class ImagePipeline(Pipeline):
             Targets used for scoring. Must fulfill label requirements for all
             steps of the pipeline.
         """
-        Xt = self._transform_x(X, self.steps[:-1])
+        Xt = self._transform_X(X, self.steps[:-1])
         return self.steps[-1][-1].score(Xt, y)

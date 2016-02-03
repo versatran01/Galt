@@ -11,7 +11,9 @@ import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 from scpye.fruit_detector import make_image_pipeline
+from sklearn.grid_search import GridSearchCV
 from scpye.viz import imshow
+from sklearn.svm import SVC
 
 # %%
 data_dir = "/home/chao/Workspace/bag/apple/green/fast_led/train"
@@ -46,14 +48,18 @@ ys = [lbl0, lbl1]
 
 # Xs = img_raw0
 # ys = lbl0
+params = dict(C=[0.1, 1, 10])
 
-image_ppl = make_image_pipeline(bbox=bbox, use_loc=True)
-image_ppl.fit(Xs, ys)
+ppl = make_image_pipeline(bbox=bbox, use_loc=True)
+Xts, yts = ppl.fit_transform(Xs, ys)
+
+clf = GridSearchCV(SVC(), param_grid=params, verbose=10)
+clf.fit(Xts, yts)
 
 # %%
 img_file = os.path.join(data_dir, img_fmt.format(2, 'raw'))
 img_raw2 = cv2.imread(img_file, cv2.IMREAD_COLOR)
-y_pred = image_ppl.predict(img_raw2)
-bw = image_ppl.named_steps['remove_dark'].mask
+y_pred = clf.predict(ppl.transform(img_raw2))
+bw = ppl.named_steps['remove_dark'].mask
 bw[bw > 0] = y_pred
 imshow(bw)

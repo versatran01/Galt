@@ -16,6 +16,53 @@ class BlobAnalyzer(object):
                            ('extent', 'float32'),
                            ('equiv_diameter', 'float32')]
 
+    def thresh_blobs_area(self, blobs, area):
+        return blobs[blobs['area'] > area]
+
+    def is_blob_multiple(self, blob, min_area):
+        return blob['area'] >= min_area
+
+    def num_peaks_in_blob(self, blob, image, min_area=25):
+        if self.is_blob_multiple(blob, min_area):
+            bbox = blob['bbox']
+            region = extract_bbox(image, bbox)
+            # TODO: need to change n according to image size
+            num_peaks = num_local_maximas(region)
+        else:
+            num_peaks = 1
+        return num_peaks
+
+    def num_local_maximas(self, image, n=7):
+        """
+        http://answers.opencv.org/question/28035/find-local-maximum-in-1d-2d-mat/
+        :param image:
+        :param n:
+        :return:
+        """
+        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (n, n))
+        peak = cv2.dilate(image, kernel, iterations=1)
+        peak -= image
+
+        flat = cv2.erode(image, kernel, iterations=1)
+        flat = image - flat
+
+        peak[peak > 0] = 255
+        flat[flat > 0] = 255
+
+        flat = cv2.bitwise_not(flat)
+        peak[flat > 0] = 255
+        peak = cv2.bitwise_not(peak)
+
+        cs, _ = cv2.findContours(peak, mode=cv2.RETR_EXTERNAL,
+                                 method=cv2.CHAIN_APPROX_SIMPLE)
+        return len(cs)
+
+    def clean_bw(self, bw, ksize=3):
+        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (ksize, ksize))
+        bw_open = cv2.morphologyEx(bw, cv2.MORPH_OPEN, kernel=kernel)
+
+        return bw_open
+
     def fill_holes(self, cs, shape):
         bw_filled = np.zeros(shape, np.uint8)
         cv2.drawContours(bw_filled, cs, -1, color=255, thickness=-1)

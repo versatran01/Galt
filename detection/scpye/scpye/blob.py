@@ -25,9 +25,9 @@ class BlobAnalyzer(object):
     def num_peaks_in_blob(self, blob, image, min_area=25):
         if self.is_blob_multiple(blob, min_area):
             bbox = blob['bbox']
-            region = extract_bbox(image, bbox)
+            region = self.extract_bbox(image, bbox)
             # TODO: need to change n according to image size
-            num_peaks = num_local_maximas(region)
+            num_peaks = self.num_local_maximas(region)
         else:
             num_peaks = 1
         return num_peaks
@@ -64,12 +64,26 @@ class BlobAnalyzer(object):
         return bw_open
 
     def fill_holes(self, cs, shape):
+        """
+
+        :param cs:
+        :param shape:
+        :return: filled image
+        :rtype: numpy.ndarray
+        """
         bw_filled = np.zeros(shape, np.uint8)
         cv2.drawContours(bw_filled, cs, -1, color=255, thickness=-1)
+
         return bw_filled
 
     # TODO: Investigate scikit-image regionprops
     def analyze(self, bw):
+        """
+
+        :param bw: numpy.ndarray
+        :return:
+        :rtype:
+        """
         # Detect contour
         cs, _ = cv2.findContours(bw, mode=cv2.RETR_EXTERNAL,
                                  method=cv2.CHAIN_APPROX_SIMPLE)

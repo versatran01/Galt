@@ -78,6 +78,7 @@ class ImageRotator(ImageTransformer):
         :return: rotated image and label
         """
         func = partial(np.rot90, k=self.ccw)
+
         Xt = func(X)
         if y is None:
             return Xt
@@ -97,8 +98,8 @@ class ImageCropper(ImageTransformer):
         :param y: label
         :return: region of image and label
         """
-
         func = partial(extract_bbox, bbox=self.bbox)
+
         Xt = func(X)
         if y is None:
             return Xt
@@ -108,6 +109,9 @@ class ImageCropper(ImageTransformer):
 
 
 class ImageResizer(ImageTransformer):
+    def __init__(self, k=0.5):
+        self.k = k
+
     @ImageTransformer.forward_list_input
     def transform(self, X, y=None):
         """
@@ -115,15 +119,14 @@ class ImageResizer(ImageTransformer):
         :param y: label
         :return: resized image
         """
-        k = 0.5
-        func_x = cv2.pyrDown
-        func_y = partial(cv2.resize, dsize=None, fx=k, fy=k,
-                         interpolation=cv2.INTER_NEAREST)
-        Xt = func_x(X)
+        func = partial(cv2.resize, dsize=None, fx=self.k, fy=self.k,
+                       interpolation=cv2.INTER_NEAREST)
+
+        Xt = func(cv2.GaussianBlur(X, (5, 5), 1))
         if y is None:
             return Xt
         else:
-            yt = func_y(y)
+            yt = func(y)
             return Xt, yt
 
 
@@ -145,6 +148,7 @@ class DarkRemover(ImageTransformer):
         """
         assert 0 < v_min < 255
         self.mask = None
+        self.label = None
         self.v_min = v_min
 
     @ImageTransformer.forward_list_input
@@ -167,9 +171,9 @@ class DarkRemover(ImageTransformer):
         y_pos = np.ones(np.count_nonzero(pos_mask))
         y_neg = np.zeros(np.count_nonzero(neg_mask))
 
-        mask = np.dstack((neg_mask, pos_mask))
+        self.label = np.dstack((neg_mask, pos_mask))
         yt = np.hstack((y_neg, y_pos))
-        return MaskedData(X=X, m=mask), yt
+        return MaskedData(X=X, m=self.label), yt
 
 
 class FeatureTransformer(ImageTransformer):
@@ -226,8 +230,10 @@ class CspaceTransformer(ImageTransformer):
         mask = X.m
         if np.ndim(mask) == 2:
             Xt = self.cspace_transform(bgr[mask])
-            self.img = np.zeros_like(bgr)
-            self.img[mask] = Xt
+            img = np.zeros_like(bgr)
+            img[mask] = Xt
+            if y is None:
+                self.img = img
         else:
             neg, pos = split_label01(mask)
             Xt_neg = self.cspace_transform(bgr[neg])

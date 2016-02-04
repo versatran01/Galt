@@ -15,6 +15,7 @@ class DataReader(object):
         # Directory
         self.data_dir = os.path.join(self.base_dir, fruit, color, mode)
         self.train_dir = os.path.join(self.data_dir, 'train')
+        self.model_dir = os.path.join(self.data_dir, 'model')
 
     def read_image(self, ind, suffix, color=True):
         """
@@ -62,4 +63,3 @@ class DataReader(object):
         image = self.load_image(ind)
         label = self.load_label(ind)
         return image, label
-

@@ -15,10 +15,10 @@ from scpye.train import make_image_pipeline, load_data, transform_data, train_sv
 
 # %%
 # bbox = np.array([200, 0, 800, 1440])
-bbox = np.array([240, 400, 720, 1280])
+bbox = np.array([200, 0, 800, 1440])
 
-dr = DataReader(color='green', mode='slow_flash')
-ppl = make_image_pipeline(bbox=bbox, k=0.4, v_min=20, use_loc=True)
+dr = DataReader(color='red', mode='fast_flash')
+ppl = make_image_pipeline(bbox=bbox, k=0.4, v_min=25, use_loc=False)
 
 train_inds = range(0, 12, 3)
 Is, Ls = load_data(dr, train_inds)

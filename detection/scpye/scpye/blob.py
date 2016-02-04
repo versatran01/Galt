@@ -53,6 +53,7 @@ class BlobAnalyzer(object):
             num_peaks = 1
         return num_peaks
 
+    # TODO: replace this with ndimage stuff instead of using my own
     def num_local_maximas(self, image, n=7):
         """
         http://answers.opencv.org/question/28035/find-local-maximum-in-1d-2d-mat/
@@ -78,19 +79,6 @@ class BlobAnalyzer(object):
         cs, _ = cv2.findContours(peak, mode=cv2.RETR_EXTERNAL,
                                  method=cv2.CHAIN_APPROX_SIMPLE)
         return len(cs)
-
-    def clean_bw(self, bw, ksize=3):
-        """
-
-        :param bw: numpy.ndarray
-        :param ksize: int
-        :return: cleaned image
-        :rtype: numpy.ndarray
-        """
-        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (ksize, ksize))
-        bw_open = cv2.morphologyEx(bw, cv2.MORPH_OPEN, kernel=kernel)
-
-        return bw_open
 
     def fill_holes(self, cs, shape):
         """
@@ -137,3 +125,43 @@ class BlobAnalyzer(object):
         blobs = np.array(blobs)
 
         return blobs, bw_filled
+
+
+def morph_opening(bw, ksize=3):
+    """
+    http://docs.opencv.org/2.4/doc/tutorials/imgproc/opening_closing_hats/opening_closing_hats.html
+    http://docs.opencv.org/master/d9/d61/tutorial_py_morphological_ops.html#gsc.tab=0
+    :param bw: binary image
+    :type bw: numpy.ndarray
+    :return: binary image after opening
+    :rtype: numpy.ndarray
+    """
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (ksize, ksize))
+    bw_open = cv2.morphologyEx(bw, cv2.MORPH_OPEN, kernel=kernel)
+    return bw_open
+
+
+def morph_closing(bw, ksize=3):
+    """
+    :param bw:
+    :type bw: numpy.ndarray
+    :param ksize:
+    :return: binary image after closing
+    :rtype: numpy.ndarray
+    """
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (ksize, ksize))
+    bw_close = cv2.morphologyEx(bw, cv2.MORPH_CLOSE, kernel)
+    return bw_close
+
+
+def find_contours(bw):
+    """
+    http://docs.opencv.org/master/d4/d73/tutorial_py_contours_begin.html#gsc.tab=0
+    :param bw: binary image
+    :type bw: numpy.ndarray
+    :return: a list of contours
+    :rtype: List
+    """
+    cs, _ = cv2.findContours(bw, mode=cv2.RETR_EXTERNAL,
+                             method=cv2.CHAIN_APPROX_SIMPLE)
+    return cs

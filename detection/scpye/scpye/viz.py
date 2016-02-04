@@ -25,16 +25,17 @@ class Colors:
         pass
 
 
-def imshow(image, title="", fsize=(10, 10)):
+def imshow(image, fsize=(10, 10), title=""):
     """
     Convenient function to display image
     :param image:
     :param title:
     :param fsize:
     """
-    plt.figure(figsize=fsize).gca().imshow(image)
-    plt.gca().set_title(title)
-    return plt.gca()
+    fig = plt.figure(figsize=fsize)
+    ax = fig.add_subplot(111)
+    ax.imshow(image)
+    return ax
 
 
 def imshow2(image1, image2, fsize=(10, 10)):
@@ -45,8 +46,88 @@ def imshow2(image1, image2, fsize=(10, 10)):
     :param fsize:
     """
     fig = plt.figure(figsize=fsize)
-    fig.add_subplot(121).imshow(image1)
-    fig.add_subplot(122).imshow(image2)
+    ax1 = fig.add_subplot(121).imshow(image1)
+    ax2 = fig.add_subplot(122).imshow(image2)
+    return ax1, ax2
+
+
+def draw_contours(image, cs, color=(255, 0, 0), thickness=1):
+    """
+    Draw a list of contours on image
+    :param image:
+    :param cs:
+    :param color:
+    :param thickness:
+    :return:
+    """
+    cv2.drawContours(image, cs, -1, color, thickness)
+
+
+def draw_contour(image, cnt, color=(255, 0, 0), thickness=1):
+    """
+    Draw a single contour on image
+    :param image:
+    :param cnt:
+    :param color:
+    :param thickness:
+    """
+    cv2.drawContours(image, [cnt], 0, color, thickness)
+
+
+def draw_bbox(image, bbox, color=(255, 0, 0), thickness=1):
+    """
+    Draw a single bounding box on image
+    :param image:
+    :param bbox: [x, y, w, h]
+    :param color:
+    :param thickness:
+    """
+    x, y, w, h = np.array(bbox, dtype=int)
+    cv2.rectangle(image, (x, y), (x + w, y + h), color=color,
+                  thickness=thickness)
+
+
+def draw_circle(image, circle, color=(255, 0, 0), thickness=1):
+    """
+    Draw a single circle on image
+    :param image:
+    :param circle:
+    :param color:
+    :param thickness:
+    """
+    x, y, r = np.array(circle, dtype=int)
+    cv2.circle(image, (x, y), r, color=color, thickness=thickness)
+
+
+def draw_ellipse(image, ellipse, color=(255, 0, 0), thickness=1):
+    """
+    Draw a single ellipse on image
+    :param image:
+    :param ellipse:
+    :param color:
+    :param thickness:
+    """
+    x, y, a1, a2, an = np.array(ellipse, dtype=int)
+    cv2.ellipse(image, (x, y), (a1, a2), an, 0, 360, color=color,
+                thickness=thickness)
+
+
+def draw_text(image, text, point, color=(255, 0, 0), scale=0.5, thickness=1):
+    """
+    Draw text at point on image
+    :param image:
+    :param text:
+    :param point:
+    :param color:
+    :param scale:
+    :param thickness:
+    """
+    if type(text) is not str:
+        text = str(int(text))
+
+    x, y = np.array(point, dtype=int)
+    cv2.putText(image, text, (x, y), 0, scale, color=color,
+                thickness=thickness)
 
 
 # Functions start with plot calls pyplot subroutines and usually requires ax

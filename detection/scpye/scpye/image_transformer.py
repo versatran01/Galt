@@ -78,6 +78,7 @@ class ImageRotator(ImageTransformer):
         :return: rotated image and label
         """
         func = partial(np.rot90, k=self.ccw)
+
         Xt = func(X)
         if y is None:
             return Xt
@@ -97,8 +98,8 @@ class ImageCropper(ImageTransformer):
         :param y: label
         :return: region of image and label
         """
-
         func = partial(extract_bbox, bbox=self.bbox)
+
         Xt = func(X)
         if y is None:
             return Xt
@@ -118,7 +119,6 @@ class ImageResizer(ImageTransformer):
         :param y: label
         :return: resized image
         """
-
         func = partial(cv2.resize, dsize=None, fx=self.k, fy=self.k,
                        interpolation=cv2.INTER_NEAREST)
 

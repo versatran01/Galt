@@ -11,45 +11,20 @@ import cv2
 import numpy as np
 from scpye.viz import imshow, imshow2
 from scpye.data_reader import DataReader
-from scpye.train import *
-from sklearn.cross_validation import train_test_split
+from scpye.train import make_image_pipeline, load_data, transform_data, train_svm
 
 # %%
-test_size = 0.3
-#bbox = np.array([200, 0, 800, 1440])
-bbox = np.array([200, 400, 800, 1280])
-params = [{'C': [0.1, 1, 10]}]
+# bbox = np.array([200, 0, 800, 1440])
+bbox = np.array([240, 400, 720, 1280])
 
 dr = DataReader(color='green', mode='slow_flash')
-ppl = make_image_pipeline(bbox=bbox, k=0.4)
+ppl = make_image_pipeline(bbox=bbox, k=0.4, v_min=20, use_loc=True)
 
-# Load a list of training images and labels
-train_indices = range(0, 11, 3)
-imgs_train = []
-lbls_train = []
-for ind in train_indices:
-    img, lbl = dr.load_image_label(ind)
-    imgs_train.append(img)
-    lbls_train.append(lbl)
+train_inds = range(0, 12, 3)
+Is, Ls = load_data(dr, train_inds)
 
-# Transform both images and labels
-print('Transforming images...')
-X_train, y_train = ppl.fit_transform(imgs_train, lbls_train)
-print('Done')
-
-# Split data into train and valid
-print('Spliting training data...')
-X_t, X_v, y_t, y_v = train_test_split(X_train, y_train, test_size=test_size)
-print('Done')
-
-# Do a grid search over some parameters
-print('Training classifier...')
-clf = tune_svc(X_t, y_t, params, verbose=10)
-print('Done')
-
-# %%
-print_grid_search_report(clf)
-print_validation_report(clf, X_v, y_v)
+X_train, y_train = transform_data(ppl, Is, Ls)
+clf = train_svm(X_train, y_train)
 
 # %%
 img, lbl = dr.load_image_label(1)

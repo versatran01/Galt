@@ -7,6 +7,7 @@ from collections import namedtuple
 
 from sklearn.base import TransformerMixin, BaseEstimator
 from sklearn.preprocessing import StandardScaler
+from scipy.ndimage import maximum_filter
 
 from scpye.bbox import extract_bbox
 
@@ -194,7 +195,30 @@ class FeatureTransformer(ImageTransformer):
         return func_wrapper
 
 
-class CspaceTransformer(ImageTransformer):
+class MaximumFilterTransformer(FeatureTransformer):
+    def __init__(self, size=25):
+        self.size = size
+        self.img = None
+
+    def transform(self, X, y=None):
+        bgr = X.X
+        mask = X.m
+        gray = cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY)
+        mf = maximum_filter(gray, self.size)
+        if np.ndim(mask) == 2:
+            Xt = mf[mask]
+            if y is None:
+                self.img = mf
+        else:
+            neg, pos = split_label01(mask)
+            Xt_neg = mf[neg]
+            Xt_pos = mf[pos]
+            Xt = np.hstack((Xt_neg, Xt_pos))
+        # Need to change to float to suppress later warnings
+        return np.array(Xt, np.float64)
+
+
+class CspaceTransformer(FeatureTransformer):
     def __init__(self, des):
         self.des = des
         self.img = None

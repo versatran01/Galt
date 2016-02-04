@@ -34,6 +34,7 @@ def imshow(image, title="", fsize=(10, 10)):
     """
     plt.figure(figsize=fsize).gca().imshow(image)
     plt.gca().set_title(title)
+    return plt.gca()
 
 
 def imshow2(image1, image2, fsize=(10, 10)):

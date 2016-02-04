@@ -9,11 +9,13 @@ from scpye.image_transformer import (ImageRotator, ImageCropper, ImageResizer,
 from scpye.image_pipeline import ImagePipeline, FeatureUnion
 
 
-def make_image_pipeline(ccw=-1, bbox=None, v_min=25, cspace=None, use_loc=True):
+def make_image_pipeline(ccw=-1, bbox=None, k=0.5, v_min=25, cspace=None,
+                        use_loc=True):
     """
     Factory function for making an image pipeline
     :param ccw: rotate image by ccw
     :param bbox: crop image by bbox
+    :param k: resize image by k
     :param v_min: remove dark pixels < v_min
     :param cspace: features - colorspace
     :param use_loc: features - pixel location
@@ -25,7 +27,7 @@ def make_image_pipeline(ccw=-1, bbox=None, v_min=25, cspace=None, use_loc=True):
     img_ppl = ImagePipeline([
         ('rotate_image', ImageRotator(ccw)),
         ('crop_image', ImageCropper(bbox)),
-        ('resize_image', ImageResizer()),
+        ('resize_image', ImageResizer(k)),
         ('remove_dark', DarkRemover(v_min)),
         ('features', features),
         ('scale', StandardScaler()),

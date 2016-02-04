@@ -16,14 +16,15 @@ from sklearn.cross_validation import train_test_split
 
 # %%
 test_size = 0.3
-bbox = np.array([200, 0, 800, 1440])
+#bbox = np.array([200, 0, 800, 1440])
+bbox = np.array([200, 400, 800, 1280])
 params = [{'C': [0.1, 1, 10]}]
 
-dr = DataReader()
-ppl = make_image_pipeline(bbox=bbox, use_loc=False)
+dr = DataReader(color='green', mode='slow_flash')
+ppl = make_image_pipeline(bbox=bbox, k=0.4)
 
 # Load a list of training images and labels
-train_indices = range(0, 6, 2)
+train_indices = range(0, 11, 3)
 imgs_train = []
 lbls_train = []
 for ind in train_indices:
@@ -43,7 +44,7 @@ print('Done')
 
 # Do a grid search over some parameters
 print('Training classifier...')
-clf = tune_svc(X_t, y_t, params)
+clf = tune_svc(X_t, y_t, params, verbose=10)
 print('Done')
 
 # %%
@@ -51,10 +52,10 @@ print_grid_search_report(clf)
 print_validation_report(clf, X_v, y_v)
 
 # %%
-img, lbl = dr.load_image_label(9)
+img, lbl = dr.load_image_label(1)
 X = ppl.transform(img)
 y = clf.predict(X)
 bw = ppl.named_steps['remove_dark'].mask.copy()
 bw[bw > 0] = y
 bgr = ppl.named_steps['features'].transformer_list[0][-1].img
-imshow2(bgr, bw)
+imshow2(bgr, bw, fsize=(16, 16))

@@ -8,14 +8,14 @@ import numpy as np
 from scpye.viz import imshow, imshow2
 from scpye.data_reader import DataReader
 from scpye.train import (make_image_pipeline, load_data, fit_transform_data,
-                         train_clf)
+                         train_svm)
 
 
 # %%
-def train_data(drd, inds, ppl):
+def train_image_classifier(drd, inds, ppl):
     Is, Ls = load_data(drd, inds)
     X_train, y_train = fit_transform_data(ppl, Is, Ls)
-    clf = train_clf(X_train, y_train)
+    clf = train_svm(X_train, y_train)
     return clf
 
 
@@ -46,26 +46,25 @@ else:
 # DataReader
 drd = DataReader(base_dir=base_dir, color=color, mode=mode)
 # ImagePipeline
-ppl = make_image_pipeline(bbox=bbox, k=k, v_min=v_min, use_loc=use_loc)
+img_ppl = make_image_pipeline(bbox=bbox, k=k, v_min=v_min, use_loc=use_loc)
 # Train SVC
-clf = train_data(drd, train_inds, ppl)
-#test_data(drd, test_inds, ppl, clf)
+img_clf = train_image_classifier(drd, train_inds, img_ppl)
 
 # %%
 I, L = drd.load_image_label(1)
-ppl.transform(I, L)
+img_ppl.transform(I, L)
 
 # Get transformed label
-lbl = ppl.named_steps['remove_dark'].label
+lbl = img_ppl.named_steps['remove_dark'].label
 pos = lbl[:,:, 1]
 imshow(pos)
 
 # %%
-X = ppl.transform(I)
-y = clf.predict(X)
-bw = ppl.named_steps['remove_dark'].mask.copy()
+X = img_ppl.transform(I)
+y = img_clf.predict(X)
+bw = img_ppl.named_steps['remove_dark'].mask.copy()
 bw[bw > 0] = y
 bw = np.array(bw, dtype='uint8') * 255
 
-bgr = ppl.named_steps['features'].transformer_list[0][-1].img
+bgr = img_ppl.named_steps['features'].transformer_list[0][-1].img
 imshow2(bgr, bw, fsize=(16, 16))

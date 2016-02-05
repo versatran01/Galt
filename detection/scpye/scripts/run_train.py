@@ -1,5 +1,6 @@
 # %%
 import sys
+
 # HACK
 sys.path.append('..')
 
@@ -8,18 +9,21 @@ from scpye.viz import imshow, imshow2
 from scpye.data_reader import DataReader
 from scpye.train import (make_image_pipeline, load_data, transform_data,
                          train_clf)
-                         
+
+
 # %%
-def train_data(dr, train_inds, ppl):
-    Is, Ls = load_data(dr, train_inds)
+def train_data(drd, inds, ppl):
+    Is, Ls = load_data(drd, inds)
     X_train, y_train = transform_data(ppl, Is, Ls)
     clf = train_clf(X_train, y_train)
     return clf
 
-def test_data(dr, test_inds, ppl, clf):
-    for ind in test_inds:
-        
-    
+
+def test_data(drd, inds, ppl, clf):
+    for ind in inds:
+        pass
+
+
 # %%
 base_dir = '/home/chao/Workspace/bag'
 color = 'red'
@@ -27,7 +31,7 @@ mode = 'slow_flash'
 train_inds = range(0, 12, 3)
 test_inds = range(1, 12, 3)
 
-dr = DataReader(base_dir=base_dir, color=color, mode=mode)
+drd = DataReader(base_dir=base_dir, color=color, mode=mode)
 
 # Parameters
 k = 0.4
@@ -42,11 +46,11 @@ else:
 ppl = make_image_pipeline(bbox=bbox, k=k, v_min=v_min, use_loc=use_loc)
 
 # %%
-clf = train_data(dr, train_inds, ppl)
-test_data(dr, test_inds, ppl, clf)
+clf = train_data(drd, train_inds, ppl)
+test_data(drd, test_inds, ppl, clf)
 
 # %%
-I, L = dr.load_image_label(1)
+I, L = drd.load_image_label(1)
 X = ppl.transform(I, L)
 y = clf.predict(X)
 bw = ppl.named_steps['remove_dark'].mask.copy()

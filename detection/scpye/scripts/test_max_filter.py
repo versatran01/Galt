@@ -4,22 +4,21 @@ Created on Thu Feb  4 14:19:48 2016
 
 @author: makineni
 """
+#%%
 import numpy as np
-from scpye.blob import BlobAnalyzer
 from scpye.data_reader import DataReader
-from scpye.train import load_data
 from scpye.viz import imshow, imshow2
 import cv2
 
 from scipy import ndimage as ndi
-import matplotlib.pyplot as plt
 from skimage.feature import peak_local_max
 from skimage import data, img_as_float
 
 from scpye.image_pipeline import ImagePipeline
 from scpye.image_transformer import MaximumFilterTransformer, DarkRemover
+# %%
 
-dr = DataReader('/home/makineni/Desktop/', color='green', mode='slow_flash')
+dr = DataReader('/home/anuragmakineni/Desktop/', color='green', mode='slow_flash')
 image = dr.load_image(1)
 imshow(image)
 

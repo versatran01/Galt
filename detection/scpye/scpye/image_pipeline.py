@@ -62,6 +62,27 @@ class ImagePipeline(Pipeline):
         return Xt
 
     @staticmethod
+    def _transform_Xy(X, y, steps):
+        """
+        Transform X and y according to steps
+        Because transform take X and y as input, it should return Xt and yt
+        unless it is not supported
+        :param X:
+        :param y:
+        :param steps:
+        :return: X and y transformed
+        """
+        Xt = X
+        yt = y
+        for name, transform in steps:
+            Xyt = transform.transform(Xt, yt)
+            if type(Xyt) == tuple and len(Xyt) == 2:
+                Xt, yt = Xyt
+            else:
+                Xt = Xyt
+        return Xt, yt
+
+    @staticmethod
     def _extract_X(Xy):
         """
         Extract X from Xyt
@@ -239,8 +260,12 @@ class ImagePipeline(Pipeline):
             Data to predict on. Must fulfill input requirements of first step of
             the pipeline.
         """
-        Xt = self._transform_X(X, self.steps)
-        return Xt
+        if y is None:
+            Xt = self._transform_X(X, self.steps)
+            return Xt
+        else:
+            Xt, yt = self._transform_Xy(X, y, self.steps)
+            return Xt, yt
 
     @if_delegate_has_method(delegate='_final_estimator')
     def score(self, X, y=None):

@@ -146,7 +146,7 @@ def transform_data(ppl, Is, Ls):
     return X, y
 
 
-def train_svm(X, y, test_size=0.3, report=True):
+def train_clf(X, y, test_size=0.3, report=True):
     """
     Train an svm with cross validation
     :param X:
@@ -166,3 +166,12 @@ def train_svm(X, y, test_size=0.3, report=True):
         print_validation_report(grid, X_v, y_v)
 
     return grid
+
+
+def test_clf(ppl, clf, I, L):
+    X, _ = ppl.transform(I, L)
+    y = clf.predict(X)
+    bw = ppl.named_steps['remove_dark'].mask.copy()
+    bw[bw > 0] = y
+    bgr = ppl.named_steps['features'].transformer_list[0][-1].img
+    return bgr, bw

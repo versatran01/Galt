@@ -1,63 +1,60 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Sun Jan 31 16:06:13 2016
-
-@author: chao
-"""
-
 # %%
-import os
-import cv2
+import sys
+# HACK
+sys.path.append('..')
+
 import numpy as np
-from sklearn.grid_search import GridSearchCV
-from scpye.viz import imshow
-from sklearn.svm import SVC
+from scpye.viz import imshow, imshow2
+from scpye.data_reader import DataReader
+from scpye.train import (make_image_pipeline, load_data, transform_data,
+                         train_clf)
+                         
+# %%
+def train_data(dr, train_inds, ppl):
+    Is, Ls = load_data(dr, train_inds)
+    X_train, y_train = transform_data(ppl, Is, Ls)
+    clf = train_clf(X_train, y_train)
+    return clf
+
+def test_data(dr, test_inds, ppl, clf):
+    for ind in test_inds:
+        
+    
+# %%
+base_dir = '/home/chao/Workspace/bag'
+color = 'red'
+mode = 'slow_flash'
+train_inds = range(0, 12, 3)
+test_inds = range(1, 12, 3)
+
+dr = DataReader(base_dir=base_dir, color=color, mode=mode)
+
+# Parameters
+k = 0.4
+v_min = 25
+if color == 'red':
+    bbox = np.array([200, 0, 800, 1440])
+    use_loc = False
+else:
+    bbox = np.array([200, 0, 800, 1440])
+    use_loc = True
+
+ppl = make_image_pipeline(bbox=bbox, k=k, v_min=v_min, use_loc=use_loc)
 
 # %%
-data_dir = "/home/chao/Workspace/bag/apple/green/fast_led/train"
-i = 0
-img_fmt = "frame{0:04d}_{1}.png"
-
-img_file = os.path.join(data_dir, img_fmt.format(i, 'raw'))
-neg_file = os.path.join(data_dir, img_fmt.format(i, 'neg'))
-pos_file = os.path.join(data_dir, img_fmt.format(i, 'pos'))
-
-img_raw0 = cv2.imread(img_file, cv2.IMREAD_COLOR)
-neg0 = cv2.imread(neg_file, cv2.IMREAD_GRAYSCALE)
-pos0 = cv2.imread(pos_file, cv2.IMREAD_GRAYSCALE)
-lbl0 = np.dstack((neg0, pos0))
-
-i = 1
-img_file = os.path.join(data_dir, img_fmt.format(i, 'raw'))
-neg_file = os.path.join(data_dir, img_fmt.format(i, 'neg'))
-pos_file = os.path.join(data_dir, img_fmt.format(i, 'pos'))
-
-img_raw1 = cv2.imread(img_file, cv2.IMREAD_COLOR)
-neg1 = cv2.imread(neg_file, cv2.IMREAD_GRAYSCALE)
-pos1 = cv2.imread(pos_file, cv2.IMREAD_GRAYSCALE)
-lbl1 = np.dstack((neg1, pos1))
-
-bbox = np.array([200, 200, 800, 1400])
+clf = train_data(dr, train_inds, ppl)
+test_data(dr, test_inds, ppl, clf)
 
 # %%
-# Use Pipeline and FeatureUnion to simplify preprocessing
-Xs = [img_raw0, img_raw1]
-ys = [lbl0, lbl1]
+I, L = dr.load_image_label(1)
+X = ppl.transform(I, L)
+y = clf.predict(X)
+bw = ppl.named_steps['remove_dark'].mask.copy()
+bw[bw > 0] = y
+bw = np.array(bw, dtype='uint8') * 255
 
-# Xs = img_raw0
-# ys = lbl0
-params = dict(C=[0.1, 1, 10])
+lbl = ppl.named_steps['remove_dark'].label
+pos = lbl[:, :, 1]
 
-ppl = make_image_pipeline(bbox=bbox, use_loc=True)
-Xts, yts = ppl.fit_transform(Xs, ys)
-
-clf = GridSearchCV(SVC(), param_grid=params, verbose=10)
-clf.fit(Xts, yts)
-
-# %%
-img_file = os.path.join(data_dir, img_fmt.format(2, 'raw'))
-img_raw2 = cv2.imread(img_file, cv2.IMREAD_COLOR)
-y_pred = clf.predict(ppl.transform(img_raw2))
-bw = ppl.named_steps['remove_dark'].mask
-bw[bw > 0] = y_pred
-imshow(bw)
+bgr = ppl.named_steps['features'].transformer_list[0][-1].img
+imshow2(bgr, bw, fsize=(16, 16))

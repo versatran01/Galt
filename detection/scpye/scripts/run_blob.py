@@ -19,30 +19,6 @@ img_bw = cv2.imread(bw_file, cv2.IMREAD_GRAYSCALE)
 
 
 # %%
-def morph_opening(bw, ksize=3):
-    """
-    http://docs.opencv.org/2.4/doc/tutorials/imgproc/opening_closing_hats/opening_closing_hats.html
-    http://docs.opencv.org/master/d9/d61/tutorial_py_morphological_ops.html#gsc.tab=0
-    """
-    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (ksize, ksize))
-    bw_open = cv2.morphologyEx(bw, cv2.MORPH_OPEN, kernel=kernel)
-    return bw_open
-
-
-def morph_closing(bw, ksize=3):
-    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (ksize, ksize))
-    bw_close = cv2.morphologyEx(bw, cv2.MORPH_CLOSE, kernel)
-    return bw_close
-
-
-def find_contours(bw):
-    """
-    http://docs.opencv.org/master/d4/d73/tutorial_py_contours_begin.html#gsc.tab=0
-    """
-    cs, _ = cv2.findContours(bw, mode=cv2.RETR_EXTERNAL,
-                             method=cv2.CHAIN_APPROX_SIMPLE)
-    return cs
-
 
 def regionprops_cv(bw, image=None):
     cs = find_contours(bw.copy())

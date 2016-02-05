@@ -127,21 +127,6 @@ class BlobAnalyzer(object):
         return blobs, bw_filled
 
 
-def gray_from_bw(bw, color=False):
-    """
-    Convert binary image (bool, int) to grayscale image (gray, bgr)
-    :param bw: binary image
-    :param color: whether to convert to bgr
-    :return: grayscale image
-    """
-    gray = np.array(bw, dtype='uint8') * 255
-    if color:
-        bgr = cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR)
-        return bgr
-    else:
-        return gray
-
-
 def morph_opening(bw, ksize=3):
     """
     http://docs.opencv.org/2.4/doc/tutorials/imgproc/opening_closing_hats/opening_closing_hats.html

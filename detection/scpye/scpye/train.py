@@ -133,7 +133,7 @@ def load_data(reader, inds):
     return Is, Ls
 
 
-def transform_data(ppl, Is, Ls):
+def fit_transform_data(ppl, Is, Ls):
     """
     :type ppl: ImagePipeline
     :param Is:

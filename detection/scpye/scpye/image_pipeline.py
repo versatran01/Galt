@@ -75,11 +75,15 @@ class ImagePipeline(Pipeline):
         Xt = X
         yt = y
         for name, transform in steps:
-            Xyt = transform.transform(Xt, yt)
-            if type(Xyt) == tuple and len(Xyt) == 2:
-                Xt, yt = Xyt
+            if isinstance(transform, FeatureUnion):
+                # FeatureUnion's transform only takes X, so we need to handle it
+                Xt = transform.transform(Xt)
             else:
-                Xt = Xyt
+                Xyt = transform.transform(Xt, yt)
+                if type(Xyt) == tuple and len(Xyt) == 2:
+                    Xt, yt = Xyt
+                else:
+                    Xt = Xyt
         return Xt, yt
 
     @staticmethod

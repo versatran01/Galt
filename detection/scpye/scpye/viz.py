@@ -25,6 +25,21 @@ class Colors:
         pass
 
 
+def gray_from_bw(bw, color=False):
+    """
+    Convert binary image (bool, int) to grayscale image (gray, bgr)
+    :param bw: binary image
+    :param color: whether to convert to bgr
+    :return: grayscale image
+    """
+    gray = np.array(bw, dtype='uint8') * 255
+    if color:
+        bgr = cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR)
+        return bgr
+    else:
+        return gray
+
+
 def imshow(image, fsize=(10, 10), title=""):
     """
     Convenient function to display image

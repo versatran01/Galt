@@ -7,15 +7,15 @@ sys.path.append('..')
 import numpy as np
 from scpye.viz import imshow, imshow2
 from scpye.data_reader import DataReader
-from scpye.train import (make_image_pipeline, load_data, fit_transform_data,
-                         train_svm)
+from scpye.train import (make_image_pipeline, load_image_label, fit_transform_image_label,
+                         train_svc)
 
 
 # %%
 def train_image_classifier(drd, inds, ppl):
-    Is, Ls = load_data(drd, inds)
-    X_train, y_train = fit_transform_data(ppl, Is, Ls)
-    clf = train_svm(X_train, y_train)
+    Is, Ls = load_image_label(drd, inds)
+    X_train, y_train = fit_transform_image_label(ppl, Is, Ls)
+    clf = train_svc(X_train, y_train)
     return clf
 
 

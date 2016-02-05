@@ -168,3 +168,15 @@ def find_contours(bw):
     cs, _ = cv2.findContours(bw, mode=cv2.RETR_EXTERNAL,
                              method=cv2.CHAIN_APPROX_SIMPLE)
     return cs
+
+
+def clean_bw(bw, ksize=3):
+    """
+    Clean binary image by doing a opening followed by a closing
+    :param bw:
+    :param ksize:
+    :return:
+    """
+    bw = morph_opening(bw, ksize=ksize)
+    bw = morph_closing(bw, ksize=ksize)
+    return bw

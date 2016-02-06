@@ -162,10 +162,16 @@ def fit_transform_image_label(ppl, Is, Ls):
     return X, y
 
 
-def test_image_classifier(ppl, clf, I, L):
-    X, _ = ppl.transform(I, L)
-    y = clf.predict(X)
-    bw = ppl.named_steps['remove_dark'].mask.copy()
-    bw[bw > 0] = y
-    bgr = ppl.named_steps['features'].transformer_list[0][-1].img
-    return bgr, bw
+def train_image_classifier(drd, inds, ppl):
+    """
+
+    :param drd:
+    :param inds:
+    :param ppl:
+    :return:
+    """
+    Is, Ls = load_image_label(drd, inds)
+    X_train, y_train = fit_transform_image_label(ppl, Is, Ls)
+    clf = train_svc(X_train, y_train)
+
+    return clf

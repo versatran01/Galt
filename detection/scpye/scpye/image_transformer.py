@@ -148,6 +148,7 @@ class DarkRemover(ImageTransformer):
         :type v_min: int
         """
         assert 0 < v_min < 255
+        self.img = None
         self.mask = None
         self.label = None
         self.v_min = v_min
@@ -159,6 +160,7 @@ class DarkRemover(ImageTransformer):
         :param y: label
         :return: a tuple of bgr image and mask
         """
+        self.img = X
         img_hsv = cv2.cvtColor(X, cv2.COLOR_BGR2HSV)
         self.mask = img_hsv[:, :, -1] > self.v_min
         if y is None:
@@ -193,29 +195,6 @@ class FeatureTransformer(ImageTransformer):
                 return func(self, X)
 
         return func_wrapper
-
-
-class MaximumFilterTransformer(FeatureTransformer):
-    def __init__(self, size=25):
-        self.size = size
-        self.img = None
-
-    def transform(self, X, y=None):
-        bgr = X.X
-        mask = X.m
-        gray = cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY)
-        mf = maximum_filter(gray, self.size)
-        if np.ndim(mask) == 2:
-            Xt = mf[mask]
-            if y is None:
-                self.img = mf
-        else:
-            neg, pos = split_label01(mask)
-            Xt_neg = mf[neg]
-            Xt_pos = mf[pos]
-            Xt = np.hstack((Xt_neg, Xt_pos))
-        # Need to change to float to suppress later warnings
-        return np.array(Xt, np.float64)
 
 
 class CspaceTransformer(FeatureTransformer):

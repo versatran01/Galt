@@ -17,29 +17,6 @@ bw_file = os.path.join(cwd, '../image/red_bw.png')
 img_bgr = cv2.imread(bgr_file, cv2.IMREAD_COLOR)
 img_bw = cv2.imread(bw_file, cv2.IMREAD_GRAYSCALE)
 
-
-# %%
-
-def regionprops_cv(bw, image=None):
-    cs = find_contours(bw.copy())
-
-    for cnt in cs:
-        m = cv2.moments(cnt)
-        area = m['m00']
-        if area > 0:
-            bbox = cv2.boundingRect(cnt)
-            bbox_area = bbox[-1] * bbox[-2]
-            extent = area / bbox_area
-            equiv_diameter = np.sqrt(4 * area / np.pi)
-            # Poly
-            epsilon = 0.1 * cv2.arcLength(cnt, True)
-            center, radius = cv2.minEnclosingCircle
-
-
-def regionprops_sk(bw, image=None):
-    pass
-
-
 # %%
 bw = img_bw
 bw = morph_opening(bw)

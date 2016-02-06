@@ -4,33 +4,21 @@ import sys
 # HACK
 sys.path.append('..')
 
+import os
 import numpy as np
+from sklearn.externals import joblib
 from scpye.viz import imshow, imshow2
 from scpye.data_reader import DataReader
-from scpye.train import (make_image_pipeline, load_image_label, fit_transform_image_label,
-                         train_svc)
-
+from scpye.train import *
 
 # %%
-def train_image_classifier(drd, inds, ppl):
-    Is, Ls = load_image_label(drd, inds)
-    X_train, y_train = fit_transform_image_label(ppl, Is, Ls)
-    clf = train_svc(X_train, y_train)
-    return clf
-
-
-def test_data(drd, inds, ppl, clf):
-    for ind in inds:
-        pass
-
-
-# %%
-base_dir = '/home/chao/Dropbox'
+base_dir = '/home/chao/Workspace/bag'
 color = 'red'
 mode = 'slow_flash'
 train_inds = range(0, 12, 3)
 test_inds = range(1, 12, 3)
 save = True
+load = False
 
 # Parameters
 k = 0.4
@@ -41,15 +29,27 @@ if color == 'red':
 else:
     bbox = np.array([200, 0, 800, 1440])
     use_loc = True
+    
+drd = DataReader(base_dir=base_dir, color=color, mode=mode)
+img_ppl_pkl = os.path.join(drd.model_dir, 'img_ppl.pkl')
+img_clf_pkl = os.path.join(drd.model_dir, 'img_clf.pkl')
 
 # %%
 # DataReader
-drd = DataReader(base_dir=base_dir, color=color, mode=mode)
-# ImagePipeline
-img_ppl = make_image_pipeline(bbox=bbox, k=k, v_min=v_min, use_loc=use_loc)
-# Train SVC
-img_clf = train_image_classifier(drd, train_inds, img_ppl)
+if not load:
+    # ImagePipeline
+    img_ppl = make_image_pipeline(bbox=bbox, k=k, v_min=v_min, use_loc=use_loc)
+    # Train SVC
+    img_clf = train_image_classifier(drd, train_inds, img_ppl)
 
+    if save:
+        print('Svaing pipeline and classifier')
+        joblib.dump(img_ppl, img_ppl_pkl)
+        joblib.dump(img_clf, img_clf_pkl)
+else:
+    img_ppl = joblib.load(img_ppl_pkl)
+    img_clf = joblib.load(img_clf_pkl)
+    
 # %%
 I, L = drd.load_image_label(1)
 img_ppl.transform(I, L)
@@ -57,7 +57,6 @@ img_ppl.transform(I, L)
 # Get transformed label
 lbl = img_ppl.named_steps['remove_dark'].label
 pos = lbl[:,:, 1]
-imshow(pos)
 
 # %%
 X = img_ppl.transform(I)
@@ -66,5 +65,5 @@ bw = img_ppl.named_steps['remove_dark'].mask.copy()
 bw[bw > 0] = y
 bw = np.array(bw, dtype='uint8') * 255
 
-bgr = img_ppl.named_steps['features'].transformer_list[0][-1].img
-imshow2(bgr, bw, figsize=(16, 16))
+bgr = img_ppl.named_steps['remove_dark'].img
+imshow2(bgr, bw)

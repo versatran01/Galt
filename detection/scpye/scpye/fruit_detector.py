@@ -1,4 +1,6 @@
 from __future__ import (print_function, division, absolute_import)
+
+import os
 import numpy as np
 from sklearn.externals import joblib
 from sklearn.svm import SVC
@@ -7,14 +9,14 @@ from scpye.image_transformer import *
 
 
 class FruitDetector(object):
-    def __init__(self, ppl, clf):
+    def __init__(self, img_ppl, img_clf):
         """
-        :param ppl: image pipeline
-        :type ppl: ImagePipeline
-        :param clf: classifier
+        :param img_ppl: image pipeline
+        :type img_ppl: ImagePipeline
+        :param img_clf: classifier
         """
-        self.ppl = ppl
-        self.clf = clf
+        self.ppl = img_ppl
+        self.clf = img_clf
 
     def detect(self, img_raw):
         # TODO: what else to return from ppl?
@@ -25,14 +27,15 @@ class FruitDetector(object):
         return bw
 
     @classmethod
-    def from_pickle(cls, ppl_file, clf_file):
+    def from_pickle(cls, model_dir):
         """
         Constructor from a pickle
-        :param clf_file:
-        :param ppl_file:
+        :param model_dir:
         :return:
         :rtype: FruitDetector
         """
-        ppl = joblib.load(ppl_file)
-        clf = joblib.load(clf_file)
-        return cls(ppl, clf)
+        img_ppl_file = os.path.join(model_dir, 'img_ppl.pkl')
+        img_clf_file = os.path.join(model_dir, 'img_clf.pkl')
+        img_ppl = joblib.load(img_ppl_file)
+        img_clf = joblib.load(img_clf_file)
+        return cls(img_ppl, img_clf)

@@ -67,4 +67,4 @@ bw[bw > 0] = y
 bw = np.array(bw, dtype='uint8') * 255
 
 bgr = img_ppl.named_steps['features'].transformer_list[0][-1].img
-imshow2(bgr, bw, fsize=(16, 16))
+imshow2(bgr, bw, figsize=(16, 16))

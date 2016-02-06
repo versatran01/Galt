@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 import numpy.testing as nt
-from scpye.bbox import *
+from scpye.bounding_box import *
 
 
 class TestBbox(unittest.TestCase):

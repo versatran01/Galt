@@ -9,7 +9,7 @@ from sklearn.base import TransformerMixin, BaseEstimator
 from sklearn.preprocessing import StandardScaler
 from scipy.ndimage import maximum_filter
 
-from scpye.bbox import extract_bbox
+from scpye.bounding_box import extract_bbox
 
 __all__ = ['ImageRotator', 'ImageCropper', 'ImageResizer', 'DarkRemover',
            'CspaceTransformer', 'MaskLocator', 'StandardScaler']

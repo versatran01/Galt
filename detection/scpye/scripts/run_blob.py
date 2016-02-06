@@ -84,4 +84,4 @@ for cnt in cs:
         draw_contour(disp, cnt)
         draw_text(disp, solidity * 100, center)
         
-imshow(disp, fsize=(15, 15))
+imshow(disp, figsize=(15, 15))

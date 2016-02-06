@@ -16,43 +16,6 @@ class BlobAnalyzer(object):
                            ('extent', 'float32'),
                            ('equiv_diameter', 'float32')]
 
-    def thresh_blobs_area(self, blobs, area):
-        """
-
-        :param blobs:
-        :param area:
-        :return:
-        :rtype:
-        """
-        return blobs[blobs['area'] > area]
-
-    def is_blob_multiple(self, blob, min_area):
-        """
-
-        :param blob:
-        :param min_area:
-        :return:
-        """
-        return blob['area'] >= min_area
-
-    def num_peaks_in_blob(self, blob, image, min_area=25):
-        """
-
-        :param blob:
-        :param image:
-        :param min_area:
-        :return: number of peaks in blob
-        :rtype: int
-        """
-        if self.is_blob_multiple(blob, min_area):
-            bbox = blob['bbox']
-            region = self.extract_bbox(image, bbox)
-            # TODO: need to change n according to image size
-            num_peaks = self.num_local_maximas(region)
-        else:
-            num_peaks = 1
-        return num_peaks
-
     # TODO: replace this with ndimage stuff instead of using my own
     def num_local_maximas(self, image, n=7):
         """
@@ -79,19 +42,6 @@ class BlobAnalyzer(object):
         cs, _ = cv2.findContours(peak, mode=cv2.RETR_EXTERNAL,
                                  method=cv2.CHAIN_APPROX_SIMPLE)
         return len(cs)
-
-    def fill_holes(self, cs, shape):
-        """
-
-        :param cs:
-        :param shape:
-        :return: filled image
-        :rtype: numpy.ndarray
-        """
-        bw_filled = np.zeros(shape, np.uint8)
-        cv2.drawContours(bw_filled, cs, -1, color=255, thickness=-1)
-
-        return bw_filled
 
     # TODO: Investigate scikit-image regionprops
     def analyze(self, bw):
@@ -127,6 +77,62 @@ class BlobAnalyzer(object):
         return blobs, bw_filled
 
 
+blob_dtype = [('area', 'int32'), ('bbox', '(4,)int32'),
+              ('extent', 'float32'), ('equiv_diameter', 'float32'),
+              ('solid', 'float32'), ('axes_ratio', 'float32'),
+              ('eccen', 'float32')]
+
+
+def region_props(bw):
+    """
+    Same as matlab regionprops but implemented in opencv
+    :param bw: binary image
+    :return: a list of blobs
+    """
+    # Need to do a copy because opencv find contour will modify image
+    cntrs_raw = find_contours(bw)
+
+    blobs = []
+    cntrs = []
+    for cntr in cntrs_raw:
+        m = cv2.moments(cntr)
+        area = m['m00']
+        if area > 0 and len(cntr) >= 5:
+            # Bbox
+            bbox = np.array(cv2.boundingRect(cntr))
+            bbox_area = bbox[-1] * bbox[-2]
+            extent = area / bbox_area
+            equiv_diameter = np.sqrt(4 * area / np.pi)
+            # Convex
+            cvx_hull = cv2.convexHull(cntr)
+            cvx_area = cv2.contourArea(cvx_hull)
+            # Solidity
+            solid = area / cvx_area
+            # Ellipse
+            center, axes, angle = cv2.fitEllipse(cntr)
+            maj_ind = np.argmax(axes)
+            maj_axes = axes[maj_ind]
+            min_axes = axes[1 - maj_ind]
+            axes_ratio = min_axes / maj_axes
+            # Eccentricity
+            eccen = np.sqrt(1 - axes_ratio ** 2)
+
+            # blob
+            blob = np.array((area, bbox, extent, equiv_diameter,
+                             solid, axes_ratio, eccen),
+                            dtype=blob_dtype)
+            blobs.append(blob)
+            cntrs.append(cntr)
+
+    blobs = np.array(blobs)
+    return blobs, cntrs
+
+
+def contour_centroid(cntr):
+    mmt = cv2.moments(cntr)
+    return np.array([mmt['m10'] / mmt['m00'], mmt['m01'] / mmt['m00']])
+
+
 def morph_opening(bw, ksize=3):
     """
     http://docs.opencv.org/2.4/doc/tutorials/imgproc/opening_closing_hats/opening_closing_hats.html
@@ -157,26 +163,39 @@ def morph_closing(bw, ksize=3):
     return bw_close
 
 
-def find_contours(bw):
+def find_contours(bw, method=cv2.CHAIN_APPROX_NONE):
     """
     http://docs.opencv.org/master/d4/d73/tutorial_py_contours_begin.html#gsc.tab=0
     :param bw: binary image
     :type bw: numpy.ndarray
+    :param method:
     :return: a list of contours
-    :rtype: List
     """
-    cs, _ = cv2.findContours(bw, mode=cv2.RETR_EXTERNAL,
-                             method=cv2.CHAIN_APPROX_SIMPLE)
+    cs, _ = cv2.findContours(bw.copy(), mode=cv2.RETR_EXTERNAL, method=method)
     return cs
 
 
 def clean_bw(bw, ksize=3):
     """
     Clean binary image by doing a opening followed by a closing
-    :param bw:
-    :param ksize:
-    :return:
+    :param bw: binary image
+    :param ksize: kernel size
+    :return: cleaned binary image
     """
     bw = morph_opening(bw, ksize=ksize)
     bw = morph_closing(bw, ksize=ksize)
     return bw
+
+
+def fill_bw(bw, cs):
+    """
+    Redraw contours of binary image
+    :param bw:
+    :param cs:
+    :return: filled image
+    :rtype: numpy.ndarray
+    """
+    bw_filled = np.zeros_like(bw)
+    cv2.drawContours(bw_filled, cs, -1, color=255, thickness=-1)
+
+    return bw_filled

@@ -13,15 +13,17 @@ import cv2
 from skimage.filters import gabor_kernel, gabor_filter
 from scpye.image_pipeline import ImagePipeline
 import matplotlib.pyplot as plt
+
 # %%
 
 dr = DataReader('/home/anuragmakineni/Desktop/', color='green', mode='slow_flash')
-image = dr.load_image(2)
+image = dr.load_image(5)
 plt.imshow(image)
 gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+gray = cv2.pyrDown(gray)
 
 #%%
-frequency = 0.1
+frequency = 1.0
 theta = 0
 theta = (theta / 4.0) * np.pi
 
@@ -52,6 +54,8 @@ imshow(real_135)
 
 filtered = real_0 + real_45 + real_90 + real_135
 
-filtered = cv2.normalize(filtered)
+plt.figure(figsize=(16, 16))
+plt.imshow(filtered, cmap="jet")
 
-plt.imshow(filtered)
+plt.figure(figsize=(16, 16))
+plt.imshow(gray, cmap="jet")

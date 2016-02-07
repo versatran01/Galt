@@ -6,44 +6,6 @@ import numpy as np
 http://scikit-image.org/docs/dev/api/skimage.measure.html#skimage.measure.regionprops
 """
 
-
-class BlobAnalyzer(object):
-    def __init__(self):
-        # Assemble a list of Blobs
-        self.blob_dtype = [('area', 'int32'),
-                           ('bbox', '(4,)int32'),
-                           ('bbox_area', 'int32'),
-                           ('extent', 'float32'),
-                           ('equiv_diameter', 'float32')]
-
-    # TODO: replace this with ndimage stuff instead of using my own
-    def num_local_maximas(self, image, n=7):
-        """
-        http://answers.opencv.org/question/28035/find-local-maximum-in-1d-2d-mat/
-        :param image:
-        :param n: int
-        :return: number of local maximas
-        :rtype: int
-        """
-        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (n, n))
-        peak = cv2.dilate(image, kernel, iterations=1)
-        peak -= image
-
-        flat = cv2.erode(image, kernel, iterations=1)
-        flat = image - flat
-
-        peak[peak > 0] = 255
-        flat[flat > 0] = 255
-
-        flat = cv2.bitwise_not(flat)
-        peak[flat > 0] = 255
-        peak = cv2.bitwise_not(peak)
-
-        cs, _ = cv2.findContours(peak, mode=cv2.RETR_EXTERNAL,
-                                 method=cv2.CHAIN_APPROX_SIMPLE)
-        return len(cs)
-
-
 blob_dtype = [('area', 'int32'), ('bbox', '(4,)int32'),
               ('extent', 'float32'), ('equiv_diameter', 'float32'),
               ('solid', 'float32'), ('axes_ratio', 'float32'),

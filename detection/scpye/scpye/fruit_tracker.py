@@ -1,6 +1,6 @@
 from __future__ import print_function, division, absolute_import
 
-from scpye.viz import *
+from scpye.visualization import *
 from scpye.fruit_track import FruitTrack
 from scpye.assignment import hungarian_assignment
 from scpye.blob_analysis import num_peaks_in_blob

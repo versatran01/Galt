@@ -7,12 +7,12 @@ Created on Thu Feb  4 14:19:48 2016
 #%%
 import numpy as np
 from scpye.data_reader import DataReader
-from scpye.viz import imshow, imshow2
+from scpye.visualization import imshow, imshow2
 import cv2
 
 from scipy import ndimage as ndi
-from skimage.feature import peak_local_max
-from skimage import data, img_as_float
+from bbb.feature import peak_local_max
+from bbb import data, img_as_float
 
 from scpye.image_pipeline import ImagePipeline
 from scpye.image_transformer import MaximumFilterTransformer, DarkRemover

@@ -149,29 +149,15 @@ def load_image_label(reader, inds):
     return Is, Ls
 
 
-def fit_transform_image_label(ppl, Is, Ls):
-    """
-    :type ppl: ImagePipeline
-    :param Is:
-    :param Ls:
-    :return: X and y transformed
-    """
-    X, y = ppl.fit_transform(Is, Ls)
-    logger.info("Images and labels transformed.")
-
-    return X, y
-
-
 def train_image_classifier(drd, inds, ppl):
     """
-
     :param drd:
     :param inds:
     :param ppl:
     :return:
     """
     Is, Ls = load_image_label(drd, inds)
-    X_train, y_train = fit_transform_image_label(ppl, Is, Ls)
+    X_train, y_train = ppl.fit_transform(Is, Ls)
     clf = train_svc(X_train, y_train)
 
     return clf

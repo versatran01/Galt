@@ -8,7 +8,7 @@ from __future__ import division
 import os
 cwd = os.getcwd()
 import cv2
-from scpye.viz import *
+from scpye.visualization import *
 from scpye.blob_analysis import *
 
 img_dir = os.path.join(cwd, '../image')

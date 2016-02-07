@@ -8,7 +8,8 @@ Created on Thu Feb  4 14:30:18 2016
 import os
 import cv2
 import numpy as np
-from scpye.viz import *
+
+from scpye.visualization import *
 
 # %%
 cwd = os.getcwd()

@@ -7,10 +7,10 @@ Created on Fri Feb  5 12:16:54 2016
 #%%
 import numpy as np
 from scpye.data_reader import DataReader
-from scpye.viz import imshow, imshow2
+from scpye.visualization import imshow, imshow2
 import cv2
 
-from skimage.filters import gabor_kernel, gabor_filter
+from bbb.filters import gabor_kernel, gabor_filter
 from scpye.image_pipeline import ImagePipeline
 import matplotlib.pyplot as plt
 

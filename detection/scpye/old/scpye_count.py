@@ -11,7 +11,7 @@ from sklearn.externals import joblib
 from scpye.blob_analysis import region_props
 from scpye.fruit_detector import FruitDetector
 from scpye.fruit_tracker import FruitTracker
-from scpye.viz import draw_bboxes
+from scpye.visualization import draw_bboxes
 
 k = 0.3
 apple = 'green'

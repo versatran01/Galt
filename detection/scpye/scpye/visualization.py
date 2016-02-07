@@ -3,7 +3,6 @@ from __future__ import (print_function, division, absolute_import)
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.patches as patches
 
 
 class Colors:
@@ -30,21 +29,6 @@ def draw_multiple(func):
             func(image, obj, **kwargs)
 
     return func_wrapper
-
-
-def gray_from_bw(bw, color=False):
-    """
-    Convert binary image (bool, int) to grayscale image (gray, bgr)
-    :param bw: binary image
-    :param color: whether to convert to bgr
-    :return: grayscale image
-    """
-    gray = np.array(bw, dtype='uint8') * 255
-    if color:
-        bgr = cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR)
-        return bgr
-    else:
-        return gray
 
 
 def imshow(image, figsize=(10, 10)):

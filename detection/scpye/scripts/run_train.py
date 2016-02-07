@@ -7,7 +7,7 @@ sys.path.append('..')
 import os
 import numpy as np
 from sklearn.externals import joblib
-from scpye.viz import imshow, imshow2
+from scpye.visualization import imshow, imshow2
 from scpye.data_reader import DataReader
 from scpye.train import *
 

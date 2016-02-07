@@ -9,9 +9,9 @@ import math
 import matplotlib.pyplot as plt
 import numpy as np
 
-from skimage.draw import ellipse
-from skimage.measure import label, regionprops
-from skimage.transform import rotate
+from bbb.draw import ellipse
+from bbb.measure import label, regionprops
+from bbb.transform import rotate
 
 
 image = np.zeros((600, 600))

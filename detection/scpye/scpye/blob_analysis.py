@@ -43,39 +43,6 @@ class BlobAnalyzer(object):
                                  method=cv2.CHAIN_APPROX_SIMPLE)
         return len(cs)
 
-    # TODO: Investigate scikit-image regionprops
-    def analyze(self, bw):
-        """
-
-        :param bw: numpy.ndarray
-        :return:
-        """
-        # Detect contour
-        cs, _ = cv2.findContours(bw, mode=cv2.RETR_EXTERNAL,
-                                 method=cv2.CHAIN_APPROX_SIMPLE)
-
-        # Redraw the contour on a new image to fill all the holes
-        bw_filled = self.fill_holes(cs, bw.shape)
-
-        blobs = []
-        for cnt in cs:
-            m = cv2.moments(cnt)
-            area = m['m00']
-            # We only accept blob that is decently big
-            # because sometimes we will get a blob with an area of 0
-            if area > 0:
-                bbox = cv2.boundingRect(cnt)
-                x, y, w, h = bbox
-                bbox_area = w * h
-                extent = area / bbox_area
-                equiv_diameter = np.sqrt(4 * area / np.pi)
-                blob = np.array((area, bbox, bbox_area, extent, equiv_diameter),
-                                dtype=self.blob_dtype)
-                blobs.append(blob)
-        blobs = np.array(blobs)
-
-        return blobs, bw_filled
-
 
 blob_dtype = [('area', 'int32'), ('bbox', '(4,)int32'),
               ('extent', 'float32'), ('equiv_diameter', 'float32'),
@@ -97,7 +64,7 @@ def region_props(bw):
     for cntr in cntrs_raw:
         m = cv2.moments(cntr)
         area = m['m00']
-        if area > 0 and len(cntr) >= 5:
+        if area >= 4 and len(cntr) >= 5:
             # Bbox
             bbox = np.array(cv2.boundingRect(cntr))
             bbox_area = bbox[-1] * bbox[-2]
@@ -128,8 +95,22 @@ def region_props(bw):
     return blobs, cntrs
 
 
-def contour_centroid(cntr):
-    mmt = cv2.moments(cntr)
+def gray_from_bw(bw, color=False):
+    """
+    Convert binary image (bool, int) to grayscale image (gray, bgr)
+    :param bw: binary image
+    :param color: whether to convert to bgr
+    :return: grayscale image
+    """
+    gray = np.array(bw, dtype='uint8') * 255
+    if color:
+        bgr = cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR)
+        return bgr
+    else:
+        return gray
+
+
+def moment_centroid(mmt):
     return np.array([mmt['m10'] / mmt['m00'], mmt['m01'] / mmt['m00']])
 
 

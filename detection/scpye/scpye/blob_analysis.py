@@ -76,47 +76,45 @@ def moment_centroid(mmt):
     return np.array([mmt['m10'] / mmt['m00'], mmt['m01'] / mmt['m00']])
 
 
-def morph_opening(bw, ksize=3, iter=1):
+def morph_opening(bw, ksize=3, iters=1):
     """
     http://docs.opencv.org/2.4/doc/tutorials/imgproc/opening_closing_hats/opening_closing_hats.html
     http://docs.opencv.org/master/d9/d61/tutorial_py_morphological_ops.html#gsc.tab=0
     :param bw: binary image
-    :type bw: numpy.ndarray
     :param ksize: kernel size
-    :type ksize: int
+    :param iters: number of iterations
     :return: binary image after opening
     :rtype: numpy.ndarray
     """
     kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (ksize, ksize))
-    bw_open = cv2.morphologyEx(bw, cv2.MORPH_OPEN, kernel=kernel,
-                               iterations=iter)
-    return bw_open
+    bw_opened = cv2.morphologyEx(bw, cv2.MORPH_OPEN, kernel=kernel,
+                                 iterations=iters)
+    return bw_opened
 
 
-def morph_closing(bw, ksize=3, iter=1):
+def morph_closing(bw, ksize=3, iters=1):
     """
-    :param bw:
-    :type bw: numpy.ndarray
+    :param bw: binary image
     :param ksize: kernel size
-    :type ksize: int
+    :param iters: number of iterations
     :return: binary image after closing
     :rtype: numpy.ndarray
     """
     kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (ksize, ksize))
-    bw_close = cv2.morphologyEx(bw, cv2.MORPH_CLOSE, kernel, iterations=iter)
-    return bw_close
+    bw_closed = cv2.morphologyEx(bw, cv2.MORPH_CLOSE, kernel, iterations=iters)
+    return bw_closed
 
 
 def find_contours(bw, method=cv2.CHAIN_APPROX_NONE):
     """
     http://docs.opencv.org/master/d4/d73/tutorial_py_contours_begin.html#gsc.tab=0
     :param bw: binary image
-    :type bw: numpy.ndarray
     :param method:
     :return: a list of contours
     """
-    cs, _ = cv2.findContours(bw.copy(), mode=cv2.RETR_EXTERNAL, method=method)
-    return cs
+    contours, _ = cv2.findContours(bw.copy(), mode=cv2.RETR_EXTERNAL,
+                                   method=method)
+    return contours
 
 
 def clean_bw(bw, ksize=3):
@@ -131,15 +129,15 @@ def clean_bw(bw, ksize=3):
     return bw
 
 
-def fill_bw(bw, cs):
+def fill_bw(bw, contours):
     """
     Redraw contours of binary image
     :param bw:
-    :param cs:
+    :param contours:
     :return: filled image
     :rtype: numpy.ndarray
     """
     bw_filled = np.zeros_like(bw)
-    cv2.drawContours(bw_filled, cs, -1, color=255, thickness=-1)
+    cv2.drawContours(bw_filled, contours, -1, color=255, thickness=-1)
 
     return bw_filled

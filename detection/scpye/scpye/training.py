@@ -1,4 +1,5 @@
 from __future__ import (print_function, absolute_import, division)
+import numpy as np
 from sklearn.svm import SVC
 from sklearn.grid_search import GridSearchCV
 from sklearn.cross_validation import train_test_split
@@ -13,6 +14,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
+# TODO: change this to kwargs later
 def make_image_pipeline(ccw=-1, bbox=None, k=0.5, v_min=25, cspace=None,
                         use_loc=True):
     """
@@ -131,32 +133,36 @@ def print_validation_report(clf, X, y, target_names=None):
     print(report)
 
 
-def load_image_label(reader, inds):
+def load_image_label(data_reader, image_indices):
     """
     Load data
-    :type reader: DataReader
-    :param inds:
+    :type data_reader: DataReader
+    :param image_indices:
     """
+    # image_indices has to be a slist
+    if np.isscalar(image_indices):
+        image_indices = [image_indices]
+
     Is = []
     Ls = []
-    for ind in inds:
+    for ind in image_indices:
         logger.info("Load image and label {}".format(ind))
-        I, L = reader.load_image_label(ind)
+        I, L = data_reader.load_image_label(ind)
         Is.append(I)
         Ls.append(L)
 
     return Is, Ls
 
 
-def train_image_classifier(drd, inds, ppl):
+def train_image_classifier(data_reader, image_indices, image_pipeline):
     """
-    :type drd: DataReader
-    :param inds: list of indices
-    :type ppl: ImagePipeline
+    :type data_reader: DataReader
+    :param image_indices: list of indices
+    :type image_pipeline: ImagePipeline
     :rtype: GridSearchCV
     """
-    Is, Ls = load_image_label(drd, inds)
-    X_train, y_train = ppl.fit_transform(Is, Ls)
+    Is, Ls = load_image_label(data_reader, image_indices)
+    X_train, y_train = image_pipeline.fit_transform(Is, Ls)
     clf = train_svc(X_train, y_train)
 
     return clf

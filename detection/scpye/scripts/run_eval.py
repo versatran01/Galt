@@ -17,7 +17,7 @@ import cv2
 import numpy as np
 from sklearn.externals import joblib
 from scpye.data_reader import DataReader
-from scpye.train import *
+from scpye.training import *
 from scpye.blob_analysis import *
 from scpye.visualization import *
 from scpye.bounding_box import extract_bbox

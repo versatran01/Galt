@@ -289,3 +289,10 @@ class ImagePipeline(Pipeline):
         """
         Xt = self._transform_X(X, self.steps[:-1])
         return self.steps[-1][-1].score(Xt, y)
+
+    @property
+    def named_features(self):
+        """
+        :return:
+        """
+        return dict(self.named_steps['features'].transformer_list)

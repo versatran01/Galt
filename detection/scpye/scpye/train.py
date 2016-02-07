@@ -136,7 +136,6 @@ def load_image_label(reader, inds):
     Load data
     :type reader: DataReader
     :param inds:
-    :return:
     """
     Is = []
     Ls = []
@@ -151,10 +150,10 @@ def load_image_label(reader, inds):
 
 def train_image_classifier(drd, inds, ppl):
     """
-    :param drd:
-    :param inds:
-    :param ppl:
-    :return:
+    :type drd: DataReader
+    :param inds: list of indices
+    :type ppl: ImagePipeline
+    :rtype: GridSearchCV
     """
     Is, Ls = load_image_label(drd, inds)
     X_train, y_train = ppl.fit_transform(Is, Ls)

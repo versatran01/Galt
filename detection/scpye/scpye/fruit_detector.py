@@ -3,9 +3,7 @@ from __future__ import (print_function, division, absolute_import)
 import os
 import numpy as np
 from sklearn.externals import joblib
-from sklearn.svm import SVC
-from scpye.image_pipeline import (ImagePipeline, FeatureUnion)
-from scpye.image_transformer import *
+from scpye.image_pipeline import ImagePipeline
 
 
 class FruitDetector(object):

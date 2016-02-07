@@ -23,7 +23,7 @@ from scpye.visualization import *
 from scpye.bounding_box import extract_bbox
 
 # %%
-base_dir = '/home/chao/Workspace/bag'
+base_dir = '/home/chao/Dropbox'
 color = 'red'
 mode = 'slow_flash'
 train_inds = range(0, 12, 3)
@@ -52,8 +52,8 @@ pos = gray_from_bw(pos)
 X = img_ppl.transform(I)
 y = img_clf.predict(X)
 
-hsv = img_ppl.named_steps['features'].transformer_list[1][-1].img
-bgr = img_ppl.named_steps['remove_dark'].img
+hsv = img_ppl.named_features['hsv'].image
+bgr = img_ppl.named_steps['remove_dark'].image
 bw = img_ppl.named_steps['remove_dark'].mask.copy()
 bw[bw] = y
 bw = gray_from_bw(bw)

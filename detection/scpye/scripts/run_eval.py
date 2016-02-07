@@ -81,8 +81,27 @@ bw_bbox = extract_bbox(bw, bbox)
 v_bbox[bw_bbox == 0] = 0
 imshow2(v_bbox, bw_bbox)
 
+# This returns [row, column], need to flip it
 rc = peak_local_max(v_bbox, min_distance=5)
 uv = np.fliplr(rc)
 draw_point(bgr_bbox, uv)
 
 imshow(bgr_bbox)
+
+# %%
+# skiamge watershed
+from scipy import ndimage
+from skimage.morphology import watershed
+
+dist = ndimage.distance_transform_edt(bw_bbox)
+local_max = peak_local_max(dist, indices=False, min_distance=5)
+imshow(local_max)
+
+markers = ndimage.label(local_max, structure=np.ones((3, 3)))[0]
+labels = watershed(-dist, markers, mask=bw_bbox)
+imshow(labels)
+
+# %%
+# opencv watershed
+# http://docs.opencv.org/master/d3/db4/tutorial_py_watershed.html#gsc.tab=0
+# Opencv watershed is annoying since it requires 3 channel which is unnecessary

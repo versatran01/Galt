@@ -29,7 +29,7 @@ else:
 
 # %%
 # DataReader
-drd = DataReader(base_dir=base_dir, color=color, mode=mode)
+drd = DataReader(base_dir, color=color, mode=mode)
 if train:
     img_ppl = make_image_pipeline(bbox=bbox, k=k, v_min=v_min, use_loc=use_loc)
     img_clf = train_image_classifier(drd, train_inds, img_ppl)

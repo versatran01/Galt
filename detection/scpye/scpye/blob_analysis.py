@@ -117,15 +117,15 @@ def find_contours(bw, method=cv2.CHAIN_APPROX_NONE):
     return contours
 
 
-def clean_bw(bw, ksize=3):
+def clean_bw(bw, ksize=3, iters=1):
     """
     Clean binary image by doing a opening followed by a closing
     :param bw: binary image
     :param ksize: kernel size
     :return: cleaned binary image
     """
-    bw = morph_opening(bw, ksize=ksize)
-    bw = morph_closing(bw, ksize=ksize)
+    bw = morph_opening(bw, ksize=ksize, iters=iters)
+    bw = morph_closing(bw, ksize=ksize, iters=iters)
     return bw
 
 

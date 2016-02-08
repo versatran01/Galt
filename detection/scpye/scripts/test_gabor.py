@@ -10,17 +10,16 @@ from scpye.data_reader import DataReader
 from scpye.visualization import imshow, imshow2
 import cv2
 
-from bbb.filters import gabor_kernel, gabor_filter
 from scpye.image_pipeline import ImagePipeline
 import matplotlib.pyplot as plt
 
 # %%
 
-dr = DataReader('/home/anuragmakineni/Desktop/', color='green', mode='slow_flash')
+dr = DataReader('/home/chao/Dropbox/', color='green', mode='slow_flash')
 image = dr.load_image(5)
-plt.imshow(image)
 gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 gray = cv2.pyrDown(gray)
+gray = np.rot90(gray, -1)
 
 #%%
 frequency = 1.0
@@ -59,3 +58,19 @@ plt.imshow(filtered, cmap="jet")
 
 plt.figure(figsize=(16, 16))
 plt.imshow(gray, cmap="jet")
+
+
+# %%
+import cv2
+
+ksize = 5
+sigma = 1
+theta = np.pi
+lambd = 5.0
+gamma = 0.5
+psi = 0
+kernel = cv2.getGaborKernel((ksize, ksize), sigma, theta, lambd, gamma, psi)
+kernel /= kernel.sum()
+
+fimg = cv2.filter2D(gray, cv2.CV_8UC3, kernel)
+imshow2(gray, fimg)

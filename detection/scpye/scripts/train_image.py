@@ -7,9 +7,9 @@ from scpye.testing import test_image_classifier
 # %%
 base_dir = '/home/chao/Dropbox'
 color = 'green'
-mode = 'slow_flash'
-train_inds = range(0, 12, 3)
-test_inds = range(2, 12, 3)
+mode = 'fast_led'
+train_inds = range(0, 12, 3) + range(1, 12, 3)
+test_inds = range(2, 12, 2)
 
 # %%
 train = True
@@ -18,13 +18,13 @@ test = True
 
 # %% 
 # Parameters
-k = 0.4
+k = 0.5
 v_min = 25
 if color == 'red':
+    bbox = np.array([250, 0, 700, 1440])
     use_loc = False
-    bbox = np.array([240, 0, 720, 1440])
 else:
-    bbox = np.array([240, 250, 720, 1440])
+    bbox = np.array([250, 250, 700, 1440])
     use_loc = True
 
 # %%

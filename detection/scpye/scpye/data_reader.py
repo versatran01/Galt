@@ -88,3 +88,22 @@ class DataReader(object):
         model = joblib.load(model_pickle)
         print('{0} load from {1}'.format(name, model_pickle))
         return model
+
+    def load_image_label_list(self, image_indices):
+        """
+        Load image and label in separate lists
+        :param image_indices:
+        """
+
+        # image_indices has to be a list
+        if np.isscalar(image_indices):
+            image_indices = [image_indices]
+
+        Is = []
+        Ls = []
+        for ind in image_indices:
+            I, L = self.load_image_label(ind)
+            Is.append(I)
+            Ls.append(L)
+
+        return Is, Ls

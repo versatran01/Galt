@@ -26,7 +26,10 @@ def extract_bbox(image, bbox, copy=False):
     :rtype: numpy.ndarray
     """
     x, y, w, h = bbox
-    return np.array(image[y:y + h, x:x + w, ...], copy=copy)
+    if copy:
+        return np.array(image[y:y + h, x:x + w, ...], copy=True)
+    else:
+        return image[y:y + h, x:x + w, ...]
 
 
 def bbox_center(bbox):

@@ -8,12 +8,12 @@ from scpye.testing import test_image_classifier
 base_dir = '/home/chao/Dropbox'
 color = 'green'
 mode = 'fast_led'
-train_inds = range(0, 12, 3) + range(1, 12, 3)
+train_inds = range(0, 12, 5) + range(1, 12, 5)
 test_inds = range(2, 12, 2)
 
 # %%
 train = True
-save = True
+save = False
 test = True
 
 # %% 

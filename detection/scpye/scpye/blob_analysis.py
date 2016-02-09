@@ -6,10 +6,10 @@ import numpy as np
 http://scikit-image.org/docs/dev/api/skimage.measure.html#skimage.measure.regionprops
 """
 
-blob_dtype = [('bbox', np.int, 4), ('prop', np.float, 2)]
+blob_dtype = [('bbox', np.int, 4), ('area', np.float, 1)]
 
 
-def region_props(contours):
+def region_props(contours, min_area=0):
     """
     :param contours:
     :return:
@@ -19,13 +19,13 @@ def region_props(contours):
     for cntr in contours:
         area = cv2.contourArea(cntr)
         # Need len(cntr) >= 5 to fit ellipse
-        if area >= 4 and len(cntr) >= 5:
+        if area > min_area:
             # Bbox
             bbox = np.array(cv2.boundingRect(cntr))
-            bbox_area = bbox[-1] * bbox[-2]
+            # bbox_area = bbox[-1] * bbox[-2]
+            aspect = bbox[-1] / bbox[-2]
             # Extent
-            extent = area / bbox_area
-            # equid = np.sqrt(4 * area / np.pi)
+            # extent = area / bbox_area
             # Convex
             # cvx_hull = cv2.convexHull(cntr)
             # cvx_area = cv2.contourArea(cvx_hull)
@@ -41,7 +41,7 @@ def region_props(contours):
             # eccen = np.sqrt(1 - axes_ratio ** 2)
 
             # Assemble to recarray
-            blob = np.array((bbox, (area, extent)), dtype=blob_dtype)
+            blob = np.array((bbox, area), dtype=blob_dtype)
             blobs.append(blob)
             cntrs.append(cntr)
 
@@ -49,7 +49,7 @@ def region_props(contours):
     return blobs, cntrs
 
 
-def region_props_bw(bw):
+def region_props_bw(bw, min_area=0):
     """
     Same as matlab regionprops but implemented in opencv
     Prefer using this than skimage's regionprops because this return a numpy
@@ -58,7 +58,7 @@ def region_props_bw(bw):
     :return: a structured array of blobs
     """
     contours = find_contours(bw)
-    return region_props(contours)
+    return region_props(contours, min_area=min_area)
 
 
 def gray_from_bw(bw, color=False):
@@ -69,6 +69,7 @@ def gray_from_bw(bw, color=False):
     :return: grayscale image
     """
     gray = np.array(bw, dtype='uint8') * 255
+
     if color:
         bgr = cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR)
         return bgr

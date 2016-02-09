@@ -16,13 +16,18 @@ class FruitDetector(object):
         self.ppl = img_ppl
         self.clf = img_clf
 
-    def detect(self, image):
+    def detect_image(self, image):
         # TODO: what else to return from ppl?
         Xt = self.ppl.transform(image)
         y = self.clf.predict(Xt)
         bw = np.array(self.ppl.named_steps['remove_dark'].mask, copy=True)
         bw[bw > 0] = y
         return bw
+
+    def detect(self, image):
+        bboxes = []
+        gray = []
+        return bboxes, gray
 
     @classmethod
     def from_pickle(cls, model_dir):

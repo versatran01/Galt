@@ -52,4 +52,4 @@ def test_image_classifier(data_reader, image_indices, image_pipeline,
         draw_contours(disp_label, pos_cntrs)
 
         disp_color = image_pipeline.named_steps['remove_dark'].image
-        imshow2(disp_color, disp_label)
+        imshow2(disp_color, disp_label, figsize=(17, 17))

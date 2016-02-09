@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 
-blob_dtype = [('bbox', np.int, 4), ('area', np.float, 1)]
+blob_dtype = [('bbox', np.int, 4), ('prop', np.float, 3)]
 
 
 def region_props_bw(bw, min_area=0):
@@ -30,10 +30,11 @@ def region_props(contours, min_area=0):
         if area >= min_area:
             # Bbox
             bbox = np.array(cv2.boundingRect(cntr))
-            # bbox_area = bbox[-1] * bbox[-2]
-            aspect = bbox[-1] / bbox[-2]
+            _, _, w, h = bbox
+            bbox_area = w * h
+            aspect = w / h if w > h else h / w
             # Extent
-            # extent = area / bbox_area
+            extent = area / bbox_area
             # Convex
             # cvx_hull = cv2.convexHull(cntr)
             # cvx_area = cv2.contourArea(cvx_hull)
@@ -49,7 +50,7 @@ def region_props(contours, min_area=0):
             # eccen = np.sqrt(1 - axes_ratio ** 2)
 
             # Assemble to recarray
-            blob = np.array((bbox, area), dtype=blob_dtype)
+            blob = np.array((bbox, (area, aspect, extent)), dtype=blob_dtype)
             blobs.append(blob)
             cntrs.append(cntr)
 

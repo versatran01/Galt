@@ -15,7 +15,7 @@ from scpye.visualization import *
 
 # %%
 base_dir = '/home/chao/Dropbox'
-color = 'red'
+color = 'green'
 mode = 'slow_flash'
 test_indices = [3]
 
@@ -31,21 +31,29 @@ for I, L in zip(Is, Ls):
     B = gray_from_bw(B)   
     B = clean_bw(B)
 
-    blobs, cntrs = region_props_bw(B, min_area=9)
+    blobs, cntrs = region_props_bw(B, min_area=5)
     B = fill_bw(B, cntrs)
     
     disp_bgr = img_ppl.named_steps['remove_dark'].image
     v = img_ppl.named_features['hsv'].image[:,:,-1]
     
-    blobs = np.partition(blobs, len(blobs) - 10, order='area')
-    for blob in blobs[-10:]:
+    areas = blobs['prop'][:, 0]
+    area_thresh = np.mean(areas)
+    bboxes = []
+    for blob in blobs:
         bbox = blob['bbox']
-        label, n = label_blob(bbox, B, v, return_num=True)
-        if n == 1:
-            draw_bbox(disp_bgr, bbox, color=(0, 0, 255))
+        prop = blob['prop']
+        area, aspect, extent = blob['prop']
+        if area > area_thresh and (aspect > 1.5 or extent < 0.6):
+            label, n = label_blob(bbox, B, v, k=5.5, return_num=True)
+            if n == 1:
+                draw_bbox(disp_bgr, bbox, color=(0, 0, 255))
+            else:
+                draw_bbox(disp_bgr, bbox, color=(0, 255, 0))
+                imshow2(extract_bbox(disp_bgr, bbox), label)
         else:
-            draw_bbox(disp_bgr, bbox, color=(0, 255, 0))
-            imshow2(extract_bbox(disp_bgr, bbox), label)
-        draw_bbox(disp_bgr, blobs[:-10]['bbox'])
+            bboxes.append(bbox)
+    bboxes = np.array(bboxes)
+    draw_bbox(disp_bgr, bboxes)
     imshow2(disp_bgr, B, figsize=(17, 17))
     

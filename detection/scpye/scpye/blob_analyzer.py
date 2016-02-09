@@ -33,6 +33,8 @@ class BlobAnalyzer(object):
         blobs = np.partition(blobs, n_blobs - self.num_split, order='area')
 
         # For small blobs just add it to output list
+        # Other criteria:
+        # big size and sufficiently large aspect and
         bboxes = [blobs[:-self.num_split]['bbox']]
 
         for blob in blobs[-self.num_split:]:
@@ -66,7 +68,7 @@ def label_blob(bbox, bw, v, k=5.5, return_num=False):
     v_bbox = extract_bbox(v, bbox, copy=True)
     bw_bbox = extract_bbox(bw, bbox, copy=True)
     v_bbox[bw_bbox == 0] = 0
-    dist = ndi.distance_transform_edt(bw_bbox) * k
+    dist = ndi.distance_transform_edt(bw_bbox) * 2
     dist += v_bbox
 
     local_max = peak_local_max(dist, indices=False, min_distance=min_dist,

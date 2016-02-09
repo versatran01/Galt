@@ -7,13 +7,13 @@ from scpye.testing import test_image_classifier
 # %%
 base_dir = '/home/chao/Dropbox'
 color = 'green'
-mode = 'fast_led'
-train_inds = range(0, 12, 5) + range(1, 12, 5)
-test_inds = range(2, 12, 2)
+mode = 'slow_flash'
+train_inds = range(0, 12, 3) + range(1, 12, 3)
+test_inds = range(2, 12, 3)
 
 # %%
 train = True
-save = False
+save = True
 test = True
 
 # %% 
@@ -38,7 +38,8 @@ if train:
         print('Saving pipeline and classifier')
         drd.save_model(img_ppl, 'img_ppl')
         drd.save_model(img_clf, 'img_clf')
-
+        
+# %%
 if test:
     img_ppl = drd.load_model('img_ppl')
     img_clf = drd.load_model('img_clf')

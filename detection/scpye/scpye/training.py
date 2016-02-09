@@ -64,7 +64,7 @@ def tune_svc(X, y, param_grid=None, cv=4, verbose=5):
     :rtype: GridSearchCV
     """
     if param_grid is None:
-        param_grid = [{'C': [0.1, 1, 10]}]
+        param_grid = [{'C': [0.1, 0.5, 1, 5, 10]}]
 
     grid = GridSearchCV(estimator=SVC(), param_grid=param_grid, cv=cv,
                         verbose=verbose)

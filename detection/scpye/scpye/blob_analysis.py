@@ -1,6 +1,10 @@
 from __future__ import print_function, division, absolute_import
 import cv2
 import numpy as np
+from scpye.bounding_box import bbox_area, extract_bbox
+from skimage.feature import peak_local_max
+from skimage.morphology import watershed
+import scipy.ndimage as ndi
 
 """
 http://scikit-image.org/docs/dev/api/skimage.measure.html#skimage.measure.regionprops
@@ -127,6 +131,7 @@ def clean_bw(bw, ksize=3, iters=1):
     Clean binary image by doing a opening followed by a closing
     :param bw: binary image
     :param ksize: kernel size
+    :param iters: number of iterations
     :return: cleaned binary image
     """
     bw = morph_opening(bw, ksize=ksize, iters=iters)
@@ -146,3 +151,33 @@ def fill_bw(bw, contours):
     cv2.drawContours(bw_filled, contours, -1, color=255, thickness=-1)
 
     return bw_filled
+
+
+def split_blob(bbox, bw, v, k=5.5, return_num=False):
+    """
+    :param bbox: bounding box
+    :param bw: binary image
+    :param v: gray scale image
+    :param k: magic number
+    :param return_num: return number of labels
+    :return:
+    """
+    min_dist = np.sqrt(bbox_area(bbox)) / k
+
+    v_bbox = extract_bbox(v, bbox, copy=True)
+    bw_bbox = extract_bbox(bw, bbox, copy=True)
+    v_bbox[bw_bbox == 0] = 0
+    dist = ndi.distance_transform_edt(bw_bbox) * k
+    dist += v_bbox
+
+    local_max = peak_local_max(dist, indices=False, min_distance=min_dist,
+                               labels=bw_bbox)
+    if np.count_nonzero(local_max) > 1:
+        markers = ndi.label(local_max, structure=np.ones((3, 3)))[0]
+        label = watershed(-dist, markers, mask=bw_bbox)
+    else:
+        label = bw_bbox
+    if return_num:
+        return label, np.max(label)
+    else:
+        return label

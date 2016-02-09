@@ -1,3 +1,4 @@
+from __future__ import (print_function, absolute_import, division)
 import cv2
 import numpy as np
 
@@ -20,6 +21,7 @@ def region_props_bw(bw, min_area=0):
 def region_props(contours, min_area=0):
     """
     :param contours:
+    :param min_area:
     :return:
     """
     blobs = []
@@ -60,8 +62,6 @@ def region_props(contours, min_area=0):
 
 def morph_opening(bw, ksize=3, iters=1):
     """
-    http://docs.opencv.org/2.4/doc/tutorials/imgproc/opening_closing_hats/opening_closing_hats.html
-    http://docs.opencv.org/master/d9/d61/tutorial_py_morphological_ops.html#gsc.tab=0
     :param bw: binary image
     :param ksize: kernel size
     :param iters: number of iterations
@@ -89,7 +89,6 @@ def morph_closing(bw, ksize=3, iters=1):
 
 def find_contours(bw, method=cv2.CHAIN_APPROX_NONE):
     """
-    http://docs.opencv.org/master/d4/d73/tutorial_py_contours_begin.html#gsc.tab=0
     :param bw: binary image
     :param method:
     :return: a list of contours

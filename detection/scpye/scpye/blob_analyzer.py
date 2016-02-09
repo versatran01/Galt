@@ -10,9 +10,10 @@ from scpye.region_props import region_props_bw, clean_bw, fill_bw
 
 
 class BlobAnalyzer(object):
-    def __init__(self, min_area=9, num_split=10):
+    def __init__(self, min_area=9, split=False, split_method=0):
         self.min_area = min_area
-        self.num_split = num_split
+        self.split = split
+        self.split_method = split_method
 
     def analyze(self, bw, v):
         """
@@ -48,6 +49,9 @@ class BlobAnalyzer(object):
                 bboxes.extend(bboxes)
 
         return bboxes
+
+    def split(self):
+        pass
 
 
 def split_label():

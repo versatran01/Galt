@@ -7,7 +7,7 @@ from scpye.testing import test_image_classifier
 # %%
 base_dir = '/home/chao/Dropbox'
 color = 'green'
-mode = 'slow_flash'
+mode = 'fast_led'
 train_inds = range(0, 12, 3) + range(1, 12, 3)
 test_inds = range(2, 12, 3)
 

@@ -1,7 +1,6 @@
 from __future__ import (absolute_import, division, print_function)
 import cv2
 import numpy as np
-from scpye.blob_analysis import gray_from_bw
 from scpye.visualization import imshow2
 from scpye.data_reader import DataReader
 from scpye.image_pipeline import ImagePipeline

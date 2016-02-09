@@ -8,7 +8,7 @@ Created on Sun Feb  7 23:17:29 2016
 # %%
 from skimage.measure import label
 
-from scpye.blob_analysis import *
+from scpye.blob_analyzer import *
 from scpye.bounding_box import extract_bbox
 from scpye.region_props import clean_bw, fill_bw, gray_from_bw
 from scpye.testing import get_positive_bw, get_prediction_bw

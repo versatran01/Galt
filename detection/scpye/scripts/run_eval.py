@@ -18,7 +18,7 @@ sys.path.append('..')
 import os
 from sklearn.externals import joblib
 from scpye.training import *
-from scpye.blob_analysis import *
+from scpye.blob_analyzer import *
 from scpye.visualization import *
 from scpye.bounding_box import extract_bbox
 

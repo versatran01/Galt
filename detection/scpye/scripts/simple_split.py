@@ -6,9 +6,9 @@ Created on Mon Feb  8 20:45:49 2016
 """
 
 # %%
-from scpye.blob_analysis import *
 from scpye.bounding_box import extract_bbox
-from scpye.region_props import clean_bw, fill_bw, gray_from_bw
+from scpye.region_props import *
+from scpye.blob_analyzer import *
 from scpye.testing import get_prediction_bw
 from scpye.training import *
 from scpye.visualization import *

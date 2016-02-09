@@ -12,7 +12,7 @@ from scpye.region_props import find_contours
 
 cwd = os.getcwd()
 from scpye.visualization import *
-from scpye.blob_analysis import *
+from scpye.blob_analyzer import *
 
 img_dir = os.path.join(cwd, '../image')
 bw_file = os.path.join(img_dir, 'red_pred.png')

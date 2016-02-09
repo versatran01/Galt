@@ -6,18 +6,20 @@ from sklearn.externals import joblib
 
 class DataReader(object):
     def __init__(self, base_dir='/home/chao/Workspace/bag', fruit='apple',
-                 color='red', mode='fast_flash',
+                 color='red', mode='fast_flash', bag='rect_fixed',
                  filename='frame{0:04d}_{1}.png'):
         self.base_dir = base_dir
         self.fruit = fruit
         self.color = color
         self.mode = mode
         self.filename = filename
+        self.bagname = 'frame{0}_' + bag + '.bag'
 
         # Directory
         self.data_dir = os.path.join(self.base_dir, fruit, color, mode)
         self.train_dir = os.path.join(self.data_dir, 'train')
         self.model_dir = os.path.join(self.data_dir, 'model')
+        self.bag_dir = os.path.join(self.data_dir, bag)
 
     def _read_image(self, index, suffix, color=True):
         """

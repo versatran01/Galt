@@ -6,17 +6,14 @@ Created on Sun Feb  7 23:17:29 2016
 """
 
 # %%
-import numpy as np
-from scpye.data_reader import DataReader
-from scpye.testing import get_positive_bw, get_prediction_bw
-from scpye.visualization import *
+from skimage.measure import label
+
 from scpye.blob_analysis import *
 from scpye.bounding_box import extract_bbox
-from sklearn.preprocessing import StandardScaler
-from sklearn.svm import SVC
+from scpye.region_props import clean_bw, fill_bw, gray_from_bw
+from scpye.testing import get_positive_bw, get_prediction_bw
 from scpye.training import *
-from sklearn.grid_search import GridSearchCV
-from skimage.measure import label
+from scpye.visualization import *
 
 # %%
 base_dir = '/home/chao/Dropbox'

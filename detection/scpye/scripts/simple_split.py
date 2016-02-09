@@ -6,14 +6,12 @@ Created on Mon Feb  8 20:45:49 2016
 """
 
 # %%
-import numpy as np
-from scpye.data_reader import DataReader
-from scpye.testing import get_positive_bw, get_prediction_bw
-from scpye.visualization import *
 from scpye.blob_analysis import *
 from scpye.bounding_box import extract_bbox
+from scpye.region_props import clean_bw, fill_bw, gray_from_bw
+from scpye.testing import get_prediction_bw
 from scpye.training import *
-
+from scpye.visualization import *
 
 # %%
 base_dir = '/home/chao/Dropbox'
@@ -42,7 +40,7 @@ for I, L in zip(Is, Ls):
     blobs = np.partition(blobs, len(blobs) - 10, order='area')
     for blob in blobs[-10:]:
         bbox = blob['bbox']
-        label, n = split_blob(bbox, B, v, return_num=True)
+        label, n = label_blob(bbox, B, v, return_num=True)
         if n == 1:
             draw_bbox(disp_bgr, bbox, color=(0, 0, 255))
         else:

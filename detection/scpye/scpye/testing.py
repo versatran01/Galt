@@ -5,7 +5,7 @@ from scpye.blob_analysis import gray_from_bw
 from scpye.visualization import imshow2
 from scpye.data_reader import DataReader
 from scpye.image_pipeline import ImagePipeline
-from scpye.blob_analysis import find_contours
+from scpye.region_props import find_contours, gray_from_bw
 from scpye.visualization import draw_contours
 
 

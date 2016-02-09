@@ -34,22 +34,22 @@ def draw_multiple(func):
 def imshow(image, figsize=(10, 10)):
     fig = plt.figure(figsize=figsize)
     ax = fig.add_subplot(111)
-    ax.imshow(image)
+    ax.imshow(image, interpolation='none')
     return ax
 
 
 def imshow2(image1, image2, figsize=(10, 10)):
     fig = plt.figure(figsize=figsize)
-    ax1 = fig.add_subplot(121).imshow(image1)
-    ax2 = fig.add_subplot(122).imshow(image2)
+    ax1 = fig.add_subplot(121).imshow(image1, interpolation='none')
+    ax2 = fig.add_subplot(122).imshow(image2, interpolation='none')
     return ax1, ax2
 
 
 def imshow3(image1, image2, image3, figsize=(10, 10)):
     fig = plt.figure(figsize=figsize)
-    ax1 = fig.add_subplot(131).imshow(image1)
-    ax2 = fig.add_subplot(132).imshow(image2)
-    ax3 = fig.add_subplot(133).imshow(image3)
+    ax1 = fig.add_subplot(131).imshow(image1, interpolation='none')
+    ax2 = fig.add_subplot(132).imshow(image2, interpolation='none')
+    ax3 = fig.add_subplot(133).imshow(image3, interpolation='none')
     return ax1, ax2, ax3
 
 

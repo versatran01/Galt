@@ -5,9 +5,12 @@ Created on Fri Feb  5 13:35:01 2016
 @author: chao
 """
 from __future__ import division
+
 import os
+
+from scpye.region_props import find_contours
+
 cwd = os.getcwd()
-import cv2
 from scpye.visualization import *
 from scpye.blob_analysis import *
 

@@ -8,7 +8,8 @@ Created on Mon Feb  8 19:20:09 2016
 import numpy as np
 from scpye.image_pipeline import ImagePipeline
 from scpye.image_transformer import ImageTransformer, FeatureTransformer
-from scpye.blob_analysis import clean_bw, gray_from_bw, region_props_bw, fill_bw
+from scpye.blob_analysis import clean_bw, gray_from_bw, fill_bw
+from scpye.region_props import region_props_bw, clean_bw, fill_bw, gray_from_bw
 from scpye.bounding_box import extract_bbox
 from skimage.measure import label
 from scpye.data_reader import DataReader

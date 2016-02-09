@@ -7,16 +7,16 @@ Created on Sat Feb  6 16:15:28 2016
 
 # %%
 from __future__ import division
+
 import sys
 
 # HACK
+from scpye.region_props import gray_from_bw
+
 sys.path.append('..')
 
 import os
-import cv2
-import numpy as np
 from sklearn.externals import joblib
-from scpye.data_reader import DataReader
 from scpye.training import *
 from scpye.blob_analysis import *
 from scpye.visualization import *

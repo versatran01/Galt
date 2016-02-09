@@ -24,6 +24,9 @@ class FruitDetector(object):
         bw[bw > 0] = y
         return bw
 
+    def detect_bw(self, bw):
+        pass
+
     def detect(self, image):
         bboxes = []
         gray = []

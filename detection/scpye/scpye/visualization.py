@@ -106,6 +106,7 @@ def draw_bboxes_matches(image, matches, bboxes1, bboxes2, color, thickness=1):
     matches = np.atleast_2d(matches)
     bboxes1 = np.atleast_2d(bboxes1)
     bboxes2 = np.atleast_2d(bboxes2)
+
     for pair in matches:
         i1, i2 = pair
         bbox1 = bboxes1[i1]

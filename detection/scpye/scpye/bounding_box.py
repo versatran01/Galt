@@ -92,7 +92,6 @@ def bbox_intersect_area(bbox1, bbox2):
     return w * h
 
 
-# TODO: need unittest for this
 def bbox_overlap_ratio(bbox1, bbox2, ratio_type=OverlapRatio.Union):
     """
     Overlap ratio of two bboxes

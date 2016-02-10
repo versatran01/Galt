@@ -3,17 +3,22 @@ import cv2
 import numpy as np
 from sklearn.externals import joblib
 
+import rosbag
+from cv_bridge import CvBridge, CvBridgeError
+
 
 class DataReader(object):
     def __init__(self, base_dir='/home/chao/Workspace/bag', fruit='apple',
                  color='red', mode='fast_flash', bag='rect_fixed',
-                 filename='frame{0:04d}_{1}.png'):
+                 filename='frame{0:04d}_{1}.png',
+                 topic='/color/image_rect_color'):
         self.base_dir = base_dir
         self.fruit = fruit
         self.color = color
         self.mode = mode
         self.filename = filename
         self.bagname = 'frame{0}_' + bag + '.bag'
+        self.topic = topic
 
         # Directory
         self.data_dir = os.path.join(self.base_dir, fruit, color, mode)
@@ -109,3 +114,15 @@ class DataReader(object):
             Ls.append(L)
 
         return Is, Ls
+
+    def load_bag(self, index):
+        bagname = os.path.join(self.bag_dir, self.bagname.format(index))
+        bridge = CvBridge()
+        with rosbag.Bag(bagname) as bag:
+            for topic, msg, t in bag.read_messages(self.topic):
+                try:
+                    image = bridge.imgmsg_to_cv2(msg)
+                except CvBridgeError as e:
+                    print(e)
+                    continue
+                yield image

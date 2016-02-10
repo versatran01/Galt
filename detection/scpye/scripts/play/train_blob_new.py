@@ -157,11 +157,11 @@ for I, L in zip(Is, Ls):
     for blob, r in zip(blobs, y):
         bbox = blob['bbox']
         if r == 0:
-            draw_bbox(disp_bgr, bbox)
+            draw_bboxes(disp_bgr, bbox)
         elif r == 1:
-            draw_bbox(disp_bgr, bbox, color=(0, 255, 0))
+            draw_bboxes(disp_bgr, bbox, color=(0, 255, 0))
         else:
-            draw_bbox(disp_bgr, bbox, color=(0, 0, 255))
+            draw_bboxes(disp_bgr, bbox, color=(0, 0, 255))
     
     imshow2(disp_bgr, disp_bw, figsize=(17, 17))
         

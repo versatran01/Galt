@@ -87,6 +87,6 @@ for I, L in zip(Is, Ls):
     
     fruits = blb_anl.analyze(B, v)
     disp_bgr = img_ppl.named_steps['remove_dark'].image.copy()
-    draw_bbox(disp_bgr, fruits[:, :4])
+    draw_bboxes(disp_bgr, fruits[:, :4])
     
 imshow(disp_bgr, figsize=(17, 17))

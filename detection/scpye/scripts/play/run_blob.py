@@ -53,7 +53,7 @@ for cnt in cs:
         # Ellipse
         center, axes, angle = cv2.fitEllipse(cnt)
         ellipse = np.hstack((center, axes, angle))
-        draw_ellipse(disp, ellipse)
+        draw_ellipses(disp, ellipse)
 
         MAJ = np.argmax(axes)
         maj_axes = axes[MAJ]

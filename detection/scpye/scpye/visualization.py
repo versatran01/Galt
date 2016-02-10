@@ -22,15 +22,6 @@ class Colors:
         pass
 
 
-def draw_multiple(func):
-    def func_wrapper(image, objects, **kwargs):
-        objects = np.atleast_2d(objects)
-        for obj in objects:
-            func(image, obj, **kwargs)
-
-    return func_wrapper
-
-
 def imshow(image, figsize=(10, 10)):
     fig = plt.figure(figsize=figsize)
     ax = fig.add_subplot(111)
@@ -61,41 +52,45 @@ def draw_fruit(image, fruit):
     if num > 1:
         thickness = 2
 
-    draw_bbox(image, bbox, thickness=thickness)
+    draw_bboxes(image, bbox, thickness=thickness)
 
 
-@draw_multiple
-def draw_bbox(image, bbox, color=(255, 0, 0), thickness=1):
-    x, y, w, h = np.array(bbox, dtype=int)
-    cv2.rectangle(image, (x, y), (x + w, y + h), color=color,
-                  thickness=thickness)
+def draw_bboxes(image, bboxes, color=(255, 0, 0), thickness=1):
+    bboxes = np.atleast_2d(bboxes)
+    for bbox in bboxes:
+        x, y, w, h = np.array(bbox, dtype=int)
+        cv2.rectangle(image, (x, y), (x + w, y + h), color=color,
+                      thickness=thickness)
 
 
-@draw_multiple
-def draw_circle(image, circle, color=(255, 0, 0), thickness=1):
-    x, y, r = np.array(circle, dtype=int)
-    cv2.circle(image, (x, y), r, color=color, thickness=thickness)
+def draw_circles(image, circles, color=(255, 0, 0), thickness=1):
+    circles = np.atleast_2d(circles)
+    for circle in circles:
+        x, y, r = np.array(circle, dtype=int)
+        cv2.circle(image, (x, y), r, color=color, thickness=thickness)
 
 
-@draw_multiple
-def draw_point(image, point, color=(255, 0, 0), radius=1):
-    x, y = np.array(point, dtype=int)
-    cv2.circle(image, (x, y), radius, color=color, thickness=-1)
+def draw_points(image, points, color=(255, 0, 0), radius=1):
+    points = np.atleast_2d(points)
+    for point in points:
+        x, y = np.array(point, dtype=int)
+        cv2.circle(image, (x, y), radius, color=color, thickness=-1)
 
 
-@draw_multiple
-def draw_ellipse(image, ellipse, color=(255, 0, 0), thickness=1):
-    x, y, ax1, ax2, ang = np.array(ellipse, dtype=int)
-    cv2.ellipse(image, (x, y), (ax1, ax2), ang, 0, 360, color=color,
-                thickness=thickness)
-
-
-def draw_contour(image, cnt, color=(255, 0, 0), thickness=1):
-    cv2.drawContours(image, [cnt], 0, color, thickness)
+def draw_ellipses(image, ellipses, color=(255, 0, 0), thickness=1):
+    ellipses = np.atleast_2d(ellipses)
+    for ellipse in ellipses:
+        x, y, ax1, ax2, ang = np.array(ellipse, dtype=int)
+        cv2.ellipse(image, (x, y), (ax1, ax2), ang, 0, 360, color=color,
+                    thickness=thickness)
 
 
 def draw_contours(image, cs, color=(255, 0, 0), thickness=1):
     cv2.drawContours(image, cs, -1, color, thickness)
+
+
+def draw_contour(image, cnt, color=(255, 0, 0), thickness=1):
+    cv2.drawContours(image, [cnt], 0, color, thickness)
 
 
 def draw_text(image, text, point, color=(255, 0, 0), scale=0.5, thickness=1):

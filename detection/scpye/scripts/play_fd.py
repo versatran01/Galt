@@ -18,5 +18,5 @@ Is, Ls = drd.load_image_label_list(test_indices)
 for I in Is:
     fruits, bw = fd.detect(I)
     disp = fd.color
-    draw_bbox(disp, fruits[:, :4])
+    draw_bboxes(disp, fruits[:, :4])
     imshow(disp, figsize=(17, 17))

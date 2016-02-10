@@ -5,7 +5,7 @@ from scpye.visualization import *
 
 # %%
 base_dir = '/home/chao/Dropbox'
-color = 'green'
+color = 'red'
 mode = 'slow_flash'
 test_indices = [5, 6, 7]
 

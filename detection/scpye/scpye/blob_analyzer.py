@@ -72,7 +72,7 @@ class BlobAnalyzer(object):
         fruits = []
         for pt in points:
             x, y = pt
-            fruit = np.array([x + xb - a, y + yb - a, 2 * a, 2 * a, 1])
+            fruit = np.array([x + xb - a / 2, y + yb - a / 2, a, a, 1])
             fruits.append(fruit)
         return np.vstack(fruits)
 

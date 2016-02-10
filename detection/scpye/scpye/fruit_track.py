@@ -1,42 +1,34 @@
 from __future__ import (print_function, division, absolute_import)
 
 import numpy as np
+
 from scpye.bounding_box import bbox_center
 from scpye.kalman_filter import KalmanFilter
 
 
 class FruitTrack(object):
-    def __init__(self, blob, num_fruits=1):
-        self.blob = blob
-        self.num_fruits = num_fruits
-        self.kf = KalmanFilter(bbox_center(blob['bbox']))
-
-    def get_bbox(self):
-        return self.blob['bbox']
+    def __init__(self, fruit):
+        self.bbox = fruit[:4]
+        self.num = fruit[-1]
+        self.kf = KalmanFilter(bbox_center(self.bbox))
 
     def get_bbox_filtered(self):
         cx, cy = self.kf.x
-        _, _, w, h = self.blob['bbox']
+        _, _, w, h = self.bbox
         x = cx - w / 2
         y = cy - h / 2
-        return np.array([x, y, w, h], int)
+        return np.array([x, y, w, h], dtype=np.int)
 
-    def get_x(self):
-        return self.kf.x
-
-    def get_age(self):
+    @property
+    def age(self):
         return self.kf.length
-
-    x = property(get_x)
-    age = property(get_age)
-    bbox = property(get_bbox)
-    bbox_filtered = property(get_bbox_filtered)
 
     def predict(self, flow):
         self.kf.predict(flow)
 
-    def correct(self, blob):
+    def correct(self, fruit):
         # Update blob
-        self.blob = blob
+        self.bbox = fruit[:4]
+        self.num = fruit[-1]
         z = bbox_center(self.bbox)
         self.kf.correct(z)

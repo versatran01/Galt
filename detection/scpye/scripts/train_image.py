@@ -5,9 +5,9 @@ from scpye.training import make_image_pipeline, train_image_classifier
 from scpye.testing import test_image_classifier
 
 # %%
-base_dir = '/home/chao/Dropbox'
-color = 'green'
-mode = 'fast_led'
+base_dir = '/home/chao/Workspace/bag'
+color = 'red'
+mode = 'slow_flash'
 train_inds = range(0, 12, 3) + range(1, 12, 3)
 test_inds = range(2, 12, 3)
 
@@ -18,7 +18,7 @@ test = True
 
 # %% 
 # Parameters
-k = 0.5
+k = 0.25
 v_min = 25
 if color == 'red':
     bbox = np.array([250, 0, 700, 1440])

@@ -27,7 +27,7 @@ class BlobAnalyzer(object):
 
         :param bw:
         :param v:
-        :return:
+        :return: (fruits, bw)
         """
         bw = gray_from_bw(bw)
         # Clean binary image

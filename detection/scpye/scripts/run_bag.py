@@ -20,4 +20,5 @@ fd = FruitDetector.from_pickle(dr.model_dir)
 fv = FruitVisualizer()
 
 for image in dr.load_bag(1):
-    fv.show(image, image)
+    _, bw = fd.detect(image)
+    fv.show(fd.color, bw)

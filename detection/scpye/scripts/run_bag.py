@@ -12,7 +12,7 @@ from scpye.fruit_visualizer import FruitVisualizer
 # %%
 
 base_dir = '/home/chao/Workspace/bag'
-color = 'red'
+color = 'green'
 mode = 'slow_flash'
 
 dr = DataReader(base_dir, color=color, mode=mode)
@@ -20,5 +20,5 @@ fd = FruitDetector.from_pickle(dr.model_dir)
 fv = FruitVisualizer()
 
 for image in dr.load_bag(1):
-    _, bw = fd.detect(image)
-    fv.show(fd.color, bw)
+    fd.detect(image)
+    fv.show(fd.color, fd.bw)

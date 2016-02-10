@@ -44,7 +44,7 @@ def make_image_features(cspace=None, use_loc=True):
     :rtype: FeatureUnion
     """
     if cspace is None:
-        cspace = ['bgr', 'hsv']
+        cspace = ['hsv']
     transformer_list = [(cs, CspaceTransformer(cs)) for cs in cspace]
     if use_loc:
         transformer_list.append(('mask_location', MaskLocator()))

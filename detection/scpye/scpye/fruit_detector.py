@@ -18,10 +18,11 @@ class FruitDetector(object):
         self.img_ppl = img_ppl
         self.img_clf = img_clf
         self.blb_anl = BlobAnalyzer(split=split)
+        self.bw = None
 
     @property
     def color(self):
-        return self.img_ppl.named_steps['remove_dark'].image.copy()
+        return self.img_ppl.named_steps['remove_dark'].bgr.copy()
 
     @property
     def gray(self):
@@ -29,7 +30,7 @@ class FruitDetector(object):
 
     @property
     def v(self):
-        return self.img_ppl.named_features['hsv'].image[:, :, -1]
+        return self.img_ppl.named_steps['remove_dark'].hsv[:, :, -1].copy()
 
     def detect_image(self, image):
         Xt = self.img_ppl.transform(image)
@@ -40,7 +41,8 @@ class FruitDetector(object):
 
     def detect(self, image):
         bw = self.detect_image(image)
-        return self.blb_anl.analyze(bw, self.v)
+        fruits, self.bw = self.blb_anl.analyze(bw, self.v)
+        return fruits
 
     @classmethod
     def from_pickle(cls, model_dir, split=False):

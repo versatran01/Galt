@@ -59,7 +59,6 @@ def bbox_distsq(bbox1, bbox2):
     return (cx1 - cx2) ** 2 + (cy1 - cy2) ** 2
 
 
-# TODO: this might be broken
 def bbox_intersect(bbox1, bbox2):
     """
     Whether two bboxes intersect or not
@@ -72,7 +71,9 @@ def bbox_intersect(bbox1, bbox2):
     """
     x1, y1, w1, h1 = bbox1
     x2, y2, w2, h2 = bbox2
-    return (abs(x1 - x2) * 2 < (w1 + w2)) and (abs(y1 - y2) * 2 < (h1 + h2))
+    dx = abs((x1 + w1 / 2) - (x2 + w2 / 2))
+    dy = abs((y1 + h1 / 2) - (y2 + h2 / 2))
+    return (dx * 2 < (w1 + w2)) and (dy * 2 < (h1 + h2))
 
 
 def bbox_intersect_area(bbox1, bbox2):
@@ -104,12 +105,10 @@ def bbox_overlap_ratio(bbox1, bbox2, ratio_type=OverlapRatio.Union):
     if not bbox_intersect(bbox1, bbox2):
         return 0.0
 
-    x1, y1, w1, h1 = bbox1
-    x2, y2, w2, h2 = bbox2
     # intersection area is a * b, where a is width and b is height
     area_intersection = bbox_intersect_area(bbox1, bbox2)
-    area_b1 = w1 * h1
-    area_b2 = w2 * h2
+    area_b1 = bbox_area(bbox1)
+    area_b2 = bbox_area(bbox2)
     if ratio_type == OverlapRatio.Union:
         area_union = area_b1 + area_b2 - area_intersection
         return area_intersection / area_union

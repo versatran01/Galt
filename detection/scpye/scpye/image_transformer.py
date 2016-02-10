@@ -148,7 +148,8 @@ class DarkRemover(ImageTransformer):
         :type v_min: int
         """
         assert 0 < v_min < 255
-        self.image = None
+        self.bgr = None
+        self.hsv = None
         self.mask = None
         self.label = None
         self.v_min = v_min
@@ -160,9 +161,11 @@ class DarkRemover(ImageTransformer):
         :param y: label
         :return: a tuple of bgr image and mask
         """
-        self.image = X
-        img_hsv = cv2.cvtColor(X, cv2.COLOR_BGR2HSV)
-        self.mask = img_hsv[:, :, -1] > self.v_min
+        self.bgr = X
+        self.hsv = cv2.cvtColor(X, cv2.COLOR_BGR2HSV)
+        self.mask = self.hsv[:, :, -1] > self.v_min
+        self.hsv[self.mask == 0] = 0
+
         if y is None:
             return MaskedData(X=X, m=self.mask)
 
@@ -200,7 +203,7 @@ class FeatureTransformer(ImageTransformer):
 class CspaceTransformer(FeatureTransformer):
     def __init__(self, cspace):
         self.cspace = cspace
-        self.image = None
+        # self.image = None
 
     def cspace_transform(self, src):
         """
@@ -235,8 +238,8 @@ class CspaceTransformer(FeatureTransformer):
             Xt = self.cspace_transform(bgr[mask])
             image = np.zeros_like(bgr)
             image[mask] = Xt
-            if y is None:
-                self.image = image
+            # if y is None:
+            #     self.image = image
         else:
             neg, pos = split_label01(mask)
             Xt_neg = self.cspace_transform(bgr[neg])

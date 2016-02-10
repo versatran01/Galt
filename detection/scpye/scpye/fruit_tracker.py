@@ -196,4 +196,8 @@ class FruitTracker(object):
 
         self.logger.debug('Lost tracks sum: {0}'.format(temp_sum))
         self.total_counts += temp_sum
-        self.logger.info('Total counts: {0}'.format(self.total_counts))
+
+        # ===== DRAW TOTAL COUNTS =====
+        draw_text(self.disp, self.total_counts, (0, len(self.disp) - 5),
+                  scale=1, color=Colors.text)
+        self.logger.debug('Total counts: {0}'.format(self.total_counts))

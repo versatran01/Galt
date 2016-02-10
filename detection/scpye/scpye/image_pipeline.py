@@ -23,7 +23,7 @@ class ImagePipeline(Pipeline):
         fit_params_steps = dict((step, {}) for step, _ in self.steps)
 
         for pname, pval in six.iteritems(fit_params):
-            step, param = pname.split('__', 1)
+            step, param = pname.split_blob('__', 1)
             fit_params_steps[step][param] = pval
         Xt = X
         yt = y

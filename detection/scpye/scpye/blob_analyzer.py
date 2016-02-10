@@ -13,9 +13,14 @@ from scpye.region_props import (region_props_bw, clean_bw, fill_bw,
 class BlobAnalyzer(object):
     fruit_dtype = [('bbox', np.int, 4), ('num', np.int, 1)]
 
-    def __init__(self, min_area=9, do_split=False):
+    def __init__(self, min_area=9, split=False):
+        """
+        :param min_area: minimum area to be consider a blob
+        :param split: whether to split big blob to smaller ones or not
+        :return:
+        """
         self.min_area = min_area
-        self.do_split = do_split
+        self.split = split
         self.bw = None
 
     def analyze(self, bw, v):
@@ -37,12 +42,21 @@ class BlobAnalyzer(object):
         area_thresh = np.mean(areas)
         fruits = []
         for blob in blobs:
-            fruit = self.split(blob, bw, v, area_thresh)
+            fruit = self.split_blob(blob, bw, v, area_thresh)
             fruits.append(fruit)
         fruits = np.vstack(fruits)
         return np.array(fruits)
 
-    def split(self, blob, bw, v, min_area, min_aspect=1.4, max_extent=0.5):
+    def split_blob(self, blob, bw, v, min_area, min_aspect=1.4, max_extent=0.5):
+        """
+        :param blob:
+        :param bw:
+        :param v:
+        :param min_area:
+        :param min_aspect:
+        :param max_extent:
+        :return:
+        """
         bbox = blob['bbox']
         v_bbox = extract_bbox(v, bbox, copy=True)
         bw_bbox = extract_bbox(bw, bbox)
@@ -57,15 +71,22 @@ class BlobAnalyzer(object):
                 return np.hstack((bbox, 1))
 
             num = len(points)
-            if self.do_split:
-                return self.split_blob(points, bbox, area)
+            if self.split:
+                return self.split_points(points, bbox, area)
             else:
                 return np.hstack((bbox, num))
         else:
             return np.hstack((bbox, 1))
 
     @staticmethod
-    def split_blob(points, bbox, area):
+    def split_points(points, bbox, area):
+        """
+        Split local max points into multiple fruits [bbox, num]
+        :param points:
+        :param bbox:
+        :param area:
+        :return:
+        """
         xb, yb, _, _ = bbox
         num = len(points)
         a = np.sqrt(area / num)

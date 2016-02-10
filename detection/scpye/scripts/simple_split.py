@@ -72,7 +72,7 @@ Is, Ls = drd.load_image_label_list(test_indices)
 #    draw_bbox(disp_bgr, bboxes)
 #    imshow2(disp_bgr, B, figsize=(17, 17))
 
-blb_anl = BlobAnalyzer(do_split=True)
+blb_anl = BlobAnalyzer(split=True)
 
 for I, L in zip(Is, Ls):
     B = get_prediction_bw(img_ppl, img_clf, I)

@@ -8,7 +8,7 @@ from scpye.fruit_track import FruitTrack
 from scpye.optical_flow import calc_optical_flow
 from scpye.visualization import *
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 
 
 class FruitTracker(object):
@@ -81,10 +81,7 @@ class FruitTracker(object):
                                                        self.init_flow))
 
             self.add_new_tracks(self.tracks, fruits)
-            self.logger.info('Fruit tracker initialized')
             return
-
-        self.logger.info('Predict new location of tracks')
 
         valid_tracks, invalid_tracks = self.predict_tracks(gray)
 
@@ -199,4 +196,4 @@ class FruitTracker(object):
 
         self.logger.debug('Lost tracks sum: {0}'.format(temp_sum))
         self.total_counts += temp_sum
-        self.logger.debug('Total counts: {0}'.format(self.total_counts))
+        self.logger.info('Total counts: {0}'.format(self.total_counts))

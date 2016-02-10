@@ -17,7 +17,7 @@ class OverlapRatio:
         pass
 
 
-def extract_bbox(image, bbox):
+def extract_bbox(image, bbox, copy=False):
     """
     Extract region of image defined by bbox
     :param image: image
@@ -25,10 +25,10 @@ def extract_bbox(image, bbox):
     :return: region of image
     :rtype: numpy.ndarray
     """
-    if bbox is None:
-        return image
+    x, y, w, h = bbox
+    if copy:
+        return np.array(image[y:y + h, x:x + w, ...], copy=True)
     else:
-        x, y, w, h = bbox
         return image[y:y + h, x:x + w, ...]
 
 

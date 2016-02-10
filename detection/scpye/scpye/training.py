@@ -1,6 +1,5 @@
 from __future__ import (print_function, absolute_import, division)
 from sklearn.svm import SVC
-from sklearn.externals import joblib
 from sklearn.grid_search import GridSearchCV
 from sklearn.cross_validation import train_test_split
 from sklearn.metrics import classification_report
@@ -8,12 +7,8 @@ from scpye.image_transformer import *
 from scpye.image_pipeline import ImagePipeline, FeatureUnion
 from scpye.data_reader import DataReader
 
-import logging
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-
+# TODO: change this to kwargs later
 def make_image_pipeline(ccw=-1, bbox=None, k=0.5, v_min=25, cspace=None,
                         use_loc=True):
     """
@@ -27,7 +22,7 @@ def make_image_pipeline(ccw=-1, bbox=None, k=0.5, v_min=25, cspace=None,
     :return: image pipeline
     :rtype: ImagePipeline
     """
-    features = make_feature_union(cspace, use_loc)
+    features = make_image_features(cspace, use_loc)
 
     img_ppl = ImagePipeline([
         ('rotate_image', ImageRotator(ccw)),
@@ -40,7 +35,7 @@ def make_image_pipeline(ccw=-1, bbox=None, k=0.5, v_min=25, cspace=None,
     return img_ppl
 
 
-def make_feature_union(cspace=None, use_loc=True):
+def make_image_features(cspace=None, use_loc=True):
     """
     Factory function for making a feature unin
     :param cspace: features - colorspace
@@ -61,9 +56,6 @@ def make_feature_union(cspace=None, use_loc=True):
 def tune_svc(X, y, param_grid=None, cv=4, verbose=5):
     """
     Tune a support vector machine with cross validation
-    :type X: numpy.ndarray
-    :type y: numpy.ndarray
-    :param param_grid:
     :param cv: n folds cross validation
     :type cv: int
     :param verbose: verbosity level
@@ -72,14 +64,30 @@ def tune_svc(X, y, param_grid=None, cv=4, verbose=5):
     :rtype: GridSearchCV
     """
     if param_grid is None:
-        logger.info("Tuning svm using default parameters.")
-        param_grid = [{'C': [0.1, 1, 10]}]
+        param_grid = [{'C': [0.1, 0.5, 1, 5, 10]}]
 
     grid = GridSearchCV(estimator=SVC(), param_grid=param_grid, cv=cv,
                         verbose=verbose)
     grid.fit(X, y)
 
-    logger.info("Done grid search cross validation on svm")
+    return grid
+
+
+def train_svc(X, y, test_size=0.3, report=True):
+    """
+    Train an svm with cross validation
+    :param test_size: portion of data to split
+    :param report: whether to print report or not
+    :return: svm
+    :rtype: GridSearchCV
+    """
+    X_t, X_v, y_t, y_v = train_test_split(X, y, test_size=test_size)
+    grid = tune_svc(X_t, y_t)
+
+    if report:
+        print_grid_search_report(grid)
+        print_validation_report(grid, X_v, y_v)
+
     return grid
 
 
@@ -115,54 +123,15 @@ def print_validation_report(clf, X, y, target_names=None):
     print(report)
 
 
-def load_data(reader, inds):
+def train_image_classifier(data_reader, image_indices, image_pipeline):
     """
-    Load data
-    :type reader: DataReader
-    :param inds:
-    :return:
-    """
-    Is = []
-    Ls = []
-    for ind in inds:
-        logger.info("Load image and label {}".format(ind))
-        I, L = reader.load_image_label(ind)
-        Is.append(I)
-        Ls.append(L)
-
-    return Is, Ls
-
-
-def transform_data(ppl, Is, Ls):
-    """
-    :type ppl: ImagePipeline
-    :param Is:
-    :param Ls:
-    :return: X and y transformed
-    """
-    X, y = ppl.fit_transform(Is, Ls)
-    logger.info("Images and labels transformed.")
-
-    return X, y
-
-
-def train_svm(X, y, test_size=0.3, report=True):
-    """
-    Train an svm with cross validation
-    :param X:
-    :param y:
-    :param test_size: portion of data to split
-    :param report: whether to print report or not
-    :return: svm
+    :type data_reader: DataReader
+    :param image_indices: list of indices
+    :type image_pipeline: ImagePipeline
     :rtype: GridSearchCV
     """
-    X_t, X_v, y_t, y_v = train_test_split(X, y, test_size=test_size)
-    logger.info("Split data into {0} train and {1} test".format(1 - test_size,
-                                                                test_size))
-    grid = tune_svc(X_t, y_t)
+    Is, Ls = data_reader.load_image_label_list(image_indices)
+    X_train, y_train = image_pipeline.fit_transform(Is, Ls)
+    clf = train_svc(X_train, y_train)
 
-    if report:
-        print_grid_search_report(grid)
-        print_validation_report(grid, X_v, y_v)
-
-    return grid
+    return clf

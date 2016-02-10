@@ -23,7 +23,7 @@ class ImagePipeline(Pipeline):
         fit_params_steps = dict((step, {}) for step, _ in self.steps)
 
         for pname, pval in six.iteritems(fit_params):
-            step, param = pname.split('__', 1)
+            step, param = pname.split_blob('__', 1)
             fit_params_steps[step][param] = pval
         Xt = X
         yt = y
@@ -60,6 +60,31 @@ class ImagePipeline(Pipeline):
             Xyt = transform.transform(Xt)
             Xt = ImagePipeline._extract_X(Xyt)
         return Xt
+
+    @staticmethod
+    def _transform_Xy(X, y, steps):
+        """
+        Transform X and y according to steps
+        Because transform take X and y as input, it should return Xt and yt
+        unless it is not supported
+        :param X:
+        :param y:
+        :param steps:
+        :return: X and y transformed
+        """
+        Xt = X
+        yt = y
+        for name, transform in steps:
+            if isinstance(transform, FeatureUnion):
+                # FeatureUnion's transform only takes X, so we need to handle it
+                Xt = transform.transform(Xt)
+            else:
+                Xyt = transform.transform(Xt, yt)
+                if type(Xyt) == tuple and len(Xyt) == 2:
+                    Xt, yt = Xyt
+                else:
+                    Xt = Xyt
+        return Xt, yt
 
     @staticmethod
     def _extract_X(Xy):
@@ -239,8 +264,12 @@ class ImagePipeline(Pipeline):
             Data to predict on. Must fulfill input requirements of first step of
             the pipeline.
         """
-        Xt = self._transform_X(X, self.steps)
-        return Xt
+        if y is None:
+            Xt = self._transform_X(X, self.steps)
+            return Xt
+        else:
+            Xt, yt = self._transform_Xy(X, y, self.steps)
+            return Xt, yt
 
     @if_delegate_has_method(delegate='_final_estimator')
     def score(self, X, y=None):
@@ -260,3 +289,10 @@ class ImagePipeline(Pipeline):
         """
         Xt = self._transform_X(X, self.steps[:-1])
         return self.steps[-1][-1].score(Xt, y)
+
+    @property
+    def named_features(self):
+        """
+        :return:
+        """
+        return dict(self.named_steps['features'].transformer_list)

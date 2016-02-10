@@ -1,10 +1,10 @@
 from __future__ import print_function, division, absolute_import
 
-from scpye.viz import *
+from scpye.visualization import *
 from scpye.fruit_track import FruitTrack
-from scpye.assign import hungarian_assignment
-from scpye.blob import num_peaks_in_blob
-from scpye.bbox import bboxes_assignment_cost
+from scpye.assignment import hungarian_assignment
+from scpye.blob_analyzer import num_peaks_in_blob
+from scpye.bounding_box import bboxes_assignment_cost
 from scpye.optical_flow import calc_bboxes_flow, calc_average_flow
 
 

@@ -139,3 +139,33 @@ def gray_from_bw(bw, color=False):
         return bgr
     else:
         return gray
+
+
+def local_max_points(bw):
+    """
+    http://answers.opencv.org/question/28035/find-local-maximum-in-1d-2d-mat/
+    :param bw:
+    :return:
+    """
+    cs = find_contours(bw)
+
+    if len(cs) == 0:
+        return None
+
+    points = []
+    for cnt in cs:
+        m = cv2.moments(cnt)
+        a = cv2.contourArea(cnt)
+        if a > 0:
+            points.append(moment_centroid(m))
+    points = np.array(points)
+    return points
+
+
+def moment_centroid(mmt):
+    """
+    Centroid of moment
+    :param mmt:
+    :return:
+    """
+    return np.array((mmt['m10'] / mmt['m00'], mmt['m01'] / mmt['m00']))

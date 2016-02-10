@@ -6,14 +6,17 @@ from skimage.feature import peak_local_max
 from skimage.morphology import watershed
 
 from scpye.bounding_box import bbox_area, extract_bbox
-from scpye.region_props import region_props_bw, clean_bw, fill_bw
+from scpye.region_props import (region_props_bw, clean_bw, fill_bw,
+                                local_max_points, gray_from_bw)
 
 
 class BlobAnalyzer(object):
-    def __init__(self, min_area=9, split=False, split_method=0):
+    fruit_dtype = [('bbox', np.int, 4), ('num', np.int, 1)]
+
+    def __init__(self, min_area=9, do_split=False):
         self.min_area = min_area
-        self.split = split
-        self.split_method = split_method
+        self.do_split = do_split
+        self.bw = None
 
     def analyze(self, bw, v):
         """
@@ -28,37 +31,68 @@ class BlobAnalyzer(object):
         blobs, cntrs = region_props_bw(bw, self.min_area)
         # Redraw bw with cntrs
         bw = fill_bw(bw, cntrs)
+        self.bw = bw
 
-        # Partition blobs by area
-        n_blobs = len(blobs)
-        blobs = np.partition(blobs, n_blobs - self.num_split, order='area')
+        areas = blobs['prop'][:, 0]
+        area_thresh = np.mean(areas)
+        fruits = []
+        for blob in blobs:
+            fruit = self.split(blob, bw, v, area_thresh)
+            fruits.append(fruit)
+        fruits = np.vstack(fruits)
+        return np.array(fruits)
 
-        # For small blobs just add it to output list
-        # Other criteria:
-        # big size and sufficiently large aspect and
-        bboxes = [blobs[:-self.num_split]['bbox']]
+    def split(self, blob, bw, v, min_area, min_aspect=1.4, max_extent=0.5):
+        bbox = blob['bbox']
+        v_bbox = extract_bbox(v, bbox, copy=True)
+        bw_bbox = extract_bbox(bw, bbox)
+        v_bbox[bw_bbox == 0] = 0
 
-        for blob in blobs[-self.num_split:]:
-            bbox = blob['bbox']
-            label, n = label_blob(bbox, bw, v, return_num=True)
-            if n == 1:
-                # Nothing to split, just add to list
-                bboxes.append(bbox)
+        min_dist = min(np.sqrt(bbox_area(bbox)) / 5, 10)
+        area, aspect, extent = blob['prop']
+        if area > min_area and (aspect > min_aspect or extent < max_extent):
+            points = find_local_maximas(v_bbox, min_distance=min_dist)
+
+            if points is None:
+                return np.hstack((bbox, 1))
+
+            num = len(points)
+            if self.do_split:
+                return self.split_blob(points, bbox, area)
             else:
-                splited_bboxes = split_label(label)
-                bboxes.extend(bboxes)
+                return np.hstack((bbox, num))
+        else:
+            return np.hstack((bbox, 1))
 
-        return bboxes
+    @staticmethod
+    def split_blob(points, bbox, area):
+        xb, yb, _, _ = bbox
+        num = len(points)
+        a = np.sqrt(area / num)
+        fruits = []
+        for pt in points:
+            x, y = pt
+            fruit = np.array([x + xb - a, y + yb - a, 2 * a, 2 * a, 1])
+            fruits.append(fruit)
+        return np.vstack(fruits)
 
-    def split(self):
-        pass
+
+def find_local_maximas(image, min_distance=10):
+    """
+    Find points of local maximas from gray scale image
+    :param image:
+    :param min_distance:
+    :return:
+    """
+    image_max = ndi.maximum_filter(image, size=3, mode='constant')
+    local_max = peak_local_max(image_max, min_distance=min_distance,
+                               indices=False, exclude_border=False)
+    local_max = gray_from_bw(local_max)
+    points = local_max_points(local_max)
+    return points
 
 
-def split_label():
-    pass
-
-
-def label_blob(bbox, bw, v, k=5.5, return_num=False):
+def label_blob_watershed(bbox, bw, v, k=5.5, return_num=False):
     """
     :param bbox: bounding box
     :param bw: binary image

@@ -23,7 +23,7 @@ class FruitTracker(object):
 
         self.gray_prev = None
         self.win_size = 0
-        self.max_level = 3
+        self.max_level = 4
         self.init_flow = np.zeros(2, np.int)
 
         self.disp = None

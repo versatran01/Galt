@@ -1,66 +1,61 @@
-from __future__ import print_function, division, absolute_import
+from __future__ import (print_function, division, absolute_import)
+
 import cv2
 import numpy as np
 
 
-def points_inside_image(points, image, margin=4):
+def points_inside_image(points, image, b=4):
     """
     Check if point is inside image with a certain margin
     :param points:
     :param image:
-    :param margin:
+    :param b: distance from border
     :return:
     """
     h, w = image.shape
     px = points[:, :, 0]
     py = points[:, :, 1]
-    return (px >= margin) & (px < w - margin) & (py >= margin) & (
-    py < h - margin)
+    return (px >= b) & (px < w - b) & (py >= b) & (py < h - b)
 
 
-def calc_average_flow(flows, sts=None):
+def _prepare_points(points):
     """
-    Calculates average optical flow
-    :param flows:
-    :param sts:
+    Prepare points for opencv
+    :param points:
     :return:
     """
-    if sts is None:
-        flows_good = flows
-    else:
-        flows_good = flows[sts > 0]
-    return np.mean(flows_good, axis=0)
+    if points.dtype is not np.float32:
+        points = np.array(points, dtype=np.float32)
+    if np.ndim(points) == 2:
+        points = np.expand_dims(points, 1)
+    return points
 
 
-def calc_bboxes_flow(gray1, gray2, bboxes1, win_size=21, max_level=3,
-                     guess=None):
-    p1 = []
-    for bbox in bboxes1:
-        x, y, w, h = bbox
-        p1.append(np.array([x + w / 2, y + h / 2]))
-    # OpenCV need np.float32
-    p1 = np.array(p1, np.float32)
-    p1 = p1[:, np.newaxis, :]
+def calc_optical_flow(gray1, gray2, points1, points2, win_size, max_level):
+    """
+    Thin wrapper around opencv's calcOpticalFlowPyrLK
+    :param gray1:
+    :param gray2:
+    :param points1:
+    :param points2:
+    :param win_size:
+    :param max_level:
+    :return:
+    """
+    points1 = _prepare_points(points1)
+    points2 = _prepare_points(points2)
 
     criteria = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 0.03)
-    if guess is not None:
-        p2_0 = np.array(p1, copy=True)
-        p2_0 += guess
-        klt_params = dict(winSize=(win_size, win_size),
-                          maxLevel=max_level,
-                          flags=cv2.OPTFLOW_USE_INITIAL_FLOW,
-                          criteria=criteria)
-        p2, st, err = cv2.calcOpticalFlowPyrLK(gray1, gray2, p1, p2_0,
-                                               **klt_params)
-    else:
-        klt_params = dict(winSize=(win_size, win_size),
-                          maxLevel=max_level,
-                          criteria=criteria)
-        p2, st, err = cv2.calcOpticalFlowPyrLK(gray1, gray2, p1, None,
-                                               **klt_params)
+    klt_params = dict(winSize=(win_size, win_size),
+                      maxLevel=max_level,
+                      flags=cv2.OPTFLOW_USE_INITIAL_FLOW,
+                      criteria=criteria)
 
-    # we also check whether p2 is inside some bounds of the image, 4 pixels
-    is_inside = points_inside_image(p2, gray2)
-    st = (st == 1) & is_inside
+    points2, status, _ = cv2.calcOpticalFlowPyrLK(gray1, gray2, points1,
+                                                  points2, **klt_params)
 
-    return p1, p2, st
+    is_inside = points_inside_image(points2, gray2)
+
+    status = (status == 1) & is_inside
+
+    return points1, points2, np.squeeze(status)

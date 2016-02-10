@@ -91,25 +91,10 @@ def draw_text(image, text, point, color=(255, 0, 0), scale=0.5, thickness=1):
                 thickness=thickness)
 
 
-# Functions start with plot calls pyplot subroutines and usually requires ax
-# def plot_filled_bboxes(ax, bboxes, color, alpha):
-#     for bbox in bboxes:
-#         x, y, w, h = bbox
-#         rect = patches.Rectangle((x, y), w, h, facecolor=color, alpha=alpha)
-#         ax.add_patch(rect)
-
-
-# def plot_edge_bboxes(ax, bboxes, color):
-#     for bbox in bboxes:
-#         x, y, w, h = bbox
-#         rect = patches.Rectangle((x, y), w, h, edgecolor=color, fill=False)
-#         ax.add_patch(rect)
-
-
-def draw_optical_flow(image, p1, p2, color=(255, 0, 0)):
-    for p1g, p2g in zip(p1, p2):
-        a, b = p1g.ravel()
-        c, d = p2g.ravel()
+def draw_optical_flow(image, points1, points2, color=(255, 0, 0)):
+    for pt1, pt2 in zip(points1, points2):
+        a, b = pt1.ravel()
+        c, d = pt2.ravel()
 
         cv2.line(image, (a, b), (c, d), color=color, thickness=1)
         cv2.circle(image, (c, d), 1, color=color, thickness=-1)

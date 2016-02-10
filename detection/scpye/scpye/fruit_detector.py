@@ -9,6 +9,8 @@ from scpye.blob_analyzer import BlobAnalyzer
 
 
 class FruitDetector(object):
+    fruit_dtype = [('bbox', np.int, 4), ('num', np.int, 1)]
+
     def __init__(self, img_ppl, img_clf, split=False):
         """
         :param img_ppl: image pipeline

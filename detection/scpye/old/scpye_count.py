@@ -8,8 +8,8 @@ import rosbag
 from cv_bridge import CvBridge, CvBridgeError
 from sklearn.externals import joblib
 
-from old.fruit_tracker import FruitTracker
 from scpye.fruit_detector import FruitDetector
+from scpye.fruit_tracker import FruitTracker
 from scpye.region_props import region_props
 from scpye.visualization import draw_bboxes
 

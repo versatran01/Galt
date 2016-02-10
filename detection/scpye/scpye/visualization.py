@@ -54,6 +54,17 @@ def imshow3(image1, image2, image3, figsize=(10, 10)):
 
 
 @draw_multiple
+def draw_fruit(image, fruit):
+    bbox = fruit[:4]
+    num = fruit[-1]
+    thickness = 1
+    if num > 1:
+        thickness = 2
+
+    draw_bbox(image, bbox, thickness=thickness)
+
+
+@draw_multiple
 def draw_bbox(image, bbox, color=(255, 0, 0), thickness=1):
     x, y, w, h = np.array(bbox, dtype=int)
     cv2.rectangle(image, (x, y), (x + w, y + h), color=color,

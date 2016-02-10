@@ -13,7 +13,7 @@ from scpye.region_props import (region_props_bw, clean_bw, fill_bw,
 class BlobAnalyzer(object):
     fruit_dtype = [('bbox', np.int, 4), ('num', np.int, 1)]
 
-    def __init__(self, min_area=9, split=False):
+    def __init__(self, min_area=8, split=False):
         """
         :param min_area: minimum area to be consider a blob
         :param split: whether to split big blob to smaller ones or not
@@ -21,7 +21,6 @@ class BlobAnalyzer(object):
         """
         self.min_area = min_area
         self.split = split
-        self.bw = None
 
     def analyze(self, bw, v):
         """
@@ -30,13 +29,13 @@ class BlobAnalyzer(object):
         :param v:
         :return:
         """
+        bw = gray_from_bw(bw)
         # Clean binary image
         bw = clean_bw(bw)
         # Get regional properties and also remove very small blobs
         blobs, cntrs = region_props_bw(bw, self.min_area)
         # Redraw bw with cntrs
         bw = fill_bw(bw, cntrs)
-        self.bw = bw
 
         areas = blobs['prop'][:, 0]
         area_thresh = np.mean(areas)
@@ -45,7 +44,7 @@ class BlobAnalyzer(object):
             fruit = self.split_blob(blob, bw, v, area_thresh)
             fruits.append(fruit)
         fruits = np.vstack(fruits)
-        return np.array(fruits)
+        return np.array(fruits), bw
 
     def split_blob(self, blob, bw, v, min_area, min_aspect=1.4, max_extent=0.5):
         """

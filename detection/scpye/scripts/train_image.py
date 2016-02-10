@@ -6,8 +6,8 @@ from scpye.testing import test_image_classifier
 
 # %%
 base_dir = '/home/chao/Workspace/bag'
-color = 'green'
-mode = 'slow_flash'
+color = 'red'
+mode = 'fast_flash'
 train_inds = range(0, 12, 3) + range(1, 12, 3)
 test_inds = range(2, 12, 3)
 

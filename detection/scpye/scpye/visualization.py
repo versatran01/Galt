@@ -12,8 +12,7 @@ class Colors:
 
     predict = (0, 0, 255)  # blue
     detect = (255, 0, 0)  # red
-    correct = (255, 255, 0)  # yellow
-    new = (255, 255, 255)  # white
+    new = (255, 255, 0)  # yellow
     match = (0, 255, 0)  # green
     flow = (255, 0, 0)  # red
     text = (0, 255, 255)
@@ -91,7 +90,10 @@ def draw_text(image, text, point, color=(255, 0, 0), scale=0.5, thickness=1):
                 thickness=thickness)
 
 
-def draw_optical_flow(image, points1, points2, color=(255, 0, 0)):
+def draw_optical_flows(image, points1, points2, color=(255, 0, 0)):
+    points1 = np.atleast_2d(points1)
+    points2 = np.atleast_2d(points2)
+
     for pt1, pt2 in zip(points1, points2):
         a, b = pt1.ravel()
         c, d = pt2.ravel()
@@ -102,14 +104,17 @@ def draw_optical_flow(image, points1, points2, color=(255, 0, 0)):
 
 def draw_bboxes_matches(image, matches, bboxes1, bboxes2, color, thickness=1):
     matches = np.atleast_2d(matches)
+    bboxes1 = np.atleast_2d(bboxes1)
+    bboxes2 = np.atleast_2d(bboxes2)
     for pair in matches:
         i1, i2 = pair
-        b1 = bboxes1[i1]
-        b2 = bboxes2[i2]
-        x1, y1, w1, h1 = b1
-        x2, y2, w2, h2 = b2
+        bbox1 = bboxes1[i1]
+        bbox2 = bboxes2[i2]
+        x1, y1, w1, h1 = bbox1
+        x2, y2, w2, h2 = bbox2
         a = int(x1 + w1 / 2)
         b = int(y1 + h1 / 2)
         c = int(x2 + w2 / 2)
         d = int(y2 + h2 / 2)
+        draw_bboxes(image, bbox2, color=color, thickness=thickness)
         cv2.line(image, (a, b), (c, d), color=color, thickness=thickness)

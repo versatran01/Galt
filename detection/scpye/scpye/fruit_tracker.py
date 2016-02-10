@@ -58,9 +58,16 @@ class FruitTracker(object):
         return win_size | 1
 
     def track(self, image, fruits):
+        """
+        Main tracking step
+        :param image: gray scale image
+        :param fruits: new fruits
+        """
         # Convert to grayscale
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         self.disp = image.copy()
+
+        # ===== DRAW DETECTION =====
         draw_bboxes(self.disp, fruits[:, :4], color=Colors.detect)
 
         if not self.initialized:
@@ -77,8 +84,6 @@ class FruitTracker(object):
             self.logger.info('Fruit tracker initialized')
             return
 
-        # Starting here we do the following things
-        # 1. predict new location of each track
         self.logger.info('Predict new location of tracks')
 
         valid_tracks, invalid_tracks = self.predict_tracks(gray)
@@ -86,8 +91,20 @@ class FruitTracker(object):
         self.logger.debug(
             'Tracks valid/invalid: {0}/{1}'.format(len(valid_tracks),
                                                    len(invalid_tracks)))
+        matched_tracks, lost_tracks = self.match_tracks(valid_tracks, fruits)
+
+        # Update matched tracks
+        self.tracks = matched_tracks
+
+        # Count fruits in invalid tracks
+        invalid_tracks.extend(lost_tracks)
+        self.count_fruits_in_tracks(invalid_tracks)
 
     def predict_tracks(self, gray):
+        """
+        Predict tracks using optical flow
+        :param gray: gray scale image
+        """
         # for each track, get center points and flow
         points1 = np.array([bbox_center(track.bbox) for track in self.tracks])
         prev_flows = np.array([track.flow for track in self.tracks])
@@ -99,11 +116,13 @@ class FruitTracker(object):
                                                      points1, points2,
                                                      self.win_size,
                                                      self.max_level)
-        # New optical flow
+        # New optical flow, used to update init_flow
         flows = points2 - points1
-        self.logger.debug('Average flow: {0}'.format(np.mean(flows, axis=0)))
+        self.init_flow = np.squeeze(np.mean(flows, axis=0))
+        self.logger.debug('Average flow: {0}'.format(self.init_flow))
 
-        draw_optical_flow(self.disp, points1, points2, color=Colors.flow)
+        # ===== DRAW OPTICAL FLOW =====
+        draw_optical_flows(self.disp, points1, points2, color=Colors.flow)
 
         valid_tracks = []
         invalid_tracks = []
@@ -118,101 +137,66 @@ class FruitTracker(object):
         self.gray_prev = gray
         return valid_tracks, invalid_tracks
 
-    def track_old(self, gray, fruits):
+    def match_tracks(self, tracks, fruits):
+        """
+        Match tracks to fruits
+        :param tracks: list of valid tracks
+        :param fruits: list of detected fruits
+        :return: matched tracks (with new tracks) and lost tracks
+        """
+        # Get prediction and detection bboxes
+        bboxes_prediction = np.array([t.bbox for t in tracks])
+        bboxes_detection = fruits[:, :4]
 
-        # Starting here we do the following things
-        # 1. predict new location of each track
-        #   a. calculate optical flow at the track's location
-        #   b. move tracks to invalid_tracks if optical flow is bad
-        #   c. use kalman filter to predict the new location of valid_tracks
-        # 2. find correspondences between valid tracks and fruits
-        # 3. update tracks
-        #   a. for matched tracks and detections, use kalman filter to update
-        #      new locations
-        #   b. for new detections, spawn a new track and add to valid_tracks
-        #   c. for lost tracks, move to invalid_tracks
-        #   d. for all invalid_tracks, we see if they can be added to total
-        #      counts and then delete them
-        # Calculate optical flow from the tracks bounding boxes
-
-        # Draw prediction
-        bboxes_prediction = get_tracks_bboxes(valid_tracks, filtered=True)
-        draw_bboxes(self.disp, bboxes_prediction, color=Colors.predict)
-
-        # 2
-        self.tracks = valid_tracks
-        bboxes_detection = blobs['bbox']
         cost = bboxes_assignment_cost(bboxes_prediction, bboxes_detection)
-        matches, lost_tracks, new_detections = hungarian_assignment(cost)
+        match_inds, lost_inds, new_inds = hungarian_assignment(cost)
 
-        # Draw matches
-        draw_bboxes_matches(self.disp, matches, bboxes_prediction,
+        # ===== DRAW MATCHES =====
+        draw_bboxes_matches(self.disp, match_inds, bboxes_prediction,
                             bboxes_detection, color=Colors.match)
 
-        # 3.a
-        valid_tracks = []
-        for match in matches:
-            i1, i2 = match
-            track = self.tracks[i1]
-            blob = self.blobs[i2]
-            track.correct(blob)
-            valid_tracks.append(track)
+        # Update matched tracks
+        matched_tracks = []
+        for match in match_inds:
+            i_track, i_fruit = match
+            track = tracks[i_track]
+            fruit = fruits[i_fruit]
+            track.correct(fruit)
+            matched_tracks.append(track)
 
-        # Draw kalman filter update and tracks that contains multiple fruits
-        for track in valid_tracks:
-            x, y = np.array(track.x, dtype=int)
-            cv2.circle(self.disp, (x, y), 2, color=Colors.correct,
-                       thickness=-1)
-            if track.num_fruits > 1:
-                cv2.putText(self.disp, str(track.num_fruits), (x, y),
-                            cv2.FONT_HERSHEY_PLAIN, 1, color=Colors.text)
+        self.logger.debug(
+            'Matched/lost/new: {0}/{1}/{2}'.format(len(match_inds),
+                                                   len(lost_inds),
+                                                   len(new_inds)))
 
-        # 3.b
-        blobs_new = blobs[new_detections]
-        v_bw = np.array(self.v_channel, copy=True)
-        v_bw[~(bw > 0)] = 0
-        add_new_tracks(valid_tracks, blobs_new, v_bw, min_area=min_area)
+        # Add new tracks
+        new_fruits = fruits[new_inds]
+        self.add_new_tracks(matched_tracks, new_fruits)
 
-        # Draw new tracks
-        bboxes_new = blobs_new['bbox']
-        draw_bboxes(self.disp, bboxes_new, color=Colors.new)
+        # ===== DRAW NEW FRUITS =====
+        draw_bboxes(self.disp, new_fruits[:, :4], color=Colors.new)
 
-        # 3.c
-        for i in lost_tracks:
-            invalid_tracks.append(self.tracks[i])
+        # Get lost tracks
+        lost_tracks = [tracks[ind] for ind in lost_inds]
 
-        # 3.d
-        self.count_fruits_in_tracks(invalid_tracks)
-
-        self.tracks = valid_tracks
+        return matched_tracks, lost_tracks
 
     def finish(self):
+        """
+        Count what's left in tracks, call after final image
+        """
         self.count_fruits_in_tracks(self.tracks)
 
     def count_fruits_in_tracks(self, tracks):
+        """
+        Count how many fruits there are in tracks
+        :param tracks: list of tracks
+        """
+        temp_sum = 0
         for track in tracks:
             if track.age >= self.min_age:
-                self.total_counts += track.num_fruits
+                temp_sum += track.num
 
-
-def get_tracks_bboxes(tracks, filtered=False):
-    bboxes = []
-    for track in tracks:
-        if filtered:
-            bboxes.append(track.bbox_filtered)
-        else:
-            bboxes.append(track.bbox)
-    return np.array(bboxes, dtype=np.int)
-
-
-def predict_tracks_with_flows(tracks, flows, sts):
-    valid_tracks = []
-    invalid_tracks = []
-
-    for track, flow, st in zip(tracks, flows, sts):
-        if st.ravel():
-            track.predict(flow)
-            valid_tracks.append(track)
-        else:
-            invalid_tracks.append(track)
-    return valid_tracks, invalid_tracks
+        self.logger.debug('Lost tracks sum: {0}'.format(temp_sum))
+        self.total_counts += temp_sum
+        self.logger.debug('Total counts: {0}'.format(self.total_counts))

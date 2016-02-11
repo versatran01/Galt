@@ -12,23 +12,13 @@ class Colors:
 
     predict = (0, 0, 255)  # blue
     detect = (255, 0, 0)  # red
-    correct = (255, 255, 0)  # yellow
-    new = (255, 255, 255)  # white
+    new = (255, 255, 0)  # yellow
     match = (0, 255, 0)  # green
-    flow = (255, 0, 0)  # red
+    flow = (255, 0, 255)  # magenta
     text = (0, 255, 255)
 
     def __init__(self):
         pass
-
-
-def draw_multiple(func):
-    def func_wrapper(image, objects, **kwargs):
-        objects = np.atleast_2d(objects)
-        for obj in objects:
-            func(image, obj, **kwargs)
-
-    return func_wrapper
 
 
 def imshow(image, figsize=(10, 10)):
@@ -53,49 +43,42 @@ def imshow3(image1, image2, image3, figsize=(10, 10)):
     return ax1, ax2, ax3
 
 
-@draw_multiple
-def draw_fruit(image, fruit):
-    bbox = fruit[:4]
-    num = fruit[-1]
-    thickness = 1
-    if num > 1:
-        thickness = 2
-
-    draw_bbox(image, bbox, thickness=thickness)
+def draw_bboxes(image, bboxes, color=(255, 0, 0), thickness=1):
+    bboxes = np.atleast_2d(bboxes)
+    for bbox in bboxes:
+        x, y, w, h = np.array(bbox, dtype=int)
+        cv2.rectangle(image, (x, y), (x + w, y + h), color=color,
+                      thickness=thickness)
 
 
-@draw_multiple
-def draw_bbox(image, bbox, color=(255, 0, 0), thickness=1):
-    x, y, w, h = np.array(bbox, dtype=int)
-    cv2.rectangle(image, (x, y), (x + w, y + h), color=color,
-                  thickness=thickness)
+def draw_circles(image, circles, color=(255, 0, 0), thickness=1):
+    circles = np.atleast_2d(circles)
+    for circle in circles:
+        x, y, r = np.array(circle, dtype=int)
+        cv2.circle(image, (x, y), r, color=color, thickness=thickness)
 
 
-@draw_multiple
-def draw_circle(image, circle, color=(255, 0, 0), thickness=1):
-    x, y, r = np.array(circle, dtype=int)
-    cv2.circle(image, (x, y), r, color=color, thickness=thickness)
+def draw_points(image, points, color=(255, 0, 0), radius=1):
+    points = np.atleast_2d(points)
+    for point in points:
+        x, y = np.array(point, dtype=int)
+        cv2.circle(image, (x, y), radius, color=color, thickness=-1)
 
 
-@draw_multiple
-def draw_point(image, point, color=(255, 0, 0), radius=1):
-    x, y = np.array(point, dtype=int)
-    cv2.circle(image, (x, y), radius, color=color, thickness=-1)
-
-
-@draw_multiple
-def draw_ellipse(image, ellipse, color=(255, 0, 0), thickness=1):
-    x, y, ax1, ax2, ang = np.array(ellipse, dtype=int)
-    cv2.ellipse(image, (x, y), (ax1, ax2), ang, 0, 360, color=color,
-                thickness=thickness)
-
-
-def draw_contour(image, cnt, color=(255, 0, 0), thickness=1):
-    cv2.drawContours(image, [cnt], 0, color, thickness)
+def draw_ellipses(image, ellipses, color=(255, 0, 0), thickness=1):
+    ellipses = np.atleast_2d(ellipses)
+    for ellipse in ellipses:
+        x, y, ax1, ax2, ang = np.array(ellipse, dtype=int)
+        cv2.ellipse(image, (x, y), (ax1, ax2), ang, 0, 360, color=color,
+                    thickness=thickness)
 
 
 def draw_contours(image, cs, color=(255, 0, 0), thickness=1):
     cv2.drawContours(image, cs, -1, color, thickness)
+
+
+def draw_contour(image, cnt, color=(255, 0, 0), thickness=1):
+    cv2.drawContours(image, [cnt], 0, color, thickness)
 
 
 def draw_text(image, text, point, color=(255, 0, 0), scale=0.5, thickness=1):
@@ -107,25 +90,13 @@ def draw_text(image, text, point, color=(255, 0, 0), scale=0.5, thickness=1):
                 thickness=thickness)
 
 
-# Functions start with plot calls pyplot subroutines and usually requires ax
-# def plot_filled_bboxes(ax, bboxes, color, alpha):
-#     for bbox in bboxes:
-#         x, y, w, h = bbox
-#         rect = patches.Rectangle((x, y), w, h, facecolor=color, alpha=alpha)
-#         ax.add_patch(rect)
+def draw_optical_flows(image, points1, points2, color=(255, 0, 0)):
+    points1 = np.atleast_2d(points1)
+    points2 = np.atleast_2d(points2)
 
-
-# def plot_edge_bboxes(ax, bboxes, color):
-#     for bbox in bboxes:
-#         x, y, w, h = bbox
-#         rect = patches.Rectangle((x, y), w, h, edgecolor=color, fill=False)
-#         ax.add_patch(rect)
-
-
-def draw_optical_flow(image, p1, p2, color=(255, 0, 0)):
-    for p1g, p2g in zip(p1, p2):
-        a, b = p1g.ravel()
-        c, d = p2g.ravel()
+    for pt1, pt2 in zip(points1, points2):
+        a, b = pt1.ravel()
+        c, d = pt2.ravel()
 
         cv2.line(image, (a, b), (c, d), color=color, thickness=1)
         cv2.circle(image, (c, d), 1, color=color, thickness=-1)
@@ -133,14 +104,18 @@ def draw_optical_flow(image, p1, p2, color=(255, 0, 0)):
 
 def draw_bboxes_matches(image, matches, bboxes1, bboxes2, color, thickness=1):
     matches = np.atleast_2d(matches)
+    bboxes1 = np.atleast_2d(bboxes1)
+    bboxes2 = np.atleast_2d(bboxes2)
+
     for pair in matches:
         i1, i2 = pair
-        b1 = bboxes1[i1]
-        b2 = bboxes2[i2]
-        x1, y1, w1, h1 = b1
-        x2, y2, w2, h2 = b2
+        bbox1 = bboxes1[i1]
+        bbox2 = bboxes2[i2]
+        x1, y1, w1, h1 = bbox1
+        x2, y2, w2, h2 = bbox2
         a = int(x1 + w1 / 2)
         b = int(y1 + h1 / 2)
         c = int(x2 + w2 / 2)
         d = int(y2 + h2 / 2)
+        draw_bboxes(image, bbox2, color=color, thickness=thickness)
         cv2.line(image, (a, b), (c, d), color=color, thickness=thickness)

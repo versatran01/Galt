@@ -1,54 +1,26 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Tue Feb  9 21:39:28 2016
-
-@author: chao
-"""
-
-import matplotlib.pyplot as plt
-import rosbag 
-from cv_bridge import CvBridge, CvBridgeError
 from scpye.data_reader import DataReader
 from scpye.fruit_detector import FruitDetector
+from scpye.blob_analyzer import BlobAnalyzer
+from scpye.fruit_tracker import FruitTracker
+from scpye.fruit_visualizer import FruitVisualizer
 
-# %%
-def ScpyeVisualizer(object):
-    def __init__(self):
-        pass
-
-
-# %%
-bridge = CvBridge()
-h_color = None
-h_bw = None
-
-fig = plt.figure()
-plt.ion()
-
-base_dir = '/home/chao/Dropbox'
+base_dir = '/home/chao/Workspace/bag'
 color = 'red'
 mode = 'slow_flash'
+bag_ind = 3
 
-drd = DataReader(base_dir, color=color, mode=mode)
-fd = FruitDetector.from_pickle(drd.model_dir)
-via = ScpyeVisualizer()
+dr = DataReader(base_dir, color=color, mode=mode)
+fd = FruitDetector.from_pickle(dr.model_dir)
+ba = BlobAnalyzer(split=False, min_area=5)
+ft = FruitTracker()
+fv = FruitVisualizer(image_dir=dr.image_dir)
 
-with rosbag.Bag(bagfile) as bag:
-    for i, (topic, msg, t) in enumerate(bag.read_messages(im_topic)):
-        try:
-            image = bridge.imgmsg_to_cv2(msg)
-            # Rotate image 90 degree
+for image in dr.load_bag(bag_ind):
+    bw = fd.detect(image)
+    fruits, bw_clean = ba.analyze(bw, fd.v)
+    ft.track(fd.color, fruits)
+    fv.show(ft.disp, bw_clean)
+    print(ft.total_counts)
 
-        except CvBridgeError as e:
-            print(e)
-            continue
-        
-        
-#        fruits, bw = fd.detect(I)
-        if h_bgr:
-            h_bw.set_data(mask)
-            h_bgr.set_data(disp)
-        else:
-            h_bw = ax_bw.imshow(mask)
-            h_bgr = ax_bgr.imshow(disp)
-        plt.pause(0.001)
+ft.finish()
+print(ft.total_counts)

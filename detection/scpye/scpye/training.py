@@ -8,7 +8,6 @@ from scpye.image_pipeline import ImagePipeline, FeatureUnion
 from scpye.data_reader import DataReader
 
 
-# TODO: change this to kwargs later
 def make_image_pipeline(ccw=-1, bbox=None, k=0.5, v_min=25, cspace=None,
                         use_loc=True):
     """
@@ -44,7 +43,7 @@ def make_image_features(cspace=None, use_loc=True):
     :rtype: FeatureUnion
     """
     if cspace is None:
-        cspace = ['bgr', 'hsv']
+        cspace = ['hsv']
     transformer_list = [(cs, CspaceTransformer(cs)) for cs in cspace]
     if use_loc:
         transformer_list.append(('mask_location', MaskLocator()))

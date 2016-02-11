@@ -51,5 +51,5 @@ def test_image_classifier(data_reader, image_indices, image_pipeline,
         disp_label = cv2.cvtColor(pred_bw, cv2.COLOR_GRAY2BGR)
         draw_contours(disp_label, pos_cntrs)
 
-        disp_color = image_pipeline.named_steps['remove_dark'].image
+        disp_color = image_pipeline.named_steps['remove_dark'].bgr
         imshow2(disp_color, disp_label, figsize=(17, 17))

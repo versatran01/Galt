@@ -1,189 +1,202 @@
-from __future__ import print_function, division, absolute_import
+from __future__ import (print_function, division, absolute_import)
 
-from scpye.visualization import *
-from scpye.fruit_track import FruitTrack
+import logging
+
 from scpye.assignment import hungarian_assignment
-from scpye.blob_analyzer import num_peaks_in_blob
-from scpye.bounding_box import bboxes_assignment_cost
-from scpye.optical_flow import calc_bboxes_flow, calc_average_flow
+from scpye.bounding_box import bboxes_assignment_cost, bbox_center
+from scpye.fruit_track import FruitTrack
+from scpye.optical_flow import calc_optical_flow
+from scpye.visualization import *
 
-
-def get_tracks_bboxes(tracks, filtered=False):
-    bboxes = []
-    for track in tracks:
-        if filtered:
-            bboxes.append(track.bbox_filtered)
-        else:
-            bboxes.append(track.bbox)
-    return np.array(bboxes, int)
-
-
-def predict_tracks_with_flows(tracks, flows, sts):
-    valid_tracks = []
-    invalid_tracks = []
-
-    for track, flow, st in zip(tracks, flows, sts):
-        if st.ravel():
-            track.predict(flow)
-            valid_tracks.append(track)
-        else:
-            invalid_tracks.append(track)
-    return valid_tracks, invalid_tracks
-
-
-def add_new_tracks(tracks, blobs, v, min_area):
-    for blob in blobs:
-        num_fruits = num_peaks_in_blob(blob, v, min_area=min_area)
-        track = FruitTrack(blob, num_fruits=num_fruits)
-        tracks.append(track)
+logging.basicConfig(level=logging.INFO)
 
 
 class FruitTracker(object):
-    def __init__(self):
+    def __init__(self, min_age=3):
+        """
+        :param min_age: minimum age of a track to be considered for counting
+        """
         # Tracking
         self.tracks = []
-        self.s = None
-        self.blobs = None
-        self.min_age = 3
+        self.min_age = min_age
         self.total_counts = 0
 
-        # Optical flow
         self.gray_prev = None
-        self.flow_mean = None
+        self.win_size = 0
+        self.max_level = 3
+        self.init_flow = np.zeros(2, np.int)
 
-        # visualization
         self.disp = None
+        self.logger = logging.getLogger('fruit_tracker')
 
-    def track(self, s, blobs, bw):
-        self.s = s
-        self.blobs = blobs
-        self.disp = np.array(s.im_raw, copy=True)
+    @property
+    def initialized(self):
+        return self.gray_prev is not None
 
-        # Draw detections
-        draw_bboxes(self.disp, blobs['bbox'], Colors.detect)
+    def add_new_tracks(self, tracks, fruits):
+        """
+        Add new fruits to tracks
+        :param tracks: a list of tracks
+        :param fruits: a list of fruits
+        """
+        for fruit in fruits:
+            track = FruitTrack(fruit, self.init_flow)
+            tracks.append(track)
+        self.logger.debug('Add {0} new tracks'.format(len(fruits)))
 
-        h, w = np.shape(bw)
-        min_area = (h * w) / (50.0 ** 2)
-
-        if not self.initialized:
-            v_bw = np.array(self.v_channel, copy=True)
-            v_bw[~(bw > 0)] = 0
-            add_new_tracks(self.tracks, blobs, v_bw, min_area=min_area)
-            self.gray_prev = cv2.cvtColor(self.s.im_raw, cv2.COLOR_BGR2GRAY)
-            return
-
-        # Starting here we do the following things
-        # 1. predict new location of each track
-        #   a. calculate optical flow at the track's location
-        #   b. move tracks to invalid_tracks if optical flow is bad
-        #   c. use kalman filter to predict the new location of valid_tracks
-        # 2. find correspondences between tracks and detections
-        # 3. update tracks
-        #   a. for matched tracks and detections, use kalman filter to update
-        #      new locations
-        #   b. for new detections, spawn a new track and add to valid_tracks
-        #   c. for lost tracks, move to invalid_tracks
-        #   d. for all invalid_tracks, we see if they can be added to total
-        #      counts and then delete them
-        # Calculate optical flow from the tracks bounding boxes
-
-        # 1.a
-        bboxes_track = get_tracks_bboxes(self.tracks)
-        gray = cv2.cvtColor(self.s.im_raw, cv2.COLOR_BGR2GRAY)
-        # if self.flow_mean is None:
-        # p1s, p2s, sts = calc_bboxes_flow(self.gray_prev, gray, bboxes_track)
-        # else:
+    @staticmethod
+    def calc_win_size(gray, k=15):
+        """
+        Calculate window size for
+        :param gray:
+        :param k:
+        :return: window size
+        """
         h, w = gray.shape
         d = np.sqrt(h * w)
-        win_size = int(d / 16)
-        if self.flow_mean is None:
-            self.flow_mean = np.array([w / 6, 0], np.float32)
-        p1s, p2s, sts = calc_bboxes_flow(self.gray_prev, gray, bboxes_track,
-                                         win_size=win_size, max_level=4,
-                                         guess=self.flow_mean)
-        # p1s, p2s, sts = calc_bboxes_flow(self.gray_prev, gray, bboxes_track,
-        #                                  win_size=win_size, max_level=4)
-        flows = p2s - p1s
-        self.flow_mean = calc_average_flow(flows, sts)
-        self.gray_prev = gray
+        win_size = int(d / k)
+        return win_size | 1
 
-        # Draw optical flow
-        draw_optical_flow(self.disp, p1s, p2s, color=Colors.flow)
+    def track(self, image, fruits):
+        """
+        Main tracking step
+        :param image: gray scale image
+        :param fruits: new fruits
+        """
+        # Convert to grayscale
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        self.disp = image.copy()
 
-        # 1.b and 1.c
+        if not self.initialized:
+            self.logger.info('Initializing fruit tracker')
+            # ===== DRAW DETECTION =====
+            draw_bboxes(self.disp, fruits[:, :4], color=Colors.detect)
+
+            self.gray_prev = gray
+            self.win_size = self.calc_win_size(gray)
+            self.init_flow = np.array([self.win_size, 0], np.int)
+            self.logger.debug(
+                'win_size: {0}, init_flow: {1}'.format(self.win_size,
+                                                       self.init_flow))
+
+            self.add_new_tracks(self.tracks, fruits)
+            return
+
+        valid_tracks, invalid_tracks = self.predict_tracks(gray)
+
+        self.logger.debug(
+            'Tracks valid/invalid: {0}/{1}'.format(len(valid_tracks),
+                                                   len(invalid_tracks)))
+        matched_tracks, lost_tracks = self.match_tracks(valid_tracks, fruits)
+
+        # Update matched tracks
+        self.tracks = matched_tracks
+
+        # Count fruits in invalid tracks
+        invalid_tracks.extend(lost_tracks)
+        self.count_fruits_in_tracks(invalid_tracks)
+
+    def predict_tracks(self, gray):
+        """
+        Predict tracks using optical flow
+        :param gray: gray scale image
+        """
+        # for each track, get center points and flow
+        points1 = np.array([bbox_center(track.bbox) for track in self.tracks])
+        prev_flows = np.array([track.flow for track in self.tracks])
+        points2 = points1 + prev_flows
+
+        # Do optical flow
+        # NOTE: dimension of points1 and points2 are 3 because of opencv
+        points1, points2, status = calc_optical_flow(self.gray_prev, gray,
+                                                     points1, points2,
+                                                     self.win_size,
+                                                     self.max_level)
+        # New optical flow, used to update init_flow
+        flows = points2 - points1
+        self.init_flow = np.squeeze(np.mean(flows, axis=0))
+        self.logger.debug('Average flow: {0}'.format(self.init_flow))
+
+        # ===== DRAW OPTICAL FLOW =====
+        draw_optical_flows(self.disp, points1, points2, color=Colors.flow)
+
         valid_tracks = []
         invalid_tracks = []
-        for track, flow, st in zip(self.tracks, flows, sts):
-            if st.ravel():
-                track.predict(flow)
+        for track, flow, stat in zip(self.tracks, flows, status):
+            if stat:
+                track.predict(np.ravel(flow))
                 valid_tracks.append(track)
             else:
                 invalid_tracks.append(track)
 
-        # Draw prediction
-        bboxes_prediction = get_tracks_bboxes(valid_tracks, filtered=True)
-        draw_bboxes(self.disp, bboxes_prediction, color=Colors.predict)
+        # Update gray_prev
+        self.gray_prev = gray
+        return valid_tracks, invalid_tracks
 
-        # 2
-        self.tracks = valid_tracks
-        bboxes_detection = blobs['bbox']
+    def match_tracks(self, tracks, fruits):
+        """
+        Match tracks to fruits
+        :param tracks: list of valid tracks
+        :param fruits: list of detected fruits
+        :return: matched tracks (with new tracks) and lost tracks
+        """
+        # Get prediction and detection bboxes
+        bboxes_prediction = np.array([t.bbox for t in tracks])
+        bboxes_detection = fruits[:, :4]
+
         cost = bboxes_assignment_cost(bboxes_prediction, bboxes_detection)
-        matches, lost_tracks, new_detections = hungarian_assignment(cost)
+        match_inds, lost_inds, new_inds = hungarian_assignment(cost)
 
-        # Draw matches
-        draw_bboxes_matches(self.disp, matches, bboxes_prediction,
+        # ===== DRAW MATCHES =====
+        draw_bboxes_matches(self.disp, match_inds, bboxes_prediction,
                             bboxes_detection, color=Colors.match)
 
-        # 3.a
-        valid_tracks = []
-        for match in matches:
-            i1, i2 = match
-            track = self.tracks[i1]
-            blob = self.blobs[i2]
-            track.correct(blob)
-            valid_tracks.append(track)
+        # Update matched tracks
+        matched_tracks = []
+        for match in match_inds:
+            i_track, i_fruit = match
+            track = tracks[i_track]
+            fruit = fruits[i_fruit]
+            track.correct(fruit)
+            matched_tracks.append(track)
 
-        # Draw kalman filter update and tracks that contains multiple fruits
-        for track in valid_tracks:
-            x, y = np.array(track.x, dtype=int)
-            cv2.circle(self.disp, (x, y), 2, color=Colors.correct,
-                       thickness=-1)
-            if track.num_fruits > 1:
-                cv2.putText(self.disp, str(track.num_fruits), (x, y),
-                            cv2.FONT_HERSHEY_PLAIN, 1, color=Colors.text)
+        self.logger.debug(
+            'Matched/lost/new: {0}/{1}/{2}'.format(len(match_inds),
+                                                   len(lost_inds),
+                                                   len(new_inds)))
 
-        # 3.b
-        blobs_new = blobs[new_detections]
-        v_bw = np.array(self.v_channel, copy=True)
-        v_bw[~(bw > 0)] = 0
-        add_new_tracks(valid_tracks, blobs_new, v_bw, min_area=min_area)
+        # Add new tracks
+        new_fruits = fruits[new_inds]
+        self.add_new_tracks(matched_tracks, new_fruits)
 
-        # Draw new tracks
-        bboxes_new = blobs_new['bbox']
-        draw_bboxes(self.disp, bboxes_new, color=Colors.new)
+        # ===== DRAW NEW FRUITS =====
+        draw_bboxes(self.disp, new_fruits[:, :4], color=Colors.new)
 
-        # 3.c
-        for i in lost_tracks:
-            invalid_tracks.append(self.tracks[i])
+        # Get lost tracks
+        lost_tracks = [tracks[ind] for ind in lost_inds]
 
-        # 3.d
-        self.count_fruits_in_tracks(invalid_tracks)
-
-        self.tracks = valid_tracks
+        return matched_tracks, lost_tracks
 
     def finish(self):
+        """
+        Count what's left in tracks, call after final image
+        """
         self.count_fruits_in_tracks(self.tracks)
 
     def count_fruits_in_tracks(self, tracks):
+        """
+        Count how many fruits there are in tracks
+        :param tracks: list of tracks
+        """
+        temp_sum = 0
         for track in tracks:
             if track.age >= self.min_age:
-                self.total_counts += track.num_fruits
+                temp_sum += track.num
 
-    def get_initialized(self):
-        return self.gray_prev is not None
+        self.logger.debug('Lost tracks sum: {0}'.format(temp_sum))
+        self.total_counts += temp_sum
 
-    def get_v_channel(self):
-        return self.s.im_hsv[:, :, -1]
-
-    initialized = property(get_initialized)
-    v_channel = property(get_v_channel)
+        # ===== DRAW TOTAL COUNTS =====
+        draw_text(self.disp, self.total_counts, (0, len(self.disp) - 5),
+                  scale=1, color=Colors.text)
+        self.logger.debug('Total counts: {0}'.format(self.total_counts))

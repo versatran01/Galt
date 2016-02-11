@@ -54,6 +54,15 @@ def make_image_features(cspace=None, use_loc=True):
 
 
 def tune_image_classifier(X, y, method='svm', test_size=0.3, report=True):
+    """
+
+    :param X:
+    :param y:
+    :param method:
+    :param test_size:
+    :param report:
+    :return:
+    """
     param_grid = [{'C': [0.1, 1, 10]}]
     if method == 'svm':
         clf = SVC()

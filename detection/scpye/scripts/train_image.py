@@ -8,23 +8,23 @@ from scpye.testing import test_image_classifier
 base_dir = '/home/chao/Workspace/bag'
 color = 'red'
 mode = 'slow_flash'
-train_inds = range(0, 12, 3) + range(12, 16)
-test_inds = range(1, 12, 3)
+train_inds = range(0, 12, 3) + range(1, 12, 3) + range(12, 16)
+test_inds = range(2, 12, 3)
 
 # %%
 train = True
-save = False
+save = True
 test = True
 
 # %% 
 # Parameters
 k = 0.5
-v_min = 30
+v_min = 28
 if color == 'red':
     bbox = np.array([300, 0, 600, 1440])
     use_loc = False
 else:
-    bbox = np.array([250, 250, 700, 1440])
+    bbox = np.array([300, 240, 600, 1440])
     use_loc = True
 
 # %%

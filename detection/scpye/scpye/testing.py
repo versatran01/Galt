@@ -8,7 +8,6 @@ from scpye.region_props import find_contours, gray_from_bw
 from scpye.visualization import draw_contours
 
 
-# TODO: All these stuff should be integrated into FruitDetector
 def get_positive_bw(image_pipeline, image, label):
     image_pipeline.transform(image, label)
     label = image_pipeline.named_steps['remove_dark'].label

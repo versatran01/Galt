@@ -14,7 +14,7 @@ class Colors:
     detect = (255, 0, 0)  # red
     new = (255, 255, 0)  # yellow
     match = (0, 255, 0)  # green
-    flow = (255, 0, 0)  # red
+    flow = (255, 0, 255)  # magenta
     text = (0, 255, 255)
 
     def __init__(self):

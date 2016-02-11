@@ -24,6 +24,7 @@ class DataReader(object):
         self.data_dir = os.path.join(self.base_dir, fruit, color, mode)
         self.train_dir = os.path.join(self.data_dir, 'train')
         self.model_dir = os.path.join(self.data_dir, 'model')
+        self.image_dir = os.path.join(self.data_dir, 'image')
         self.bag_dir = os.path.join(self.data_dir, bag)
 
     def _read_image(self, index, suffix, color=True):

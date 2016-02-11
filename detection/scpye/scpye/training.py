@@ -8,7 +8,6 @@ from scpye.image_pipeline import ImagePipeline, FeatureUnion
 from scpye.data_reader import DataReader
 
 
-# TODO: change this to kwargs later
 def make_image_pipeline(ccw=-1, bbox=None, k=0.5, v_min=25, cspace=None,
                         use_loc=True):
     """

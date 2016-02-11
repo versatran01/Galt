@@ -44,7 +44,7 @@ class BlobAnalyzer(object):
             fruit = self.split_blob(blob, bw, v, area_thresh)
             fruits.append(fruit)
         fruits = np.vstack(fruits)
-        return np.array(fruits), bw
+        return fruits, bw
 
     def split_blob(self, blob, bw, v, min_area, min_aspect=1.4, max_extent=0.5):
         """
@@ -104,8 +104,8 @@ def find_local_maximas(image, min_distance=10):
     :param min_distance:
     :return:
     """
-    image_max = ndi.maximum_filter(image, size=3, mode='constant')
-    local_max = peak_local_max(image_max, min_distance=min_distance,
+    # image_max = ndi.maximum_filter(image, size=3, mode='constant')
+    local_max = peak_local_max(image, min_distance=min_distance,
                                indices=False, exclude_border=False)
     local_max = gray_from_bw(local_max)
     points = local_max_points(local_max)

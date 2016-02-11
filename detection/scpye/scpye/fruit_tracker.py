@@ -23,7 +23,7 @@ class FruitTracker(object):
 
         self.gray_prev = None
         self.win_size = 0
-        self.max_level = 4
+        self.max_level = 3
         self.init_flow = np.zeros(2, np.int)
 
         self.disp = None
@@ -67,11 +67,10 @@ class FruitTracker(object):
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         self.disp = image.copy()
 
-        # ===== DRAW DETECTION =====
-        draw_bboxes(self.disp, fruits[:, :4], color=Colors.detect)
-
         if not self.initialized:
             self.logger.info('Initializing fruit tracker')
+            # ===== DRAW DETECTION =====
+            draw_bboxes(self.disp, fruits[:, :4], color=Colors.detect)
 
             self.gray_prev = gray
             self.win_size = self.calc_win_size(gray)

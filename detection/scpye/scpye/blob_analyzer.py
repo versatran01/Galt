@@ -13,7 +13,7 @@ from scpye.region_props import (region_props_bw, clean_bw, fill_bw,
 class BlobAnalyzer(object):
     fruit_dtype = [('bbox', np.int, 4), ('num', np.int, 1)]
 
-    def __init__(self, min_area=8, split=False):
+    def __init__(self, min_area=5, split=False):
         """
         :param min_area: minimum area to be consider a blob
         :param split: whether to split big blob to smaller ones or not

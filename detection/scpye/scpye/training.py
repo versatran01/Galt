@@ -1,5 +1,6 @@
 from __future__ import (print_function, absolute_import, division)
 from sklearn.svm import SVC
+from sklearn.linear_model import LogisticRegression
 from sklearn.grid_search import GridSearchCV
 from sklearn.cross_validation import train_test_split
 from sklearn.metrics import classification_report
@@ -52,42 +53,41 @@ def make_image_features(cspace=None, use_loc=True):
     return FeatureUnion(transformer_list)
 
 
-def tune_svc(X, y, param_grid=None, cv=4, verbose=5):
-    """
-    Tune a support vector machine with cross validation
-    :param cv: n folds cross validation
-    :type cv: int
-    :param verbose: verbosity level
-    :type verbose: int
-    :return: grid search
-    :rtype: GridSearchCV
-    """
-    if param_grid is None:
-        param_grid = [{'C': [0.1, 0.5, 1, 5, 10]}]
+def tune_image_classifier(X, y, method='svm', test_size=0.3, report=True):
+    param_grid = [{'C': [0.1, 1, 10]}]
+    if method == 'svm':
+        clf = SVC()
+    elif method == 'lr':
+        clf = LogisticRegression()
+    else:
+        raise ValueError('Unsupported method')
 
-    grid = GridSearchCV(estimator=SVC(), param_grid=param_grid, cv=cv,
-                        verbose=verbose)
-    grid.fit(X, y)
-
-    return grid
-
-
-def train_svc(X, y, test_size=0.3, report=True):
-    """
-    Train an svm with cross validation
-    :param test_size: portion of data to split
-    :param report: whether to print report or not
-    :return: svm
-    :rtype: GridSearchCV
-    """
     X_t, X_v, y_t, y_v = train_test_split(X, y, test_size=test_size)
-    grid = tune_svc(X_t, y_t)
+    grid = GridSearchCV(estimator=clf, param_grid=param_grid, cv=4,
+                        verbose=5)
+    grid.fit(X_t, y_t)
 
     if report:
         print_grid_search_report(grid)
         print_validation_report(grid, X_v, y_v)
 
     return grid
+
+
+def train_image_classifier(data_reader, image_indices, image_pipeline,
+                           method='svm'):
+    """
+    :type data_reader: DataReader
+    :param image_indices: list of indices
+    :type image_pipeline: ImagePipeline
+    :param method:
+    :rtype: GridSearchCV
+    """
+    Is, Ls = data_reader.load_image_label_list(image_indices)
+    X_train, y_train = image_pipeline.fit_transform(Is, Ls)
+    clf = tune_image_classifier(X_train, y_train, method=method)
+
+    return clf
 
 
 def print_grid_search_report(grid):
@@ -120,17 +120,3 @@ def print_validation_report(clf, X, y, target_names=None):
     y_p = clf.predict(X)
     report = classification_report(y, y_p, target_names=target_names)
     print(report)
-
-
-def train_image_classifier(data_reader, image_indices, image_pipeline):
-    """
-    :type data_reader: DataReader
-    :param image_indices: list of indices
-    :type image_pipeline: ImagePipeline
-    :rtype: GridSearchCV
-    """
-    Is, Ls = data_reader.load_image_label_list(image_indices)
-    X_train, y_train = image_pipeline.fit_transform(Is, Ls)
-    clf = train_svc(X_train, y_train)
-
-    return clf

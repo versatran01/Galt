@@ -116,9 +116,9 @@ class DataReader(object):
 
         return Is, Ls
 
-    def load_bag(self, index, direction='forth'):
+    def load_bag(self, index, side='north'):
         bagname = os.path.join(self.bag_dir,
-                               self.bagname.format(index, direction))
+                               self.bagname.format(index, side))
         bridge = CvBridge()
         with rosbag.Bag(bagname) as bag:
             for topic, msg, t in bag.read_messages(self.topic):

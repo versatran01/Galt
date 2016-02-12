@@ -39,16 +39,16 @@ def test_image_classifier(data_reader, image_indices, image_pipeline,
     for ind in image_indices:
         I, L = data_reader.load_image_label(ind)
 
-        pos_bw = get_positive_bw(image_pipeline, I, L)
-        pos_bw = gray_from_bw(pos_bw)
-        pos_cntrs = find_contours(pos_bw)
+        bw_pos = get_positive_bw(image_pipeline, I, L)
+        bw_pos = gray_from_bw(bw_pos)
+        cntrs_pos = find_contours(bw_pos)
 
-        pred_bw = get_prediction_bw(image_pipeline, image_classifier, I)
-        pred_bw = gray_from_bw(pred_bw)
+        bw_pred = get_prediction_bw(image_pipeline, image_classifier, I)
+        bw_pred = gray_from_bw(bw_pred)
 
         # Draw contour of labeled apple
-        disp_label = cv2.cvtColor(pred_bw, cv2.COLOR_GRAY2BGR)
-        draw_contours(disp_label, pos_cntrs)
+        disp_label = cv2.cvtColor(bw_pred, cv2.COLOR_GRAY2BGR)
+        draw_contours(disp_label, cntrs_pos)
 
         disp_color = image_pipeline.named_steps['remove_dark'].bgr
         imshow2(disp_color, disp_label, figsize=(17, 17))

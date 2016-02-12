@@ -17,7 +17,7 @@ class DataReader(object):
         self.color = color
         self.mode = mode
         self.filename = filename
-        self.bagname = 'frame{0}_' + bag + '.bag'
+        self.bagname = 'frame{0}_{1}_' + bag + '.bag'
         self.topic = topic
 
         # Directory
@@ -116,8 +116,9 @@ class DataReader(object):
 
         return Is, Ls
 
-    def load_bag(self, index):
-        bagname = os.path.join(self.bag_dir, self.bagname.format(index))
+    def load_bag(self, index, direction='forth'):
+        bagname = os.path.join(self.bag_dir,
+                               self.bagname.format(index, direction))
         bridge = CvBridge()
         with rosbag.Bag(bagname) as bag:
             for topic, msg, t in bag.read_messages(self.topic):

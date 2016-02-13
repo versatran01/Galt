@@ -7,8 +7,8 @@ from scpye.fruit_visualizer import FruitVisualizer
 base_dir = '/home/chao/Workspace/bag'
 color = 'red'
 mode = 'slow_flash'
-side = 'north'
-bag_ind = 4
+side = 'south'
+bag_ind = 1
 
 dr = DataReader(base_dir, color=color, mode=mode)
 fd = FruitDetector.from_pickle(dr.model_dir)

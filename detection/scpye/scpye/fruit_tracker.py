@@ -20,6 +20,7 @@ class FruitTracker(object):
         self.tracks = []
         self.min_age = min_age
         self.total_counts = 0
+        self.frame_counts = []
 
         self.gray_prev = None
         self.win_size = 0
@@ -182,6 +183,7 @@ class FruitTracker(object):
         Count what's left in tracks, call after final image
         """
         self.count_fruits_in_tracks(self.tracks)
+        self.frame_counts = np.array(self.frame_counts)
 
     def count_fruits_in_tracks(self, tracks):
         """
@@ -194,9 +196,9 @@ class FruitTracker(object):
                 temp_sum += track.num
 
         self.logger.debug('Lost tracks sum: {0}'.format(temp_sum))
+        self.frame_counts.append(temp_sum)
         self.total_counts += temp_sum
 
         # ===== DRAW TOTAL COUNTS =====
         draw_text(self.disp, self.total_counts, (0, len(self.disp) - 5),
                   scale=1, color=Colors.text)
-        self.logger.debug('Total counts: {0}'.format(self.total_counts))

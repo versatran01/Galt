@@ -21,12 +21,28 @@ class BlobAnalyzer(object):
         """
         self.min_area = min_area
         self.split = split
+        self.area_thresh = 0
 
     def analyze(self, bw, v):
         """
         :param bw:
         :param v:
         :return: (fruits, bw)
+        """
+        bw_clean, blobs = self.clean(bw)
+        v[bw_clean == 0] = 0
+
+        areas = blobs['prop'][:, 0]
+        self.area_thresh = np.mean(areas)
+        fruits = [self.split_blob(blob, v) for blob in blobs]
+        fruits = np.vstack(fruits)
+        return fruits, bw
+
+    def clean(self, bw):
+        """
+        Clean up raw binary detection image and do contour analysis
+        :param bw:
+        :return:
         """
         bw = gray_from_bw(bw)
         # Clean binary image
@@ -35,31 +51,23 @@ class BlobAnalyzer(object):
         blobs, cntrs = region_props_bw(bw, self.min_area)
         # Redraw bw with cntrs
         bw = fill_bw(bw, cntrs)
+        return bw, blobs
 
-        areas = blobs['prop'][:, 0]
-        area_thresh = np.mean(areas)
-        fruits = [self.split_blob(blob, bw, v, area_thresh) for blob in blobs]
-        fruits = np.vstack(fruits)
-        return fruits, bw
-
-    def split_blob(self, blob, bw, v, min_area, min_aspect=1.4, max_extent=0.5):
+    def split_blob(self, blob, v, min_aspect=1.4, max_extent=0.5):
         """
         :param blob:
-        :param bw:
         :param v:
-        :param min_area:
         :param min_aspect:
         :param max_extent:
         :return:
         """
         bbox = blob['bbox']
-        v_bbox = extract_bbox(v, bbox, copy=True)
-        bw_bbox = extract_bbox(bw, bbox)
-        v_bbox[bw_bbox == 0] = 0
+        v_bbox = extract_bbox(v, bbox)
 
         min_dist = min(np.sqrt(bbox_area(bbox)) / 5, 10)
         area, aspect, extent = blob['prop']
-        if area > min_area and (aspect > min_aspect or extent < max_extent):
+        if area > self.area_thresh and \
+                (aspect > min_aspect or extent < max_extent):
             points = find_local_maximas(v_bbox, min_distance=min_dist)
 
             if points is None:
@@ -67,14 +75,14 @@ class BlobAnalyzer(object):
 
             num = len(points)
             if self.split:
-                return self.split_points(points, bbox, area)
+                return self.split_local_max_points(points, bbox, area)
             else:
                 return np.hstack((bbox, num))
         else:
             return np.hstack((bbox, 1))
 
     @staticmethod
-    def split_points(points, bbox, area):
+    def split_local_max_points(points, bbox, area):
         """
         Split local max points into multiple fruits [bbox, num]
         :param points:

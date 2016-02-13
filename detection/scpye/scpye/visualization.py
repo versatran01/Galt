@@ -24,14 +24,14 @@ class Colors:
 def imshow(image, figsize=(10, 10)):
     fig = plt.figure(figsize=figsize)
     ax = fig.add_subplot(111)
-    ax.imshow(image, interpolation='none')
+    ax.imshow(image)
     return ax
 
 
 def imshow2(image1, image2, figsize=(10, 10)):
     fig = plt.figure(figsize=figsize)
-    ax1 = fig.add_subplot(121).imshow(image1, interpolation='none')
-    ax2 = fig.add_subplot(122).imshow(image2, interpolation='none')
+    ax1 = fig.add_subplot(121).imshow(image1)
+    ax2 = fig.add_subplot(122).imshow(image2)
     return ax1, ax2
 
 

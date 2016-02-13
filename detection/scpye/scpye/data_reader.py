@@ -10,15 +10,13 @@ from cv_bridge import CvBridge, CvBridgeError
 class DataReader(object):
     def __init__(self, base_dir='/home/chao/Workspace/bag', fruit='apple',
                  color='red', mode='fast_flash', bag='rect_fixed',
-                 filename='frame{0:04d}_{1}.png',
-                 topic='/color/image_rect_color'):
+                 filename='frame{0:04d}_{1}.png'):
         self.base_dir = base_dir
         self.fruit = fruit
         self.color = color
         self.mode = mode
         self.filename = filename
         self.bagname = 'frame{0}_{1}_' + bag + '.bag'
-        self.topic = topic
 
         # Directory
         self.data_dir = os.path.join(self.base_dir, fruit, color, mode)
@@ -116,12 +114,19 @@ class DataReader(object):
 
         return Is, Ls
 
-    def load_bag(self, index, side='north'):
+    def load_bag(self, index, side='north', topic='/color/image_rect_color'):
+        """
+        A generator for image
+        :param index:
+        :param side: north or south
+        :param topic: image message topic
+        :return:
+        """
         bagname = os.path.join(self.bag_dir,
                                self.bagname.format(index, side))
         bridge = CvBridge()
         with rosbag.Bag(bagname) as bag:
-            for topic, msg, t in bag.read_messages(self.topic):
+            for topic, msg, t in bag.read_messages(topic):
                 try:
                     image = bridge.imgmsg_to_cv2(msg)
                 except CvBridgeError as e:

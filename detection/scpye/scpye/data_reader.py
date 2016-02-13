@@ -20,10 +20,12 @@ class DataReader(object):
         self.bagname = bagname
 
         # Directory
-        self.data_dir = os.path.join(self.base_dir, fruit, color, mode, side)
+        self.color_dir = os.path.join(self.base_dir, fruit, color)
+        self.data_dir = os.path.join(self.color_dir, mode, side)
         self.train_dir = os.path.join(self.data_dir, 'train')
         self.model_dir = os.path.join(self.data_dir, 'model')
         self.image_dir = os.path.join(self.data_dir, 'image')
+        self.count_dir = os.path.join(self.data_dir, 'count')
         self.bag_dir = os.path.join(self.data_dir, bag)
 
     def _read_image(self, index, suffix, color=True):
@@ -124,6 +126,7 @@ class DataReader(object):
         """
         bagname = os.path.join(self.bag_dir,
                                self.bagname.format(index))
+        print('loading bag: {0}'.format(bagname))
         bridge = CvBridge()
         with rosbag.Bag(bagname) as bag:
             for topic, msg, t in bag.read_messages(topic):
@@ -133,3 +136,17 @@ class DataReader(object):
                     print(e)
                     continue
                 yield image
+
+    def load_ground_truth(self):
+        truth_file = os.path.join(self.color_dir, 'ground_truth.txt')
+        return np.loadtxt(truth_file)
+
+    def save_count(self, bag_ind, frame_counts):
+        count_file = os.path.join(self.count_dir,
+                                  'frame{0}.txt'.format(bag_ind))
+        np.savetxt(count_file, frame_counts, fmt='%u')
+
+    def load_count(self, bag_ind):
+        count_file = os.path.join(self.count_dir,
+                                  'frame{0}.txt'.format(bag_ind))
+        return np.loadtxt(count_file)

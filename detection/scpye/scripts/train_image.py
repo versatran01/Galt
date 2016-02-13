@@ -24,7 +24,7 @@ if side == 'north':
     train_inds = range(0, 12, 3) + range(1, 12, 3)
     test_inds = range(2, 12, 3)
 else:
-    train_inds = range(12, 16)
+    train_inds = range(12, 16) + range(0, 4)
     test_inds = range(12, 16)
 
 if color == 'red':

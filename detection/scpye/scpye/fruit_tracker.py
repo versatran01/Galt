@@ -2,17 +2,20 @@ from __future__ import (print_function, division, absolute_import)
 
 import logging
 
+import cv2
+import numpy as np
 from scpye.assignment import hungarian_assignment
 from scpye.bounding_box import bboxes_assignment_cost, bbox_center
 from scpye.fruit_track import FruitTrack
 from scpye.optical_flow import calc_optical_flow
-from scpye.visualization import *
+from scpye.visualization import (draw_bboxes, draw_optical_flows,
+                                 draw_bboxes_matches, draw_text, Colors)
 
 logging.basicConfig(level=logging.INFO)
 
 
 class FruitTracker(object):
-    def __init__(self, min_age=3):
+    def __init__(self, min_age=3, max_level=3):
         """
         :param min_age: minimum age of a track to be considered for counting
         """
@@ -22,9 +25,9 @@ class FruitTracker(object):
         self.total_counts = 0
         self.frame_counts = []
 
+        self.max_level = max_level
         self.gray_prev = None
         self.win_size = 0
-        self.max_level = 3
         self.init_flow = np.zeros(2, np.int)
 
         self.disp = None
@@ -46,7 +49,7 @@ class FruitTracker(object):
         self.logger.debug('Add {0} new tracks'.format(len(fruits)))
 
     @staticmethod
-    def calc_win_size(gray, k=15):
+    def calc_win_size(gray, k=16):
         """
         Calculate window size for
         :param gray:

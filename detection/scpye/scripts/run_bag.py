@@ -5,16 +5,16 @@ from scpye.fruit_tracker import FruitTracker
 from scpye.fruit_visualizer import FruitVisualizer
 
 base_dir = '/home/chao/Workspace/bag'
-color = 'red'
+color = 'green'
 mode = 'slow_flash'
 side = 'south'
-bag_ind = 1
-min_area = 10
+bag_ind = 4
+min_area = 9
 
 dr = DataReader(base_dir, color=color, mode=mode, side=side)
 fd = FruitDetector.from_pickle(dr.model_dir)
 ba = BlobAnalyzer(split=False, min_area=min_area)
-ft = FruitTracker()
+ft = FruitTracker(min_age=3, max_level=4)
 fv = FruitVisualizer()
 
 for image in dr.load_bag(bag_ind):
@@ -26,3 +26,4 @@ for image in dr.load_bag(bag_ind):
 
 ft.finish()
 print(ft.total_counts)
+dr.save_count(bag_ind, ft.frame_counts)

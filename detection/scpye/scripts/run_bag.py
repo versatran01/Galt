@@ -7,12 +7,13 @@ from scpye.fruit_visualizer import FruitVisualizer
 base_dir = '/home/chao/Workspace/bag'
 color = 'red'
 mode = 'slow_flash'
-side = 'north'
+side = 'south'
 bag_ind = 1
+min_area = 10
 
 dr = DataReader(base_dir, color=color, mode=mode, side=side)
 fd = FruitDetector.from_pickle(dr.model_dir)
-ba = BlobAnalyzer(split=False, min_area=10)
+ba = BlobAnalyzer(split=False, min_area=min_area)
 ft = FruitTracker()
 fv = FruitVisualizer()
 

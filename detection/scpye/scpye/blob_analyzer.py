@@ -36,7 +36,7 @@ class BlobAnalyzer(object):
         self.area_thresh = np.mean(areas)
         fruits = [self.split_blob(blob, v) for blob in blobs]
         fruits = np.vstack(fruits)
-        return fruits, bw
+        return fruits, bw_clean
 
     def clean(self, bw):
         """

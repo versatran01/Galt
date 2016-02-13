@@ -9,17 +9,18 @@ from cv_bridge import CvBridge, CvBridgeError
 
 class DataReader(object):
     def __init__(self, base_dir='/home/chao/Workspace/bag', fruit='apple',
-                 color='red', mode='fast_flash', bag='rect_fixed',
-                 filename='frame{0:04d}_{1}.png'):
+                 color='red', mode='fast_flash', side='north', bag='rect_fixed',
+                 filename='frame{0:04d}_{1}.png', bagname='frame{0}.bag'):
         self.base_dir = base_dir
         self.fruit = fruit
         self.color = color
         self.mode = mode
+        self.side = side
         self.filename = filename
-        self.bagname = 'frame{0}_{1}_' + bag + '.bag'
+        self.bagname = bagname
 
         # Directory
-        self.data_dir = os.path.join(self.base_dir, fruit, color, mode)
+        self.data_dir = os.path.join(self.base_dir, fruit, color, mode, side)
         self.train_dir = os.path.join(self.data_dir, 'train')
         self.model_dir = os.path.join(self.data_dir, 'model')
         self.image_dir = os.path.join(self.data_dir, 'image')
@@ -114,16 +115,15 @@ class DataReader(object):
 
         return Is, Ls
 
-    def load_bag(self, index, side='north', topic='/color/image_rect_color'):
+    def load_bag(self, index, topic='/color/image_rect_color'):
         """
         A generator for image
         :param index:
-        :param side: north or south
         :param topic: image message topic
         :return:
         """
         bagname = os.path.join(self.bag_dir,
-                               self.bagname.format(index, side))
+                               self.bagname.format(index))
         bridge = CvBridge()
         with rosbag.Bag(bagname) as bag:
             for topic, msg, t in bag.read_messages(topic):

@@ -7,16 +7,16 @@ from scpye.fruit_visualizer import FruitVisualizer
 base_dir = '/home/chao/Workspace/bag'
 color = 'red'
 mode = 'slow_flash'
-side = 'south'
+side = 'north'
 bag_ind = 1
 
-dr = DataReader(base_dir, color=color, mode=mode)
+dr = DataReader(base_dir, color=color, mode=mode, side=side)
 fd = FruitDetector.from_pickle(dr.model_dir)
 ba = BlobAnalyzer(split=False, min_area=10)
 ft = FruitTracker()
 fv = FruitVisualizer()
 
-for image in dr.load_bag(bag_ind, side):
+for image in dr.load_bag(bag_ind):
     bw = fd.detect(image)
     fruits, bw_clean = ba.analyze(bw, fd.v)
     ft.track(fd.color, fruits)

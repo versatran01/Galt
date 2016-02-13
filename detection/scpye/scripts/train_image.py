@@ -6,11 +6,9 @@ from scpye.testing import test_image_classifier
 
 # %%
 base_dir = '/home/chao/Workspace/bag'
-color = 'red'
+color = 'green'
 mode = 'slow_flash'
-side = 'north'
-train_inds = range(0, 12, 3) + range(1, 12, 3)
-test_inds = range(2, 12, 3)
+side = 'south'
 
 # %%
 train = True
@@ -21,6 +19,14 @@ test = True
 # Parameters
 k = 0.5
 v_min = 28
+
+if side == 'north':
+    train_inds = range(0, 12, 3) + range(1, 12, 3)
+    test_inds = range(2, 12, 3)
+else:
+    train_inds = range(12, 16)
+    test_inds = range(12, 16)
+
 if color == 'red':
     bbox = np.array([300, 0, 600, 1440])
     use_loc = True

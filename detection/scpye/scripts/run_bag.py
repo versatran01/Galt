@@ -8,8 +8,8 @@ base_dir = '/home/chao/Workspace/bag'
 color = 'green'
 mode = 'slow_flash'
 side = 'south'
-bag_ind = 4
-min_area = 9
+bag_ind = 1
+min_area = 12
 
 dr = DataReader(base_dir, color=color, mode=mode, side=side)
 fd = FruitDetector.from_pickle(dr.model_dir)

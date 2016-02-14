@@ -119,3 +119,4 @@ def draw_bboxes_matches(image, matches, bboxes1, bboxes2, color, thickness=1):
         d = int(y2 + h2 / 2)
         draw_bboxes(image, bbox2, color=color, thickness=thickness)
         cv2.line(image, (a, b), (c, d), color=color, thickness=thickness)
+

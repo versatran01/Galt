@@ -5,10 +5,10 @@ from scpye.fruit_tracker import FruitTracker
 from scpye.fruit_visualizer import FruitVisualizer
 
 base_dir = '/home/chao/Workspace/bag'
-color = 'green'
+color = 'red'
 mode = 'slow_flash'
 side = 'south'
-bag_ind = 1
+bag_ind = 4
 min_area = 12
 
 dr = DataReader(base_dir, color=color, mode=mode, side=side)

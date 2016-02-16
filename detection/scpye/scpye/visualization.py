@@ -11,9 +11,9 @@ class Colors:
     """
 
     predict = (0, 0, 255)  # blue
-    detect = (255, 0, 0)  # red
-    new = (255, 255, 0)  # yellow
-    match = (0, 255, 0)  # green
+    detect = (0, 0, 255)  # red
+    counted = (0, 255, 0)  # green
+    match = (0, 255, 255)  # yellow
     flow = (255, 0, 255)  # magenta
     text = (0, 255, 255)
 
@@ -90,16 +90,25 @@ def draw_text(image, text, point, color=(255, 0, 0), scale=0.5, thickness=1):
                 thickness=thickness)
 
 
-def draw_optical_flows(image, points1, points2, color=(255, 0, 0)):
+def draw_optical_flows(image, points1, points2, status=None, color=(255, 0, 0)):
     points1 = np.atleast_2d(points1)
     points2 = np.atleast_2d(points2)
 
-    for pt1, pt2 in zip(points1, points2):
-        a, b = pt1.ravel()
-        c, d = pt2.ravel()
+    if status is None:
+        for pt1, pt2 in zip(points1, points2):
+            a, b = pt1.ravel()
+            c, d = pt2.ravel()
 
-        cv2.line(image, (a, b), (c, d), color=color, thickness=1)
-        cv2.circle(image, (c, d), 1, color=color, thickness=-1)
+            cv2.line(image, (a, b), (c, d), color=color, thickness=1)
+            cv2.circle(image, (c, d), 1, color=color, thickness=-1)
+    else:
+        for pt1, pt2, st in zip(points1, points2, status):
+            if st:
+                a, b = pt1.ravel()
+                c, d = pt2.ravel()
+
+                cv2.line(image, (a, b), (c, d), color=color, thickness=1)
+                cv2.circle(image, (c, d), 1, color=color, thickness=-1)
 
 
 def draw_bboxes_matches(image, matches, bboxes1, bboxes2, color, thickness=1):
@@ -119,4 +128,3 @@ def draw_bboxes_matches(image, matches, bboxes1, bboxes2, color, thickness=1):
         d = int(y2 + h2 / 2)
         draw_bboxes(image, bbox2, color=color, thickness=thickness)
         cv2.line(image, (a, b), (c, d), color=color, thickness=thickness)
-

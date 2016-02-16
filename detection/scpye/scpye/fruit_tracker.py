@@ -71,10 +71,11 @@ class FruitTracker(object):
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         self.disp = image.copy()
 
+        # ===== DRAW DETECTION =====
+        draw_bboxes(self.disp, fruits[:, :4], color=Colors.detect)
+
         if not self.initialized:
             self.logger.info('Initializing fruit tracker')
-            # ===== DRAW DETECTION =====
-            draw_bboxes(self.disp, fruits[:, :4], color=Colors.detect)
 
             self.gray_prev = gray
             self.win_size = self.calc_win_size(gray)
@@ -96,9 +97,18 @@ class FruitTracker(object):
         # Update matched tracks
         self.tracks = matched_tracks
 
+        # ===== DRAW COUNTED TRACKS =====
+        self.draw_tracks()
+
         # Count fruits in invalid tracks
         invalid_tracks.extend(lost_tracks)
         self.count_fruits_in_tracks(invalid_tracks)
+
+    def draw_tracks(self):
+        bboxes = [t.bbox for t in self.tracks if t.age >= self.min_age]
+        if len(bboxes) == 0:
+            return
+        draw_bboxes(self.disp, bboxes, color=Colors.counted)
 
     def predict_tracks(self, gray):
         """
@@ -122,7 +132,8 @@ class FruitTracker(object):
         self.logger.debug('Average flow: {0}'.format(self.init_flow))
 
         # ===== DRAW OPTICAL FLOW =====
-        draw_optical_flows(self.disp, points1, points2, color=Colors.flow)
+        draw_optical_flows(self.disp, points1, points2, status=status,
+                           color=Colors.flow)
 
         valid_tracks = []
         invalid_tracks = []
@@ -174,7 +185,7 @@ class FruitTracker(object):
         self.add_new_tracks(matched_tracks, new_fruits)
 
         # ===== DRAW NEW FRUITS =====
-        draw_bboxes(self.disp, new_fruits[:, :4], color=Colors.new)
+        draw_bboxes(self.disp, new_fruits[:, :4], color=Colors.detect)
 
         # Get lost tracks
         lost_tracks = [tracks[ind] for ind in lost_inds]
@@ -204,4 +215,4 @@ class FruitTracker(object):
 
         # ===== DRAW TOTAL COUNTS =====
         draw_text(self.disp, self.total_counts, (0, len(self.disp) - 5),
-                  scale=1, color=Colors.text)
+                  scale=1, color=Colors.counted)

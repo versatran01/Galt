@@ -21,7 +21,7 @@ save_dir = '/home/chao/Desktop'
 # Raw detection
 # red    8
 # green  11
-color = 'red'
+color = 'green'
 if color == 'red':
     index = 10
     min_area = 9
@@ -96,14 +96,23 @@ for blob, cntr in zip(blobs_multi, cntrs_multi):
     n = np.max(label)
     local_max = gray_from_bw(local_max)
     points = local_max_points(local_max)
+    i = 0
     if points is not None and len(points) > 1:
         for i in np.arange(1, n + 1):
             mask = np.array(label == i, np.uint8)
             cs = find_contours(mask)
-            draw_contour(bgr, cs[0], color=(0, 255, 255))
-                        
-            
+#            draw_contour(bgr, cs[0], color=(0, 255, 255))            
         draw_points(bgr, points, radius=2, color=(0, 255, 255))
-        
+        fig = plt.figure(figsize=(12, 12))
+        ax = fig.add_subplot(121)
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.imshow(bgr)
+        ax = fig.add_subplot(122)
+        ax.imshow(image_max, interpolation='none')
+        ax.set_xticks([])
+        ax.set_yticks([])
+        plt.savefig('/home/chao/Desktop/' + color + '/split{0}.png'.format(i))
+        i += 1
 imshow(disp_left)
-cv2.imwrite(os.path.join(save_dir, color + '_split.png'), disp_left)
+#cv2.imwrite(os.path.join(save_dir, color + '_split.png'), disp_left)

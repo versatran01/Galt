@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 from scpye.data_reader import DataReader
 
 base_dir = '/home/chao/Workspace/bag'
-color = 'red'
+color = 'green'
 mode = 'slow_flash'
 
 # %%
@@ -31,7 +31,7 @@ frame1_total_gt = np.sum(frame1_counts_gt)
 num_trees = len(frame1_counts_gt) 
 frame_trees = np.arange(1, num_trees + 1)
 
-k_north = 0.25
+k_north = 0.75
 k_south = 1 - k_north
 
 calib_totals = []
@@ -61,7 +61,7 @@ for i, ax in enumerate(axarr.ravel()):
     ax.plot(frame_trees, calib_counts_per_tree, color='g', label='calib')
     ax.set_xlabel('trees')
     ax.set_ylabel('fruits')
-    ax.set_title('{0} frame {1}'.format(color, n_frame))
+    ax.set_title('{0} rep {1}'.format(color, n_frame))
     ax.grid(True)
     ax.set_xlim([0, num_trees + 1])
     
@@ -84,7 +84,7 @@ bar_width = 0.4
 ax.set_title(color)
 ax.set_ylabel('fruits')
 ax.set_xticks(x + bar_width)
-ax.set_xticklabels(('frame1', 'frame2', 'frame3', 'frame4'))
+ax.set_xticklabels(('rep1', 'rep2', 'rep3', 'rep4'))
 ax.set_xlim([x[0] - bar_width, x[-1] + bar_width * 4])
 ax.set_ylim([0, 3500])
 ax.grid(True)

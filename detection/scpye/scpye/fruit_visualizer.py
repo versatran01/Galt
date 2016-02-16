@@ -33,11 +33,11 @@ class FruitVisualizer(object):
         self.i += 1
 
         if self.image_dir is not None:
-            disp_bw = cv2.cvtColor(disp_bw, cv2.COLOR_GRAY2BGR)
-            white = np.ones((len(disp_bw), self.margin, 3)) * 255
-            disp = np.hstack((disp_bgr, white, disp_bw))
+            # disp_bw = cv2.cvtColor(disp_bw, cv2.COLOR_GRAY2BGR)
+            # white = np.ones((len(disp_bw), self.margin, 3)) * 255
+            # disp = np.hstack((disp_bgr, white, disp_bw))
             image_name = os.path.join(self.image_dir,
                                       self.image_name.format(self.i))
-            cv2.imwrite(image_name, disp)
+            cv2.imwrite(image_name, disp_bgr)
 
         plt.pause(self.pause_time)

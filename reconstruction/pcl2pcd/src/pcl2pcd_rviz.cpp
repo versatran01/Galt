@@ -20,9 +20,8 @@ Pcl2PcdRviz::Pcl2PcdRviz(const ros::NodeHandle &nh, const ros::NodeHandle &pnh)
 
 bool Pcl2PcdRviz::SaveToPcd(SaveToPcd::Request &req, SaveToPcd::Response &res) {
   if (clouds_.empty()) {
-    res.success = false;
     ROS_INFO("No clouds to save");
-    return true;
+    return false;
   }
   ROS_INFO("Saveing %d clouds to %s", (int)clouds_.size(),
            req.filename.c_str());
@@ -31,12 +30,10 @@ bool Pcl2PcdRviz::SaveToPcd(SaveToPcd::Request &req, SaveToPcd::Response &res) {
     try {
       pcl::io::savePCDFile(file, *(clouds_[i]));
       ROS_INFO("Saved cloud %d to: %s", (int)i, file.c_str());
-    }
-    catch (const std::exception &e) {
+    } catch (const std::exception &e) {
       ROS_ERROR("%s: %s", nh_.getNamespace().c_str(), e.what());
     }
   }
-  res.success = true;
   return true;
 }
 
@@ -77,8 +74,7 @@ void Pcl2PcdRviz::CloudCb(const sensor_msgs::PointCloud2ConstPtr &cloud_msg) {
   try {
     tf_stamped = core_.lookupTransform(cloud_msg->header.frame_id, "laser",
                                        ros::Time(0));
-  }
-  catch (const tf2::TransformException &e) {
+  } catch (const tf2::TransformException &e) {
     ROS_WARN_THROTTLE(1, "%s", e.what());
     return;
   }

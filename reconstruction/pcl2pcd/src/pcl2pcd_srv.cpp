@@ -42,14 +42,12 @@ bool Pcl2PcdSrv::SaveToPcd(SaveToPcd::Request &req, SaveToPcd::Response &res) {
   try {
     pcl::io::savePCDFile(req.filename, cloud_pcl_w);
     ROS_INFO_STREAM("Cloud saved to" << req.filename);
-  }
-  catch (const std::exception &e) {
+  } catch (const std::exception &e) {
     ROS_ERROR("%s: %s", nh_.getNamespace().c_str(), e.what());
     return false;
   }
 
   prev_stamp_ = curr_stamp;
-  res.success = true;
   return true;
 }
 

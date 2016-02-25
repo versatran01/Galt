@@ -1,4 +1,4 @@
 gps_covariance_scale_factor: 1.0
-#reference:
-    #latitude: 36.419528
-    #longitude: -119.188725
+reference:
+    latitude: 46.7117073
+    longitude: -119.1506528

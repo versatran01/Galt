@@ -29,6 +29,20 @@ PclAssemblerNode::PclAssemblerNode(const ros::NodeHandle &nh,
   pc2_sub_ =
       nh_.subscribe(resolved_topic, 1, &PclAssemblerNode::PointCloud2Cb, this);
   pc2_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("cloud_assembled", 1);
+  save_srv_server_ = nh_.advertiseService(
+      "save_to_pcd", &PclAssemblerNode::SaveToPcdFile, this);
+}
+
+bool PclAssemblerNode::SaveToPcdFile(SaveToPcdFile::Request &req,
+                                     SaveToPcdFile::Response &res) {
+  try {
+    pcl::io::savePCDFile(req.filename, *pcl_pc_assembled_);
+    ROS_INFO_STREAM("Cloud saved to" << req.filename);
+    return true;
+  } catch (const std::exception &e) {
+    ROS_ERROR("%s: %s", nh_.getNamespace().c_str(), e.what());
+    return false;
+  }
 }
 
 // This function is full of hack, will never fix it
@@ -42,10 +56,10 @@ void PclAssemblerNode::PointCloud2Cb(
   Eigen::Affine3d affine;
   tf::transformMsgToEigen(tf_stamped.transform, affine);
   // Convert Ros PointCloud2 message to pcl point cloud
-  PclPointCloud::Ptr pcl_pc = boost::make_shared<PclPointCloud>();
-  PclPointCloud::Ptr pcl_pc_passed = boost::make_shared<PclPointCloud>();
-  PclPointCloud::Ptr pcl_pc_filtered = boost::make_shared<PclPointCloud>();
-  PclPointCloud::Ptr pcl_pc_transformed = boost::make_shared<PclPointCloud>();
+  auto pcl_pc = boost::make_shared<PclPointCloud>();
+  auto pcl_pc_passed = boost::make_shared<PclPointCloud>();
+  auto pcl_pc_filtered = boost::make_shared<PclPointCloud>();
+  auto pcl_pc_transformed = boost::make_shared<PclPointCloud>();
   pcl::fromROSMsg(*pc2_msg, *pcl_pc);
   // Pass through filter
   pcl::PassThrough<PointT> pass_filter;
@@ -80,7 +94,6 @@ void PclAssemblerNode::PointCloud2Cb(
     pcl::toROSMsg(*pcl_pc_filtered, pc2);
   }
   pc2_pub_.publish(pc2);
-  // Publish
 }
 
 bool PclAssemblerNode::GetLatestTransfrom(
@@ -89,8 +102,7 @@ bool PclAssemblerNode::GetLatestTransfrom(
   try {
     tf_stamped = core_.lookupTransform(frame_tgt, frame_src, ros::Time(0));
     return true;
-  }
-  catch (const tf2::TransformException &e) {
+  } catch (const tf2::TransformException &e) {
     ROS_WARN_THROTTLE(1, "unable to listen to transform from %s to %s: %s",
                       frame_src.c_str(), frame_tgt.c_str(), e.what());
     return false;
@@ -106,8 +118,7 @@ int main(int argc, char **argv) {
   try {
     pcl_assembler::PclAssemblerNode pcl_assembler_node(nh, pnh);
     ros::spin();
-  }
-  catch (const std::exception &e) {
+  } catch (const std::exception &e) {
     ROS_ERROR("%s: %s", pnh.getNamespace().c_str(), e.what());
   }
 }

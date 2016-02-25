@@ -3,10 +3,10 @@
     <arg name="fixed_frame" default="world"/>
     <arg name="assemble" default="true"/>
     <arg name="leaf_size" default="0.05"/>
-    <arg name="min_z" default="0.5"/>
+    <arg name="min_z" default="0.0"/>
     <arg name="max_z" default="10.0"/>
-    <arg name="source"/>
-    <arg name="topic"/>
+    <arg name="source" default="laser"/>
+    <arg name="topic" default="cloud_filtered"/>
 
     <node pkg="pcl_assembler" type="pcl_assembler_node" name="pcl_assembler"
         ns="$(arg source)" output="$(arg output)">

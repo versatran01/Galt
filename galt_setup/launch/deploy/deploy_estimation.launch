@@ -13,18 +13,12 @@
 -->
 
 <launch>
-  <arg name="laser" default="$(optenv GALT_USE_LASER true)"/>
-
   <!-- gps -->
   <include file="$(find galt_setup)/launch/drivers/gps.launch"/>
 
   <!-- imu -->
   <include file="$(find galt_setup)/launch/drivers/imu.launch"/>
 
-  <!-- laser -->
-  <include if="$(arg laser)" file="$(find galt_setup)/launch/drivers/laser.launch"/>
-
   <!-- camera -->
-  <include file="$(find galt_setup)/launch/drivers/color_flash.launch"/>
-  <include file="$(find galt_setup)/launch/drivers/mono.launch"/>
+  <include file="$(find galt_setup)/launch/drivers/color.launch"/>
 </launch>

@@ -1,6 +1,0 @@
-# note this was actually calculated at penn
-mag_calib:
-  bias: [-0.2494, 0.0309, -0.2321]
-  # reference: [0.0, 0.236074, -0.421609]
-  reference: [0.0, 0.236, -0.421609]
-  scale: [1.0299,  1.0283, 0.9742]

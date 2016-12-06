@@ -56,7 +56,7 @@ class IntensityNode(object):
     def image_cb(self, image_msg):
         if self.transport == 'compressed':
             np_arr = np.fromstring(image_msg.data, np.uint8)
-            image = cv2.imdecode(np_arr, cv2.CV_LOAD_IMAGE_GRAYSCALE)
+            image = cv2.imdecode(np_arr, cv2.IMREAD_GRAYSCALE)
         else:
             try:
                 image = self.bridge.imgmsg_to_cv2(image_msg, 'mono8')
